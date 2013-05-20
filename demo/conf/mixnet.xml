@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<mixnet>
+    <node>
+        <host>localhost</host>
+        <portNo>11000</portNo>
+    </node>
+    <node>
+        <host>localhost</host>
+        <portNo>11001</portNo>
+    </node>
+</mixnet>
