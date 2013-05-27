@@ -17,14 +17,19 @@ package org.cryptoworkshop.ximix.demo.client;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
@@ -49,6 +54,19 @@ public class Main
         }
         while (r.compareTo(n) >= 0);
         return r;
+    }
+
+    public static BigInteger[] decodeSig(
+        byte[] encoding)
+        throws IOException
+    {
+        ASN1Sequence s = ASN1Sequence.getInstance(encoding);
+        BigInteger[] sig = new BigInteger[2];
+
+        sig[0] = ((DERInteger)s.getObjectAt(0)).getValue();
+        sig[1] = ((DERInteger)s.getObjectAt(1)).getValue();
+
+        return sig;
     }
 
     public static void main(String[] args)
@@ -99,5 +117,25 @@ public class Main
         bOut.write(dsaSig);
 
         client.uploadMessage("FRED", bOut.toByteArray());
+
+        //
+        // check the signature locally.
+        //
+        ECDSASigner signer = new ECDSASigner();
+
+        ECPublicKeyParameters sigPubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(signingService.fetchPublicKey("SIGKEY"));
+
+        signer.init(false, sigPubKey);
+
+        BigInteger[] rs = decodeSig(dsaSig);
+
+        if (signer.verifySignature(hash, rs[0], rs[1]))
+        {
+            System.out.println("sig verified!");
+        }
+        else
+        {
+            System.out.println("sig failed...");
+        }
     }
 }
