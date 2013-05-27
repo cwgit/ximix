@@ -13,29 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet;
+package org.cryptoworkshop.ximix.crypto.client;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.crypto.client.KeyService;
 
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
-
-public class MixNetNodeContext
+public interface SigningService
+    extends KeyService
 {
-
-    private Executor multiTaskExecutor = Executors.newCachedThreadPool();
-
-    public void addConnection(Runnable task)
-    {
-        multiTaskExecutor.execute(task);
-    }
-
-    public void scheduleTask(Runnable task)
-    {
-        multiTaskExecutor.execute(task);
-    }
-
-
+    byte[] generateSignature(String keyID, byte[] hash)
+        throws ServiceConnectionException;
 }

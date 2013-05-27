@@ -15,59 +15,45 @@
  */
 package org.cryptoworkshop.ximix.common.message;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERUTF8String;
 
-public class Command
+public class CreateSignatureMessage
     extends ASN1Object
 {
-    private final Type type;
-    private final ASN1Encodable payload;
+    private String keyID;
+    private byte[] hash;
 
-    public static enum Type
+    public CreateSignatureMessage(String keyID, byte[] hash)
     {
-        UPLOAD_TO_BOARD
+        this.keyID = keyID;
+        this.hash = hash.clone();
     }
 
-    public Command(Type type, ASN1Encodable payload)
+    private CreateSignatureMessage(ASN1Sequence seq)
     {
-        this.type = type;
-        this.payload = payload;
+        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
+        this.hash = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets().clone();
     }
 
-    private Command(ASN1Sequence seq)
+    public static final CreateSignatureMessage getInstance(Object o)
     {
-        this.type = Type.values()[ASN1Enumerated.getInstance(seq.getObjectAt(0)).getValue().intValue()];
-        this.payload = seq.getObjectAt(1);
-    }
-
-    public static final Command getInstance(Object o)
-    {
-        if (o instanceof Command)
+        if (o instanceof CreateSignatureMessage)
         {
-            return (Command)o;
+            return (CreateSignatureMessage)o;
         }
         else if (o != null)
         {
-            return new Command(ASN1Sequence.getInstance(o));
+            return new CreateSignatureMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
-    }
-
-    public Type getType()
-    {
-        return type;
-    }
-
-    public ASN1Encodable getPayload()
-    {
-        return payload;
     }
 
     @Override
@@ -75,9 +61,19 @@ public class Command
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Enumerated(type.ordinal()));
-        v.add(payload);
+        v.add(new DERUTF8String(keyID));
+        v.add(new DEROctetString(hash));
 
         return new DERSequence(v);
+    }
+
+    public String getKeyID()
+    {
+        return keyID;
+    }
+
+    public byte[] getHash()
+    {
+        return hash;
     }
 }

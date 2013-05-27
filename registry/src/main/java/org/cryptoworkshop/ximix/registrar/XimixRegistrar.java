@@ -13,29 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet;
+package org.cryptoworkshop.ximix.registrar;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
-
-public class MixNetNodeContext
+public interface XimixRegistrar
 {
-
-    private Executor multiTaskExecutor = Executors.newCachedThreadPool();
-
-    public void addConnection(Runnable task)
-    {
-        multiTaskExecutor.execute(task);
-    }
-
-    public void scheduleTask(Runnable task)
-    {
-        multiTaskExecutor.execute(task);
-    }
-
-
+    /**
+     * Connect to a specific service.
+     *
+     * @param serviceClass
+     * @param <T>
+     * @return
+     */
+   <T> T connect(Class<T> serviceClass)
+       throws RegistrarServiceException;
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet;
+package org.cryptoworkshop.ximix.node;
 
 import java.io.File;
 
@@ -23,10 +23,9 @@ public class Main
 {
     public static void main(String[] args)
     {
-
         try
         {
-            MixNetNode node = MixNetNodeFactory.createNode(new File(args[0]));
+            XimixNode node = XimixNodeFactory.createNode(new File(args[0]));
 
             node.start();
         }

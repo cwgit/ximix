@@ -27,10 +27,10 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.service.XimixRegistrar;
-import org.cryptoworkshop.ximix.service.XimixRegistrarFactory;
-import org.cryptoworkshop.ximix.upload.UploadService;
-import org.cryptoworkshop.ximix.crypto.SigningService;
+import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
+import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.mixnet.client.UploadService;
+import org.cryptoworkshop.ximix.crypto.client.SigningService;
 
 public class Main
 {

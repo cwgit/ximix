@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.impl;
+package org.cryptoworkshop.ximix.crypto.service;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -21,11 +21,15 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.sun.xml.internal.stream.writers.UTF8OutputStreamWriter;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
@@ -33,32 +37,34 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
-import org.cryptoworkshop.ximix.crypto.SigningService;
+import org.cryptoworkshop.ximix.common.message.CreateSignatureMessage;
+import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.service.Service;
+import org.cryptoworkshop.ximix.common.service.ServiceContext;
 
-public class SigningServiceImpl
-    implements SigningService
+public class NodeSigningService
+    implements Service
 {
     Map<String, AsymmetricCipherKeyPair> keyMap = new HashMap<String, AsymmetricCipherKeyPair>();
 
-    public byte[] fetchPublicKey(String keyID)
+    public NodeSigningService(ServiceContext nodeConnection)
     {
-        // TODO: obviously this needs to take place remotely!
-        try
-        {
-            AsymmetricCipherKeyPair kp = getKeyPair(keyID);
+        //To change body of created methods use File | Settings | File Templates.
+    }
 
-            if (kp == null)
-            {
-                return null;
-            }
+    private SubjectPublicKeyInfo fetchPublicKey(String keyID)
+        throws IOException
+    {
+        AsymmetricCipherKeyPair kp = getKeyPair(keyID);
 
-            return SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()).getEncoded();
-        }
-        catch (IOException e)
+        if (kp == null)
         {
-            // TODO: there's probably no point in telling the client more than this, but it does need to be logged remotely.
-            return new byte[0];
+            return null;
         }
+
+        return SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic());
     }
 
     private AsymmetricCipherKeyPair getKeyPair(String keyID)
@@ -106,5 +112,35 @@ public class SigningServiceImpl
         }
 
         return null;
+    }
+
+    public MessageReply handle(Message message)
+    {
+        switch (message.getType())
+        {
+        case FETCH_PUBLIC_KEY:
+            FetchPublicKeyMessage fetchMessage = FetchPublicKeyMessage.getInstance(message.getPayload());
+             System.err.println("here") ;
+            try
+            {
+                return new MessageReply(MessageReply.Type.OKAY, fetchPublicKey(fetchMessage.getKeyID()));
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        case CREATE_SIGNATURE:
+            CreateSignatureMessage sigMessage = CreateSignatureMessage.getInstance(message.getPayload());
+
+            return new MessageReply(MessageReply.Type.OKAY, new DEROctetString(generateSignature(sigMessage.getKeyID(), sigMessage.getHash())));
+        default:
+            System.err.println("unknown command");
+        }
+        return null;  // TODO:
+    }
+
+    public boolean isAbleToHandle(Message.Type type)
+    {
+        return type == Message.Type.FETCH_PUBLIC_KEY || type == Message.Type.CREATE_SIGNATURE;
     }
 }

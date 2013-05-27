@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.upload;
+package org.cryptoworkshop.ximix.common.service;
 
-public class UploadClientCreationException
-    extends Exception
+public class MalformedServiceResponseException
+    extends ServiceConnectionException
 {
-    public UploadClientCreationException(String message)
+    public MalformedServiceResponseException(String message)
     {
         super(message);
     }

@@ -16,25 +16,26 @@
 package org.cryptoworkshop.ximix.mixnet.task;
 
 import org.cryptoworkshop.ximix.common.message.UploadMessage;
+import org.cryptoworkshop.ximix.common.service.ServiceContext;
 import org.cryptoworkshop.ximix.mixnet.MixNetNodeContext;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 
 public class UploadTask
     implements Runnable
 {
-    private final MixNetNodeContext nodeContext;
+    private final ServiceContext nodeContext;
     private final UploadMessage message;
+    private final BulletinBoard board;
 
-    public UploadTask(MixNetNodeContext nodeContext, UploadMessage message)
+    public UploadTask(ServiceContext nodeContext, BulletinBoard board, UploadMessage message)
     {
         this.nodeContext = nodeContext;
+        this.board = board;
         this.message = message;
     }
 
     public void run()
     {
-        BulletinBoard board = nodeContext.getBoard(message.getBoardName());
-
         board.postMessage(message.getData());
     }
 }

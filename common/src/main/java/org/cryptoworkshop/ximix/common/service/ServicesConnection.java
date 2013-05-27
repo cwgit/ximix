@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto;
+package org.cryptoworkshop.ximix.common.service;
 
-public interface SigningService
-    extends KeyService
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+
+public interface ServicesConnection
 {
-    byte[] generateSignature(String keyID, byte[] hash);
+    public MessageReply sendMessage(Message.Type type, ASN1Encodable messagePayload)
+        throws ServiceConnectionException;
+
+    public MessageReply sendThresholdMessage(Message.Type type, ASN1Encodable messagePayload)
+        throws ServiceConnectionException;
 }

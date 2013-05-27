@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.upload;
+package org.cryptoworkshop.ximix.mixnet.client;
 
-import java.io.IOException;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 public interface UploadService
 {
     void uploadMessage(String boardName, byte[] message)
-        throws IOException;
+        throws ServiceConnectionException;
 }

@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto;
+package org.cryptoworkshop.ximix.registrar;
 
-public interface KeyService
+public class RegistrarServiceException
+    extends Exception
 {
-    /**
-     * Return the public key associated with key ID keyID.
-     *
-     * @param keyID the id of the key we are looking for.
-     * @return a byte[] array of the SubjectPublicKeyInfo object representing the key.
-     */
-    byte[] fetchPublicKey(String keyID);
+    public RegistrarServiceException(String message)
+    {
+        super(message);
+    }
 }

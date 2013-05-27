@@ -13,29 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet;
+package org.cryptoworkshop.ximix.common.service;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
-
-public class MixNetNodeContext
+public interface ServiceContext
 {
-
-    private Executor multiTaskExecutor = Executors.newCachedThreadPool();
-
-    public void addConnection(Runnable task)
-    {
-        multiTaskExecutor.execute(task);
-    }
-
-    public void scheduleTask(Runnable task)
-    {
-        multiTaskExecutor.execute(task);
-    }
-
-
+    void scheduleTask(Runnable task);
 }

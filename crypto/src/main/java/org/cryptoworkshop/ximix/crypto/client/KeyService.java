@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.service;
+package org.cryptoworkshop.ximix.crypto.client;
 
-public class RegistrarConnectionException
-    extends Exception
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+
+public interface KeyService
 {
-    public RegistrarConnectionException(String message)
-    {
-        super(message);
-    }
+    /**
+     * Return the public key associated with key ID keyID.
+     *
+     * @param keyID the id of the key we are looking for.
+     * @return a byte[] array of the SubjectPublicKeyInfo object representing the key.
+     */
+    byte[] fetchPublicKey(String keyID)
+        throws ServiceConnectionException;
 }

@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.service;
+package org.cryptoworkshop.ximix.registrar;
 
-public interface XimixRegistrar
+public class RegistrarConnectionException
+    extends Exception
 {
-    /**
-     * Connect to a specific service.
-     *
-     * @param serviceClass
-     * @param <T>
-     * @return
-     */
-   <T> T connect(Class<T> serviceClass)
-       throws RegistrarServiceException;
+    public RegistrarConnectionException(String message)
+    {
+        super(message);
+    }
 }
