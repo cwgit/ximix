@@ -15,7 +15,7 @@
  */
 package org.cryptoworkshop.ximix.mixnet.task;
 
-import org.cryptoworkshop.ximix.common.messages.UploadMessage;
+import org.cryptoworkshop.ximix.common.message.UploadMessage;
 import org.cryptoworkshop.ximix.mixnet.MixNetNodeContext;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 

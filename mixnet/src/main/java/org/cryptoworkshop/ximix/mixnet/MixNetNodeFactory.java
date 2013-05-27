@@ -27,8 +27,8 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
-import org.cryptoworkshop.ximix.common.messages.Command;
-import org.cryptoworkshop.ximix.common.messages.UploadMessage;
+import org.cryptoworkshop.ximix.common.message.Command;
+import org.cryptoworkshop.ximix.common.message.UploadMessage;
 import org.cryptoworkshop.ximix.mixnet.task.UploadTask;
 
 public class MixNetNodeFactory

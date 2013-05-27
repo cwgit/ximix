@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.upload;
+package org.cryptoworkshop.ximix.service;
 
-public class UploadClientCreationException
+public class RegistrarServiceException
     extends Exception
 {
-    public UploadClientCreationException(String message)
+    public RegistrarServiceException(String message)
     {
         super(message);
     }

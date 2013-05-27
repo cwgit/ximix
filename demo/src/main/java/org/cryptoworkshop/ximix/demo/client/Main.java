@@ -17,7 +17,6 @@ package org.cryptoworkshop.ximix.demo.client;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
@@ -26,11 +25,12 @@ import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.client.upload.UploadClient;
-import org.cryptoworkshop.ximix.client.upload.UploadClientCreationException;
-import org.cryptoworkshop.ximix.client.upload.UploadClientFactory;
-import org.cryptoworkshop.ximix.common.conf.ConfigException;
+import org.cryptoworkshop.ximix.service.XimixRegistrar;
+import org.cryptoworkshop.ximix.service.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.upload.UploadService;
+import org.cryptoworkshop.ximix.crypto.SigningService;
 
 public class Main
 {
@@ -52,12 +52,18 @@ public class Main
     }
 
     public static void main(String[] args)
-        throws ConfigException, UploadClientCreationException, IOException
+        throws Exception
     {
         SHA256Digest sha256 = new SHA256Digest();
-        UploadClient client = UploadClientFactory.createClient(new File(args[0]));
 
-        ECPublicKeyParameters pubKey = (ECPublicKeyParameters)client.fetchPublicKey("ENCKEY");
+        XimixRegistrar registrar = XimixRegistrarFactory.createServicesRegistrar(new File(args[0]));
+
+        UploadService client = registrar.connect(UploadService.class);
+        SigningService signingService = registrar.connect(SigningService.class);
+
+        byte[] encPubKey = signingService.fetchPublicKey("ENCKEY");
+
+        ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
 
         ECElGamalEncryptor encryptor = new ECElGamalEncryptor();
 
@@ -88,7 +94,7 @@ public class Main
         //
         // append signature of encrypted message to upload message
         //
-        byte[] dsaSig = client.generateSignature("SIGKEY", hash);
+        byte[] dsaSig = signingService.generateSignature("SIGKEY", hash);
 
         bOut.write(dsaSig);
 

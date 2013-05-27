@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.upload;
+package org.cryptoworkshop.ximix.crypto;
 
-import java.io.IOException;
-
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-
-public interface UploadClient
+public interface KeyService
 {
-    public AsymmetricKeyParameter fetchPublicKey(String keyID);
-
-    public byte[] generateSignature(String keyID, byte[] hash);
-
-    public void uploadMessage(String boardName, byte[] message)
-        throws IOException;
+    /**
+     * Return the public key associated with key ID keyID.
+     *
+     * @param keyID the id of the key we are looking for.
+     * @return a byte[] array of the SubjectPublicKeyInfo object representing the key.
+     */
+    byte[] fetchPublicKey(String keyID);
 }

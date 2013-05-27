@@ -13,45 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.upload;
+package org.cryptoworkshop.ximix.upload;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.SecureRandom;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.sec.SECNamedCurves;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
-import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.messages.Command;
-import org.cryptoworkshop.ximix.common.messages.UploadMessage;
+import org.cryptoworkshop.ximix.common.message.Command;
+import org.cryptoworkshop.ximix.common.message.UploadMessage;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class UploadClientFactory
 {
-    public static UploadClient createClient(File config)
+    public static UploadService createClient(File config)
         throws ConfigException, UploadClientCreationException
     {
         List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
@@ -75,65 +58,8 @@ public class UploadClientFactory
                     final OutputStream cOut = connection.getOutputStream();
                     final InputStream cIn = connection.getInputStream();
 
-                    return new UploadClient()
+                    return new UploadService()
                     {
-                        Map<String, AsymmetricCipherKeyPair> keyMap = new HashMap<String, AsymmetricCipherKeyPair>();
-
-                        public AsymmetricKeyParameter fetchPublicKey(String keyID)
-                        {
-                            // TODO: obviously this needs to take place remotely!
-                            AsymmetricCipherKeyPair kp = getKeyPair(keyID);
-
-                            return kp.getPublic();
-                        }
-
-                        private AsymmetricCipherKeyPair getKeyPair(String keyID)
-                        {
-                            AsymmetricCipherKeyPair kp = keyMap.get(keyID);
-
-                            if (kp == null)
-                            {
-                                X9ECParameters params = SECNamedCurves.getByName("secp256r1");
-
-                                ECKeyPairGenerator kpGen = new ECKeyPairGenerator();
-
-                                kpGen.init(new ECKeyGenerationParameters(new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()), new SecureRandom()));
-
-                                kp =  kpGen.generateKeyPair();
-
-                                keyMap.put(keyID, kp);
-                            }
-                            return kp;
-                        }
-
-                        public byte[] generateSignature(String keyID, byte[] hash)
-                        {
-                            // TODO: needs to be distributed
-                            ECDSASigner signer = new ECDSASigner();
-
-                            AsymmetricCipherKeyPair kp = getKeyPair(keyID);
-
-                            signer.init(true, kp.getPrivate());
-
-                            BigInteger[] rs = signer.generateSignature(hash);
-
-                            ASN1EncodableVector v = new ASN1EncodableVector();
-
-                             v.add(new ASN1Integer(rs[0]));
-                             v.add(new ASN1Integer(rs[1]));
-
-                            try
-                            {
-                                return new DERSequence(v).getEncoded(ASN1Encoding.DER);
-                            }
-                            catch (IOException e)
-                            {
-                                // TODO: some sort of sig failure exception will be required here...
-                            }
-
-                            return null;
-                        }
-
                         public void uploadMessage(String boardName, byte[] message)
                             throws IOException
                         {
