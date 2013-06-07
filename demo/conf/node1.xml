@@ -5,6 +5,15 @@
         <service>
             <implementation>org.cryptoworkshop.ximix.mixnet.service.NodeUploadService</implementation>
             <keystore></keystore>
+            <board>
+                <name>FRED</name>
+                <capability>
+                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform</implementation>
+                </capability>
+                <capability>
+                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.NullTransform</implementation>
+                </capability>
+            </board>
         </service>
         <service>
             <implementation>org.cryptoworkshop.ximix.crypto.service.NodeSigningService</implementation>

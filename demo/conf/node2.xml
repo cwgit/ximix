@@ -6,13 +6,12 @@
             <implementation>org.cryptoworkshop.ximix.mixnet.service.NodeUploadService</implementation>
             <keystore></keystore>
             <board>
-                <name>ONE</name>
-                <numColums>7</numColums>
+                <name>FRED</name>
                 <capability>
                     <implementation>org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform</implementation>
                 </capability>
                 <capability>
-                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.NullShuffle</implementation>
+                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.NullTransform</implementation>
                 </capability>
             </board>
         </service>
