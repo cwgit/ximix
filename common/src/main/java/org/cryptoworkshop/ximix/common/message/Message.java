@@ -16,39 +16,26 @@
 package org.cryptoworkshop.ximix.common.message;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Enumerated;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 
-public class Message
+public abstract class Message<T extends Enum<T>>
     extends ASN1Object
 {
-    private final Type type;
-    private final ASN1Encodable payload;
+    protected static final ASN1Integer COMMAND_LEVEL = new ASN1Integer(1);
+    protected static final ASN1Integer CLIENT_LEVEL = new ASN1Integer(2);
 
-    public static enum Type
-    {
-        UPLOAD_TO_BOARD,
-        FETCH_PUBLIC_KEY,
-        CREATE_SIGNATURE
-    }
+    protected final T type;
+    protected final ASN1Encodable payload;
 
-    public Message(Type type, ASN1Encodable payload)
+    public Message(T type, ASN1Encodable payload)
     {
         this.type = type;
         this.payload = payload;
     }
 
-    private Message(ASN1Sequence seq)
-    {
-        this.type = Type.values()[ASN1Enumerated.getInstance(seq.getObjectAt(0)).getValue().intValue()];
-        this.payload = seq.getObjectAt(1);
-    }
-
-    public static final Message getInstance(Object o)
+    public static Message getInstance(Object o)
     {
         if (o instanceof Message)
         {
@@ -56,15 +43,19 @@ public class Message
         }
         else if (o != null)
         {
-            return new Message(ASN1Sequence.getInstance(o));
+            ASN1Sequence s = ASN1Sequence.getInstance(o);
+
+            if (s.getObjectAt(0).equals(COMMAND_LEVEL))
+            {
+                return CommandMessage.getInstance(s);
+            }
+            else
+            {
+                return ClientMessage.getInstance(s);
+            }
         }
 
         return null;
-    }
-
-    public Type getType()
-    {
-        return type;
     }
 
     public ASN1Encodable getPayload()
@@ -72,14 +63,5 @@ public class Message
         return payload;
     }
 
-    @Override
-    public ASN1Primitive toASN1Primitive()
-    {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        v.add(new ASN1Enumerated(type.ordinal()));
-        v.add(payload);
-
-        return new DERSequence(v);
-    }
+    public abstract T getType();
 }

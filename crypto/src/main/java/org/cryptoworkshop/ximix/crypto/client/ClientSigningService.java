@@ -17,6 +17,7 @@ package org.cryptoworkshop.ximix.crypto.client;
 
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CreateSignatureMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
@@ -37,7 +38,7 @@ public class ClientSigningService
     public byte[] generateSignature(String keyID, byte[] hash)
         throws ServiceConnectionException
     {
-        MessageReply reply = connection.sendThresholdMessage(Message.Type.CREATE_SIGNATURE, new CreateSignatureMessage(keyID, hash));
+        MessageReply reply = connection.sendThresholdMessage(ClientMessage.Type.CREATE_SIGNATURE, new CreateSignatureMessage(keyID, hash));
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {
@@ -50,7 +51,7 @@ public class ClientSigningService
     public byte[] fetchPublicKey(String keyID)
         throws ServiceConnectionException
     {
-        MessageReply reply = connection.sendMessage(Message.Type.FETCH_PUBLIC_KEY, new FetchPublicKeyMessage(keyID));
+        MessageReply reply = connection.sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, new FetchPublicKeyMessage(keyID));
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {

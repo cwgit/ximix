@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.mixnet.client;
 
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.UploadMessage;
@@ -34,7 +35,7 @@ public class ClientUploadService
     public void uploadMessage(String boardName, byte[] message)
         throws ServiceConnectionException
     {
-        MessageReply reply = connection.sendMessage(Message.Type.UPLOAD_TO_BOARD, new UploadMessage(boardName, message));
+        MessageReply reply = connection.sendMessage(ClientMessage.Type.UPLOAD_TO_BOARD, new UploadMessage(boardName, message));
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {

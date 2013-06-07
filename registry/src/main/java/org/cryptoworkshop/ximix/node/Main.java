@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.node;
 import java.io.File;
 
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
+import org.cryptoworkshop.ximix.registrar.RegistrarConnectionException;
 
 public class Main
 {
@@ -25,11 +26,15 @@ public class Main
     {
         try
         {
-            XimixNode node = XimixNodeFactory.createNode(new File(args[0]));
+            XimixNode node = XimixNodeFactory.createNode(new File(args[0]), new File(args[1]));
 
             node.start();
         }
         catch (ConfigException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        catch (RegistrarConnectionException e)
         {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }

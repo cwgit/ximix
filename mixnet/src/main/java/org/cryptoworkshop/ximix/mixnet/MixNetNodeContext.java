@@ -15,12 +15,8 @@
  */
 package org.cryptoworkshop.ximix.mixnet;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 
 public class MixNetNodeContext
 {

@@ -35,6 +35,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CreateSignatureMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
@@ -114,7 +115,7 @@ public class NodeSigningService
 
     public MessageReply handle(Message message)
     {
-        switch (message.getType())
+        switch (((ClientMessage)message).getType())
         {
         case FETCH_PUBLIC_KEY:
             FetchPublicKeyMessage fetchMessage = FetchPublicKeyMessage.getInstance(message.getPayload());
@@ -137,8 +138,8 @@ public class NodeSigningService
         return null;  // TODO:
     }
 
-    public boolean isAbleToHandle(Message.Type type)
+    public boolean isAbleToHandle(Enum type)
     {
-        return type == Message.Type.FETCH_PUBLIC_KEY || type == Message.Type.CREATE_SIGNATURE;
+        return type == ClientMessage.Type.FETCH_PUBLIC_KEY || type == ClientMessage.Type.CREATE_SIGNATURE;
     }
 }

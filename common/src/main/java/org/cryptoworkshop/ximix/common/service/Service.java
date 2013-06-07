@@ -22,5 +22,5 @@ public interface Service
 {
     MessageReply handle(Message message);
 
-    boolean isAbleToHandle(Message.Type type);
+    boolean isAbleToHandle(Enum type);
 }

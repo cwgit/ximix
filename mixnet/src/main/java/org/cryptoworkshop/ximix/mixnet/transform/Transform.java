@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.shuffle;
+package org.cryptoworkshop.ximix.mixnet.transform;
 
-public class ECMultiColumnRowShuffle
-    implements Shuffle
+public interface Transform
 {
-    public static final String NAME = "ECMultiColumnRowShuffle";
+    String getName();
 
-    public String getName()
-    {
-        return NAME;
-    }
+    byte[] transform(byte[] message);
 }

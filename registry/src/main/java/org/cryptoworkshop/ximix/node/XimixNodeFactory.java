@@ -19,19 +19,25 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
 
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
+import org.cryptoworkshop.ximix.registrar.SpecificXimixRegistrar;
+import org.cryptoworkshop.ximix.registrar.RegistrarConnectionException;
+import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 public class XimixNodeFactory
 {
-    public static XimixNode createNode(final File config)
-        throws ConfigException
+    public static XimixNode createNode(final File peersConfig, final File config)
+        throws RegistrarConnectionException, ConfigException
     {
+        final Map<String, SpecificXimixRegistrar> registrarMap = XimixRegistrarFactory.createServicesRegistrarMap(peersConfig);
+
         return new XimixNode()
         {
             private final Config nodeConfig = new Config(config);
-            private final XimixNodeContext nodeContext = new XimixNodeContext(nodeConfig);
+            private final XimixNodeContext nodeContext = new XimixNodeContext(registrarMap, nodeConfig);
 
             final int portNo = nodeConfig.getIntegerProperty("portNo");
 

@@ -15,33 +15,8 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executor;
-
-public class BulletinBoard
+public interface BulletinBoard
+    extends Iterable<byte[]>
 {
-    private final String boardName;
-    private final Executor boardUpdateExecutor;
-
-    private List<byte[]> messages = new ArrayList<byte[]>();
-
-    public BulletinBoard(String boardName, Executor executor)
-    {
-        this.boardName = boardName;
-        this.boardUpdateExecutor = executor;
-    }
-
-    public void postMessage(final byte[] message)
-    {
-        boardUpdateExecutor.execute(new Runnable()
-        {
-            public void run()
-            {
-                System.err.println("message posted");
-
-                messages.add(message);
-            }
-        });
-    }
+    void postMessage(final byte[] message);
 }

@@ -2,7 +2,13 @@
 <node>
     <portNo>11000</portNo>
     <services>
-        <service>org.cryptoworkshop.ximix.mixnet.service.NodeUploadService</service>
-        <service>org.cryptoworkshop.ximix.crypto.service.NodeSigningService</service>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.mixnet.service.NodeUploadService</implementation>
+            <keystore></keystore>
+        </service>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeSigningService</implementation>
+            <keystore></keystore>
+        </service>
     </services>
 </node>

@@ -22,15 +22,19 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.client.KeyService;
@@ -69,6 +73,53 @@ public class XimixRegistrarFactory
                 throw new RegistrarServiceException("Unable to identify service");
             }
         };
+    }
+
+    public static Map<String, SpecificXimixRegistrar> createServicesRegistrarMap(File config)
+        throws ConfigException, RegistrarConnectionException
+    {
+        final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
+        Map <String, SpecificXimixRegistrar> rMap = new HashMap<String, SpecificXimixRegistrar>();
+
+        for (int i = 0; i != nodes.size(); i++)
+        {
+            NodeConfig node = nodes.get(i);
+
+            // TODO: this needs to be fetched from a certificate
+            final String name = Integer.toString(node.getPortNo());
+            final List<NodeConfig> thisNode = Collections.singletonList(node);
+
+            SpecificXimixRegistrar r = new SpecificXimixRegistrar()
+            {
+                public <T> T connect(Class<T> serviceClass)
+                    throws RegistrarServiceException
+                {
+                    if (serviceClass.isAssignableFrom(UploadService.class))
+                    {
+                        return (T)new ClientUploadService(new ServicesConnectionImpl(thisNode));
+                    }
+                    else if (serviceClass.isAssignableFrom(KeyService.class))
+                    {
+                        return (T)new ClientSigningService(new ServicesConnectionImpl(thisNode));
+                    }
+                    else if (serviceClass.isAssignableFrom(SigningService.class))
+                    {
+                        return (T)new ClientSigningService(new ServicesConnectionImpl(thisNode));
+                    }
+
+                    throw new RegistrarServiceException("Unable to identify service");
+                }
+
+                public String getNodeName()
+                {
+                    return name;
+                }
+            };
+
+            rMap.put(name, r);
+        }
+
+        return rMap;
     }
 
     private static class NodeConfig
@@ -178,12 +229,12 @@ public class XimixRegistrarFactory
             }
         }
 
-        public MessageReply sendMessage(Message.Type type, ASN1Encodable messagePayload)
+        public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
             try
             {
-                cOut.write(new Message(type, messagePayload).getEncoded());
+                cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
 
                 return MessageReply.getInstance(new ASN1InputStream(cIn, 30000).readObject());      // TODO
             }
@@ -194,12 +245,12 @@ public class XimixRegistrarFactory
             }
         }
 
-        public MessageReply sendThresholdMessage(Message.Type type, ASN1Encodable messagePayload)
+        public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
             try
             {
-                cOut.write(new Message(type, messagePayload).getEncoded());
+                cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
 
                 return MessageReply.getInstance(new ASN1InputStream(cIn).readObject());
             }

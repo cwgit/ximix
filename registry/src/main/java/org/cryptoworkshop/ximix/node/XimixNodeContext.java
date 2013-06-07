@@ -19,29 +19,36 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceContext;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
+import org.cryptoworkshop.ximix.registrar.SpecificXimixRegistrar;
+import org.cryptoworkshop.ximix.registrar.RegistrarServiceException;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class XimixNodeContext
     implements ServiceContext
 {
+    private Map<String, SpecificXimixRegistrar> registrarMap;
+    private BulletinBoardRegistry boardRegistry = new BulletinBoardRegistry();
+
     private Executor boardUpdateExecutor = Executors.newSingleThreadExecutor();
     private Executor multiTaskExecutor = Executors.newCachedThreadPool();
 
     private List<Service> services = new ArrayList<Service>();
 
-    public XimixNodeContext(Config nodeConfig)
+    public XimixNodeContext(Map<String, SpecificXimixRegistrar> registrarMap, Config nodeConfig)
         throws ConfigException
     {
+        this.registrarMap = registrarMap;
         nodeConfig.getConfigObjects("services", new NodeConfigFactory());
     }
 
@@ -55,7 +62,27 @@ public class XimixNodeContext
         multiTaskExecutor.execute(task);
     }
 
-    public Service getService(Message.Type type)
+    public void connect(String nodeName, Class messageClass)
+        throws RegistrarServiceException
+    {
+        registrarMap.get(nodeName).connect(messageClass);
+    }
+
+    public Object getParameter(String name)
+    {
+        if (name.equals(ServiceContext.BULLETIN_BOARD_REGISTRY))
+        {
+            return boardRegistry;
+        }
+        if (name.equals(ServiceContext.NODE_REGISTRAR_MAP))
+        {
+            return registrarMap;
+        }
+
+        return null;
+    }
+
+    public Service getService(Enum type)
     {
         for (Service service : services)
         {
@@ -83,35 +110,44 @@ public class XimixNodeContext
 
                 if (xmlNode.getNodeName().equals("service"))
                 {
-                    try
-                    {
-                        Class clazz = Class.forName(xmlNode.getTextContent());
+                    NodeList attributes = xmlNode.getChildNodes();
 
-                        Constructor constructor = clazz.getConstructor(ServiceContext.class);
+                    for (int j = 0; j != xmlNodes.getLength(); j++)
+                    {
+                        Node attrNode = attributes.item(j);
 
-                        services.add((Service)constructor.newInstance(XimixNodeContext.this));
-                    }
-                    catch (ClassNotFoundException e)
-                    {
-                        throwable = e;
-                    }
-                    catch (NoSuchMethodException e)
-                    {
-                        throwable = e;
-                    }
-                    catch (InvocationTargetException e)
-                    {
-                        throwable = e;
-                    }
-                    catch (InstantiationException e)
-                    {
-                        throwable = e;
-                    }
-                    catch (IllegalAccessException e)
-                    {
-                        throwable = e;
-                    }
+                        if (attrNode.getNodeName().equals("implementation"))
+                        {
+                            try
+                            {
+                                Class clazz = Class.forName(attrNode.getTextContent());
 
+                                Constructor constructor = clazz.getConstructor(ServiceContext.class);
+
+                                services.add((Service)constructor.newInstance(XimixNodeContext.this));
+                            }
+                            catch (ClassNotFoundException e)
+                            {
+                                throwable = e;
+                            }
+                            catch (NoSuchMethodException e)
+                            {
+                                throwable = e;
+                            }
+                            catch (InvocationTargetException e)
+                            {
+                                throwable = e;
+                            }
+                            catch (InstantiationException e)
+                            {
+                                throwable = e;
+                            }
+                            catch (IllegalAccessException e)
+                            {
+                                throwable = e;
+                            }
+                        }
+                    }
                 }
                 else if (xmlNode.getNodeName().equals("portNo"))
                 {

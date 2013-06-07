@@ -13,9 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.shuffle;
+package org.cryptoworkshop.ximix.registrar;
 
-public interface Shuffle
+/**
+ * A registrar that contains the services associated with a specific node.
+ */
+public interface SpecificXimixRegistrar
+    extends XimixRegistrar
 {
-    String getName();
+    /**
+     * Return the name of the node the services accessed by this registrar are hosted on.
+     *
+     * @return node name for this services connection.
+     */
+    String getNodeName();
 }
