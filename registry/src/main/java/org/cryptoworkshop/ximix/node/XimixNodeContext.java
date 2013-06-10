@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.node;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -23,6 +24,8 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
@@ -30,6 +33,7 @@ import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -37,12 +41,12 @@ public class XimixNodeContext
     implements NodeContext
 {
     private Map<String, ServicesConnection> peerMap;
+    private NodeKeyGenerationService keyGenerationService;
 
     private Executor multiTaskExecutor = Executors.newCachedThreadPool();
 
     private List<Service> services = new ArrayList<Service>();
     private final String  name;
-    private Capability[] capabilities;
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, Config nodeConfig)
         throws ConfigException
@@ -50,12 +54,20 @@ public class XimixNodeContext
         this.peerMap = peerMap;
         this.name = Integer.toString(nodeConfig.getIntegerProperty("portNo"));  // TODO:
 
-        List<NodeConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
-        for (NodeConfig config : configs)
+        List<ServiceConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
+        for (ServiceConfig config : configs)
         {
             if (config.getThrowable() != null)
             {
                 config.getThrowable().printStackTrace();   // TODO: log!
+            }
+        }
+
+        for (Service service : services)
+        {
+            if (service instanceof NodeKeyGenerationService)
+            {
+                this.keyGenerationService = (NodeKeyGenerationService)service;
             }
         }
     }
@@ -91,6 +103,24 @@ public class XimixNodeContext
     {
         multiTaskExecutor.execute(task);
     }
+                                                                        // TODO: replace with private key info
+    public AsymmetricKeyParameter getPrivateKey(String keyID)
+    {
+        return keyGenerationService.getKeyPair(keyID).getPrivate();
+    }
+
+    public SubjectPublicKeyInfo getPublicKey(String keyID)
+    {
+        try
+        {
+            return keyGenerationService.fetchPublicKey(keyID);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();  // TODO:
+            return null;
+        }
+    }
 
     public Service getService(Enum type)
     {
@@ -105,12 +135,11 @@ public class XimixNodeContext
         return null;
     }
 
-    private class NodeConfig
+    private class ServiceConfig
     {
-        private int portNo;
         private Exception throwable;
 
-        NodeConfig(Node configNode)
+        ServiceConfig(Node configNode)
         {
             NodeList xmlNodes = configNode.getChildNodes();
 
@@ -125,6 +154,11 @@ public class XimixNodeContext
                     for (int j = 0; j != xmlNodes.getLength(); j++)
                     {
                         Node attrNode = attributes.item(j);
+
+                        if (attrNode == null)
+                        {
+                            continue;
+                        }
 
                         if (attrNode.getNodeName().equals("implementation"))
                         {
@@ -165,10 +199,6 @@ public class XimixNodeContext
                         }
                     }
                 }
-                else if (xmlNode.getNodeName().equals("portNo"))
-                {
-                    portNo = Integer.parseInt(xmlNode.getTextContent());
-                }
             }
         }
 
@@ -176,19 +206,14 @@ public class XimixNodeContext
         {
             return throwable;
         }
-
-        public int getPortNo()
-        {
-            return portNo;
-        }
     }
 
     private class NodeConfigFactory
-        implements ConfigObjectFactory<NodeConfig>
+        implements ConfigObjectFactory<ServiceConfig>
     {
-        public NodeConfig createObject(Node configNode)
+        public ServiceConfig createObject(Node configNode)
         {
-            return new NodeConfig(configNode);
+            return new ServiceConfig(configNode);
         }
     }
 }

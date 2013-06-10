@@ -17,9 +17,16 @@ package org.cryptoworkshop.ximix.common.service;
 
 import java.util.Map;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+
 public interface NodeContext
 {
     Map<String, ServicesConnection> getPeerMap();
 
     void scheduleTask(Runnable task);
+
+    AsymmetricKeyParameter getPrivateKey(String keyID);   // TODO: replace with private key info
+
+    SubjectPublicKeyInfo getPublicKey(String keyID);
 }

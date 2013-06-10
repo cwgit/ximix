@@ -272,6 +272,7 @@ public class XimixRegistrarFactory
         implements ServicesConnection
     {
         private NodeServicesConnection connection;
+        private NodeConfig nodeConf;
 
         public ServicesConnectionImpl(List<NodeConfig> configList)
         {
@@ -284,11 +285,11 @@ public class XimixRegistrarFactory
             for (int i = 0; i != configList.size(); i++)
             {
                 int nodeNo = (start + i) % configList.size();
-                final NodeConfig nodeConf = configList.get(nodeNo);
+
+                nodeConf = configList.get(nodeNo);
 
                 if (nodeConf.getThrowable() == null)
                 {
-                    // TODO: we should query each node to see what it's capabilities are.
                     try
                     {
                         this.connection = new NodeServicesConnection(nodeConf);
@@ -302,21 +303,38 @@ public class XimixRegistrarFactory
             }
         }
 
+        private NodeServicesConnection getConnection()
+        {
+            if (connection == null)
+            {
+                try
+                {
+                    connection = new NodeServicesConnection(nodeConf);
+                }
+                catch (IOException e)
+                {
+                    // TODO:
+                }
+            }
+
+            return connection;
+        }
+
         public Capability[] getCapabilities()
         {
-            return connection.getCapabilities();
+            return getConnection().getCapabilities();
         }
 
         public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            return connection.sendMessage(type, messagePayload);
+            return getConnection().sendMessage(type, messagePayload);
         }
 
         public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            return connection.sendThresholdMessage(type, messagePayload);
+            return getConnection().sendThresholdMessage(type, messagePayload);
         }
     }
 
