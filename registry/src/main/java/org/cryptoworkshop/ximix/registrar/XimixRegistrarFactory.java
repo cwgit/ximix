@@ -290,12 +290,7 @@ public class XimixRegistrarFactory
 
                 if (nodeConf.getThrowable() == null)
                 {
-                    try
-                    {
-                        this.connection = new NodeServicesConnection(nodeConf);
-                        break;
-                    }
-                    catch (IOException e)
+                    if (getConnection() == null)
                     {
                         continue;
                     }
@@ -303,7 +298,15 @@ public class XimixRegistrarFactory
             }
         }
 
-        private NodeServicesConnection getConnection()
+        private synchronized NodeServicesConnection resetConnection()
+        {
+            // TODO: need to look into possible connection leakage here. 2 threads may end up trying to reset at the same time.
+            connection = null;
+
+            return getConnection();
+        }
+
+        private synchronized NodeServicesConnection getConnection()
         {
             if (connection == null)
             {
@@ -328,13 +331,27 @@ public class XimixRegistrarFactory
         public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            return getConnection().sendMessage(type, messagePayload);
+            try
+            {
+                return getConnection().sendMessage(type, messagePayload);
+            }
+            catch (Exception e)
+            {
+                return resetConnection().sendMessage(type, messagePayload);
+            }
         }
 
         public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            return getConnection().sendThresholdMessage(type, messagePayload);
+            try
+            {
+                return getConnection().sendThresholdMessage(type, messagePayload);
+            }
+            catch (Exception e)
+            {
+                return resetConnection().sendMessage(type, messagePayload);
+            }
         }
     }
 

@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.cryptoworkshop.ximix.common.conf.Config;
@@ -50,8 +51,10 @@ public class NodeSigningService
         ECDSASigner signer = new ECDSASigner();
 
         try
-        {                                         // TODO: should be cached to avoid repeated encoding.
-            signer.init(true, nodeContext.getPrivateKey(keyID));
+        {
+            CipherParameters privKey = nodeContext.getPrivateKey(keyID);
+
+            signer.init(true, privKey);
 
             BigInteger[] rs = signer.generateSignature(hash);
 
