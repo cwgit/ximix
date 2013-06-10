@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.registrar;
+package org.cryptoworkshop.ximix.mixnet;
 
-/**
- * A registrar that contains the services associated with a specific node.
- */
-public interface SpecificXimixRegistrar
-    extends XimixRegistrar
+public class ShuffleOptions
 {
-    /**
-     * Return the name of the node the services accessed by this registrar are hosted on.
-     *
-     * @return node name for this services connection.
-     */
-    String getNodeName();
+    public static enum Type
+    {
+        NULL_TRANSFORM,
+        FIXED_TRANSFORM
+    }
+
+    private final Type type;
+
+    public ShuffleOptions(Type type)
+    {
+        this.type = type;
+    }
 }

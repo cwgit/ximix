@@ -28,8 +28,11 @@ public class CommandMessage
     public static enum Type
         implements MessageType
     {
+        ACTIVATE_BOARD,
         MOVE_BOARD_TO_NODE,
-        SHUFFLE_AND_MOVE_BOARD_TO_NODE
+        SHUFFLE_AND_MOVE_BOARD_TO_NODE,
+        TRANSFER_TO_BOARD,
+        SUSPEND_BOARD
     }
 
     public CommandMessage(Type type, ASN1Encodable payload)
@@ -39,7 +42,7 @@ public class CommandMessage
 
     private CommandMessage(ASN1Sequence seq)
     {
-        super(Type.values()[ASN1Enumerated.getInstance(seq.getObjectAt(0)).getValue().intValue()], seq.getObjectAt(1));
+        super(Type.values()[ASN1Enumerated.getInstance(seq.getObjectAt(1)).getValue().intValue()], seq.getObjectAt(2));
     }
 
     public static final CommandMessage getInstance(Object o)

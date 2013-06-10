@@ -26,30 +26,55 @@ import java.util.concurrent.Executors;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
+import org.cryptoworkshop.ximix.common.message.Capability;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
-import org.cryptoworkshop.ximix.common.service.ServiceContext;
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
-import org.cryptoworkshop.ximix.registrar.SpecificXimixRegistrar;
-import org.cryptoworkshop.ximix.registrar.RegistrarServiceException;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class XimixNodeContext
-    implements ServiceContext
+    implements NodeContext
 {
-    private Map<String, SpecificXimixRegistrar> registrarMap;
-    private BulletinBoardRegistry boardRegistry = new BulletinBoardRegistry();
+    private Map<String, ServicesConnection> peerMap;
 
-    private Executor boardUpdateExecutor = Executors.newSingleThreadExecutor();
     private Executor multiTaskExecutor = Executors.newCachedThreadPool();
 
     private List<Service> services = new ArrayList<Service>();
+    private final String  name;
+    private Capability[] capabilities;
 
-    public XimixNodeContext(Map<String, SpecificXimixRegistrar> registrarMap, Config nodeConfig)
+    public XimixNodeContext(Map<String, ServicesConnection> peerMap, Config nodeConfig)
         throws ConfigException
     {
-        this.registrarMap = registrarMap;
-        nodeConfig.getConfigObjects("services", new NodeConfigFactory());
+        this.peerMap = peerMap;
+        this.name = Integer.toString(nodeConfig.getIntegerProperty("portNo"));  // TODO:
+
+        List<NodeConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
+        for (NodeConfig config : configs)
+        {
+            if (config.getThrowable() != null)
+            {
+                config.getThrowable().printStackTrace();   // TODO: log!
+            }
+        }
+    }
+
+    public String getName()
+    {
+         return name;
+    }
+
+    public Capability[] getCapabilities()
+    {
+        List<Capability>  capabilityList = new ArrayList<Capability>();
+
+        for (Service service : services)
+        {
+            capabilityList.add(service.getCapability());
+        }
+
+        return capabilityList.toArray(new Capability[capabilityList.size()]);
     }
 
     public void addConnection(Runnable task)
@@ -57,29 +82,14 @@ public class XimixNodeContext
         multiTaskExecutor.execute(task);
     }
 
+    public Map<String, ServicesConnection> getPeerMap()
+    {
+        return peerMap;
+    }
+
     public void scheduleTask(Runnable task)
     {
         multiTaskExecutor.execute(task);
-    }
-
-    public void connect(String nodeName, Class messageClass)
-        throws RegistrarServiceException
-    {
-        registrarMap.get(nodeName).connect(messageClass);
-    }
-
-    public Object getParameter(String name)
-    {
-        if (name.equals(ServiceContext.BULLETIN_BOARD_REGISTRY))
-        {
-            return boardRegistry;
-        }
-        if (name.equals(ServiceContext.NODE_REGISTRAR_MAP))
-        {
-            return registrarMap;
-        }
-
-        return null;
     }
 
     public Service getService(Enum type)
@@ -122,9 +132,11 @@ public class XimixNodeContext
                             {
                                 Class clazz = Class.forName(attrNode.getTextContent());
 
-                                Constructor constructor = clazz.getConstructor(ServiceContext.class);
+                                Constructor constructor = clazz.getConstructor(NodeContext.class, Config.class);
 
-                                services.add((Service)constructor.newInstance(XimixNodeContext.this));
+                                Service impl = (Service)constructor.newInstance(XimixNodeContext.this, new Config(xmlNode));
+
+                                services.add(impl);
                             }
                             catch (ClassNotFoundException e)
                             {
@@ -143,6 +155,10 @@ public class XimixNodeContext
                                 throwable = e;
                             }
                             catch (IllegalAccessException e)
+                            {
+                                throwable = e;
+                            }
+                            catch (ConfigException e)
                             {
                                 throwable = e;
                             }

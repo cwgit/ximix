@@ -16,12 +16,15 @@
 package org.cryptoworkshop.ximix.mixnet.transform;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.ec.ECNewRandomnessTransform;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.ec.ECPairTransform;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
+import org.bouncycastle.math.ec.ECCurve;
 import org.cryptoworkshop.ximix.mixnet.board.asn1.PairSequence;
 
 public class MultiColumnRowTransform
@@ -29,18 +32,25 @@ public class MultiColumnRowTransform
 {
     public static final String NAME = "MultiColumnRowTransform";
 
+    private ECPublicKeyParameters parameters;
+
     public String getName()
     {
         return NAME;
     }
 
+    public void init(Object o)
+    {
+        this.parameters = (ECPublicKeyParameters)o;
+    }
+
     public byte[] transform(byte[] message)
     {
-        ECPair[] pairs = PairSequence.getInstance(null, message).getECPairs();
+        ECPair[] pairs = PairSequence.getInstance(parameters.getParameters().getCurve(), message).getECPairs();
 
         ECPairTransform transform = new ECNewRandomnessTransform();
-
-        ParametersWithRandom params = new ParametersWithRandom(null, new FixedSecureRandom(new byte[] { 10 }));
+                                                                                           // TODO:
+        ParametersWithRandom params = new ParametersWithRandom(parameters, new SecureRandom(new byte[] { 10 }));
 
         transform.init(params);
 

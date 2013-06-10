@@ -15,28 +15,36 @@
  */
 package org.cryptoworkshop.ximix.mixnet.task;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MoveMessage;
-import org.cryptoworkshop.ximix.common.service.ServiceContext;
+import org.cryptoworkshop.ximix.common.message.UploadMessage;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
-import org.cryptoworkshop.ximix.mixnet.service.TransferBoardService;
 import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
-import org.cryptoworkshop.ximix.registrar.RegistrarServiceException;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 
 public class TransformShuffleAndMoveTask
     implements Runnable
 {
-    private final ServiceContext nodeContext;
+    private final NodeContext nodeContext;
     private final MoveMessage message;
     private final BulletinBoardRegistry boardRegistry;
 
-    public TransformShuffleAndMoveTask(ServiceContext nodeContext, BulletinBoardRegistry boardRegistry, MoveMessage message)
+    public TransformShuffleAndMoveTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, MoveMessage message)
     {
         this.nodeContext = nodeContext;
         this.boardRegistry = boardRegistry;
@@ -47,6 +55,17 @@ public class TransformShuffleAndMoveTask
     {
         BulletinBoard board = boardRegistry.getBoard(message.getBoardName());
         Transform transform = new MultiColumnRowTransform();
+
+        // TODO: need to fetch actual public key here.
+        X9ECParameters params = SECNamedCurves.getByName("secp256r1");
+
+        ECKeyPairGenerator kpGen = new ECKeyPairGenerator();
+
+        kpGen.init(new ECKeyGenerationParameters(new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()), new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp =  kpGen.generateKeyPair();
+        transform.init(kp.getPublic());
+
         List<byte[]> transformedMessages = new ArrayList<byte[]>();
 
         for (byte[] message : board)
@@ -56,22 +75,21 @@ public class TransformShuffleAndMoveTask
             transformedMessages.add(transformed);
         }
 
-        Map<String, XimixRegistrar> registrarMap = nodeContext.getParameter(ServiceContext.NODE_REGISTRAR_MAP);
-
         try
         {
-            TransferBoardService transferService = registrarMap.get(message.getNodeName()).connect(TransferBoardService.class);
-
-            transferService.signalStart(message.getBoardName());
+            ServicesConnection peerConnection = nodeContext.getPeerMap().get(message.getNodeName());
 
             for (byte[] message : transformedMessages)
             {
-                 transferService.uploadMessage(message);
-            }
+                MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new UploadMessage(board.getName(), message));
 
-            transferService.signalEnd(message.getBoardName());
+                if (reply.getType() != MessageReply.Type.OKAY)
+                {
+                    throw new ServiceConnectionException("message failed");
+                }
+            }
         }
-        catch (RegistrarServiceException e)
+        catch (ServiceConnectionException e)
         {
             // TODO: log?
         }

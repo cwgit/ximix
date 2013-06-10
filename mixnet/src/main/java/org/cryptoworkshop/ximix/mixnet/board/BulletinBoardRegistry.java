@@ -16,23 +16,26 @@
 package org.cryptoworkshop.ximix.mixnet.board;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class BulletinBoardRegistry
 {
     private Map<String, BulletinBoard> boards = new HashMap<String, BulletinBoard>();
+    private Set<String>                suspendedBoards = new HashSet<String>();
 
     private Executor boardUpdateExecutor = Executors.newSingleThreadExecutor();
 
-    public BulletinBoard getBoard(final String boardName)
+    public BulletinBoard createBoard(final String boardName)
     {
         synchronized (boards)
         {
             BulletinBoard board = boards.get(boardName);
 
-            // TODO: probably don't want to allow add on demand, should have config up front or special command.
+            // TODO: need to detect twice!
             if (board == null)
             {
                 board = new BulletinBoardImpl(boardName, boardUpdateExecutor);
@@ -41,6 +44,14 @@ public class BulletinBoardRegistry
             }
 
             return board;
+        }
+    }
+
+    public BulletinBoard getBoard(final String boardName)
+    {
+        synchronized (boards)
+        {
+            return boards.get(boardName);
         }
     }
 
@@ -57,6 +68,27 @@ public class BulletinBoardRegistry
             }
 
             return board;
+        }
+    }
+
+    public String[] getBoardNames()
+    {
+        return boards.keySet().toArray(new String[boards.size()]);
+    }
+
+    public void activateBoard(String boardName)
+    {
+        synchronized (boards)
+        {                         // TODO: a board reference may have been passed out so more work will be required for this
+            suspendedBoards.add(boardName);
+        }
+    }
+
+    public void suspendBoard(String boardName)
+    {
+        synchronized (boards)
+        {
+            suspendedBoards.remove(boardName);
         }
     }
 }

@@ -17,40 +17,35 @@ package org.cryptoworkshop.ximix.common.message;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class MoveMessage
+public class BoardMessage
     extends ASN1Object
 {
-    private final String nodeName;
     private final String boardName;
 
-    public MoveMessage(String nodeName, String boardName)
+    public BoardMessage(String boardName)
     {
-        this.nodeName = nodeName;
         this.boardName = boardName;
     }
 
-    private MoveMessage(ASN1Sequence seq)
+    private BoardMessage(ASN1Sequence seq)
     {
-        this.nodeName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.boardName = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+        this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
     }
 
-    public static final MoveMessage getInstance(Object o)
+    public static final BoardMessage getInstance(Object o)
     {
-        if (o instanceof MoveMessage)
+        if (o instanceof BoardMessage)
         {
-            return (MoveMessage)o;
+            return (BoardMessage)o;
         }
         else if (o != null)
         {
-            return new MoveMessage(ASN1Sequence.getInstance(o));
+            return new BoardMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -61,15 +56,9 @@ public class MoveMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new DERUTF8String(nodeName));
         v.add(new DERUTF8String(boardName));
 
         return new DERSequence(v);
-    }
-
-    public String getNodeName()
-    {
-        return nodeName;
     }
 
     public String getBoardName()

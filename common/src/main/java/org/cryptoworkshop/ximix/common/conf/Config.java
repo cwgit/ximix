@@ -23,11 +23,13 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class Config
 {
-    private Document doc;
+    private Element xmlNode;
 
     public Config(File configFile)
         throws ConfigException
@@ -37,12 +39,20 @@ public class Config
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = dbFactory.newDocumentBuilder();
 
-            doc = docBuilder.parse(configFile);
+            Document doc = docBuilder.parse(configFile);
+
+            xmlNode = doc.getDocumentElement();
         }
         catch (Exception e)
         {
             throw new ConfigException("error: " + e.getMessage(), e);
         }
+    }
+
+    public Config(Node xmlNode)
+        throws ConfigException
+    {
+        this.xmlNode = (Element)xmlNode;
     }
 
     public int getIntegerProperty(String name)
@@ -52,7 +62,7 @@ public class Config
 
         for (String elementName : path)
         {
-            NodeList list = doc.getDocumentElement().getElementsByTagName(elementName);
+            NodeList list = xmlNode.getElementsByTagName(elementName);
             if (list.item(0).getNodeName().equals(path[path.length - 1]))
             {
                 return Integer.parseInt(list.item(0).getTextContent());
@@ -71,7 +81,7 @@ public class Config
 
         for (String elementName : path)
         {
-            NodeList list = doc.getDocumentElement().getElementsByTagName(elementName);
+            NodeList list = xmlNode.getElementsByTagName(elementName);
             if (list.item(0).getNodeName().equals(path[path.length - 1]))
             {
                 for (int i = 0; i != list.getLength(); i++)

@@ -18,5 +18,7 @@ package org.cryptoworkshop.ximix.mixnet.board;
 public interface BulletinBoard
     extends Iterable<byte[]>
 {
+    String getName();
+
     void postMessage(final byte[] message);
 }

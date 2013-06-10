@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <node>
     <portNo>11000</portNo>
+    <keystore>NODE1</keystore>
     <services>
         <service>
-            <implementation>org.cryptoworkshop.ximix.mixnet.service.NodeUploadService</implementation>
+            <implementation>org.cryptoworkshop.ximix.mixnet.service.BoardHostingService</implementation>
             <keystore></keystore>
             <board>
                 <name>FRED</name>
-                <capability>
+                <transform>
                     <implementation>org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform</implementation>
-                </capability>
-                <capability>
+                </transform>
+                <transform>
                     <implementation>org.cryptoworkshop.ximix.mixnet.transform.NullTransform</implementation>
-                </capability>
+                </transform>
             </board>
         </service>
         <service>

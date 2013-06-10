@@ -16,14 +16,17 @@
 package org.cryptoworkshop.ximix.common.service;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 
 public interface ServicesConnection
 {
-    public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
+    Capability[] getCapabilities();
+
+    MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
         throws ServiceConnectionException;
 
-    public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
+    MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
         throws ServiceConnectionException;
 }

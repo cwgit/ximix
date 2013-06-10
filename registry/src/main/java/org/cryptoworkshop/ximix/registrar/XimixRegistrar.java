@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.registrar;
 
+/**
+ * Registrar which encompasses all the services offered by the peers in the network.
+ */
 public interface XimixRegistrar
 {
     /**

@@ -15,11 +15,14 @@
  */
 package org.cryptoworkshop.ximix.common.service;
 
+import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 
 public interface Service
 {
+    Capability getCapability();
+
     MessageReply handle(Message message);
 
     boolean isAbleToHandle(Enum type);

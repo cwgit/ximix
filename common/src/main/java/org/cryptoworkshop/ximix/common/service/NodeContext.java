@@ -13,25 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.transform;
+package org.cryptoworkshop.ximix.common.service;
 
-public class NullTransform
-    implements Transform
+import java.util.Map;
+
+public interface NodeContext
 {
-    public static final String NAME = "NullTransform";
+    Map<String, ServicesConnection> getPeerMap();
 
-    public String getName()
-    {
-        return NAME;
-    }
-
-    public void init(Object o)
-    {
-        // ignore
-    }
-
-    public byte[] transform(byte[] message)
-    {
-        return message;
-    }
+    void scheduleTask(Runnable task);
 }

@@ -15,7 +15,6 @@
  */
 package org.cryptoworkshop.ximix.demo.client;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -32,6 +31,7 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.crypto.client.SigningService;
+import org.cryptoworkshop.ximix.mixnet.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.mixnet.client.UploadService;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
@@ -96,12 +96,9 @@ public class Main
         ECPair encCandidate1 = encryptor.encrypt(candidate1);
         ECPair encCandidate2 = encryptor.encrypt(candidate2);
 
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        PairSequence ballot = new PairSequence(encCandidate1, encCandidate2);
 
-        bOut.write(encCandidate1.getEncoded());
-        bOut.write(encCandidate2.getEncoded());
-
-        byte[] message = bOut.toByteArray();
+        byte[] message = ballot.getEncoded();
         byte[] hash = new byte[sha256.getDigestSize()];
 
         sha256.update(message, 0, message.length);
@@ -113,9 +110,7 @@ public class Main
         //
         byte[] dsaSig = signingService.generateSignature("SIGKEY", hash);
 
-        bOut.write(dsaSig);
-
-        client.uploadMessage("FRED", bOut.toByteArray());
+        client.uploadMessage("FRED", message);
 
         //
         // check the signature locally.

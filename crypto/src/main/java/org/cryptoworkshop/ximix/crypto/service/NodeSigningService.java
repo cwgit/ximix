@@ -35,20 +35,22 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.cryptoworkshop.ximix.common.conf.Config;
+import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CreateSignatureMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
-import org.cryptoworkshop.ximix.common.service.ServiceContext;
 
 public class NodeSigningService
     implements Service
 {
     Map<String, AsymmetricCipherKeyPair> keyMap = new HashMap<String, AsymmetricCipherKeyPair>();
 
-    public NodeSigningService(ServiceContext nodeConnection)
+    public NodeSigningService(NodeContext nodeConnection, Config config)
     {
         //To change body of created methods use File | Settings | File Templates.
     }
@@ -111,6 +113,11 @@ public class NodeSigningService
         }
 
         return null;
+    }
+
+    public Capability getCapability()
+    {
+        return new Capability(Capability.Type.SIGNING, new String[] { " "}); // TODO:
     }
 
     public MessageReply handle(Message message)

@@ -22,24 +22,34 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
+import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
+import org.cryptoworkshop.ximix.common.message.NodeInfo;
+import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.service.SpecificServicesConnection;
 import org.cryptoworkshop.ximix.crypto.client.KeyService;
 import org.cryptoworkshop.ximix.crypto.client.SigningService;
 import org.cryptoworkshop.ximix.crypto.client.ClientSigningService;
+import org.cryptoworkshop.ximix.mixnet.admin.ClientMixnetCommandService;
+import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
 import org.cryptoworkshop.ximix.mixnet.client.ClientUploadService;
 import org.cryptoworkshop.ximix.mixnet.client.UploadService;
 import org.w3c.dom.Node;
@@ -48,7 +58,7 @@ import org.w3c.dom.NodeList;
 public class XimixRegistrarFactory
 {
     public static XimixRegistrar createServicesRegistrar(File config)
-        throws ConfigException, RegistrarConnectionException
+        throws ConfigException
     {
         final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
 
@@ -75,11 +85,37 @@ public class XimixRegistrarFactory
         };
     }
 
-    public static Map<String, SpecificXimixRegistrar> createServicesRegistrarMap(File config)
-        throws ConfigException, RegistrarConnectionException
+    public static XimixRegistrar createAdminServiceRegistrar(File config)
+        throws ConfigException
     {
         final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
-        Map <String, SpecificXimixRegistrar> rMap = new HashMap<String, SpecificXimixRegistrar>();
+
+        return new XimixRegistrar()
+        {
+            public <T> T connect(Class<T> serviceClass)
+                throws RegistrarServiceException
+            {
+                if (serviceClass.isAssignableFrom(MixnetCommandService.class))
+                {
+                    return (T)new ClientMixnetCommandService(new AdminServicesConnectionImpl(nodes));
+                }
+
+                throw new RegistrarServiceException("Unable to identify service");
+            }
+        };
+    }
+
+    public static Map<String, ServicesConnection> createServicesRegistrarMap(File config)
+        throws ConfigException
+    {
+        final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
+
+        return createServicesRegistrarMap(nodes);
+    }
+
+    private static Map<String, ServicesConnection> createServicesRegistrarMap(List<NodeConfig> nodes)
+    {
+        Map <String, ServicesConnection> rMap = new HashMap<String, ServicesConnection>();
 
         for (int i = 0; i != nodes.size(); i++)
         {
@@ -89,34 +125,7 @@ public class XimixRegistrarFactory
             final String name = Integer.toString(node.getPortNo());
             final List<NodeConfig> thisNode = Collections.singletonList(node);
 
-            SpecificXimixRegistrar r = new SpecificXimixRegistrar()
-            {
-                public <T> T connect(Class<T> serviceClass)
-                    throws RegistrarServiceException
-                {
-                    if (serviceClass.isAssignableFrom(UploadService.class))
-                    {
-                        return (T)new ClientUploadService(new ServicesConnectionImpl(thisNode));
-                    }
-                    else if (serviceClass.isAssignableFrom(KeyService.class))
-                    {
-                        return (T)new ClientSigningService(new ServicesConnectionImpl(thisNode));
-                    }
-                    else if (serviceClass.isAssignableFrom(SigningService.class))
-                    {
-                        return (T)new ClientSigningService(new ServicesConnectionImpl(thisNode));
-                    }
-
-                    throw new RegistrarServiceException("Unable to identify service");
-                }
-
-                public String getNodeName()
-                {
-                    return name;
-                }
-            };
-
-            rMap.put(name, r);
+            rMap.put(name, new ServicesConnectionImpl(thisNode));
         }
 
         return rMap;
@@ -179,12 +188,90 @@ public class XimixRegistrarFactory
         }
     }
 
-    private static class ServicesConnectionImpl
-        implements ServicesConnection
+    private static class NodeServicesConnection
+        implements SpecificServicesConnection
     {
+        private NodeInfo nodeInfo;
         private Socket connection;
         private InputStream cIn;
         private OutputStream cOut;
+
+        public NodeServicesConnection(NodeConfig config)
+            throws IOException
+        {
+            this.connection = new Socket(config.getAddress(), config.getPortNo());
+
+            if (connection != null)
+            {
+                cOut = connection.getOutputStream();
+                cIn = connection.getInputStream();
+            }
+
+            ASN1InputStream aIn = new ASN1InputStream(cIn, 30000); // TODO:
+
+            nodeInfo = NodeInfo.getInstance(aIn.readObject());
+        }
+
+        public String getName()
+        {
+            return nodeInfo.getName();
+        }
+
+        public Capability[] getCapabilities()
+        {
+            return nodeInfo.getCapabilities();
+        }
+
+        public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
+            throws ServiceConnectionException
+        {
+            try
+            {
+                if (type instanceof ClientMessage.Type)
+                {
+                    cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
+                }
+                else
+                {
+                    cOut.write(new CommandMessage((CommandMessage.Type)type, messagePayload).getEncoded());
+                }
+                return MessageReply.getInstance(new ASN1InputStream(cIn, 30000).readObject());      // TODO
+            }
+            catch (Exception e)
+            {                                     e.printStackTrace();
+                // TODO: this should only happen when we've run out of nodes.
+                throw new ServiceConnectionException("couldn't send");
+            }
+        }
+
+        public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
+            throws ServiceConnectionException
+        {
+            try
+            {         // TODO: needs to go to a minimum number of clients
+                if (type instanceof ClientMessage.Type)
+                {
+                    cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
+                }
+                else
+                {
+                    cOut.write(new CommandMessage((CommandMessage.Type)type, messagePayload).getEncoded());
+                }
+
+                return MessageReply.getInstance(new ASN1InputStream(cIn).readObject());
+            }
+            catch (Exception e)
+            {                                         e.printStackTrace();
+                // TODO: this should only happen when we've run out of nodes.
+                throw new ServiceConnectionException("couldn't send");
+            }
+        }
+    }
+
+    private static class ServicesConnectionImpl
+        implements ServicesConnection
+    {
+        private NodeServicesConnection connection;
 
         public ServicesConnectionImpl(List<NodeConfig> configList)
         {
@@ -204,7 +291,7 @@ public class XimixRegistrarFactory
                     // TODO: we should query each node to see what it's capabilities are.
                     try
                     {
-                        this.connection = new Socket(nodeConf.getAddress(), nodeConf.getPortNo());
+                        this.connection = new NodeServicesConnection(nodeConf);
                         break;
                     }
                     catch (IOException e)
@@ -213,52 +300,98 @@ public class XimixRegistrarFactory
                     }
                 }
             }
+        }
 
-            if (connection != null)
-            {
-                try
-                {
-                    cOut = connection.getOutputStream();
-                    cIn = connection.getInputStream();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
-
-            }
+        public Capability[] getCapabilities()
+        {
+            return connection.getCapabilities();
         }
 
         public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            try
-            {
-                cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
-
-                return MessageReply.getInstance(new ASN1InputStream(cIn, 30000).readObject());      // TODO
-            }
-            catch (Exception e)
-            {                                     e.printStackTrace();
-                // TODO: this should only happen when we've run out of nodes.
-                throw new ServiceConnectionException("couldn't send");
-            }
+            return connection.sendMessage(type, messagePayload);
         }
 
         public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            try
-            {
-                cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
+            return connection.sendThresholdMessage(type, messagePayload);
+        }
+    }
 
-                return MessageReply.getInstance(new ASN1InputStream(cIn).readObject());
+    private static class AdminServicesConnectionImpl
+        implements AdminServicesConnection
+    {
+        private Map<String, NodeServicesConnection> connectionMap = new HashMap<String, NodeServicesConnection>();
+        private Set<Capability> capabilitySet = new HashSet<Capability>();
+
+        public AdminServicesConnectionImpl(List<NodeConfig> configList)
+        {
+            for (int i = 0; i != configList.size(); i++)
+            {
+                final NodeConfig nodeConf = configList.get(i);
+
+                if (nodeConf.getThrowable() == null)
+                {
+                    // TODO: we should query each node to see what it's capabilities are.
+                    try
+                    {
+                        NodeServicesConnection connection = new NodeServicesConnection(nodeConf);
+
+                        capabilitySet.addAll(Arrays.asList(connection.getCapabilities()));
+
+                        connectionMap.put(connection.getName(), connection);
+                    }
+                    catch (IOException e)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    nodeConf.getThrowable().printStackTrace();
+                }
             }
-            catch (Exception e)
-            {                                         e.printStackTrace();
-                // TODO: this should only happen when we've run out of nodes.
-                throw new ServiceConnectionException("couldn't send");
+        }
+
+        public Capability[] getCapabilities()
+        {
+            return capabilitySet.toArray(new Capability[capabilitySet.size()]);
+        }
+
+        public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
+            throws ServiceConnectionException
+        {
+            for (String name : connectionMap.keySet())
+            {
+                connectionMap.get(name).sendMessage(type, messagePayload);
             }
+
+            return null; // TODO: need to work out a composite reply
+        }
+
+        public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
+            throws ServiceConnectionException
+        {
+            for (String name : connectionMap.keySet())
+            {
+                connectionMap.get(name).sendThresholdMessage(type, messagePayload);
+            }
+
+            return null; // TODO: need to work out a composite reply
+        }
+
+        public MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
+            throws ServiceConnectionException
+        {
+            return connectionMap.get(nodeName).sendMessage(type, messagePayload);
+        }
+
+        public MessageReply sendThresholdMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
+            throws ServiceConnectionException
+        {
+            return connectionMap.get(nodeName).sendThresholdMessage(type, messagePayload);
         }
     }
 }

@@ -34,6 +34,11 @@ public class BulletinBoardImpl
         this.boardUpdateExecutor = executor;
     }
 
+    public String getName()
+    {
+        return boardName;
+    }
+
     public void postMessage(final byte[] message)
     {
         boardUpdateExecutor.execute(new Runnable()

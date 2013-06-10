@@ -13,25 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.transform;
+package org.cryptoworkshop.ximix.mixnet.admin;
 
-public class NullTransform
-    implements Transform
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
+
+public interface MixnetCommandService
 {
-    public static final String NAME = "NullTransform";
-
-    public String getName()
-    {
-        return NAME;
-    }
-
-    public void init(Object o)
-    {
-        // ignore
-    }
-
-    public byte[] transform(byte[] message)
-    {
-        return message;
-    }
+    void doShuffleAndMove(String boardName, ShuffleOptions options, String... nodes)
+        throws ServiceConnectionException;
 }

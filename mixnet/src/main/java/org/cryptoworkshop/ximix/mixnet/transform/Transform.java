@@ -19,5 +19,7 @@ public interface Transform
 {
     String getName();
 
+    void init(Object o);
+
     byte[] transform(byte[] message);
 }

@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.NodeInfo;
 import org.cryptoworkshop.ximix.common.service.Service;
 
 class XimixServices
@@ -45,8 +46,10 @@ class XimixServices
             InputStream sIn = s.getInputStream();
             OutputStream sOut = s.getOutputStream();
 
-            ASN1InputStream aIn = new ASN1InputStream(sIn, 32 * 1024);
+            ASN1InputStream aIn = new ASN1InputStream(sIn, 32 * 1024);       // TODO: should be a config item
             DEROutputStream aOut = new DEROutputStream(sOut);
+
+            aOut.writeObject(new NodeInfo(nodeContext.getName(), nodeContext.getCapabilities()));
 
             Object o;
 

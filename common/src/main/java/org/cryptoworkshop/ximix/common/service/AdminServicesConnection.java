@@ -13,25 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.transform;
+package org.cryptoworkshop.ximix.common.service;
 
-public class NullTransform
-    implements Transform
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.MessageType;
+
+public interface AdminServicesConnection
+    extends ServicesConnection
 {
-    public static final String NAME = "NullTransform";
+    MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
+        throws ServiceConnectionException;
 
-    public String getName()
-    {
-        return NAME;
-    }
-
-    public void init(Object o)
-    {
-        // ignore
-    }
-
-    public byte[] transform(byte[] message)
-    {
-        return message;
-    }
+    MessageReply sendThresholdMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
+        throws ServiceConnectionException;
 }

@@ -15,12 +15,8 @@
  */
 package org.cryptoworkshop.ximix.common.service;
 
-public interface ServiceContext
+public interface SpecificServicesConnection
+    extends ServicesConnection
 {
-    String NODE_REGISTRAR_MAP = "nodeRegistrar";
-    String BULLETIN_BOARD_REGISTRY = "boardRegistrar";
-
-    void scheduleTask(Runnable task);
-
-    <T> T getParameter(String name);
+    String getName();
 }
