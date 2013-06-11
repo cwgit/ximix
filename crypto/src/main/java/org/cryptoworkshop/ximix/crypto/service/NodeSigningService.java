@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.crypto.service;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -75,7 +76,7 @@ public class NodeSigningService
 
     public Capability getCapability()
     {
-        return new Capability(Capability.Type.SIGNING, new String[] { " "}); // TODO:
+        return new Capability(Capability.Type.SIGNING, new ASN1Encodable[0]); // TODO:
     }
 
     public MessageReply handle(Message message)

@@ -19,6 +19,7 @@ import java.io.File;
 
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
+import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
@@ -32,6 +33,6 @@ public class Main
         MixnetCommandService commandService = adminRegistrar.connect(MixnetCommandService.class);
 
         // TODO: at the moment the name of the node is taken from it's port no
-        commandService.doShuffleAndMove("FRED",  new ShuffleOptions(ShuffleOptions.Type.FIXED_TRANSFORM), "11000", "11001");
+        commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ENCKEY").build(), "11000", "11001");
     }
 }

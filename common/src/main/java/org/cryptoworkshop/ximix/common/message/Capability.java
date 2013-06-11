@@ -34,14 +34,15 @@ public class Capability
     {
         BOARD_HOSTING,
         ENCRYPTION,
+        KEY_RETRIEVAL,
         KEY_GENERATION,
         SIGNING
     }
 
     private final Type type;
-    private final String[] details;
+    private final ASN1Encodable[] details;
 
-    public Capability(Type type, String[] details)
+    public Capability(Type type, ASN1Encodable[] details)
     {
         this.type = type;
         this.details = details;
@@ -59,30 +60,18 @@ public class Capability
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new ASN1Enumerated(type.ordinal()));
-        v.add(new DERSet(convertStrings(details)));
+        v.add(new DERSet(details));
 
         return new DERSequence(v);
     }
 
-    private ASN1Encodable[] convertStrings(String[] strings)
+    private ASN1Encodable[] convertSet(ASN1Set strings)
     {
-        ASN1Encodable[] rv = new ASN1Encodable[strings.length];
+        ASN1Encodable[] rv = new ASN1Encodable[strings.size()];
 
         for (int i = 0; i != rv.length; i++)
         {
-            rv[i] = new DERUTF8String(strings[i]);
-        }
-
-        return rv;
-    }
-
-    private String[] convertSet(ASN1Set strings)
-    {
-        String[] rv = new String[strings.size()];
-
-        for (int i = 0; i != rv.length; i++)
-        {
-            rv[i] = DERUTF8String.getInstance(strings.getObjectAt(i)).getString();
+            rv[i] = strings.getObjectAt(i);
         }
 
         return rv;
@@ -107,7 +96,7 @@ public class Capability
         return type;
     }
 
-    public String[] getDetails()
+    public ASN1Encodable[] getDetails()
     {
         return details.clone();
     }

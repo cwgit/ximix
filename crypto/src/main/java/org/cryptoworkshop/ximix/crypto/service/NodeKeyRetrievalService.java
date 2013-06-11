@@ -19,30 +19,36 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 
-public class NodeKeyGenerationService
+public class NodeKeyRetrievalService
     implements Service
 {
+
     private final NodeContext nodeContext;
 
-    public NodeKeyGenerationService(NodeContext nodeContext, Config config)
+    public NodeKeyRetrievalService(NodeContext nodeContext, Config config)
     {
         this.nodeContext = nodeContext;
     }
 
     public Capability getCapability()
     {
-        return new Capability(Capability.Type.KEY_GENERATION, new ASN1Encodable[0]); // TODO:
+        return new Capability(Capability.Type.KEY_RETRIEVAL, new ASN1Encodable[0]); // TODO:
     }
 
     public MessageReply handle(Message message)
     {
         switch (((ClientMessage)message).getType())
         {
+        case FETCH_PUBLIC_KEY:
+            FetchPublicKeyMessage fetchMessage = FetchPublicKeyMessage.getInstance(message.getPayload());
+
+            return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(fetchMessage.getKeyID()));
         default:
             System.err.println("unknown command");
         }
@@ -51,6 +57,6 @@ public class NodeKeyGenerationService
 
     public boolean isAbleToHandle(Enum type)
     {
-        return type == ClientMessage.Type.GENERATE_KEY_PAIR;
+        return type == ClientMessage.Type.FETCH_PUBLIC_KEY;
     }
 }

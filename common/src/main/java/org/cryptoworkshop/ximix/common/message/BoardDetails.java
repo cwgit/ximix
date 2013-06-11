@@ -15,42 +15,55 @@
  */
 package org.cryptoworkshop.ximix.common.message;
 
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class MoveMessage
+public class BoardDetails
     extends ASN1Object
 {
-    private final String nodeName;
     private final String boardName;
+    private final Set<String> transformNames;
 
-    public MoveMessage(String boardName, String nodeName)
+    public BoardDetails(String boardName, Set<String> transformNames)
     {
-        this.nodeName = nodeName;
         this.boardName = boardName;
+        this.transformNames = Collections.unmodifiableSet(new HashSet<String>(transformNames));
     }
 
-    private MoveMessage(ASN1Sequence seq)
+    private BoardDetails(ASN1Sequence seq)
     {
         this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.nodeName = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+
+        ASN1Set asn1Trans = ASN1Set.getInstance(seq.getObjectAt(1));
+        Set<String>  sTrans = new HashSet<String>();
+
+        for (Enumeration en = asn1Trans.getObjects(); en.hasMoreElements();)
+        {
+            sTrans.add(DERUTF8String.getInstance(en.nextElement()).getString());
+        }
+
+        transformNames = Collections.unmodifiableSet(sTrans);
     }
 
-    public static final MoveMessage getInstance(Object o)
+    public static final BoardDetails getInstance(Object o)
     {
-        if (o instanceof MoveMessage)
+        if (o instanceof BoardDetails)
         {
-            return (MoveMessage)o;
+            return (BoardDetails)o;
         }
         else if (o != null)
         {
-            return new MoveMessage(ASN1Sequence.getInstance(o));
+            return new BoardDetails(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -62,18 +75,17 @@ public class MoveMessage
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new DERUTF8String(boardName));
-        v.add(new DERUTF8String(nodeName));
 
         return new DERSequence(v);
-    }
-
-    public String getNodeName()
-    {
-        return nodeName;
     }
 
     public String getBoardName()
     {
         return boardName;
+    }
+
+    public Set<String> getTransformNames()
+    {
+        return transformNames;
     }
 }

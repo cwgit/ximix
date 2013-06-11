@@ -17,40 +17,38 @@ package org.cryptoworkshop.ximix.common.message;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class MoveMessage
+public class PermuteMessage
     extends ASN1Object
 {
-    private final String nodeName;
+    private final String keyID;
     private final String boardName;
 
-    public MoveMessage(String boardName, String nodeName)
+    public PermuteMessage(String boardName, String keyID)
     {
-        this.nodeName = nodeName;
+        this.keyID = keyID;
         this.boardName = boardName;
     }
 
-    private MoveMessage(ASN1Sequence seq)
+    private PermuteMessage(ASN1Sequence seq)
     {
         this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.nodeName = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
     }
 
-    public static final MoveMessage getInstance(Object o)
+    public static final PermuteMessage getInstance(Object o)
     {
-        if (o instanceof MoveMessage)
+        if (o instanceof PermuteMessage)
         {
-            return (MoveMessage)o;
+            return (PermuteMessage)o;
         }
         else if (o != null)
         {
-            return new MoveMessage(ASN1Sequence.getInstance(o));
+            return new PermuteMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -62,14 +60,14 @@ public class MoveMessage
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new DERUTF8String(boardName));
-        v.add(new DERUTF8String(nodeName));
+        v.add(new DERUTF8String(keyID));
 
         return new DERSequence(v);
     }
 
-    public String getNodeName()
+    public String getKeyID()
     {
-        return nodeName;
+        return keyID;
     }
 
     public String getBoardName()

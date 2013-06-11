@@ -17,16 +17,46 @@ package org.cryptoworkshop.ximix.mixnet;
 
 public class ShuffleOptions
 {
-    public static enum Type
+    public static class Builder
     {
-        NULL_TRANSFORM,
-        FIXED_TRANSFORM
+        private final String transformName;
+
+        private String keyID;
+
+        public Builder(String transformName)
+        {
+             this.transformName = transformName;
+        }
+
+        public Builder setKeyID(String keyID)
+        {
+            this.keyID = keyID;
+
+            return this;
+        }
+
+        public ShuffleOptions build()
+        {
+            return new ShuffleOptions(this);
+        }
     }
 
-    private final Type type;
+    private final String transformName;
+    private final String keyID;
 
-    public ShuffleOptions(Type type)
+    private ShuffleOptions(Builder builder)
     {
-        this.type = type;
+        this.transformName = builder.transformName;
+        this.keyID = builder.keyID;
+    }
+
+    public String getTransformName()
+    {
+        return  transformName;
+    }
+
+    public String getKeyID()
+    {
+        return  keyID;
     }
 }

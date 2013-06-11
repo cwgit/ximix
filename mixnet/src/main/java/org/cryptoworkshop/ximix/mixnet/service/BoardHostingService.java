@@ -1,10 +1,18 @@
 package org.cryptoworkshop.ximix.mixnet.service;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
+import org.cryptoworkshop.ximix.common.message.BoardDetails;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
@@ -12,12 +20,14 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MoveMessage;
+import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.UploadMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.mixnet.task.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.mixnet.task.UploadTask;
+import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -36,15 +46,29 @@ public class BoardHostingService
 
         for (BoardConfig boardConfig : boards)
         {
-            boardRegistry.createBoard(boardConfig.getName());
+            boardRegistry.createBoard(boardConfig.getName(), boardConfig.getTransforms());
         }
     }
 
     public Capability getCapability()
     {
         String[] names = boardRegistry.getBoardNames();
+        BoardDetails[] details = new BoardDetails[names.length];
 
-        return new Capability(Capability.Type.BOARD_HOSTING, names);
+        int count = 0;
+        for (String name : names)
+        {
+            Transform[] transforms = boardRegistry.getBoard(name).getTransforms();
+            Set<String> transformNames = new HashSet<String>();
+            for (Transform transform : transforms)
+            {
+                transformNames.add(transform.getName());
+            }
+
+            details[count++] = new BoardDetails(name, transformNames);
+        }
+
+        return new Capability(Capability.Type.BOARD_HOSTING, details);
     }
 
     public MessageReply handle(Message message)
@@ -62,8 +86,8 @@ public class BoardHostingService
                 boardRegistry.suspendBoard(boardMessage.getBoardName());
                 break;
             case SHUFFLE_AND_MOVE_BOARD_TO_NODE:
-                MoveMessage moveMessage = MoveMessage.getInstance(message.getPayload());
-                serviceContext.scheduleTask(new TransformShuffleAndMoveTask(serviceContext, boardRegistry, moveMessage));
+                PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
+                serviceContext.scheduleTask(new TransformShuffleAndMoveTask(serviceContext, boardRegistry, pAndmMessage));
                 break;
             case TRANSFER_TO_BOARD:
                 UploadMessage uploadMessage = UploadMessage.getInstance(message.getPayload());
@@ -109,6 +133,8 @@ public class BoardHostingService
     private static class BoardConfig
     {
         private String name;
+        private Throwable throwable;
+        private Map<String, Transform> transforms = new HashMap<String, Transform>();
 
         public BoardConfig(Node configNode)
         {
@@ -122,9 +148,38 @@ public class BoardHostingService
                 {
                     this.name = xmlNode.getTextContent();
                 }
-                else if (xmlNode.getNodeName().equals("capability"))
+                else if (xmlNode.getNodeName().equals("transform"))
                 {
-                    System.err.println(xmlNode.getTextContent());
+                    try
+                    {
+                        Class clazz = Class.forName(xmlNode.getTextContent().trim());
+
+                        Constructor constructor = clazz.getConstructor();
+
+                        Transform impl = (Transform)constructor.newInstance();
+
+                        transforms.put(impl.getName(), impl);
+                    }
+                    catch (ClassNotFoundException e)
+                    {
+                        throwable = e;
+                    }
+                    catch (NoSuchMethodException e)
+                    {
+                        throwable = e;
+                    }
+                    catch (InvocationTargetException e)
+                    {
+                        throwable = e;
+                    }
+                    catch (InstantiationException e)
+                    {
+                        throwable = e;
+                    }
+                    catch (IllegalAccessException e)
+                    {
+                        throwable = e;
+                    }
                 }
             }
         }
@@ -132,6 +187,11 @@ public class BoardHostingService
         public String getName()
         {
             return name;
+        }
+
+        public Map<String, Transform> getTransforms()
+        {
+            return transforms;
         }
     }
 }

@@ -15,10 +15,12 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MoveMessage;
+import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
+import org.cryptoworkshop.ximix.common.message.PermuteMessage;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
@@ -38,7 +40,7 @@ public class ClientMixnetCommandService
     {
         for (String node : nodes)
         {
-             connection.sendMessage(node, CommandMessage.Type.SUSPEND_BOARD, new BoardMessage(boardName));
+            connection.sendMessage(node, CommandMessage.Type.SUSPEND_BOARD, new BoardMessage(boardName));
         }
 
         for (int i = 0; i != nodes.length; i++)
@@ -46,12 +48,12 @@ public class ClientMixnetCommandService
             String curNode = nodes[i];
             String nextNode = nodes[(i + 1) % nodes.length];
 
-             connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new MoveMessage(nextNode, boardName));
+            connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(boardName, options.getTransformName(), options.getKeyID(), nextNode));
         }
 
         for (String node : nodes)
         {
-             connection.sendMessage(node, CommandMessage.Type.ACTIVATE_BOARD, new BoardMessage(boardName));
+            connection.sendMessage(node, CommandMessage.Type.ACTIVATE_BOARD, new BoardMessage(boardName));
         }
     }
 }

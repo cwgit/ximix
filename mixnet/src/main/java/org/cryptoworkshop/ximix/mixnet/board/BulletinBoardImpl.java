@@ -16,21 +16,29 @@
 package org.cryptoworkshop.ximix.mixnet.board;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
+
+import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
 public class BulletinBoardImpl
     implements BulletinBoard
 {
     private final String boardName;
     private final Executor boardUpdateExecutor;
+    private final Map<String, Transform> transforms;
 
     private List<byte[]> messages = new ArrayList<byte[]>();
 
-    public BulletinBoardImpl(String boardName, Executor executor)
+    public BulletinBoardImpl(String boardName, Map<String, Transform> transforms, Executor executor)
     {
         this.boardName = boardName;
+        this.transforms = transforms;
         this.boardUpdateExecutor = executor;
     }
 
@@ -52,8 +60,18 @@ public class BulletinBoardImpl
         });
     }
 
+    public Transform[] getTransforms()
+    {
+        return transforms.values().toArray(new Transform[transforms.size()]);
+    }
+
+    public Transform getTransform(String transformName)
+    {
+        return transforms.get(transformName);
+    }
+
     public Iterator<byte[]> iterator()
     {
-        return messages.iterator();
+        return new ArrayList<byte[]>(messages).iterator();
     }
 }

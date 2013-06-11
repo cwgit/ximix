@@ -15,10 +15,16 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
+import org.cryptoworkshop.ximix.mixnet.transform.Transform;
+
 public interface BulletinBoard
     extends Iterable<byte[]>
 {
     String getName();
 
     void postMessage(final byte[] message);
+
+    Transform[] getTransforms();
+
+    Transform getTransform(String transformName);
 }

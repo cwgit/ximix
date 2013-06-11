@@ -16,6 +16,9 @@
             </board>
         </service>
         <service>
+            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeKeyRetrievalService</implementation>
+        </service>
+        <service>
             <implementation>org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService</implementation>
         </service>
         <service>

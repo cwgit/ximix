@@ -41,7 +41,8 @@ public class XimixNodeContext
     implements NodeContext
 {
     private Map<String, ServicesConnection> peerMap;
-    private NodeKeyGenerationService keyGenerationService;
+    private NodeKeyGenerationService keyRetrievalService;
+    private final KeyManager keyManager;
 
     private Executor multiTaskExecutor = Executors.newCachedThreadPool();
 
@@ -63,13 +64,7 @@ public class XimixNodeContext
             }
         }
 
-        for (Service service : services)
-        {
-            if (service instanceof NodeKeyGenerationService)
-            {
-                this.keyGenerationService = (NodeKeyGenerationService)service;
-            }
-        }
+        keyManager = new KeyManager();
     }
 
     public String getName()
@@ -106,14 +101,14 @@ public class XimixNodeContext
                                                                         // TODO: replace with private key info
     public AsymmetricKeyParameter getPrivateKey(String keyID)
     {
-        return keyGenerationService.getKeyPair(keyID).getPrivate();
+        return keyManager.getKeyPair(keyID).getPrivate();
     }
 
     public SubjectPublicKeyInfo getPublicKey(String keyID)
     {
         try
         {
-            return keyGenerationService.fetchPublicKey(keyID);
+            return keyManager.fetchPublicKey(keyID);
         }
         catch (IOException e)
         {

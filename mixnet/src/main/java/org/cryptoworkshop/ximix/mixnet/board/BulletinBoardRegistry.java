@@ -22,6 +22,8 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import org.cryptoworkshop.ximix.mixnet.transform.Transform;
+
 public class BulletinBoardRegistry
 {
     private Map<String, BulletinBoard> boards = new HashMap<String, BulletinBoard>();
@@ -29,7 +31,7 @@ public class BulletinBoardRegistry
 
     private Executor boardUpdateExecutor = Executors.newSingleThreadExecutor();
 
-    public BulletinBoard createBoard(final String boardName)
+    public BulletinBoard createBoard(final String boardName, final Map<String, Transform> transforms)
     {
         synchronized (boards)
         {
@@ -38,7 +40,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, transforms, boardUpdateExecutor);
 
                 boards.put(boardName, board);
             }
@@ -59,7 +61,7 @@ public class BulletinBoardRegistry
     {
         synchronized (boards)
         {
-            BulletinBoard board = boards.put(boardName, new BulletinBoardImpl(boardName, boardUpdateExecutor));
+            BulletinBoard board = null; //boards.put(boardName, new BulletinBoardImpl(boardName, boardUpdateExecutor));
 
             // TODO: barf!!  Maybe not here
             if (board == null)
