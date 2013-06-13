@@ -1,3 +1,13 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.apache.commons:commons-io:1.3.2'
+    }
+}
+
+
 allprojects {
     apply plugin: 'idea'
     apply plugin: 'eclipse'
@@ -5,6 +15,9 @@ allprojects {
 
     dependencies {
         compile fileTree(dir: new File(rootDir,  'libs'), include: '*.jar')
+        compile fileTree(dir: new File(rootDir,  'libs/betas'), include: '*.jar')   
+    
+
     }
 }
 
@@ -15,15 +28,46 @@ subprojects {
 
     dependencies {
         testCompile group: 'junit', name: 'junit', version: '4.+'
-    }
+     }
 
     sourceCompatibility = 1.6
     targetCompatibility = 1.6
 }
+
 
 dependencies {
     compile project(':common')
     compile project(':crypto')
     compile project(':mixnet')
     compile project(':node')
+}
+
+task remove_betas << {
+    File root = new File(projectDir,  'libs/betas');
+    if(root.exists()) {
+         org.apache.commons.io.FileUtils.deleteDirectory(root);
+         System.out.println(" Removed betas, use 'gradle fetch_betas' to reload.");
+    } 
+}
+
+task fetch_betas << {
+    File root = new File(projectDir,  'libs/betas');
+    if(!root.exists()) {
+        root.mkdirs();
+    }
+    fetchFile('http://downloads.bouncycastle.org/betas/bcprov-jdk15on-150b01.jar', root);
+}
+
+/**
+ * Fetch a file at url and save it into the directory.
+ * The filename used is taken from the url.
+ */
+void fetchFile(String url, File directory)
+{
+    URL u = new URL(url);
+    String f = u.getFile();
+    f = f.substring(f.lastIndexOf("/")+1);
+    System.out.print("Fetching '"+f+"' from '"+url+"' ... ");
+    org.apache.commons.io.FileUtils.copyURLToFile(u, new File(directory,f));
+    System.out.println("Complete");
 }
