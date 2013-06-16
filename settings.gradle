@@ -2,3 +2,8 @@ include "common"
 include "crypto"
 include "mixnet"
 include "node"
+include "registry"
+include "installer"
+include "console"
+include "demo"
+
