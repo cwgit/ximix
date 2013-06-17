@@ -1,5 +1,7 @@
 dependencies {
     compile project(':common')
-    //compile project(':crypto')
-    //compile project(':mixnet')
+    compile 'org.eclipse.jetty:jetty-server:9.0.3.v20130506'
+    compile 'com.fasterxml.jackson.core:jackson-core:2.2.0'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.2.0'
+    compile 'com.fasterxml.jackson.core:jackson-annotations:2.2.0'
 }
