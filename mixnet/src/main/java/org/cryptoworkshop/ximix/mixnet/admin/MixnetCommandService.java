@@ -15,11 +15,65 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
+import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
+import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 
+import java.util.List;
+
 public interface MixnetCommandService
 {
-    void doShuffleAndMove(String boardName, ShuffleOptions options, String... nodes)
+
+    /**
+     * Do a shuffle.
+     * @param boardName
+     * @param options
+     * @param nodes
+     * @throws ServiceConnectionException
+     */
+    void doShuffleAndMove(
+            String boardName,
+            ShuffleOptions options,
+            String... nodes)
         throws ServiceConnectionException;
+
+
+    /**
+     * Return a list of static details about the node.
+     * @return  The node.
+     * @throws ServiceConnectionException
+     */
+    List<NodeDetail> getNodeDetails() throws ServiceConnectionException;
+
+
+    /**
+     * Return a set of dynamic details about a node.
+     * @param nodes The nodes.
+     * @return
+     * @throws ServiceConnectionException
+     */
+    List<NodeHealth> getNodeHealth(String... nodes) throws ServiceConnectionException;
+
+
+    /**
+     * Return processing statistics about a node.
+     * @param nodes
+     * @return
+     */
+    List<NodeStatistics> getNodeStatistics(String... nodes);
+
+    /**
+     * Cause nodes to shutdown.
+     * @param nodes
+     */
+    void shutdown(String... nodes);
+
+
+    /**
+     * Cause nodes to restart.
+     * @param nodes
+     */
+    void restart(String... nodes);
+
 }

@@ -8,6 +8,8 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 
+import java.security.SecureRandom;
+
 /**
  *
  */
@@ -16,6 +18,7 @@ public class Main {
     private static int port = 1887;
     private static String localAddress = null;
     private static String configSource = null;
+    private static SecureRandom secureRandom = new SecureRandom();
 
 
     /**
@@ -91,6 +94,11 @@ public class Main {
         }
 
         return out;
+    }
+
+    public static SecureRandom random()
+    {
+        return secureRandom;
     }
 
 

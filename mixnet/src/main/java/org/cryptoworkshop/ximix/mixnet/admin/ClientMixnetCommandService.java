@@ -15,15 +15,16 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.MoveMessage;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
-import org.cryptoworkshop.ximix.common.message.PermuteMessage;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ClientMixnetCommandService
     implements MixnetCommandService
@@ -55,5 +56,43 @@ public class ClientMixnetCommandService
         {
             connection.sendMessage(node, CommandMessage.Type.ACTIVATE_BOARD, new BoardMessage(boardName));
         }
+    }
+
+
+    @Override
+    public List<NodeDetail> getNodeDetails() throws ServiceConnectionException {
+        ArrayList<NodeDetail> nodes = new ArrayList<NodeDetail>();
+        NodeDetail nd = new NodeDetail();
+        nodes.add(nd);
+        return nodes;
+    }
+
+    @Override
+    public List<NodeHealth> getNodeHealth(String... nodes) throws ServiceConnectionException {
+
+        ArrayList<NodeHealth> healths = new ArrayList<>();
+
+            healths.add(new NodeHealth());
+
+
+        return healths;
+    }
+
+    @Override
+    public List<NodeStatistics> getNodeStatistics(String... nodes) {
+       ArrayList<NodeStatistics> nodeStatistics = new ArrayList<>();
+        nodeStatistics.add(new NodeStatistics());
+
+        return nodeStatistics;
+    }
+
+    @Override
+    public void shutdown(String... nodes) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void restart(String... nodes) {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

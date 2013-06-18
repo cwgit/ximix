@@ -28,13 +28,13 @@ function fetchNodes() {
             outer = $("#"+node.hash+"_info");
                 if (!outer.length)
                  {
-                    outer = $("<div class='node' id='"+node.hash+"'_info'>");
+                    outer = $("<div class='node' id='node_"+t+"'_info'>");
                     outer.appendTo('#nodes');
-                    outer.append("<div class='nodetitle'>"+node.hostName+"</div>");
+                    outer.append("<div class='nodetitle'>"+node.name+"</div>");
                     outer.append("<table class='nodetable' border='0'>" +
-                        " <tr><td>Started:</td><td>"+(new Date(node.started))+"</td></tr>" +
+                        " <tr><td>Port:</td><td>"+(node.port)+"</td></tr>" +
+                        " <tr><td>Started:</td><td>"+(new Date(node.startTimestamp))+"</td></tr>" +
                         "</table>");
-
                  }
             }
         }
@@ -42,6 +42,36 @@ function fetchNodes() {
 }
 
 
+function fetchCommands() {
+    $.post("/api/commands", null, function (data) {
+
+        console.log(data);
+
+
+        if (data != null) {
+
+       //     for(t=0; t<data.length; t++) {
+
+       //         node = data[t];
+
+//                outer = $("#"+node.hash+"_info");
+//                if (!outer.length)
+//                {
+//                    outer = $("<div class='node' id='node_"+node.hash+"'_info'>");
+//                    outer.appendTo('#nodes');
+//                    outer.append("<div class='nodetitle'>"+node.name+"</div>");
+//                    outer.append("<table class='nodetable' border='0'>" +
+//                        " <tr><td>Port:</td><td>"+(node.port)+"</td></tr>" +
+//                        " <tr><td>Started:</td><td>"+(new Date(node.startedTimestamp))+"</td></tr>" +
+//                        "</table>");
+//                }
+       //     }
+        }
+    });
+}
+
+
 $( document ).ready(function() {
      fetchNodes();
+    fetchCommands();
 });

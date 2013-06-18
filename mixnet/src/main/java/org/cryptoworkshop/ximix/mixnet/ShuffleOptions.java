@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.mixnet;
 
+import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
+import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
+
 public class ShuffleOptions
 {
     public static class Builder
@@ -22,6 +25,12 @@ public class ShuffleOptions
         private final String transformName;
 
         private String keyID;
+
+        public Builder(String transformName, String keyID)
+        {
+            this.transformName = transformName;
+            this.keyID = keyID;
+        }
 
         public Builder(String transformName)
         {

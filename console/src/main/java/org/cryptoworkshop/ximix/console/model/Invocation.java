@@ -1,4 +1,4 @@
-package org.cryptoworkshop.ximix.common.console.model;
+package org.cryptoworkshop.ximix.console.model;
 
 /**
  * Class that holds invocation parameters as passed back from the ui.

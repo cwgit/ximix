@@ -7,10 +7,17 @@ public class StandardMessage {
 
     private boolean successful = false;
     private int errorCode = 0;
-    private String errorMessage = null;
+    private String message = null;
 
     public StandardMessage() {
 
+    }
+
+    public StandardMessage(boolean successful, String message)
+    {
+        this.errorCode = 0;
+        this.successful = successful;
+        this.message = message;
     }
 
     public boolean isSuccessful() {
@@ -29,11 +36,11 @@ public class StandardMessage {
         this.errorCode = errorCode;
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
+    public String getMessage() {
+        return message;
     }
 
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
+    public void setMessage(String message) {
+        this.message = message;
     }
 }
