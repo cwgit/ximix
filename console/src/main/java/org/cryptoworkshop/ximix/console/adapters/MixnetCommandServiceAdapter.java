@@ -1,24 +1,15 @@
-package org.cryptoworkshop.ximix.console.nodeadapters;
+package org.cryptoworkshop.ximix.console.adapters;
 
 import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
 import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.console.Main;
-import org.cryptoworkshop.ximix.console.NodeAdapter;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
-import org.cryptoworkshop.ximix.console.model.Command;
-import org.cryptoworkshop.ximix.console.model.ParameterInfo;
-import org.cryptoworkshop.ximix.console.util.Traversal;
-import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 import java.io.File;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 

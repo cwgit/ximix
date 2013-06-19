@@ -1,6 +1,7 @@
 package org.cryptoworkshop.ximix.console;
 
 import org.cryptoworkshop.ximix.console.handlers.ConsoleHandler;
+import org.cryptoworkshop.ximix.console.util.Config;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -8,6 +9,8 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 
+import java.io.File;
+import java.net.URL;
 import java.security.SecureRandom;
 
 /**
@@ -15,11 +18,10 @@ import java.security.SecureRandom;
  */
 public class Main {
 
-    private static int port = 1887;
+    private static Integer port = null;
     private static String localAddress = null;
     private static String configSource = null;
     private static SecureRandom secureRandom = new SecureRandom();
-
 
     /**
      * Main.
@@ -33,7 +35,7 @@ public class Main {
 
     }
 
-    public static void init(String[] args) {
+    public static void init(String[] args) throws Exception {
         for (int t = 0; t < args.length; t++) {
             String cmd = args[t];
             if ("--host".equals(cmd)) {
@@ -50,11 +52,16 @@ public class Main {
             if ("--config".equals(cmd)) {
                 assertExists("Config source is not defined.", t, args);
 
-            }
+                String cfg = args[++t];
 
+                if (cfg.startsWith("http") || cfg.startsWith("file")) {
+                    Config.load(new URL(cfg));
+                } else { // Treat as local file.
+                    Config.load(new File(cfg));
+                }
+            }
         }
     }
-
 
     private static void assertExists(String error, int t, String[] args) {
         if (t >= args.length) {
@@ -96,16 +103,32 @@ public class Main {
         return out;
     }
 
-    public static SecureRandom random()
-    {
+    public static SecureRandom random() {
         return secureRandom;
     }
 
-
     public static void start(boolean join) throws Exception {
-        Server server = new Server(port);
+
+        int p = 1887;
+        String b = "0.0.0.0";
+
+
+        if (port == null) {
+            p = Config.config().getProperty("console.bind.port", 1887);
+        } else {
+            p = port;
+        }
+
+        if (localAddress == null) {
+            b = Config.config().getProperty("console.bind.host", "0.0.0.0");
+        } else {
+            b = localAddress;
+        }
+
+
+        Server server = new Server(p);
         ServerConnector connector = new ServerConnector(server);
-        connector.setHost(localAddress);
+        connector.setHost(b);
         ContextHandler rpcHandler = new ContextHandler("/api");
         rpcHandler.setClassLoader(Thread.currentThread().getContextClassLoader());
         rpcHandler.setHandler(new ConsoleHandler());
