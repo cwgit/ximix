@@ -13,7 +13,7 @@ import java.util.Map;
  * Defines a command that can be rendered and triggered on the console.
  */
 public class Command {
-    private long id = 0;
+    private int id = 0;
     private String title = null;
     private String description = null;
     private List<ParameterInfo> parameters = new ArrayList<>();
@@ -21,20 +21,20 @@ public class Command {
     @JsonIgnore
     private Method method = null;
     @JsonIgnore
-    private NodeAdapter adapter = null;
+    private Object instance = null;
 
 
-    public Command(long id, String title, String description) {
+    public Command(int id, String title, String description) {
         this.id = id;
         this.title = title;
         this.description = description;
     }
 
-    public long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -70,12 +70,12 @@ public class Command {
         this.method = method;
     }
 
-    public NodeAdapter getAdapter() {
-        return adapter;
+    public Object getInstance() {
+        return instance;
     }
 
-    public void setAdapter(NodeAdapter adapter) {
-        this.adapter = adapter;
+    public void setInstance(Object instance) {
+        this.instance = instance;
     }
 
     @Override
@@ -92,6 +92,6 @@ public class Command {
 
     @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        return id;
     }
 }

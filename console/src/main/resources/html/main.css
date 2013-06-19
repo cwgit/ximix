@@ -58,6 +58,10 @@ body {
     font-size: 10pt;
 }
 
+table.nodetable {
+    width: 100%;
+}
+
 
 .command {
     margin-top: 2px;
@@ -65,6 +69,7 @@ body {
     border-radius: 4px;
     border: solid 1px grey;
     padding: 4px;
+    overflow: auto;
 }
 
 .commandtitle {
@@ -78,9 +83,27 @@ body {
     font-size: 10pt;
 }
 
+.commandform {
+      width: 100%;
+}
+
+.commandlabel {
+   display: block;
+   width: 700px;
+    overflow: auto;
+}
+
+.commandtext {
+    width: 200px;
+    display: inline-block;
+}
 
 
+.commandinput {
+    display: inline;
+    width: 450px;
+}
 
-table.nodetable {
-    width: 100%;
+.commandbutton {
+
 }
