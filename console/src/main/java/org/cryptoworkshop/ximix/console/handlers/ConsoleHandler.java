@@ -2,10 +2,13 @@ package org.cryptoworkshop.ximix.console.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
 import org.cryptoworkshop.ximix.console.NodeAdapter;
 import org.cryptoworkshop.ximix.console.adapters.MixnetCommandServiceAdapter;
+import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.console.util.Config;
+
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
@@ -15,7 +18,13 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+
 import java.util.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +45,7 @@ public class ConsoleHandler extends AbstractHandler {
     public ConsoleHandler() {
 
         try {
+
 
             StringTokenizer toke = new StringTokenizer(Config.config().getProperty("console.adapters"), ",");
             while (toke.hasMoreTokens()) {
@@ -62,6 +72,7 @@ public class ConsoleHandler extends AbstractHandler {
 
             mixnetCommandServiceAdapter = new MixnetCommandServiceAdapter();
 
+
             mixnetCommandServiceAdapter.init(null);       // TODO Discuss unified configuration across system.
             //mixnetCommandServiceAdapter.open();
 
@@ -73,8 +84,9 @@ public class ConsoleHandler extends AbstractHandler {
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
+        String reqUri = request.getRequestURI();
 
-        if ("/api/adapters".equals(request.getRequestURI())
+        if ("/api/adapters".equals(reqUri))
         {
             ArrayList<AdapterInfo> out = new ArrayList<>();
             Iterator<Map.Entry<String, Object>> it = adapterMap.entrySet().iterator();
@@ -87,16 +99,41 @@ public class ConsoleHandler extends AbstractHandler {
             return;
         }
 
-        if ("/api/nodes".equals(request.getRequestURI())) {
+
+
+        if ("/api/nodes".equals(reqUri)) {
             response.setContentType("application/json");
             writeObject(mixnetCommandServiceAdapter.getNodeInfo(), response);
             baseRequest.setHandled(true);
             return;
         }
 
-        if ("/api/commands".equals(request.getRequestURI())) {
+
+        if ("/api/commands".equals(reqUri)) {
             response.setContentType("application/json");
             writeObject(mixnetCommandServiceAdapter.getCommandList(), response);
+            baseRequest.setHandled(true);
+            return;
+        }
+
+        if ("/api/invoke".equals(reqUri)) {
+            StandardMessage ret = new StandardMessage(false, "Invalid command.");
+
+            String cmd = request.getParameter("cmd");
+            if (cmd != null) {
+
+
+                try {
+                    int id = Integer.valueOf(cmd);
+                    ret = mixnetCommandServiceAdapter.invoke(id,request.getParameterMap());
+                    L.info(request.getRemoteAddr()+" Invoked Command "+cmd+" with "+request.getParameterMap());
+                } catch (Exception nfe) {
+                    L.log(Level.WARNING,"Invalid command "+cmd, nfe);
+                }
+            }
+
+            response.setContentType("application/json");
+            writeObject(ret, response);
             baseRequest.setHandled(true);
             return;
         }

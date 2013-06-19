@@ -42,7 +42,7 @@ public class MixnetCommandServiceAdapter extends BaseNodeAdapter {
             configFile = (File) source;
         }
 
-        findCommands(this.getClass());
+        findCommands(this);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class MixnetCommandServiceAdapter extends BaseNodeAdapter {
         // TODO close it.
     }
 
-    @ConsoleCommand(name = "Do Shuffles & Move")
+    @ConsoleCommand(name = "Do Shuffle & Move")
     public StandardMessage doShuffleAndMove(
             @CommandParam(name = "Board Name")
             String boardName,
@@ -76,7 +76,7 @@ public class MixnetCommandServiceAdapter extends BaseNodeAdapter {
         //TODO add sensitisation.
 
 
-        //commandService.doShuffleAndMove(boardName, new ShuffleOptions.Builder(transformName, keyID).build(), nodes
+     //   commandService.doShuffleAndMove(boardName, new ShuffleOptions.Builder(transformName, keyID).build(), nodes);
 
         return new StandardMessage(true, "It worked.. not calling ximix method.");
 
@@ -93,10 +93,10 @@ public class MixnetCommandServiceAdapter extends BaseNodeAdapter {
 
             ArrayList<NodeDetail> details = new ArrayList<>();
 
-            details.add(new NodeDetail(1234,"Central Node"));
-            details.add(new NodeDetail(1234,"Lymph Node"));
-            details.add(new NodeDetail(1234,"Borg Node"));
-            details.add(new NodeDetail(1234,"Reference Node"));
+            details.add(new NodeDetail(1234,"Node 1"));
+            details.add(new NodeDetail(1234,"Node 2"));
+            details.add(new NodeDetail(1234,"Node 3"));
+            details.add(new NodeDetail(1234,"Node 4"));
 
 
 
