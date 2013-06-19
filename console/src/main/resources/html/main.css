@@ -27,12 +27,11 @@ body {
     padding: 2px;
 }
 
-#nodes {
+.nodes {
     width: 100%;
-
 }
 
-#commands {
+.commands {
     width: 100%;
 
 }

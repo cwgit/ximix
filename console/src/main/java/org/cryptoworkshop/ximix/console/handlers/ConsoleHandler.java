@@ -2,13 +2,10 @@ package org.cryptoworkshop.ximix.console.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-
 import org.cryptoworkshop.ximix.console.NodeAdapter;
-import org.cryptoworkshop.ximix.console.adapters.MixnetCommandServiceAdapter;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.console.util.Config;
-
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
@@ -18,13 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-
 import java.util.*;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,9 +26,9 @@ public class ConsoleHandler extends AbstractHandler {
 
     private static Logger L = Logger.getLogger("Console");
     private static ObjectMapper objectMapper = new ObjectMapper();
-    Map<String, Object> adapterMap = new HashMap<>();
-    private MixnetCommandServiceAdapter mixnetCommandServiceAdapter = null;
+    Map<String, NodeAdapter> adapterMap = new HashMap<>();
 
+    //    private MixnetCommandServiceAdapter mixnetCommandServiceAdapter = null;
     static {
         objectMapper.enable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
@@ -58,8 +49,8 @@ public class ConsoleHandler extends AbstractHandler {
                     Class cl = Class.forName(Config.config().getProperty(name + ".adapter"));
 
                     NodeAdapter adapter = (NodeAdapter) cl.newInstance();
-                    adapter.init(Config.getAdapterSubset(name));
-
+                    adapter.init(name, Config.getAdapterSubset(name));
+                    //      adapter.open(); // TODO this needs to happen as part of some sort of user initiated connect phase..
                     adapterMap.put(name, adapter);
 
                 } catch (Exception ex) {
@@ -70,10 +61,10 @@ public class ConsoleHandler extends AbstractHandler {
             }
 
 
-            mixnetCommandServiceAdapter = new MixnetCommandServiceAdapter();
-
-
-            mixnetCommandServiceAdapter.init(null);       // TODO Discuss unified configuration across system.
+//            mixnetCommandServiceAdapter = new MixnetCommandServiceAdapter();
+//
+//
+//            mixnetCommandServiceAdapter.init(null);       // TODO Discuss unified configuration across system.
             //mixnetCommandServiceAdapter.open();
 
         } catch (Exception e) {
@@ -85,13 +76,17 @@ public class ConsoleHandler extends AbstractHandler {
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
         String reqUri = request.getRequestURI();
+        String lastPart = null;
+        int a = reqUri.lastIndexOf('/');
+        if (a > -1 && a + 1 < reqUri.length()) {
+            lastPart = reqUri.substring(a + 1);
+        }
 
-        if ("/api/adapters".equals(reqUri))
-        {
+        if ("/api/adapters".equals(reqUri)) {
             ArrayList<AdapterInfo> out = new ArrayList<>();
-            Iterator<Map.Entry<String, Object>> it = adapterMap.entrySet().iterator();
+            Iterator<Map.Entry<String, NodeAdapter>> it = adapterMap.entrySet().iterator();
             while (it.hasNext()) {
-                out.add(((NodeAdapter) it.next().getValue()).getInfo());
+                out.add((it.next().getValue()).getInfo());
             }
             Collections.sort(out);
             writeObject(out, response);
@@ -100,23 +95,48 @@ public class ConsoleHandler extends AbstractHandler {
         }
 
 
-
-        if ("/api/nodes".equals(reqUri)) {
+        if (reqUri.startsWith("/api/nodes")) {
             response.setContentType("application/json");
-            writeObject(mixnetCommandServiceAdapter.getNodeInfo(), response);
+            NodeAdapter adapter = adapterMap.get(lastPart);
+            if (adapter == null) {
+                writeObject(new StandardMessage(false, "Unknown adapter."), response);
+                baseRequest.setHandled(true);
+                return;
+            }
+
+            writeObject(adapter.getNodeInfo(), response);
+            baseRequest.setHandled(true);
+            return;
+
+        }
+
+
+        if (reqUri.startsWith("/api/commands")) {
+            response.setContentType("application/json");
+
+            NodeAdapter adapter = adapterMap.get(lastPart);
+            if (adapter == null) {
+                writeObject(new StandardMessage(false, "Unknown adapter."), response);
+                baseRequest.setHandled(true);
+                return;
+            }
+
+
+            writeObject(adapter.getCommandList(), response);
             baseRequest.setHandled(true);
             return;
         }
 
+        if (reqUri.startsWith("/api/invoke")) {
 
-        if ("/api/commands".equals(reqUri)) {
-            response.setContentType("application/json");
-            writeObject(mixnetCommandServiceAdapter.getCommandList(), response);
-            baseRequest.setHandled(true);
-            return;
-        }
+            NodeAdapter adapter = adapterMap.get(lastPart);
+            if (adapter == null) {
+                writeObject(new StandardMessage(false, "Unknown adapter."), response);
+                baseRequest.setHandled(true);
+                return;
+            }
 
-        if ("/api/invoke".equals(reqUri)) {
+
             StandardMessage ret = new StandardMessage(false, "Invalid command.");
 
             String cmd = request.getParameter("cmd");
@@ -125,10 +145,10 @@ public class ConsoleHandler extends AbstractHandler {
 
                 try {
                     int id = Integer.valueOf(cmd);
-                    ret = mixnetCommandServiceAdapter.invoke(id,request.getParameterMap());
-                    L.info(request.getRemoteAddr()+" Invoked Command "+cmd+" with "+request.getParameterMap());
+                    ret = adapter.invoke(id, request.getParameterMap());
+                    L.info(request.getRemoteAddr() + " Invoked Command " + cmd + " with " + request.getParameterMap());
                 } catch (Exception nfe) {
-                    L.log(Level.WARNING,"Invalid command "+cmd, nfe);
+                    L.log(Level.WARNING, "Invalid command " + cmd, nfe);
                 }
             }
 

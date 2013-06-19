@@ -19,7 +19,7 @@ jQuery.ajaxSetup({
 var multipleInput = {}
 
 function fetchNodes() {
-    $.post("/api/nodes", null, function (data) {
+    $.post("/api/nodes/mixnetadmin", null, function (data) {
         if (data != null) {
 
             for(t=0; t<data.length; t++) {
@@ -87,7 +87,7 @@ function formType(index, command, parameter, ui_parent)
 //
 
 function fetchCommands() {
-    $.post("/api/commands", null, function (data) {
+    $.post("/api/commands/mixnetadmin", null, function (data) {
 
         console.log(data);
 
@@ -105,7 +105,7 @@ function fetchCommands() {
                     outer.append("<div class='commandtitle'>"+node.title+"</div>");
                     form = $("<form class='commandform' id='cmd"+node.id+"'>");
                     form.submit(function() {
-                        $.post("/api/invoke",form.serialize(), function (data) {
+                        $.post("/api/invoke/mixnetadmin",form.serialize(), function (data) {
                             console.log(data);
                         });
                         return false;

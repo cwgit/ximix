@@ -36,6 +36,7 @@ public class Main {
     }
 
     public static void init(String[] args) throws Exception {
+
         for (int t = 0; t < args.length; t++) {
             String cmd = args[t];
             if ("--host".equals(cmd)) {
@@ -60,6 +61,11 @@ public class Main {
                     Config.load(new File(cfg));
                 }
             }
+        }
+
+        if (!Config.isLoaded())
+        {
+             Config.load(new File("./conf/config.properties"));
         }
     }
 

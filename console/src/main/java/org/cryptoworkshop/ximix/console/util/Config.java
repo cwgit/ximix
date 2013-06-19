@@ -17,6 +17,7 @@ public class Config {
 
 
     private static Config config = null;
+    private static boolean loaded = false;
     private Properties properties = new Properties();
 
     private Config() {
@@ -66,17 +67,21 @@ public class Config {
         while (e.hasMoreElements()) {
             String o = e.nextElement().toString();
             if (o.startsWith(prefix)) {
-                o = o.substring(o.indexOf('.', prefix.length()) + 1);
+                cfg.properties.put(o.substring(o.indexOf('.', prefix.length()) + 1), config.properties.getProperty(o.toString()));
             }
-            cfg.properties.put(o, config.properties.getProperty(o.toString()));
         }
 
-        return config;
+        return cfg;
     }
 
     public static Config load(Object source) throws Exception {
         config = new Config(source);
+        loaded = true;
         return config;
+    }
+
+    public static boolean isLoaded() {
+        return loaded;
     }
 
     public String getProperty(String name, String def) {

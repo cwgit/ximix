@@ -7,6 +7,7 @@ import org.cryptoworkshop.ximix.console.NodeAdapter;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.Command;
 import org.cryptoworkshop.ximix.console.model.ParameterInfo;
+import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -24,12 +25,13 @@ public abstract class BaseNodeAdapter implements NodeAdapter {
 
     protected List<Command> commandList = new ArrayList<>();
     protected Map<Integer, Command> idToCommand = new ConcurrentHashMap<>();
-
+    protected String name = null;
 
     public BaseNodeAdapter() {
 
     }
 
+    @Override
     public StandardMessage invoke(int id, Map<String, String[]> params) {
         Command cmd = idToCommand.get(id);
         if (cmd == null) {
@@ -77,6 +79,7 @@ public abstract class BaseNodeAdapter implements NodeAdapter {
 
     }
 
+    @Override
     public List<Command> getCommandList() {
         return commandList;
     }
@@ -176,6 +179,22 @@ public abstract class BaseNodeAdapter implements NodeAdapter {
             }
             throw new IllegalArgumentException("Command parameter annotation missing.");
         }
+    }
+
+    public Map<Integer, Command> getIdToCommand() {
+        return idToCommand;
+    }
+
+    public void setIdToCommand(Map<Integer, Command> idToCommand) {
+        this.idToCommand = idToCommand;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
 

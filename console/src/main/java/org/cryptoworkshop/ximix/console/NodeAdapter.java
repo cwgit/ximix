@@ -1,11 +1,14 @@
 package org.cryptoworkshop.ximix.console;
 
+import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.console.model.Command;
 import org.cryptoworkshop.ximix.console.util.Config;
 import org.cryptoworkshop.ximix.console.util.Traversal;
+import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -25,7 +28,13 @@ public interface NodeAdapter {
      */
     void close() throws Exception;
 
-    void init(Config config) throws Exception;
+    void init(String name, Config config) throws Exception;
 
     AdapterInfo getInfo();
+
+    List<Command> getCommandList();
+
+    List<NodeDetail> getNodeInfo();
+
+    StandardMessage invoke(int id, Map<String, String[]> params);
 }
