@@ -1,4 +1,23 @@
+/**
+ * Copyright 2013 Crypto Workshop Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.cryptoworkshop.ximix.console.adapters;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
 import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
@@ -12,14 +31,12 @@ import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * An adapter for the Mixnet commands service.
  */
-public class MixnetCommandServiceAdapter extends BaseNodeAdapter {
+public class MixnetCommandServiceAdapter
+    extends BaseNodeAdapter
+{
 
     protected File configFile = null;
     protected XimixRegistrar registrar = null;
@@ -29,12 +46,15 @@ public class MixnetCommandServiceAdapter extends BaseNodeAdapter {
     protected Config config = null;
 
 
-    public MixnetCommandServiceAdapter() {
+    public MixnetCommandServiceAdapter()
+    {
         super();
     }
 
     @Override
-    public void init(String name, Config config) throws Exception {
+    public void init(String name, Config config)
+        throws Exception
+    {
         this.name = name;
         this.config = config;
         this.configFile = new File(config.getProperty("config.file"));
@@ -43,49 +63,61 @@ public class MixnetCommandServiceAdapter extends BaseNodeAdapter {
     }
 
     @Override
-    public AdapterInfo getInfo() {
+    public AdapterInfo getInfo()
+    {
         AdapterInfo info = new AdapterInfo();
         info.setName("Mixnet Admin");
         info.setDescription("Admin console for MixNet");
         return info;
     }
 
-    public void init(Object source) throws Exception {
+    public void init(Object source)
+        throws Exception
+    {
 
-        if (source instanceof File) {
-            configFile = (File) source;
+        if (source instanceof File)
+        {
+            configFile = (File)source;
         }
 
         findCommands(this);
     }
 
     @Override
-    public void open() throws Exception {
-        try {
+    public void open()
+        throws Exception
+    {
+        try
+        {
             registrar = XimixRegistrarFactory.createAdminServiceRegistrar(configFile);
             commandService = registrar.connect(MixnetCommandService.class);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             isOpen = false;
             throw new RuntimeException(ex); // TODO handle this better.
         }
     }
 
     @Override
-    public void close() throws Exception {
+    public void close()
+        throws Exception
+    {
         // TODO close it.
     }
 
     @ConsoleCommand(name = "Do Shuffle & Move")
     public StandardMessage doShuffleAndMove(
-            @CommandParam(name = "Board Name")
-            String boardName,
-            @CommandParam(name = "Transform Name")
-            String transformName,
-            @CommandParam(name = "Key id")
-            String keyID,
-            @CommandParam(name = "Nodes")
-            String... nodes)
-            throws ServiceConnectionException {
+        @CommandParam(name = "Board Name")
+        String boardName,
+        @CommandParam(name = "Transform Name")
+        String transformName,
+        @CommandParam(name = "Key id")
+        String keyID,
+        @CommandParam(name = "Nodes")
+        String... nodes)
+        throws ServiceConnectionException
+    {
 
         //TODO add sensitisation.
 
@@ -98,7 +130,8 @@ public class MixnetCommandServiceAdapter extends BaseNodeAdapter {
     }
 
     @Override
-    public List<NodeDetail> getNodeInfo() {
+    public List<NodeDetail> getNodeInfo()
+    {
 
         //
         // The following may seem like overkill but it allows us to
