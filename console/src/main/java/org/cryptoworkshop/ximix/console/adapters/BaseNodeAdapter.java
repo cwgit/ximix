@@ -15,6 +15,16 @@
  */
 package org.cryptoworkshop.ximix.console.adapters;
 
+import org.cryptoworkshop.ximix.common.conf.Config;
+import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
+import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
+import org.cryptoworkshop.ximix.console.Main;
+import org.cryptoworkshop.ximix.console.NodeAdapter;
+import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
+import org.cryptoworkshop.ximix.console.model.Command;
+import org.cryptoworkshop.ximix.console.model.ParameterInfo;
+import org.w3c.dom.Node;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -23,23 +33,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
-import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
-import org.cryptoworkshop.ximix.console.Main;
-import org.cryptoworkshop.ximix.console.NodeAdapter;
-import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
-import org.cryptoworkshop.ximix.console.model.Command;
-import org.cryptoworkshop.ximix.console.model.ParameterInfo;
-
 /**
  *
  */
 public abstract class BaseNodeAdapter
-    implements NodeAdapter
+        implements NodeAdapter
 {
     protected List<Command> commandList = new ArrayList<>();
     protected Map<Integer, Command> idToCommand = new ConcurrentHashMap<>();
+    protected String id = null;
     protected String name = null;
+    protected String description = null;
+    protected boolean opened = false;
 
     public BaseNodeAdapter()
     {
@@ -47,8 +52,30 @@ public abstract class BaseNodeAdapter
     }
 
     @Override
+    public void init(Config config, Node configRoot) throws Exception
+    {
+        id = Config.getValueOf(configRoot.getChildNodes(), "id");
+        name = Config.getValueOf(configRoot.getChildNodes(), "name");
+        description = Config.getValueOf(configRoot.getChildNodes(), "description");
+    }
+
+    @Override
+    public String getCommandNameForId(int id)
+    {
+        Command cmd = idToCommand.get(id);
+
+        if (cmd == null)
+        {
+            return "Unknown.";
+        }
+
+        return cmd.getMethod().getName();
+    }
+
+    @Override
     public StandardMessage invoke(int id, Map<String, String[]> params)
     {
+
         Command cmd = idToCommand.get(id);
         if (cmd == null)
         {
@@ -73,8 +100,7 @@ public abstract class BaseNodeAdapter
             if (types[t].isArray())
             {
                 p[t] = v;
-            }
-            else
+            } else
             {
                 if (p.length == 0)
                 {
@@ -86,19 +112,29 @@ public abstract class BaseNodeAdapter
 
         try
         {
+            //
+            // Check it is open.
+            //
+            synchronized (this)
+            {
+                if (!opened)
+                {
+                    open();
+                }
+            }
+
             Object o = m.invoke(cmd.getInstance(), p);
 
             if (o instanceof StandardMessage)
             {
-                return (StandardMessage)o;
+                return (StandardMessage) o;
             }
 
-        }
-        catch (Exception ex)
+        } catch (Exception ex)
         {
             //TODO Ask about preferred logging framework.
             ex.printStackTrace();
-            return new StandardMessage(false, "Unable to invoke method.");
+            return new StandardMessage(false, "Exception occurred during call, see server log.");
         }
 
 
@@ -118,7 +154,7 @@ public abstract class BaseNodeAdapter
     }
 
     protected void findCommands(Object... instances)
-        throws Exception
+            throws Exception
     {
         for (Object o : instances)
         {
@@ -156,7 +192,7 @@ public abstract class BaseNodeAdapter
     }
 
     private void scanParameters(Object m, List<ParameterInfo> parameterList)
-        throws Exception
+            throws Exception
     {
 
         Class[] types = null;
@@ -164,16 +200,14 @@ public abstract class BaseNodeAdapter
 
         if (m instanceof Method)
         {
-            types = ((Method)m).getParameterTypes();
-            annotations = ((Method)m).getParameterAnnotations();
+            types = ((Method) m).getParameterTypes();
+            annotations = ((Method) m).getParameterAnnotations();
 
-        }
-        else if (m instanceof Constructor)
+        } else if (m instanceof Constructor)
         {
-            types = ((Constructor)m).getParameterTypes();
-            annotations = ((Constructor)m).getParameterAnnotations();
-        }
-        else
+            types = ((Constructor) m).getParameterTypes();
+            annotations = ((Constructor) m).getParameterAnnotations();
+        } else
         {
             throw new IllegalAccessException("m is not Method or Constructor.");
         }
@@ -199,11 +233,10 @@ public abstract class BaseNodeAdapter
 
                     if (type.isPrimitive() || Number.class.isAssignableFrom(type) || String.class == type)
                     {
-                        ParameterInfo pinfo = new ParameterInfo(((CommandParam)a).name(), ((CommandParam)a).description());
+                        ParameterInfo pinfo = new ParameterInfo(((CommandParam) a).name(), ((CommandParam) a).description());
                         pinfo.setVargs(array);
                         parameterList.add(pinfo);
-                    }
-                    else
+                    } else
                     {
                         //
                         // Some sort of object..
@@ -215,7 +248,7 @@ public abstract class BaseNodeAdapter
                         {
                             if (c.isAnnotationPresent(CommandParam.class))
                             {
-                                ParameterInfo info = new ParameterInfo(((CommandParam)a).name(), ((CommandParam)a).description());
+                                ParameterInfo info = new ParameterInfo(((CommandParam) a).name(), ((CommandParam) a).description());
                                 info.setVargs(array);
                                 info.addParameterInfo(null); // Establishes list.
                                 parameterList.add(info);
@@ -242,6 +275,18 @@ public abstract class BaseNodeAdapter
         this.idToCommand = idToCommand;
     }
 
+    @Override
+    public String getId()
+    {
+        return id;
+    }
+
+    public void setId(String name)
+    {
+        this.id = name;
+    }
+
+    @Override
     public String getName()
     {
         return name;
@@ -252,5 +297,14 @@ public abstract class BaseNodeAdapter
         this.name = name;
     }
 
+    @Override
+    public String getDescription()
+    {
+        return description;
+    }
 
+    public void setDescription(String description)
+    {
+        this.description = description;
+    }
 }

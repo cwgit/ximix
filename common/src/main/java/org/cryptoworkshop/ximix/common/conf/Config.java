@@ -15,47 +15,80 @@
  */
 package org.cryptoworkshop.ximix.common.conf;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class Config {
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Config
+{
     private Element xmlNode;
 
     public Config(File configFile)
-            throws ConfigException {
-        try {
+            throws ConfigException
+    {
+        try
+        {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = dbFactory.newDocumentBuilder();
 
             Document doc = docBuilder.parse(configFile);
 
             xmlNode = doc.getDocumentElement();
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
             throw new ConfigException("error: " + e.getMessage(), e);
         }
     }
 
     public Config(Node xmlNode)
-            throws ConfigException {
+            throws ConfigException
+    {
         this.xmlNode = (Element) xmlNode;
     }
 
+    public static String getValueOf(NodeList nl, String name)
+    {
+        for (int t = 0; t < nl.getLength(); t++)
+        {
+            if (name.equals(nl.item(t).getNodeName()))
+            {
+                return nl.item(t).getTextContent();
+            }
+        }
+        return null;
+    }
+
+    public static Node getNodeOf(NodeList nl, String name) throws Exception
+    {
+        for (int t = 0; t < nl.getLength(); t++)
+        {
+            if (name.equals(nl.item(t).getNodeName()))
+            {
+                return nl.item(t);
+            }
+        }
+        throw new ConfigException("Node '"+name+"' was not found.");
+    }
+
+
+
     public int getIntegerProperty(String name)
-            throws ConfigException {
+            throws ConfigException
+    {
         String[] path = name.split("\\.");
 
-        for (String elementName : path) {
+        for (String elementName : path)
+        {
             NodeList list = xmlNode.getElementsByTagName(elementName);
-            if (list.item(0).getNodeName().equals(path[path.length - 1])) {
+            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
                 return Integer.parseInt(list.item(0).getTextContent());
             }
         }
@@ -63,17 +96,82 @@ public class Config {
         throw new ConfigException("property " + name + " not found");
     }
 
+    public Integer getIntegerProperty(String name, Integer def)
+            throws ConfigException
+    {
+        String[] path = name.split("\\.");
+
+        for (String elementName : path)
+        {
+            NodeList list = xmlNode.getElementsByTagName(elementName);
+
+            if (list == null)
+            {
+                throw new ConfigException("Path element '" + elementName + "' from '" + name + "' was not found.");
+            }
+
+            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
+                return Integer.parseInt(list.item(0).getTextContent());
+            }
+        }
+
+        return def;
+    }
+
+    public String getStringProperty(String name, String def)
+            throws ConfigException
+    {
+        String[] path = name.split("\\.");
+
+        for (String elementName : path)
+        {
+            NodeList list = xmlNode.getElementsByTagName(elementName);
+
+            if (list.item(0) == null)
+            {
+                throw new ConfigException("Path element '" + elementName + "' from '" + name + "' was not found.");
+            }
+
+            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
+                return list.item(0).getTextContent();
+            }
+        }
+
+        return def;
+
+    }
+
+    public NodeList getNodeList(String name) throws ConfigException
+    {
+        String[] path = name.split("\\.");
+
+        for (String elementName : path)
+        {
+            NodeList list = xmlNode.getElementsByTagName(elementName);
+            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
+                return list.item(0).getChildNodes();
+            }
+        }
+        throw new ConfigException("property " + name + " not found");
+    }
 
     public <T> List<T> getConfigObjects(String name, ConfigObjectFactory<T> factory)
-            throws ConfigException {
+            throws ConfigException
+    {
         List<T> configs = new ArrayList<T>();
 
         String[] path = name.split("\\.");
 
-        for (String elementName : path) {
+        for (String elementName : path)
+        {
             NodeList list = xmlNode.getElementsByTagName(elementName);
-            if (list.item(0).getNodeName().equals(path[path.length - 1])) {
-                for (int i = 0; i != list.getLength(); i++) {
+            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
+                for (int i = 0; i != list.getLength(); i++)
+                {
                     configs.add(factory.createObject(list.item(i)));
                 }
 

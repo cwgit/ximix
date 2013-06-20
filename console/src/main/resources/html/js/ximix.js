@@ -105,8 +105,19 @@ function fetchCommands() {
                     outer.append("<div class='commandtitle'>"+node.title+"</div>");
                     form = $("<form class='commandform' id='cmd"+node.id+"'>");
                     form.submit(function() {
+                        $("#"+node.id+"_command_err").hide();
+                        $("#"+node.id+"_command_err").html("");
+
+
                         $.post("/api/invoke/mixnetadmin",form.serialize(), function (data) {
-                            console.log(data);
+                            if (data != null)
+                            {
+                                if (data.successful == false)
+                                {
+                                    $("#"+node.id+"_command_err").html(data.message);
+                                    $("#"+node.id+"_command_err").show();
+                                }
+                            }
                         });
                         return false;
                     });
@@ -132,6 +143,7 @@ function fetchCommands() {
                         }
                     }
                     form.append("<input type='submit' class='commandbutton' value='Invoke'/>");
+                    outer.append("<div id='"+node.id+"_command_err' class='errortxt' style='display:none'></div>");
                 }
             }
         }

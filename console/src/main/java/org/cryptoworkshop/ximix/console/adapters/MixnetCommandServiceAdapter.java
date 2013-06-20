@@ -15,33 +15,33 @@
  */
 package org.cryptoworkshop.ximix.console.adapters;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
+import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
 import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
-import org.cryptoworkshop.ximix.console.util.Config;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
+import org.w3c.dom.Node;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An adapter for the Mixnet commands service.
  */
 public class MixnetCommandServiceAdapter
-    extends BaseNodeAdapter
+        extends BaseNodeAdapter
 {
 
     protected File configFile = null;
     protected XimixRegistrar registrar = null;
     protected MixnetCommandService commandService = null;
-    protected boolean isOpen = false;
     protected Class commandType = MixnetCommandService.class;
     protected Config config = null;
 
@@ -51,72 +51,72 @@ public class MixnetCommandServiceAdapter
         super();
     }
 
-    @Override
-    public void init(String name, Config config)
-        throws Exception
-    {
-        this.name = name;
-        this.config = config;
-        this.configFile = new File(config.getProperty("config.file"));
-        commandList = new ArrayList<>();
-        findCommands(this);
-    }
+
+//    @Override
+//    public void init(String name, Config config)
+//            throws Exception
+//    {
+//        this.id = name;
+//        this.config = config;
+//        // this.configFile = new File(config.getProperty("config.file"));
+//        commandList = new ArrayList<>();
+//        findCommands(this);
+//    }
 
     @Override
     public AdapterInfo getInfo()
     {
         AdapterInfo info = new AdapterInfo();
-        info.setName("Mixnet Admin");
-        info.setDescription("Admin console for MixNet");
+        info.setId(id);
+        info.setName(name);
+        info.setDescription(description);
         return info;
     }
 
-    public void init(Object source)
-        throws Exception
+    @Override
+    public void init(Config config, Node configRoot) throws Exception
     {
-
-        if (source instanceof File)
-        {
-            configFile = (File)source;
-        }
-
+        commandList = new ArrayList<>();
+        super.init(config, configRoot);
+        Node nl = Config.getNodeOf(configRoot.getChildNodes(),"adapter-config");
+        configFile = new File(Config.getValueOf(nl.getChildNodes(),"config-file"));
         findCommands(this);
     }
 
     @Override
     public void open()
-        throws Exception
+            throws Exception
     {
         try
         {
             registrar = XimixRegistrarFactory.createAdminServiceRegistrar(configFile);
             commandService = registrar.connect(MixnetCommandService.class);
-        }
-        catch (Exception ex)
+        } catch (Exception ex)
         {
-            isOpen = false;
             throw new RuntimeException(ex); // TODO handle this better.
         }
+
+        opened = true;
     }
 
     @Override
     public void close()
-        throws Exception
+            throws Exception
     {
         // TODO close it.
     }
 
     @ConsoleCommand(name = "Do Shuffle & Move")
     public StandardMessage doShuffleAndMove(
-        @CommandParam(name = "Board Name")
-        String boardName,
-        @CommandParam(name = "Transform Name")
-        String transformName,
-        @CommandParam(name = "Key id")
-        String keyID,
-        @CommandParam(name = "Nodes")
-        String... nodes)
-        throws ServiceConnectionException
+            @CommandParam(name = "Board Name")
+            String boardName,
+            @CommandParam(name = "Transform Name")
+            String transformName,
+            @CommandParam(name = "Key id")
+            String keyID,
+            @CommandParam(name = "Nodes")
+            String... nodes)
+            throws ServiceConnectionException
     {
 
         //TODO add sensitisation.
