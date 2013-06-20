@@ -8,7 +8,8 @@ import java.util.List;
 /**
  *
  */
-public class NodeManager {
+public class NodeManager
+{
 
     private static NodeManager nodeManager = new NodeManager();
 
@@ -30,17 +31,16 @@ public class NodeManager {
 
     /**
      * Traverse the list of nodes.
-     * @param adapters  The adapter.
+     *
+     * @param adapters The adapter.
      */
     void nodes(Traversal<NodeAdapter> adapters)
     {
-        for (NodeAdapter na: nodes)
+        for (NodeAdapter na : nodes)
         {
             adapters.element(na);
         }
     }
-
-
 
 
 }

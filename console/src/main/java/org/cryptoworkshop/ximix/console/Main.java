@@ -8,7 +8,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
-import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.security.SecureRandom;
@@ -49,8 +48,8 @@ public class Main
 
         config = new Config(new File(args[0]));
 
-        localAddress = config.getStringProperty("http.bind-host",localAddress);
-        port = config.getIntegerProperty("http.bind-port",port);
+        localAddress = config.getStringProperty("http.bind-host", localAddress);
+        port = config.getIntegerProperty("http.bind-port", port);
 
     }
 
@@ -110,8 +109,6 @@ public class Main
 
     public static void start(boolean join) throws Exception
     {
-
-
 
 
 //        if (port == null)

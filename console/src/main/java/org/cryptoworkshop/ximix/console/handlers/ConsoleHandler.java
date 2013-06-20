@@ -3,7 +3,6 @@ package org.cryptoworkshop.ximix.console.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.cryptoworkshop.ximix.common.conf.Config;
-import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.console.NodeAdapter;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
@@ -54,13 +53,13 @@ public class ConsoleHandler extends AbstractHandler
 
                     NodeList nl = n.getChildNodes();
 
-                    String cl = Config.getValueOf(nl,"class");
+                    String cl = Config.getValueOf(nl, "class");
                     if (cl != null)
                     {
-                        NodeAdapter na = (NodeAdapter)Class.forName(cl).newInstance();
-                        na.init(config,n);
+                        NodeAdapter na = (NodeAdapter) Class.forName(cl).newInstance();
+                        na.init(config, n);
 
-                        adapterMap.put(na.getId(),na);
+                        adapterMap.put(na.getId(), na);
                     }
 
 
@@ -189,7 +188,7 @@ public class ConsoleHandler extends AbstractHandler
                 {
                     int id = Integer.valueOf(cmd);
                     ret = adapter.invoke(id, request.getParameterMap());
-                    L.info(request.getRemoteAddr() + " Invoked Command method '" + adapter.getCommandNameForId(id)+" in "+ adapter.getId() + " ("+adapter.getClass().getName()+")"+  "' with " + request.getParameterMap());
+                    L.info(request.getRemoteAddr() + " Invoked Command method '" + adapter.getCommandNameForId(id) + " in " + adapter.getId() + " (" + adapter.getClass().getName() + ")" + "' with " + request.getParameterMap());
                 } catch (Exception nfe)
                 {
                     L.log(Level.WARNING, "Invalid command " + cmd, nfe);

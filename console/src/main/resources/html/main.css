@@ -6,7 +6,6 @@ body {
     font-color: #0000CC;
 }
 
-
 #content {
     width: 800px;
     margin-left: auto;
@@ -36,8 +35,6 @@ body {
 
 }
 
-
-
 .node {
     margin-top: 2px;
     margin-bottom: 2px;
@@ -61,7 +58,6 @@ table.nodetable {
     width: 100%;
 }
 
-
 .command {
     margin-top: 2px;
     margin-bottom: 2px;
@@ -83,12 +79,12 @@ table.nodetable {
 }
 
 .commandform {
-      width: 100%;
+    width: 100%;
 }
 
 .commandlabel {
-   display: block;
-   width: 700px;
+    display: block;
+    width: 700px;
     overflow: auto;
 }
 
@@ -96,7 +92,6 @@ table.nodetable {
     width: 200px;
     display: inline-block;
 }
-
 
 .commandinput {
     display: inline;

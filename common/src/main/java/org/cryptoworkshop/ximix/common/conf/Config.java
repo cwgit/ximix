@@ -19,19 +19,19 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class Config
 {
     private Element xmlNode;
 
     public Config(File configFile)
-            throws ConfigException
+        throws ConfigException
     {
         try
         {
@@ -41,16 +41,18 @@ public class Config
             Document doc = docBuilder.parse(configFile);
 
             xmlNode = doc.getDocumentElement();
-        } catch (Exception e)
+
+        }
+        catch (Exception e)
         {
             throw new ConfigException("error: " + e.getMessage(), e);
         }
     }
 
     public Config(Node xmlNode)
-            throws ConfigException
+        throws ConfigException
     {
-        this.xmlNode = (Element) xmlNode;
+        this.xmlNode = (Element)xmlNode;
     }
 
     public static String getValueOf(NodeList nl, String name)
@@ -80,7 +82,7 @@ public class Config
 
 
     public int getIntegerProperty(String name)
-            throws ConfigException
+        throws ConfigException
     {
         String[] path = name.split("\\.");
 
@@ -160,6 +162,7 @@ public class Config
 
     public <T> List<T> getConfigObjects(String name, ConfigObjectFactory<T> factory)
             throws ConfigException
+
     {
         List<T> configs = new ArrayList<T>();
 

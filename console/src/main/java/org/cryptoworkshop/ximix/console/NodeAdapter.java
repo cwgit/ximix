@@ -7,7 +7,6 @@ import org.cryptoworkshop.ximix.console.model.Command;
 import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
 import org.w3c.dom.Node;
 
-
 import java.util.List;
 import java.util.Map;
 
@@ -15,8 +14,8 @@ import java.util.Map;
 /**
  * A basic interface to define a Node Adapter.
  */
-public interface NodeAdapter {
-
+public interface NodeAdapter
+{
 
 
     /**

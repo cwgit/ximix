@@ -1,18 +1,16 @@
 package org.cryptoworkshop.ximix.console.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.cryptoworkshop.ximix.console.NodeAdapter;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Defines a command that can be rendered and triggered on the console.
  */
-public class Command {
+public class Command
+{
     private int id = 0;
     private String title = null;
     private String description = null;
@@ -24,62 +22,76 @@ public class Command {
     private Object instance = null;
 
 
-    public Command(int id, String title, String description) {
+    public Command(int id, String title, String description)
+    {
         this.id = id;
         this.title = title;
         this.description = description;
     }
 
-    public int getId() {
+    public int getId()
+    {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(int id)
+    {
         this.id = id;
     }
 
-    public String getTitle() {
+    public String getTitle()
+    {
         return title;
     }
 
-    public void setTitle(String title) {
+    public void setTitle(String title)
+    {
         this.title = title;
     }
 
-    public String getDescription() {
+    public String getDescription()
+    {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(String description)
+    {
         this.description = description;
     }
 
-    public List<ParameterInfo> getParameters() {
+    public List<ParameterInfo> getParameters()
+    {
         return parameters;
     }
 
-    public void setParameters(List<ParameterInfo> parameters) {
+    public void setParameters(List<ParameterInfo> parameters)
+    {
         this.parameters = parameters;
     }
 
-    public Method getMethod() {
+    public Method getMethod()
+    {
         return method;
     }
 
-    public void setMethod(Method method) {
+    public void setMethod(Method method)
+    {
         this.method = method;
     }
 
-    public Object getInstance() {
+    public Object getInstance()
+    {
         return instance;
     }
 
-    public void setInstance(Object instance) {
+    public void setInstance(Object instance)
+    {
         this.instance = instance;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(Object o)
+    {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -91,7 +103,8 @@ public class Command {
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode()
+    {
         return id;
     }
 }

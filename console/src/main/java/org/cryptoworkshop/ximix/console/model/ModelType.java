@@ -3,6 +3,7 @@ package org.cryptoworkshop.ximix.console.model;
 /**
  *
  */
-public enum ModelType {
+public enum ModelType
+{
     IN_MEMORY
 }

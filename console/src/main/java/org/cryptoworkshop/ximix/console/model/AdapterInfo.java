@@ -3,42 +3,51 @@ package org.cryptoworkshop.ximix.console.model;
 /**
  *
  */
-public class AdapterInfo implements Comparable<AdapterInfo> {
+public class AdapterInfo implements Comparable<AdapterInfo>
+{
 
     private String id = null;
     private String name = null;
     private String description = null;
 
-    public AdapterInfo() {
+    public AdapterInfo()
+    {
 
     }
 
-    public String getId() {
+    public String getId()
+    {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(String id)
+    {
         this.id = id;
     }
 
-    public String getName() {
+    public String getName()
+    {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(String name)
+    {
         this.name = name;
     }
 
-    public String getDescription() {
+    public String getDescription()
+    {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(String description)
+    {
         this.description = description;
     }
 
     @Override
-    public int compareTo(AdapterInfo o) {
+    public int compareTo(AdapterInfo o)
+    {
         return name.compareTo(o.getName());
     }
 }

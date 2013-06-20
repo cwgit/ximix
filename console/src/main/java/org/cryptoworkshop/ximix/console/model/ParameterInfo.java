@@ -6,12 +6,13 @@ import java.util.List;
 /**
  *
  */
-public class ParameterInfo {
+public class ParameterInfo
+{
     String name = null;
     String description = null;
     int maxCount = 1;
     int minCount = 1;
-    boolean vargs =false;
+    boolean vargs = false;
     List<ParameterInfo> parameters = null;
 
 
@@ -33,57 +34,72 @@ public class ParameterInfo {
             parameters = new ArrayList<>();
         }
 
-        if (info == null) {return;}
+        if (info == null)
+        {
+            return;
+        }
 
         parameters.add(info);
     }
 
 
-    public String getName() {
+    public String getName()
+    {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(String name)
+    {
         this.name = name;
     }
 
-    public String getDescription() {
+    public String getDescription()
+    {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(String description)
+    {
         this.description = description;
     }
 
-    public int getMaxCount() {
+    public int getMaxCount()
+    {
         return maxCount;
     }
 
-    public void setMaxCount(int maxCount) {
+    public void setMaxCount(int maxCount)
+    {
         this.maxCount = maxCount;
     }
 
-    public int getMinCount() {
+    public int getMinCount()
+    {
         return minCount;
     }
 
-    public void setMinCount(int minCount) {
+    public void setMinCount(int minCount)
+    {
         this.minCount = minCount;
     }
 
-    public List<ParameterInfo> getParameters() {
+    public List<ParameterInfo> getParameters()
+    {
         return parameters;
     }
 
-    public void setParameters(List<ParameterInfo> parameters) {
+    public void setParameters(List<ParameterInfo> parameters)
+    {
         this.parameters = parameters;
     }
 
-    public boolean isVargs() {
+    public boolean isVargs()
+    {
         return vargs;
     }
 
-    public void setVargs(boolean vargs) {
+    public void setVargs(boolean vargs)
+    {
         this.vargs = vargs;
     }
 }

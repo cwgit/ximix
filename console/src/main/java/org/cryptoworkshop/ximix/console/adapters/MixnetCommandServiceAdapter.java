@@ -78,8 +78,8 @@ public class MixnetCommandServiceAdapter
     {
         commandList = new ArrayList<>();
         super.init(config, configRoot);
-        Node nl = Config.getNodeOf(configRoot.getChildNodes(),"adapter-config");
-        configFile = new File(Config.getValueOf(nl.getChildNodes(),"config-file"));
+        Node nl = Config.getNodeOf(configRoot.getChildNodes(), "adapter-config");
+        configFile = new File(Config.getValueOf(nl.getChildNodes(), "config-file"));
         findCommands(this);
     }
 

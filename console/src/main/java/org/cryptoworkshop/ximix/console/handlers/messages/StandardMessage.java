@@ -3,13 +3,15 @@ package org.cryptoworkshop.ximix.console.handlers.messages;
 /**
  * Base of all message objects.
  */
-public class StandardMessage {
+public class StandardMessage
+{
 
     private boolean successful = false;
     private int errorCode = 0;
     private String message = null;
 
-    public StandardMessage() {
+    public StandardMessage()
+    {
 
     }
 
@@ -20,27 +22,33 @@ public class StandardMessage {
         this.message = message;
     }
 
-    public boolean isSuccessful() {
+    public boolean isSuccessful()
+    {
         return successful;
     }
 
-    public void setSuccessful(boolean successful) {
+    public void setSuccessful(boolean successful)
+    {
         this.successful = successful;
     }
 
-    public int getErrorCode() {
+    public int getErrorCode()
+    {
         return errorCode;
     }
 
-    public void setErrorCode(int errorCode) {
+    public void setErrorCode(int errorCode)
+    {
         this.errorCode = errorCode;
     }
 
-    public String getMessage() {
+    public String getMessage()
+    {
         return message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(String message)
+    {
         this.message = message;
     }
 }
