@@ -27,35 +27,44 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class Config {
+public class Config
+{
     private Element xmlNode;
 
     public Config(File configFile)
-            throws ConfigException {
-        try {
+        throws ConfigException
+    {
+        try
+        {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = dbFactory.newDocumentBuilder();
 
             Document doc = docBuilder.parse(configFile);
 
             xmlNode = doc.getDocumentElement();
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             throw new ConfigException("error: " + e.getMessage(), e);
         }
     }
 
     public Config(Node xmlNode)
-            throws ConfigException {
-        this.xmlNode = (Element) xmlNode;
+        throws ConfigException
+    {
+        this.xmlNode = (Element)xmlNode;
     }
 
     public int getIntegerProperty(String name)
-            throws ConfigException {
+        throws ConfigException
+    {
         String[] path = name.split("\\.");
 
-        for (String elementName : path) {
+        for (String elementName : path)
+        {
             NodeList list = xmlNode.getElementsByTagName(elementName);
-            if (list.item(0).getNodeName().equals(path[path.length - 1])) {
+            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
                 return Integer.parseInt(list.item(0).getTextContent());
             }
         }
@@ -65,15 +74,19 @@ public class Config {
 
 
     public <T> List<T> getConfigObjects(String name, ConfigObjectFactory<T> factory)
-            throws ConfigException {
+        throws ConfigException
+    {
         List<T> configs = new ArrayList<T>();
 
         String[] path = name.split("\\.");
 
-        for (String elementName : path) {
+        for (String elementName : path)
+        {
             NodeList list = xmlNode.getElementsByTagName(elementName);
-            if (list.item(0).getNodeName().equals(path[path.length - 1])) {
-                for (int i = 0; i != list.getLength(); i++) {
+            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
+                for (int i = 0; i != list.getLength(); i++)
+                {
                     configs.add(factory.createObject(list.item(i)));
                 }
 
