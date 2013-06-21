@@ -15,10 +15,23 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
-/**
- *   By way of example..
- *   I suggest we
- *
- */
-public class NodeStatistics {
+import org.cryptoworkshop.ximix.common.operation.Operation;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
+
+public interface ShuffleOperation
+{
+    /**
+     * Do a shuffle.
+     * @param boardName
+     * @param options
+     * @param nodes
+     * @throws org.cryptoworkshop.ximix.common.service.ServiceConnectionException
+     */
+    Operation<ShuffleOperationListener> doShuffleAndMove(
+            String boardName,
+            ShuffleOptions options,
+            String... nodes)
+        throws ServiceConnectionException;
+
 }

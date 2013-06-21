@@ -15,30 +15,13 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
-import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
-import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
-
 import java.util.List;
 
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+
 public interface MixnetCommandService
+    extends ShuffleOperation, DownloadOperation
 {
-
-    /**
-     * Do a shuffle.
-     * @param boardName
-     * @param options
-     * @param nodes
-     * @throws ServiceConnectionException
-     */
-    void doShuffleAndMove(
-            String boardName,
-            ShuffleOptions options,
-            String... nodes)
-        throws ServiceConnectionException;
-
-
     /**
      * Return a list of static details about the node.
      * @return  The node.

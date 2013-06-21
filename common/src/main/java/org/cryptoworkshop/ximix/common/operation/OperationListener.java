@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.admin;
+package org.cryptoworkshop.ximix.common.operation;
 
-/**
- *   By way of example..
- *   I suggest we
- *
- */
-public class NodeStatistics {
+public interface OperationListener<E>
+{
+    void completed();
+
+    void failed(E errorObject);
 }

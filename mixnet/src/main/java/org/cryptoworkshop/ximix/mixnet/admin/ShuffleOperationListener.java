@@ -15,10 +15,9 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
-/**
- *   By way of example..
- *   I suggest we
- *
- */
-public class NodeStatistics {
+import org.cryptoworkshop.ximix.common.operation.OperationListener;
+
+public interface ShuffleOperationListener
+    extends OperationListener<String>
+{
 }

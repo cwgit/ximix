@@ -15,17 +15,15 @@
  */
 package org.cryptoworkshop.ximix.mixnet;
 
-public class ShuffleOptions
+public class DownloadOptions
 {
     public static class Builder
     {
-        private final String transformName;
-
         private String keyID;
 
-        public Builder(String transformName)
+        public Builder()
         {
-             this.transformName = transformName;
+
         }
 
         public Builder setKeyID(String keyID)
@@ -35,24 +33,17 @@ public class ShuffleOptions
             return this;
         }
 
-        public ShuffleOptions build()
+        public DownloadOptions build()
         {
-            return new ShuffleOptions(this);
+            return new DownloadOptions(this);
         }
     }
 
-    private final String transformName;
     private final String keyID;
 
-    private ShuffleOptions(Builder builder)
+    private DownloadOptions(Builder builder)
     {
-        this.transformName = builder.transformName;
         this.keyID = builder.keyID;
-    }
-
-    public String getTransformName()
-    {
-        return  transformName;
     }
 
     public String getKeyID()

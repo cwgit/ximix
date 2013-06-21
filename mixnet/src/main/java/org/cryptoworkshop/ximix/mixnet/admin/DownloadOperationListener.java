@@ -15,10 +15,10 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
-/**
- *   By way of example..
- *   I suggest we
- *
- */
-public class NodeStatistics {
+import org.cryptoworkshop.ximix.common.operation.OperationListener;
+
+public interface DownloadOperationListener
+    extends OperationListener<String>
+{
+    public void messageDownloaded(byte[] message);
 }

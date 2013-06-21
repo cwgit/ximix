@@ -17,8 +17,10 @@ package org.cryptoworkshop.ximix.demo.admin;
 
 import java.io.File;
 
+import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
+import org.cryptoworkshop.ximix.mixnet.admin.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
@@ -33,6 +35,21 @@ public class Main
         MixnetCommandService commandService = adminRegistrar.connect(MixnetCommandService.class);
 
         // TODO: at the moment the name of the node is taken from it's port no
-        commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ENCKEY").build(), "11000", "11001");
+        Operation<ShuffleOperationListener> op = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ENCKEY").build(), "11000", "11001");
+
+        op.addListener(new ShuffleOperationListener()
+        {
+            @Override
+            public void completed()
+            {
+                System.err.println("done");
+            }
+
+            @Override
+            public void failed(String errorObject)
+            {
+                System.err.println("failed: " + errorObject);
+            }
+        });
     }
 }
