@@ -15,15 +15,15 @@
  */
 package org.cryptoworkshop.ximix.console.adapters;
 
-import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
 import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
 import org.cryptoworkshop.ximix.console.Main;
 import org.cryptoworkshop.ximix.console.NodeAdapter;
+import org.cryptoworkshop.ximix.console.config.AdapterConfig;
+import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.Command;
 import org.cryptoworkshop.ximix.console.model.ParameterInfo;
-import org.w3c.dom.Node;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -52,11 +52,11 @@ public abstract class BaseNodeAdapter
     }
 
     @Override
-    public void init(Config config, Node configRoot) throws Exception
+    public void init(ConsoleConfig consoleConfig, AdapterConfig config) throws Exception
     {
-        id = Config.getValueOf(configRoot.getChildNodes(), "id");
-        name = Config.getValueOf(configRoot.getChildNodes(), "name");
-        description = Config.getValueOf(configRoot.getChildNodes(), "description");
+        id = config.getId();
+        name = config.getName();
+        description = config.getDescription();
     }
 
     @Override
@@ -306,5 +306,16 @@ public abstract class BaseNodeAdapter
     public void setDescription(String description)
     {
         this.description = description;
+    }
+
+    @Override
+    public boolean isOpened()
+    {
+        return opened;
+    }
+
+    public void setOpened(boolean opened)
+    {
+        this.opened = opened;
     }
 }

@@ -55,29 +55,29 @@ public class Config
         this.xmlNode = (Element)xmlNode;
     }
 
-    public static String getValueOf(NodeList nl, String name)
-    {
-        for (int t = 0; t < nl.getLength(); t++)
-        {
-            if (name.equals(nl.item(t).getNodeName()))
-            {
-                return nl.item(t).getTextContent();
-            }
-        }
-        return null;
-    }
+//    public static String getValueOf(NodeList nl, String name)
+//    {
+//        for (int t = 0; t < nl.getLength(); t++)
+//        {
+//            if (name.equals(nl.item(t).getNodeName()))
+//            {
+//                return nl.item(t).getTextContent();
+//            }
+//        }
+//        return null;
+//    }
 
-    public static Node getNodeOf(NodeList nl, String name) throws Exception
-    {
-        for (int t = 0; t < nl.getLength(); t++)
-        {
-            if (name.equals(nl.item(t).getNodeName()))
-            {
-                return nl.item(t);
-            }
-        }
-        throw new ConfigException("Node '"+name+"' was not found.");
-    }
+//    public static Node getNodeOf(NodeList nl, String name) throws Exception
+//    {
+//        for (int t = 0; t < nl.getLength(); t++)
+//        {
+//            if (name.equals(nl.item(t).getNodeName()))
+//            {
+//                return nl.item(t);
+//            }
+//        }
+//        throw new ConfigException("Node '"+name+"' was not found.");
+//    }
 
 
 
@@ -145,20 +145,20 @@ public class Config
 
     }
 
-    public NodeList getNodeList(String name) throws ConfigException
-    {
-        String[] path = name.split("\\.");
-
-        for (String elementName : path)
-        {
-            NodeList list = xmlNode.getElementsByTagName(elementName);
-            if (list.item(0).getNodeName().equals(path[path.length - 1]))
-            {
-                return list.item(0).getChildNodes();
-            }
-        }
-        throw new ConfigException("property " + name + " not found");
-    }
+//    public NodeList getNodeList(String name) throws ConfigException
+//    {
+//        String[] path = name.split("\\.");
+//
+//        for (String elementName : path)
+//        {
+//            NodeList list = xmlNode.getElementsByTagName(elementName);
+//            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+//            {
+//                return list.item(0).getChildNodes();
+//            }
+//        }
+//        throw new ConfigException("property " + name + " not found");
+//    }
 
     public <T> List<T> getConfigObjects(String name, ConfigObjectFactory<T> factory)
             throws ConfigException

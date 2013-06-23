@@ -16,6 +16,8 @@
 package org.cryptoworkshop.ximix.console;
 
 import org.cryptoworkshop.ximix.common.conf.Config;
+import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
+import org.cryptoworkshop.ximix.console.config.ConsoleConfigFactory;
 import org.cryptoworkshop.ximix.console.handlers.ConsoleHandler;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -26,6 +28,7 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 
 import java.io.File;
 import java.security.SecureRandom;
+import java.util.List;
 
 /**
  *
@@ -54,7 +57,6 @@ public class Main
         }
 
         init(args);
-        start(true);
 
     }
 
@@ -63,66 +65,41 @@ public class Main
 
         config = new Config(new File(args[0]));
 
-        localAddress = config.getStringProperty("http.bind-host", localAddress);
-        port = config.getIntegerProperty("http.bind-port", port);
+        config.getConfigObjects("console", new ConsoleConfigFactory());
 
-    }
 
-    private static void assertExists(String error, int t, String[] args)
-    {
-        if (t >= args.length)
-        {
-            System.err.println(error);
-            System.exit(-1);
-        }
-    }
-
-    private static Integer nextInteger(String error, int t, String[] args, Integer notBefore, Integer notAfter)
-    {
-        if (t >= args.length)
-        {
-            System.err.println(error);
-            System.exit(-1);
-        }
-
-        int out = 0;
         try
         {
-            out = Integer.valueOf(args[t].trim());
-        } catch (NumberFormatException ex)
-        {
-            System.err.println(error);
-            System.err.println(ex.getMessage());
-            System.exit(-1);
-        }
+            List<ConsoleConfig> consoleConfig = config.getConfigObjects("console", ConsoleConfigFactory.factory());
 
-        if (notBefore != null)
-        {
-            if (out < notBefore)
+            //
+            // Do all but the last.
+            //
+            for (int t = 0; t < consoleConfig.size() - 1; t++)
             {
-                System.err.println(error);
-                System.err.println(out + " is less than " + notBefore);
-                System.exit(-1);
+                start(consoleConfig.get(t), false);
             }
-        }
 
-        if (notAfter != null && out > notAfter)
+            //
+            // Start the last one and join.
+            //
+            start(consoleConfig.get(consoleConfig.size()-1),true);
+
+        } catch (Exception e)
         {
-            System.err.println(error);
-            System.err.println(out + " is greater than " + notAfter);
-            System.exit(-1);
-
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
 
-        return out;
     }
+
+
 
     public static SecureRandom random()
     {
         return secureRandom;
     }
 
-    public static void start(boolean join) throws Exception
+    public static void start(ConsoleConfig config, boolean join) throws Exception
     {
 
 
@@ -143,9 +120,9 @@ public class Main
 //        }
 
 
-        Server server = new Server(port);
+        Server server = new Server(config.getHttpConfig().getPort());
         ServerConnector connector = new ServerConnector(server);
-        connector.setHost(localAddress);
+        connector.setHost(config.getHttpConfig().getHost());
         ContextHandler rpcHandler = new ContextHandler("/api");
         rpcHandler.setClassLoader(Thread.currentThread().getContextClassLoader());
         rpcHandler.setHandler(new ConsoleHandler(config));

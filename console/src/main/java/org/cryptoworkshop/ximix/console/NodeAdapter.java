@@ -16,6 +16,8 @@
 package org.cryptoworkshop.ximix.console;
 
 import org.cryptoworkshop.ximix.common.conf.Config;
+import org.cryptoworkshop.ximix.console.config.AdapterConfig;
+import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.console.model.Command;
@@ -43,7 +45,7 @@ public interface NodeAdapter
      */
     void close() throws Exception;
 
-    void init(Config config, Node configRoot) throws Exception;
+    void init(ConsoleConfig consoleConfig,  AdapterConfig config) throws Exception;
 
     AdapterInfo getInfo();
 
@@ -60,4 +62,6 @@ public interface NodeAdapter
     String getDescription();
 
     String getCommandNameForId(int id);
+
+    boolean isOpened();
 }

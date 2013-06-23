@@ -19,6 +19,8 @@ import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
 import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.console.config.AdapterConfig;
+import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
@@ -26,7 +28,6 @@ import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
-import org.w3c.dom.Node;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -74,12 +75,11 @@ public class MixnetCommandServiceAdapter
     }
 
     @Override
-    public void init(Config config, Node configRoot) throws Exception
+    public void init(ConsoleConfig consoleConfig, AdapterConfig config) throws Exception
     {
         commandList = new ArrayList<>();
-        super.init(config, configRoot);
-        Node nl = Config.getNodeOf(configRoot.getChildNodes(), "adapter-config");
-        configFile = new File(Config.getValueOf(nl.getChildNodes(), "config-file"));
+        super.init(consoleConfig, config);
+        configFile = new File(config.get("config-file").toString());
         findCommands(this);
     }
 
@@ -121,9 +121,9 @@ public class MixnetCommandServiceAdapter
 
         //TODO add sensitisation.
 
-
-        commandService.doShuffleAndMove(boardName, new ShuffleOptions.Builder(transformName, keyID).build(), nodes);
-
+        ShuffleOptions.Builder builder = new ShuffleOptions.Builder(transformName);
+        builder.setKeyID(keyID);
+        commandService.doShuffleAndMove(boardName, builder.build(), nodes);
         return new StandardMessage(true, "It worked..");
 
 

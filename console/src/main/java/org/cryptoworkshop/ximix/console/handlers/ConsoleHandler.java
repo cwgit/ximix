@@ -17,14 +17,14 @@ package org.cryptoworkshop.ximix.console.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.console.NodeAdapter;
+import org.cryptoworkshop.ximix.console.adapters.BaseNodeAdapter;
+import org.cryptoworkshop.ximix.console.config.AdapterConfig;
+import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -44,7 +44,8 @@ public class ConsoleHandler extends AbstractHandler
 
     private static Logger L = Logger.getLogger("Console");
     private static ObjectMapper objectMapper = new ObjectMapper();
-    Map<String, NodeAdapter> adapterMap = new HashMap<>();
+    private Map<String, NodeAdapter> adapterMap = new HashMap<>();
+    private ConsoleConfig consoleConfig = null;
 
     //    private MixnetCommandServiceAdapter mixnetCommandServiceAdapter = null;
     static
@@ -52,69 +53,18 @@ public class ConsoleHandler extends AbstractHandler
         objectMapper.enable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
-    public ConsoleHandler(Config config) throws Exception
+    public ConsoleHandler(ConsoleConfig config) throws Exception
     {
+        consoleConfig = config;
 
-        try
+        for (AdapterConfig acfg : consoleConfig.getAdapters())
         {
-
-            NodeList lst = config.getNodeList("adapters");
-            for (int t = 0; t < lst.getLength(); t++)
-            {
-                Node n = lst.item(t);
-
-                if ("adapter".equals(n.getNodeName()))
-                {
-
-                    NodeList nl = n.getChildNodes();
-
-                    String cl = Config.getValueOf(nl, "class");
-                    if (cl != null)
-                    {
-                        NodeAdapter na = (NodeAdapter) Class.forName(cl).newInstance();
-                        na.init(config, n);
-
-                        adapterMap.put(na.getId(), na);
-                    }
-
-
-                }
-            }
-
-
-//            StringTokenizer toke = new StringTokenizer(Config.config().getProperty("console.adapters"), ",");
-//            while (toke.hasMoreTokens()) {
-//                String name = toke.nextToken().trim();
-//                if (name.length() == 0) {
-//                    continue;
-//                }
-//
-//                try {
-//                    Class cl = Class.forName(Config.config().getProperty(name + ".adapter"));
-//
-//                    NodeAdapter adapter = (NodeAdapter) cl.newInstance();
-//                    adapter.init(name, Config.getAdapterSubset(name));
-//                    //      adapter.open(); // TODO this needs to happen as part of some sort of user initiated connect phase..
-//                    adapterMap.put(name, adapter);
-//
-//                } catch (Exception ex) {
-//                    L.log(Level.SEVERE, "Initializing adapter " + name, ex);
-//                    throw new RuntimeException("Unable to instantiate adapter class " + name, ex);
-//                }
-//
-//            }
-
-
-//            mixnetCommandServiceAdapter = new MixnetCommandServiceAdapter();
-//
-//
-//            mixnetCommandServiceAdapter.init(null);       // TODO Discuss unified configuration across system.
-            //mixnetCommandServiceAdapter.open();
-
-        } catch (Exception e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            BaseNodeAdapter bna = (BaseNodeAdapter) Class.forName(acfg.getClassName()).newInstance();
+            bna.init(consoleConfig, acfg);
+            adapterMap.put(bna.getId(), bna);
         }
+
+
     }
 
     @Override
@@ -201,6 +151,26 @@ public class ConsoleHandler extends AbstractHandler
 
                 try
                 {
+
+                    //
+                    // Check the adapter is opened.
+                    //
+
+                    synchronized (adapter)
+                    {
+                        if (!adapter.isOpened())
+                        {
+                            try
+                            {
+                                adapter.open();
+                            } catch (Exception ex)
+                            {
+                                ret.setMessage("Unable to open '" + adapter.getName() + "'");
+                            }
+                        }
+                    }
+
+
                     int id = Integer.valueOf(cmd);
                     ret = adapter.invoke(id, request.getParameterMap());
                     L.info(request.getRemoteAddr() + " Invoked Command method '" + adapter.getCommandNameForId(id) + " in " + adapter.getId() + " (" + adapter.getClass().getName() + ")" + "' with " + request.getParameterMap());

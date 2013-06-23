@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<console>
-    <http>
-        <bind-port>1887</bind-port>
-        <bind-host>0.0.0.0</bind-host>
-    </http>
-    <adapters>
+<config>
+    <console>
+        <http>
+            <bind-port>1887</bind-port>
+            <bind-host>0.0.0.0</bind-host>
+        </http>
+
         <adapter>
             <class>org.cryptoworkshop.ximix.console.adapters.MixnetCommandServiceAdapter</class>
             <id>mixnetadmin</id>
             <name>Mixnet Admin</name>
             <description>Admin panel for the Mixnet</description>
-            <adapter-config>
-                <config-file>./conf/mixnet.xml</config-file>
-            </adapter-config>
+            <property name="config-file">./conf/mixnet.xml</property>
         </adapter>
-    </adapters>
-</console>
+
+    </console>
+</config>
