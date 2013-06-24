@@ -36,6 +36,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
@@ -141,10 +142,18 @@ public class XimixNodeContext
         ECCommittedSecretShare[] shares = splitSecret.getCommittedShares();
         ECCommittedSecretShareMessage[] messages = new ECCommittedSecretShareMessage[shares.length];
 
+        BigInteger[] aCoefficients = splitSecret.getCoefficients();
+        ECPoint[] qCommitments = new ECPoint[aCoefficients.length];
+
+        for (int i = 0; i != qCommitments.length; i++)
+        {
+            qCommitments[i] = privKey.getParameters().getG().multiply(aCoefficients[i]);
+        }
+
         for (int i = 0; i != shares.length; i++)
         {
             messages[i] = new ECCommittedSecretShareMessage(i, shares[i].getValue(), shares[i].getWitness(), shares[i].getCommitmentFactors(),
-                            ((ECPublicKeyParameters)keyPair.getPublic()).getQ(), shares[i].getCommitmentFactors());  // TODO:
+                            ((ECPublicKeyParameters)keyPair.getPublic()).getQ(), qCommitments);  // TODO:
         }
 
         return messages;

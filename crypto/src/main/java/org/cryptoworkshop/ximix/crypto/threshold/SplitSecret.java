@@ -24,8 +24,8 @@ public class SplitSecret
 
     public SplitSecret(BigInteger[] shares, BigInteger[] coefficients)
     {
-        this.coefficients = coefficients;
         this.shares = shares;
+        this.coefficients = coefficients;
     }
 
     public BigInteger[] getCoefficients()
