@@ -48,6 +48,7 @@ public class NodeKeyGenerationService
 
     public MessageReply handle(Message message)
     {
+        // TODO: sort out the reply messages
         switch (((CommandMessage)message).getType())
         {
         case INITIATE_GENERATE_KEY_PAIR:
@@ -59,9 +60,7 @@ public class NodeKeyGenerationService
                 //
                 // generate our part
                 //
-                int order = findOrderNumber(peersToInitiate);
-
-                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate.size(), order, initiateMessage.getThreshold(), initiateMessage.getH());
+                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate, initiateMessage.getThreshold(), initiateMessage.getH());
 
                 //
                 // start everyone else
@@ -94,9 +93,7 @@ public class NodeKeyGenerationService
 
             if (involvedPeers.contains(nodeContext.getName()))
             {
-                int order = findOrderNumber(involvedPeers);
-
-                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers.size(), order, generateMessage.getThreshold(), generateMessage.getH());
+                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), generateMessage.getH());
 
                 nodeContext.scheduleTask(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
             }
@@ -159,7 +156,7 @@ public class NodeKeyGenerationService
             {
                 if (name.equals(nodeContext.getName()))
                 {
-                    nodeContext.scheduleTask(new StoreShareTask(keyID, messages[index++]));
+                    nodeContext.storeThresholdKeyShare(keyID, messages[index++]);
                 }
                 else
                 {
@@ -198,7 +195,7 @@ public class NodeKeyGenerationService
            else
            {
                // TODO: there needs to be a limit on how long we do this!
-               nodeContext.scheduleTask(this);
+               nodeContext.scheduleTask(StoreShareTask.this);
            }
        }
     }

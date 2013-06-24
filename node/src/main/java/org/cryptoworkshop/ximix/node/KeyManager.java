@@ -15,21 +15,27 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 
 class KeyManager
 {
-    volatile Map<String, AsymmetricCipherKeyPair> keyMap = new HashMap<>();
-    volatile Map<String, BigInteger> hMap = new HashMap<>();
+    private final Map<String, AsymmetricCipherKeyPair> keyMap = new HashMap<>();
+    private final Map<String, BigInteger> hMap = new HashMap<>();
+    private final Map<String, Integer> peerCountMap = new HashMap<>();
+    private final Map<String, BigInteger> sharedPrivateKeyMap = new HashMap<>();
+    private final Map<String, ECPoint> sharedPublicKeyMap = new HashMap<>();
 
     public synchronized boolean hasPrivateKey(String keyID)
     {
-        return keyMap.containsKey(keyID) && hMap.containsKey(keyID);
+        return keyMap.containsKey(keyID);
     }
 
-    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, BigInteger h)
+    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, String n, int numberOfPeers, BigInteger h)
     {
         AsymmetricCipherKeyPair kp = keyMap.get(keyID);
 
@@ -43,6 +49,7 @@ class KeyManager
 
             kp =  kpGen.generateKeyPair();
 
+            peerCountMap.put(keyID, numberOfPeers);
             hMap.put(keyID, h);
             keyMap.put(keyID, kp);
         }
@@ -72,7 +79,17 @@ class KeyManager
     public synchronized SubjectPublicKeyInfo fetchPublicKey(String keyID)
         throws IOException
     {
-        AsymmetricCipherKeyPair kp = getKeyPair(keyID);
+        ECPoint q = sharedPublicKeyMap.get(keyID);
+
+        if (q != null)
+        {       // TODO
+            X9ECParameters params = SECNamedCurves.getByName("secp256r1");
+
+            return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q,
+                           new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()))).getEncoded());
+        }
+
+        AsymmetricCipherKeyPair kp = keyMap.get(keyID);
 
         if (kp == null)
         {
@@ -82,7 +99,7 @@ class KeyManager
         return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()).getEncoded());
     }
 
-    public synchronized void addSharedPrivate(String keyID, ECCommittedSecretShareMessage message)
+    public synchronized void buildSharedKey(String keyID, ECCommittedSecretShareMessage message)
     {
         X9ECParameters params = SECNamedCurves.getByName("secp256r1");
         ECDomainParameters domainParams = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
@@ -91,7 +108,42 @@ class KeyManager
 
         if (share.isRevealed(message.getIndex(), domainParams, hMap.get(keyID)))
         {
-            System.err.println("commitment passes!!");
+            int count = peerCountMap.get(keyID) - 1;
+
+            peerCountMap.put(keyID, count);
+
+            BigInteger myD = sharedPrivateKeyMap.get(keyID);
+
+            if (myD != null)
+            {
+                sharedPrivateKeyMap.put(keyID, myD.add(message.getValue()));
+            }
+            else
+            {
+                sharedPrivateKeyMap.put(keyID, message.getValue());
+            }
+
+            ECPoint jointPubKey = sharedPublicKeyMap.get(keyID);
+
+            if (jointPubKey != null)
+            {
+                sharedPublicKeyMap.put(keyID, jointPubKey.add(message.getQ()));
+            }
+            else
+            {
+                sharedPublicKeyMap.put(keyID, message.getQ());
+            }
         }
+        else
+        {
+            System.err.println("commitment fails!!");
+
+            // TODO: need a policy decision on this one!!!
+        }
+    }
+
+    public BigInteger getPartialPrivateKey(String keyID)
+    {
+        return sharedPrivateKeyMap.get(keyID);
     }
 }

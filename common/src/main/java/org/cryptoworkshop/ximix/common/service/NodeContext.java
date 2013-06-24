@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
 
 public interface NodeContext
@@ -40,11 +40,13 @@ public interface NodeContext
 
     SubjectPublicKeyInfo getPublicKey(String keyID);
 
-    ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, int numberOfPeers, int index, int minimumNumberOfPeers, BigInteger h);
+    ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, BigInteger h);
 
     void storeThresholdKeyShare(String keyID, ECCommittedSecretShareMessage message);
 
     <T> T getDomainParameters(String keyID);
 
     boolean hasPrivateKey(String keyID);
+
+    ECPoint getPartialDecrypt(String keyID, ECPoint cipherText);
 }
