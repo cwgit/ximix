@@ -30,6 +30,7 @@ public class ECNewDKGSecretSplitter
     private final ECPoint h;
     private final ECDomainParameters domainParams;
     private final ShamirSecretSplitter secretSplitter;
+    private final SecureRandom random;
 
     /**
      * creates an instance over the specified EC domain parameters
@@ -39,13 +40,20 @@ public class ECNewDKGSecretSplitter
      * @param threshold number of peers that must be available for secret reconstruction,
      * @param h value to calculate commitment polynomial against.
      * @param domainParams domain parameters for the EC group to use.
+     * @param random a source of randomness,
      */
-    public ECNewDKGSecretSplitter(int numberOfPeers, int threshold, BigInteger h, ECDomainParameters domainParams)
+    public ECNewDKGSecretSplitter(int numberOfPeers, int threshold, BigInteger h, ECDomainParameters domainParams, SecureRandom random)
     {
+        if (numberOfPeers < threshold)
+        {
+            throw new IllegalArgumentException("numberOfPeers must at least be as big as the threshold value.");
+        }
+
         this.k = threshold;
         this.h = domainParams.getG().multiply(h);
         this.domainParams = domainParams;
-        this.secretSplitter = new ShamirSecretSplitter(numberOfPeers, threshold, domainParams.getN());
+        this.secretSplitter = new ShamirSecretSplitter(numberOfPeers, threshold, domainParams.getN(), random);
+        this.random = random;
     }
 
     /**
@@ -54,15 +62,14 @@ public class ECNewDKGSecretSplitter
      * assigned a dedicated alpha). Coefficients are picked from (0, fieldSize).
      *
      * @param secret the secret to be shared
-     * @param random a source of randomness,
      * @return the shares of the secret for each privacy peer
      */
-    public ECCommittedSplitSecret split(BigInteger secret, SecureRandom random)
+    public ECCommittedSplitSecret split(BigInteger secret)
     {
         // a polynomial
-        SplitSecret secretShares = secretSplitter.split(secret, random);
+        SplitSecret secretShares = secretSplitter.split(secret);
         // b polynomial
-        SplitSecret bShares = secretSplitter.split(getRandomInteger(domainParams.getN(), random), random);
+        SplitSecret bShares = secretSplitter.split(getRandomInteger(domainParams.getN(), random));
 
         ECPoint[] commitments = new ECPoint[k];
 
@@ -71,7 +78,7 @@ public class ECNewDKGSecretSplitter
             commitments[j] = domainParams.getG().multiply(secretShares.getCoefficients()[j]).add(h.multiply(bShares.getCoefficients()[j]));
         }
 
-        return new ECCommittedSplitSecret(secretShares.getShares(), bShares.getShares(), commitments);
+        return new ECCommittedSplitSecret(secretShares.getShares(), secretShares.getCoefficients(), bShares.getShares(), commitments);
     }
 
     private static BigInteger getRandomInteger(BigInteger n, SecureRandom rand)

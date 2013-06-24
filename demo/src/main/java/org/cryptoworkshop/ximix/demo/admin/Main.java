@@ -17,8 +17,11 @@ package org.cryptoworkshop.ximix.demo.admin;
 
 import java.io.File;
 
+import org.cryptoworkshop.ximix.common.message.BoardDetails;
 import org.cryptoworkshop.ximix.common.operation.Operation;
+import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
+import org.cryptoworkshop.ximix.mixnet.admin.DownloadOperationListener;
 import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
@@ -35,9 +38,9 @@ public class Main
         MixnetCommandService commandService = adminRegistrar.connect(MixnetCommandService.class);
 
         // TODO: at the moment the name of the node is taken from it's port no
-        Operation<ShuffleOperationListener> op = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ENCKEY").build(), "11000", "11001");
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ENCKEY").build(), "11000", "11001");
 
-        op.addListener(new ShuffleOperationListener()
+        shuffleOp.addListener(new ShuffleOperationListener()
         {
             @Override
             public void completed()
@@ -51,5 +54,48 @@ public class Main
                 System.err.println("failed: " + errorObject);
             }
         });
+
+        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().setKeyID("ENCKEY").build(), new DownloadOperationListener()
+        {
+
+            @Override
+            public void messageDownloaded(byte[] message)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void completed()
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void failed(String errorObject)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+        });
+
+       op.addListener(new DownloadOperationListener()
+       {
+           @Override
+           public void completed()
+           {
+               System.err.println("done");
+           }
+
+           @Override
+           public void failed(String errorObject)
+           {
+               System.err.println("failed: " + errorObject);
+           }
+
+           @Override
+           public void messageDownloaded(byte[] message)
+           {
+               System.err.println("message");
+           }
+       });
     }
 }

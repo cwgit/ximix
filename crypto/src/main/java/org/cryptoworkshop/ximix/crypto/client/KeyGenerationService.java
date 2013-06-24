@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.admin;
+package org.cryptoworkshop.ximix.crypto.client;
 
-import org.cryptoworkshop.ximix.common.operation.Operation;
+import java.util.Set;
+
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 
-public interface DownloadOperation
+public interface KeyGenerationService
+    extends KeyService
 {
     /**
-     * Download the contents of a board.
+     * Return the public key associated with key ID keyID.
      *
-     * @param boardName name of the board to download from.
-     * @param options
-     * @param defaultListener the listener to be sent messages
+     * @param keyID the id of the key we are looking for.
+     * @param nodeNames the names of the nodes to take part.
+     * @param thresholdNumber the number of nodes that should be required to recover a message.
+     * @return a byte[] array of the SubjectPublicKeyInfo object representing the key.
      */
-    Operation<DownloadOperationListener> downloadBoardContents(
-            String boardName,
-            DownloadOptions options,
-            DownloadOperationListener defaultListener)
+    byte[] generatePublicKey(String keyID, Set<String> nodeNames, int thresholdNumber)
         throws ServiceConnectionException;
 }

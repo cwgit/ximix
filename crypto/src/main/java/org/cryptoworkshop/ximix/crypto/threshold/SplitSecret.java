@@ -22,7 +22,7 @@ public class SplitSecret
     private final BigInteger[] coefficients;
     private final BigInteger[] shares;
 
-    public SplitSecret(BigInteger[] coefficients, BigInteger[] shares)
+    public SplitSecret(BigInteger[] shares, BigInteger[] coefficients)
     {
         this.coefficients = coefficients;
         this.shares = shares;

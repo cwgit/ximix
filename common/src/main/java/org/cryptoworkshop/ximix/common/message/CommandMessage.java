@@ -32,7 +32,10 @@ public class CommandMessage
         MOVE_BOARD_TO_NODE,
         SHUFFLE_AND_MOVE_BOARD_TO_NODE,
         TRANSFER_TO_BOARD,
-        SUSPEND_BOARD
+        SUSPEND_BOARD,
+        INITIATE_GENERATE_KEY_PAIR,
+        GENERATE_KEY_PAIR,
+        STORE_SHARE
     }
 
     public CommandMessage(Type type, ASN1Encodable payload)

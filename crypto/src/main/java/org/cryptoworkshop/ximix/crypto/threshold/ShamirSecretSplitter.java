@@ -24,6 +24,7 @@ public class ShamirSecretSplitter
     private final int numberOfPeers;
     private final int k;
     private final BigInteger fieldSize;
+    private final SecureRandom random;
 
     /**
      * creates a ShamirSecretSplitter instance over the specified field
@@ -32,24 +33,30 @@ public class ShamirSecretSplitter
      * @param numberOfPeers the number of peers among which the secret is shared
      * @param threshold number of peers that must be available for secret reconstruction,
      * @param fieldSize size of the group's field.
+     * @param random a source of randomness,
      */
-    public ShamirSecretSplitter(int numberOfPeers, int threshold, BigInteger fieldSize)
+    public ShamirSecretSplitter(int numberOfPeers, int threshold, BigInteger fieldSize, SecureRandom random)
     {
+        if (numberOfPeers < threshold)
+        {
+            throw new IllegalArgumentException("numberOfPeers must at least be as big as the threshold value.");
+        }
+
         this.numberOfPeers = numberOfPeers;
         this.k = threshold;
         this.fieldSize = fieldSize;
+        this.random = random;
     }
 
     /**
-     * Given the secret generate random coefficients (except for a_0 which is
+     * Given the secret generate random coefficients (except for a<sub>0</sub> which is
      * the secret) and compute the function for each privacy peer (who is
      * assigned a dedicated alpha). Coefficients are picked from (0, fieldSize).
      *
      * @param secret the secret to be shared
-     * @param random a source of randomness,
      * @return the shares of the secret for each privacy peer
      */
-    public SplitSecret split(BigInteger secret, SecureRandom random)
+    public SplitSecret split(BigInteger secret)
     {
         BigInteger[] shares = new BigInteger[numberOfPeers];
         BigInteger[] coefficients = new BigInteger[k];
@@ -89,7 +96,7 @@ public class ShamirSecretSplitter
             }
         }
 
-        return new SplitSecret(coefficients, shares);
+        return new SplitSecret(shares, coefficients);
     }
 
     // Shamir's original paper actually gives from [0, fieldSize) as the range in

@@ -15,39 +15,29 @@
  */
 package org.cryptoworkshop.ximix.crypto.client;
 
-import org.bouncycastle.asn1.ASN1OctetString;
+import java.math.BigInteger;
+import java.util.Set;
+
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CreateSignatureMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.GenerateKeyPairMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
-public class ClientSigningService
-    implements SigningService
+public class ClientKeyGenerationService
+    implements KeyGenerationService
 {
-    private ServicesConnection connection;
+    private AdminServicesConnection connection;
 
-    public ClientSigningService(ServicesConnection connection)
+    public ClientKeyGenerationService(AdminServicesConnection connection)
     {
         this.connection = connection;
     }
 
-    public byte[] generateSignature(String keyID, byte[] hash)
-        throws ServiceConnectionException
-    {
-        MessageReply reply = connection.sendMessage(ClientMessage.Type.CREATE_SIGNATURE, new CreateSignatureMessage(keyID, hash));
-
-        if (reply.getType() != MessageReply.Type.OKAY)
-        {
-            throw new ServiceConnectionException("message failed");
-        }
-
-        return ASN1OctetString.getInstance(reply.getPayload().toASN1Primitive()).getOctets();
-    }
-
+    @Override
     public byte[] fetchPublicKey(String keyID)
         throws ServiceConnectionException
     {
@@ -64,6 +54,30 @@ public class ClientSigningService
         }
         catch (Exception e)
         {                                 e.printStackTrace();
+            throw new ServiceConnectionException("Malformed public key response.");
+        }
+    }
+
+    @Override
+    public byte[] generatePublicKey(String keyID, Set<String> nodeNames, int thresholdNumber)
+        throws ServiceConnectionException
+    {
+        // TODO: need to generate h from appropriate EC domain parameters
+        BigInteger h = BigInteger.valueOf(1000);
+        MessageReply reply = connection.sendThresholdMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, thresholdNumber, new GenerateKeyPairMessage(keyID, nodeNames, thresholdNumber, h));
+
+        if (reply.getType() != MessageReply.Type.OKAY)
+        {
+            throw new ServiceConnectionException("message failed");
+        }
+
+        try
+        {
+            return SubjectPublicKeyInfo.getInstance(reply.getPayload().toASN1Primitive()).getEncoded();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
             throw new ServiceConnectionException("Malformed public key response.");
         }
     }

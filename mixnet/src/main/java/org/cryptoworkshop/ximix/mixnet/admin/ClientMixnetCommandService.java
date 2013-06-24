@@ -54,10 +54,12 @@ public class ClientMixnetCommandService
     }
 
     @Override
-    public Operation<DownloadOperationListener> downloadBoardContents(String boardName, DownloadOptions options)
+    public Operation<DownloadOperationListener> downloadBoardContents(String boardName, DownloadOptions options, DownloadOperationListener defaultListener)
         throws ServiceConnectionException
     {
         Operation<DownloadOperationListener> op = new DownloadOp(boardName, options);
+
+        op.addListener(defaultListener);
 
         executor.execute((Runnable)op);
 
@@ -175,7 +177,7 @@ public class ClientMixnetCommandService
         {
             try
             {
-                connection.sendMessage(CommandMessage.Type.SUSPEND_BOARD, new BoardMessage(boardName));
+//                connection.sendMessage(CommandMessage.Type.SUSPEND_BOARD, new BoardMessage(boardName));
 
 //                for (int i = 0; i != nodes.length; i++)
 //                {
@@ -186,8 +188,8 @@ public class ClientMixnetCommandService
 //                }
 
                 notifier.messageDownloaded(new byte[100]);
-
-                connection.sendMessage(CommandMessage.Type.ACTIVATE_BOARD, new BoardMessage(boardName));
+//
+//                connection.sendMessage(CommandMessage.Type.ACTIVATE_BOARD, new BoardMessage(boardName));
 
                 notifier.completed();
             }

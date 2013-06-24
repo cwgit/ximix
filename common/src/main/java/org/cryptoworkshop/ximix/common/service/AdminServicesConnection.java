@@ -15,6 +15,8 @@
  */
 package org.cryptoworkshop.ximix.common.service;
 
+import java.util.Set;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
@@ -22,9 +24,8 @@ import org.cryptoworkshop.ximix.common.message.MessageType;
 public interface AdminServicesConnection
     extends ServicesConnection
 {
-    MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
-        throws ServiceConnectionException;
+    Set<String> getActiveNodeNames();
 
-    MessageReply sendThresholdMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
+    MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
         throws ServiceConnectionException;
 }

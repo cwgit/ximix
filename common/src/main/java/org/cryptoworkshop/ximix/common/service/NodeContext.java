@@ -15,12 +15,23 @@
  */
 package org.cryptoworkshop.ximix.common.service;
 
+import java.math.BigInteger;
 import java.util.Map;
+import java.util.Set;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
 
 public interface NodeContext
 {
+    /**
+     * Return the name of the node this context represents.
+     *
+     * @return our node's name.
+     */
+    String getName();
+
     Map<String, ServicesConnection> getPeerMap();
 
     void scheduleTask(Runnable task);
@@ -28,4 +39,12 @@ public interface NodeContext
     <T> T getPrivateKey(String keyID);
 
     SubjectPublicKeyInfo getPublicKey(String keyID);
+
+    ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, int numberOfPeers, int index, int minimumNumberOfPeers, BigInteger h);
+
+    void storeThresholdKeyShare(String keyID, ECCommittedSecretShareMessage message);
+
+    <T> T getDomainParameters(String keyID);
+
+    boolean hasPrivateKey(String keyID);
 }

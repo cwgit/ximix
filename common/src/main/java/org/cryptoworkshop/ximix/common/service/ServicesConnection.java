@@ -27,6 +27,6 @@ public interface ServicesConnection
     MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
         throws ServiceConnectionException;
 
-    MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
+    MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
         throws ServiceConnectionException;
 }

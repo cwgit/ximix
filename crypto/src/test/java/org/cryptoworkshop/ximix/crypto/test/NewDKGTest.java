@@ -1,3 +1,18 @@
+/**
+ * Copyright 2013 Crypto Workshop Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.cryptoworkshop.ximix.crypto.test;
 
 import java.math.BigInteger;
@@ -69,7 +84,7 @@ public class NewDKGTest
 
         // create the splitter for the peers/threshold over the order of the curve.
         BigInteger hVal = getRandomInteger(domainParams.getN(), new SecureRandom());
-        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(numberOfPeers, threshold, hVal, domainParams);
+        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(numberOfPeers, threshold, hVal, domainParams, new SecureRandom());
 
         // Having created a private key the server creates shares of that
         // private key. It would keep one share for itself and sends the others
@@ -78,16 +93,16 @@ public class NewDKGTest
         BigInteger[] finalPrivateKeyShares = new BigInteger[numberOfPeers];
         for (int i = 0; i < numberOfPeers; i++)
         {
-            privateKeyShares[i] = secretSplitter.split(((ECPrivateKeyParameters)kps[i].getPrivate()).getD(), new SecureRandom());
+            privateKeyShares[i] = secretSplitter.split(((ECPrivateKeyParameters)kps[i].getPrivate()).getD());
         }
 
         // Simulates distributing shares and combining them
         for (int i = 0; i < numberOfPeers; i++)
         {
-            finalPrivateKeyShares[i] = privateKeyShares[0].getShares()[i].getValue();
+            finalPrivateKeyShares[i] = privateKeyShares[0].getShares()[i];
             for (int j = 1; j < numberOfPeers; j++)
             {
-                finalPrivateKeyShares[i] = finalPrivateKeyShares[i].add(privateKeyShares[j].getShares()[i].getValue());
+                finalPrivateKeyShares[i] = finalPrivateKeyShares[i].add(privateKeyShares[j].getShares()[i]);
             }
         }
 
@@ -96,7 +111,7 @@ public class NewDKGTest
         //
         for (int i = 0; i != numberOfPeers; i++)
         {
-            ECCommittedSecretShare[] shares = privateKeyShares[i].getShares();
+            ECCommittedSecretShare[] shares = privateKeyShares[i].getCommittedShares();
             for (int j = 0; j != numberOfPeers; j++)
             {
                 Assert.assertTrue(shares[j].isRevealed(j, domainParams, hVal));

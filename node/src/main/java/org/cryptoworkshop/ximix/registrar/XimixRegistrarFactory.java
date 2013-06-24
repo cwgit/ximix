@@ -244,7 +244,7 @@ public class XimixRegistrarFactory
             }
         }
 
-        public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
+        public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
             try
@@ -341,12 +341,13 @@ public class XimixRegistrarFactory
             }
         }
 
-        public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
+        @Override
+        public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
             try
             {
-                return getConnection().sendThresholdMessage(type, messagePayload);
+                return getConnection().sendThresholdMessage(type, minimumNumberOfPeers, messagePayload);
             }
             catch (Exception e)
             {
@@ -406,27 +407,29 @@ public class XimixRegistrarFactory
             return null; // TODO: need to work out a composite reply
         }
 
-        public MessageReply sendThresholdMessage(MessageType type, ASN1Encodable messagePayload)
+        @Override
+        public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
             for (String name : connectionMap.keySet())
             {
-                connectionMap.get(name).sendThresholdMessage(type, messagePayload);
+                connectionMap.get(name).sendThresholdMessage(type, minimumNumberOfPeers, messagePayload);
             }
 
             return null; // TODO: need to work out a composite reply
+        }
+
+        @Override
+        public Set<String> getActiveNodeNames()
+        {
+            // TODO: this should only return names with an active connection
+            return connectionMap.keySet();
         }
 
         public MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
             return connectionMap.get(nodeName).sendMessage(type, messagePayload);
-        }
-
-        public MessageReply sendThresholdMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
-            throws ServiceConnectionException
-        {
-            return connectionMap.get(nodeName).sendThresholdMessage(type, messagePayload);
         }
     }
 }

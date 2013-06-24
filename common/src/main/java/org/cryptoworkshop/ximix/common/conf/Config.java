@@ -79,8 +79,6 @@ public class Config
 //        throw new ConfigException("Node '"+name+"' was not found.");
 //    }
 
-
-
     public int getIntegerProperty(String name)
         throws ConfigException
     {
@@ -98,7 +96,7 @@ public class Config
         throw new ConfigException("property " + name + " not found");
     }
 
-    public Integer getIntegerProperty(String name, Integer def)
+    public int getIntegerProperty(String name, int def)
             throws ConfigException
     {
         String[] path = name.split("\\.");
@@ -119,6 +117,23 @@ public class Config
         }
 
         return def;
+    }
+
+    public String getStringProperty(String name)
+        throws ConfigException
+    {
+        String[] path = name.split("\\.");
+
+        for (String elementName : path)
+        {
+            NodeList list = xmlNode.getElementsByTagName(elementName);
+            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
+                return list.item(0).getTextContent();
+            }
+        }
+
+        throw new ConfigException("property " + name + " not found");
     }
 
     public String getStringProperty(String name, String def)
@@ -142,7 +157,6 @@ public class Config
         }
 
         return def;
-
     }
 
 //    public NodeList getNodeList(String name) throws ConfigException

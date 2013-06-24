@@ -31,8 +31,7 @@ public class ClientMessage
     {
         UPLOAD_TO_BOARD,
         FETCH_PUBLIC_KEY,
-        CREATE_SIGNATURE,
-        GENERATE_KEY_PAIR
+        CREATE_SIGNATURE
     }
 
     public ClientMessage(Type type, ASN1Encodable payload)

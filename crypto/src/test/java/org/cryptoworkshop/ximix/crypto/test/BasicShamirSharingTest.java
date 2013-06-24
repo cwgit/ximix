@@ -1,3 +1,18 @@
+/**
+ * Copyright 2013 Crypto Workshop Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.cryptoworkshop.ximix.crypto.test;
 
 import java.math.BigInteger;
@@ -66,7 +81,7 @@ public class BasicShamirSharingTest
         int numberOfPeers = kps.length;
 
         // create the splitter for the peers/threshold over the order of the curve.
-        ShamirSecretSplitter secretSplitter = new ShamirSecretSplitter(numberOfPeers, threshold, domainParams.getN());
+        ShamirSecretSplitter secretSplitter = new ShamirSecretSplitter(numberOfPeers, threshold, domainParams.getN(), new SecureRandom());
 
         // Having created a private key the server creates shares of that
         // private key. It would keep one share for itself and sends the others
@@ -75,7 +90,7 @@ public class BasicShamirSharingTest
         BigInteger[] finalPrivateKeyShares = new BigInteger[numberOfPeers];
         for (int i = 0; i < numberOfPeers; i++)
         {
-            privateKeyShares[i] = secretSplitter.split(((ECPrivateKeyParameters)kps[i].getPrivate()).getD(), new SecureRandom()).getShares();
+            privateKeyShares[i] = secretSplitter.split(((ECPrivateKeyParameters)kps[i].getPrivate()).getD()).getShares();
         }
 
         // Simulates distributing shares and combining them
@@ -87,6 +102,7 @@ public class BasicShamirSharingTest
                 finalPrivateKeyShares[i] = finalPrivateKeyShares[i].add(privateKeyShares[j][i]);
             }
         }
+
         ECPoint pubPoint = ((ECPublicKeyParameters)kps[0].getPublic()).getQ();
 
         for (int i = 1; i < numberOfPeers; i++)

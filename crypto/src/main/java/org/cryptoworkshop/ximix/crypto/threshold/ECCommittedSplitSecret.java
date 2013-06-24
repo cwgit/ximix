@@ -20,20 +20,22 @@ import java.math.BigInteger;
 import org.bouncycastle.math.ec.ECPoint;
 
 public class ECCommittedSplitSecret
+    extends SplitSecret
 {
-    private final BigInteger[] shares;
     private final ECPoint[] commitments;
     private final BigInteger[] witnesses;
 
-    public ECCommittedSplitSecret(BigInteger[] shares, BigInteger[] witnesses, ECPoint[] commitments)
+    public ECCommittedSplitSecret(BigInteger[] shares, BigInteger[] coefficients, BigInteger[] witnesses, ECPoint[] commitments)
     {
-        this.shares = shares;
+        super(shares, coefficients);
+
         this.commitments = commitments;
         this.witnesses = witnesses;
     }
 
-    public ECCommittedSecretShare[] getShares()
+    public ECCommittedSecretShare[] getCommittedShares()
     {
+        BigInteger[] shares = this.getShares();
         ECCommittedSecretShare[] committedSecretShares = new ECCommittedSecretShare[shares.length];
 
         for (int i = 0; i != committedSecretShares.length; i++)
