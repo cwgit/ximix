@@ -60,7 +60,9 @@ public class InstallerConfig {
 
     }
 
-
+    /**
+     * A collection of movements.
+     */
     public static class MovementCollection {
         private Integer id = null;
         private List<Movement> movements = new ArrayList<>();
