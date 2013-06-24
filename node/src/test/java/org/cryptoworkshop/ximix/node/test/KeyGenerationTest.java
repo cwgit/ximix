@@ -43,7 +43,7 @@ public class KeyGenerationTest
 
         try
         {
-            ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", 5, 0, 4, BigInteger.valueOf(1000001));
+            ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", 3, 0, 4, BigInteger.valueOf(1000001));
 
             Assert.fail("no exception!");
         }

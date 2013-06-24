@@ -136,7 +136,7 @@ public class XimixNodeContext
                 // TODO: should have a source of randomness.
         AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, h);
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)keyPair.getPrivate();
-        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(peerMap.size() + 1, minimumNumberOfPeers, h, privKey.getParameters(), new SecureRandom());
+        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(numberOfPeers, minimumNumberOfPeers, h, privKey.getParameters(), new SecureRandom());
 
         ECCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getD());
         ECCommittedSecretShare[] shares = splitSecret.getCommittedShares();
@@ -153,7 +153,7 @@ public class XimixNodeContext
         for (int i = 0; i != shares.length; i++)
         {
             messages[i] = new ECCommittedSecretShareMessage(i, shares[i].getValue(), shares[i].getWitness(), shares[i].getCommitmentFactors(),
-                            ((ECPublicKeyParameters)keyPair.getPublic()).getQ(), qCommitments);  // TODO:
+                            ((ECPublicKeyParameters)keyPair.getPublic()).getQ(), qCommitments);
         }
 
         return messages;
