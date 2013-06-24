@@ -12,6 +12,10 @@ public class Extractor
 {
     private static final String DEFAULT_DIR = "/opt/ximix/node";
 
+    private static boolean headless = true;
+
+
+
     private static URL getJarFileName()
     {
         return Extractor.class.getProtectionDomain().getCodeSource().getLocation();
