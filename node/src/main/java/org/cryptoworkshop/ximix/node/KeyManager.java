@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -15,7 +15,6 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.math.ec.ECPoint;
@@ -24,9 +23,11 @@ import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 
 class KeyManager
 {
+    private static final int TIME_OUT = 20;
+
     private final Map<String, AsymmetricCipherKeyPair> keyMap = new HashMap<>();
     private final Map<String, BigInteger> hMap = new HashMap<>();
-    private final Map<String, Integer> peerCountMap = new HashMap<>();
+    private final Map<String, CountDownLatch> latchMap = new HashMap<>();
     private final Map<String, BigInteger> sharedPrivateKeyMap = new HashMap<>();
     private final Map<String, ECPoint> sharedPublicKeyMap = new HashMap<>();
 
@@ -49,7 +50,7 @@ class KeyManager
 
             kp =  kpGen.generateKeyPair();
 
-            peerCountMap.put(keyID, numberOfPeers);
+            latchMap.put(keyID, new CountDownLatch(numberOfPeers));
             hMap.put(keyID, h);
             keyMap.put(keyID, kp);
         }
@@ -82,11 +83,27 @@ class KeyManager
         ECPoint q = sharedPublicKeyMap.get(keyID);
 
         if (q != null)
-        {       // TODO
-            X9ECParameters params = SECNamedCurves.getByName("secp256r1");
+        {
+            try
+            {
+                if (latchMap.get(keyID).await(TIME_OUT, TimeUnit.SECONDS))
+                {
+                    X9ECParameters params = SECNamedCurves.getByName("secp256r1");
 
-            return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q,
-                           new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()))).getEncoded());
+                    return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q,
+                                   new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()))).getEncoded());
+                }
+                else
+                {
+                    // TODO: log timeout
+                    return null;
+                }
+
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
         }
 
         AsymmetricCipherKeyPair kp = keyMap.get(keyID);
@@ -108,10 +125,6 @@ class KeyManager
 
         if (share.isRevealed(message.getIndex(), domainParams, hMap.get(keyID)))
         {
-            int count = peerCountMap.get(keyID) - 1;
-
-            peerCountMap.put(keyID, count);
-
             BigInteger myD = sharedPrivateKeyMap.get(keyID);
 
             if (myD != null)
@@ -133,6 +146,8 @@ class KeyManager
             {
                 sharedPublicKeyMap.put(keyID, message.getQ());
             }
+
+            latchMap.get(keyID).countDown();
         }
         else
         {
@@ -144,6 +159,23 @@ class KeyManager
 
     public BigInteger getPartialPrivateKey(String keyID)
     {
-        return sharedPrivateKeyMap.get(keyID);
+        try
+        {
+            if (latchMap.get(keyID).await(TIME_OUT, TimeUnit.SECONDS))
+            {
+                return sharedPrivateKeyMap.get(keyID);
+            }
+            else
+            {
+                // TODO: log timeout.
+                return null;
+            }
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+            // TODO: log
+            return null;
+        }
     }
 }

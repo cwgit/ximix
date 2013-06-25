@@ -98,7 +98,7 @@ public class NodeKeyGenerationService
                 nodeContext.scheduleTask(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
             }
 
-            return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(generateMessage.getKeyID()));
+            return new MessageReply(MessageReply.Type.OKAY);
         case STORE_SHARE:
             final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
             final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getKeyID()).getCurve(), sssMessage.getSecretShareMessage());
@@ -107,25 +107,11 @@ public class NodeKeyGenerationService
             // till we can validate them.
             nodeContext.scheduleTask(new StoreShareTask(sssMessage.getKeyID(), shareMessage));
 
-            return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(sssMessage.getKeyID()));
+            return new MessageReply(MessageReply.Type.OKAY);
         default:
             System.err.println("unknown command");
         }
         return null;  // TODO:
-    }
-
-    private int findOrderNumber(Set<String> involvedPeers)
-    {
-        int index = 0;
-        for (String name : involvedPeers)
-        {
-            if (name.equals(nodeContext.getName()))
-            {
-                break;
-            }
-            index++;
-        }
-        return index;
     }
 
     public boolean isAbleToHandle(Enum type)

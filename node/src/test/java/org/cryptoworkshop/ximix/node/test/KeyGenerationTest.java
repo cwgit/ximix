@@ -33,7 +33,6 @@ import org.cryptoworkshop.ximix.common.message.GenerateKeyPairMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
-import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
@@ -107,14 +106,12 @@ public class KeyGenerationTest
 
         BigInteger h = BigInteger.valueOf(1000001);
 
-        ServicesConnection connection = context.getPeerMap().get("B");
+        final ServicesConnection connection = context.getPeerMap().get("B");
 
         final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
         final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", peers, 4, h);
-        MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 
-        // TODO: we need an "all clear" to show the key has settled
-        Thread.sleep(5000L);
+        MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 
         SubjectPublicKeyInfo pubKeyInfo1 = context.getPublicKey("ECKEY");
         final ECPublicKeyParameters pubKey1 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo1);
@@ -162,7 +159,7 @@ public class KeyGenerationTest
                 {
                     XimixNodeContext context = contextMap.get(nodeName);
 
-                    partialDecs[index++] = context.getPartialDecrypt("ECKEY", cipherText.getX());
+                    partialDecs[index++] = context.performPartialDecrype("ECKEY", cipherText.getX());
                 }
 
                 LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(peers.size(), pubKey1.getParameters().getN());

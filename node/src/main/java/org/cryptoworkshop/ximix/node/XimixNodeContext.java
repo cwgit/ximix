@@ -197,7 +197,7 @@ public class XimixNodeContext
         return null;
     }
 
-    public ECPoint getPartialDecrypt(String keyID, ECPoint cipherText)
+    public ECPoint performPartialDecrype(String keyID, ECPoint cipherText)
     {
         return cipherText.multiply(keyManager.getPartialPrivateKey(keyID));
     }

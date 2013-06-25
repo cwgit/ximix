@@ -48,5 +48,5 @@ public interface NodeContext
 
     boolean hasPrivateKey(String keyID);
 
-    ECPoint getPartialDecrypt(String keyID, ECPoint cipherText);
+    ECPoint performPartialDecrype(String keyID, ECPoint cipherText);
 }
