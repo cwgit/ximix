@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<installer>
+    <installation>
+        <name>Ximix</name>
+        <description>Put description here..</description>
+        <id>install_1</id>
+        <step name="install_location"></step>
+        <step name="number_of_nodes"></step>
+        <step name="confirm_step"></step>
+    </installation>
+</installer>

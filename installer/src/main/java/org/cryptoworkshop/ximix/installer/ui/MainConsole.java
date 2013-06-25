@@ -1,15 +1,18 @@
 package org.cryptoworkshop.ximix.installer.ui;
 
 import org.cryptoworkshop.ximix.installer.InstallerConfig;
+import org.cryptoworkshop.ximix.installer.ui.steps.AbstractInstallerStep;
 
 import java.io.PrintWriter;
+import java.util.concurrent.CountDownLatch;
 
 /**
  *
  */
-public class MainConsole extends  AbstractInstallerUI
+public class MainConsole extends AbstractInstallerUI
 {
     private PrintWriter pw = null;
+
 
     public MainConsole()
     {
@@ -19,12 +22,13 @@ public class MainConsole extends  AbstractInstallerUI
     @Override
     public void init(InstallerConfig config) throws Exception
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+
     }
 
     @Override
-    public void show() throws Exception
+    public ShowResult show(AbstractInstallerStep step) throws Exception
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+
+        return null;
     }
 }
