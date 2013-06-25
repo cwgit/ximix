@@ -51,22 +51,23 @@ public class LagrangeWeightCalculator
     /**
      * Computes the Lagrange weights used for interpolation to reconstruct the shared secret.
      *
+     * @param activePeers an ordered array of peers available, entries are null if no peer present.
      * @return the Lagrange weights
      */
-    public BigInteger[] computeWeights(ECPoint[] partialDecs)
+    public BigInteger[] computeWeights(Object[] activePeers)
     {
         BigInteger[] weights = new BigInteger[numberOfPeers];
 
         for (int i = 0; i < numberOfPeers; i++)
         {
-            if (partialDecs[i] != null)
+            if (activePeers[i] != null)
             {
                 BigInteger nominator = BigInteger.ONE;
                 BigInteger denominator = BigInteger.ONE;
 
                 for (int peerIndex = 0; peerIndex < numberOfPeers; peerIndex++)
                 {
-                    if (peerIndex != i && partialDecs[peerIndex] != null)
+                    if (peerIndex != i && activePeers[peerIndex] != null)
                     {
                         nominator = nominator.multiply(alphas[peerIndex]).mod(fieldSize);
                         denominator = denominator.multiply(alphas[peerIndex].subtract(alphas[i]).mod(fieldSize)).mod(fieldSize);

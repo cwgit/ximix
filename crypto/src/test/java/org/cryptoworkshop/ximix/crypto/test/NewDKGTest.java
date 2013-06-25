@@ -127,6 +127,31 @@ public class NewDKGTest
 
         ECPublicKeyParameters jointPub = new ECPublicKeyParameters(pubPoint, domainParams);
 
+        //
+        // check the public key commitment values.
+        //
+        for (int i = 0; i != numberOfPeers; i++)
+        {
+            BigInteger[] aCoefficients = privateKeyShares[i].getCoefficients();
+            ECPoint[] qCommitments = new ECPoint[aCoefficients.length];
+
+            for (int k = 0; k != qCommitments.length; k++)
+            {
+                qCommitments[k] = domainParams.getG().multiply(aCoefficients[k]);
+            }
+
+            for (int j = 0; j != numberOfPeers; j++)
+            {
+                ECPoint val = qCommitments[0];
+                for (int k = 1; k != qCommitments.length; k++)
+                {
+                    val = val.add(qCommitments[k].multiply(BigInteger.valueOf(j + 1).pow(k)));
+                }
+
+                Assert.assertEquals(domainParams.getG().multiply(privateKeyShares[i].getShares()[j]), val);
+            }
+        }
+
         // Create a random plaintext
         ECPoint plaintext = generatePoint(domainParams, new SecureRandom());
 

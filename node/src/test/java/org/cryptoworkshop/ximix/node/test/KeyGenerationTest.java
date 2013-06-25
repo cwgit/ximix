@@ -1,18 +1,30 @@
 package org.cryptoworkshop.ximix.node.test;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.ec.ECDecryptor;
+import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
+import org.bouncycastle.crypto.ec.ECEncryptor;
+import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
@@ -24,6 +36,7 @@ import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
+import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.junit.Assert;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
@@ -43,7 +56,8 @@ public class KeyGenerationTest
 
         try
         {
-            ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", 5, 0, 4, BigInteger.valueOf(1000001));
+            Set<String> peers = new HashSet(Arrays.asList("A", "B", "C"));
+            ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", peers, 4, BigInteger.valueOf(1000001));
 
             Assert.fail("no exception!");
         }
@@ -65,7 +79,8 @@ public class KeyGenerationTest
         XimixNodeContext context = contextMap.get("A");
 
         BigInteger h = BigInteger.valueOf(1000001);
-        ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", 5, 0, 4, h);
+        Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
+        ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", peers, 4, h);
 
         Assert.assertEquals(5, messages.length);
 
@@ -85,30 +100,91 @@ public class KeyGenerationTest
     public void testGenerationViaMessage()
         throws Exception
     {
-        Map<String, XimixNodeContext>  contextMap = createContextMap(5);
+        final Map<String, XimixNodeContext>  contextMap = createContextMap(5);
 
         XimixNodeContext context = contextMap.get("A");
 
         BigInteger h = BigInteger.valueOf(1000001);
 
-        ServicesConnection connection = context.getPeerMap().get("B");
+        final ServicesConnection connection = context.getPeerMap().get("B");
 
-        MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, new GenerateKeyPairMessage("ECKEY", new HashSet(Arrays.asList("A", "B", "C", "D", "E")), 4, h));
-            System.err.println(reply);
-        ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", 5, 0, 4, h);
+        final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
+        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", peers, 4, h);
 
-        Assert.assertEquals(5, messages.length);
+        MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 
-        X9ECParameters params = SECNamedCurves.getByName("secp256r1"); // TODO: should be on the context!!
-        ECDomainParameters domainParams = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+        SubjectPublicKeyInfo pubKeyInfo1 = context.getPublicKey("ECKEY");
+        final ECPublicKeyParameters pubKey1 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo1);
+        SubjectPublicKeyInfo pubKeyInfo2 = contextMap.get("B").getPublicKey("ECKEY");
+        ECPublicKeyParameters pubKey2 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo2);
 
-        for (int i = 0; i != messages.length; i++)
+        Assert.assertEquals(pubKey1.getQ(), pubKey2.getQ());
+
+        for (String nodeName : peers)
         {
-            ECCommittedSecretShareMessage message = ECCommittedSecretShareMessage.getInstance(params.getCurve(), messages[i].getEncoded());
-            ECCommittedSecretShare share = new ECCommittedSecretShare(message.getValue(), message.getWitness(), message.getCommitmentFactors());
+            pubKeyInfo2 = contextMap.get(nodeName).getPublicKey("ECKEY");
+            pubKey2 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo2);
 
-            Assert.assertTrue(share.isRevealed(i, domainParams, h));
+            Assert.assertEquals(nodeName, pubKey1.getQ(), pubKey2.getQ());
         }
+
+                // Create a random plaintext
+        ECPoint plaintext = generatePoint(context.<ECDomainParameters>getDomainParameters("ECKEY"), new SecureRandom());
+
+        // Encrypt it using the joint public key
+        ECEncryptor enc = new ECElGamalEncryptor();
+
+        enc.init(new ParametersWithRandom(pubKey1, new SecureRandom()));
+
+        final ECPair cipherText = enc.encrypt(plaintext);
+
+
+        // Note: ordering is important here!!!
+
+        ECDecryptor dec = new ECDecryptor()
+        {
+            @Override
+            public void init(CipherParameters cipherParameters)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public ECPoint decrypt(ECPair ecPair)
+            {
+                int index = 0;
+                ECPoint[] partialDecs = new ECPoint[peers.size()];
+
+                for (String nodeName : genKeyPairMessage.getNodesToUse())
+                {
+                    XimixNodeContext context = contextMap.get(nodeName);
+
+                    partialDecs[index++] = context.performPartialDecrype("ECKEY", cipherText.getX());
+                }
+
+                LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(peers.size(), pubKey1.getParameters().getN());
+
+                BigInteger[] weights = lagrangeWeightCalculator.computeWeights(partialDecs);
+
+                // weighting
+                ECPoint weightedDecryption = partialDecs[0].multiply(weights[0]);
+                for (int i = 1; i < weights.length; i++)
+                {
+                    if (partialDecs[i] != null)
+                    {
+                        weightedDecryption = weightedDecryption.add(partialDecs[i].multiply(weights[i]));
+                    }
+                }
+
+                // Do final decryption to recover plaintext ECPoint
+                return cipherText.getY().add(weightedDecryption.negate());
+            }
+        };
+
+        // Do final decryption to recover plaintext ECPoint
+        ECPoint decrypted = dec.decrypt(cipherText);
+
+        Assert.assertEquals(plaintext, decrypted);
     }
 
     private Map<String, XimixNodeContext> createContextMap(int size)
@@ -239,5 +315,22 @@ public class KeyGenerationTest
         service.appendChild(implementationNode);
 
         return service;
+    }
+
+    public static BigInteger getRandomInteger(BigInteger n, SecureRandom rand)
+    {
+        BigInteger r;
+        int maxbits = n.bitLength();
+        do
+        {
+            r = new BigInteger(maxbits, rand);
+        }
+        while (r.compareTo(n) >= 0);
+        return r;
+    }
+
+    public static ECPoint generatePoint(ECDomainParameters params, SecureRandom rand)
+    {
+        return params.getG().multiply(getRandomInteger(params.getN(), rand));
     }
 }

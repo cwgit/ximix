@@ -48,6 +48,7 @@ public class NodeKeyGenerationService
 
     public MessageReply handle(Message message)
     {
+        // TODO: sort out the reply messages
         switch (((CommandMessage)message).getType())
         {
         case INITIATE_GENERATE_KEY_PAIR:
@@ -59,9 +60,7 @@ public class NodeKeyGenerationService
                 //
                 // generate our part
                 //
-                int order = findOrderNumber(peersToInitiate);
-
-                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate.size(), order, initiateMessage.getThreshold(), initiateMessage.getH());
+                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate, initiateMessage.getThreshold(), initiateMessage.getH());
 
                 //
                 // start everyone else
@@ -94,14 +93,12 @@ public class NodeKeyGenerationService
 
             if (involvedPeers.contains(nodeContext.getName()))
             {
-                int order = findOrderNumber(involvedPeers);
-
-                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers.size(), order, generateMessage.getThreshold(), generateMessage.getH());
+                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), generateMessage.getH());
 
                 nodeContext.scheduleTask(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
             }
 
-            return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(generateMessage.getKeyID()));
+            return new MessageReply(MessageReply.Type.OKAY);
         case STORE_SHARE:
             final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
             final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getKeyID()).getCurve(), sssMessage.getSecretShareMessage());
@@ -110,25 +107,11 @@ public class NodeKeyGenerationService
             // till we can validate them.
             nodeContext.scheduleTask(new StoreShareTask(sssMessage.getKeyID(), shareMessage));
 
-            return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(sssMessage.getKeyID()));
+            return new MessageReply(MessageReply.Type.OKAY);
         default:
             System.err.println("unknown command");
         }
         return null;  // TODO:
-    }
-
-    private int findOrderNumber(Set<String> involvedPeers)
-    {
-        int index = 0;
-        for (String name : involvedPeers)
-        {
-            if (name.equals(nodeContext.getName()))
-            {
-                break;
-            }
-            index++;
-        }
-        return index;
     }
 
     public boolean isAbleToHandle(Enum type)
@@ -159,7 +142,7 @@ public class NodeKeyGenerationService
             {
                 if (name.equals(nodeContext.getName()))
                 {
-                    nodeContext.scheduleTask(new StoreShareTask(keyID, messages[index++]));
+                    nodeContext.storeThresholdKeyShare(keyID, messages[index++]);
                 }
                 else
                 {
@@ -198,7 +181,7 @@ public class NodeKeyGenerationService
            else
            {
                // TODO: there needs to be a limit on how long we do this!
-               nodeContext.scheduleTask(this);
+               nodeContext.scheduleTask(StoreShareTask.this);
            }
        }
     }
