@@ -17,8 +17,7 @@ import static org.cryptoworkshop.ximix.installer.InstallerConfig.Step;
 /**
  *
  */
-public class Installer
-{
+public class Installer {
 
     private static HashMap<String, Object> properties = new HashMap<>();
     private File archive = null;
@@ -29,10 +28,8 @@ public class Installer
     /**
      *
      */
-    public Installer()
-    {
-        try
-        {
+    public Installer() {
+        try {
             URL u = Installer.class.getProtectionDomain().getCodeSource().getLocation();
             archive = new File(u.toURI());
 
@@ -66,32 +63,40 @@ public class Installer
 
             List<Object> operations = config.getInstallation().getOperations();
 
-            for (int t = 0; t < operations.size(); t++)
-            {
+            for (int t = 0; t < operations.size(); t++) {
                 Object opp = operations.get(t);
-                if (opp instanceof Step)
-                {
-                    switch(ui.show(((Step) opp).getStepInstance()))
-                    {
+                if (opp instanceof Step) {
+                    switch (ui.show(((Step) opp).getStepInstance())) {
+                        case BACK:
+                            if (t > 0) {
+                                t -= 2;
+                            }
+                            break;
+                        case NEXT:
+                            continue;
 
+                        case CANCEL:
+                            System.exit(0);
+                            break;
                     }
+
+
+                    continue;
                 }
+
             }
 
 
-        } catch (Exception ex)
-        {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    public static HashMap<String, Object> properties()
-    {
+    public static HashMap<String, Object> properties() {
         return properties;
     }
 
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
         new Installer();
     }
 
