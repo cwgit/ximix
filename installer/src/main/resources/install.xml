@@ -4,8 +4,21 @@
         <name>Ximix</name>
         <description>Put description here..</description>
         <id>install_1</id>
+
+        <prop name="installDir" type="file" value="./ximix"/>
+        <prop name="numNodes" type="int" value="1"/>
+
+        <movements>
+            <id>1</id>
+            <movement src="image" dest="node" recursive="true"></movement>
+        </movements>
+
+
+        <!--
         <step name="install_location"></step>
         <step name="number_of_nodes"></step>
         <step name="confirm_step"></step>
+        -->
+
     </installation>
 </installer>

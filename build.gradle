@@ -1,3 +1,8 @@
+import java.util.jar.Attributes
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
+import java.util.zip.ZipEntry
+
 buildscript {
     repositories {
         mavenCentral()
@@ -14,9 +19,9 @@ allprojects {
     apply plugin: 'java'
 
     dependencies {
-        compile fileTree(dir: new File(rootDir,  'libs'), include: '*.jar')
-        compile fileTree(dir: new File(rootDir,  'libs/betas'), include: '*.jar')   
-    
+        compile fileTree(dir: new File(rootDir, 'libs'), include: '*.jar')
+        compile fileTree(dir: new File(rootDir, 'libs/betas'), include: '*.jar')
+
 
     }
 }
@@ -28,7 +33,7 @@ subprojects {
 
     dependencies {
         testCompile group: 'junit', name: 'junit', version: '4.+'
-     }
+    }
 
     sourceCompatibility = 1.7
     targetCompatibility = 1.7
@@ -43,31 +48,170 @@ dependencies {
 }
 
 task remove_betas << {
-    File root = new File(projectDir,  'libs/betas');
-    if(root.exists()) {
-         org.apache.commons.io.FileUtils.deleteDirectory(root);
-         System.out.println(" Removed betas, use 'gradle fetch_betas' to reload.");
-    } 
+    File root = new File(projectDir, 'libs/betas');
+    if (root.exists()) {
+        org.apache.commons.io.FileUtils.deleteDirectory(root);
+        System.out.println(" Removed betas, use 'gradle fetch_betas' to reload.");
+    }
 }
 
 task fetch_betas << {
-    File root = new File(projectDir,  'libs/betas');
-    if(!root.exists()) {
+    File root = new File(projectDir, 'libs/betas');
+    if (!root.exists()) {
         root.mkdirs();
     }
     fetchFile('http://downloads.bouncycastle.org/betas/bcprov-jdk15on-150b01.jar', root);
 }
 
+task test_foo << {
+    System.out.println(project(':common').file("build/lib/common.jar"));
+}
+
+//
+//task make_installer(dependsOn: [':installer:compileJava','jar'], type: Jar) << {
+//    def console = System.console();
+//    boolean interactive = true;
+//    String installLocation = null;
+//    Integer nodeNumber = 1;
+//    String[] configFiles = null;
+//
+//    console.writer().println("\r\n\r\nXimix installer generator.");
+//    console.writer().println("The following steps will enable you to generate an executable jar file that\r\n" +
+//            "will install Ximix.");
+//
+//    console.writer().println("--------------------------------------------------------------------------------\r\n");
+//
+//
+//    if (console) {
+//
+//        String l = console.readLine("Ask user for install location [Y,n] >");
+//        if (l.trim().toLowerCase().startsWith("n")) {
+//            for (; ;) {
+//                installLocation = console.readLine("Location on target system, may be relative. >");
+//                if (!installLocation.trim().isEmpty()) {
+//                    installLocation = installLocation.trim();
+//                    break;
+//                }
+//            }
+//        }
+//
+//        l = console.readLine("Ask user for number of nodes [Y,n] >");
+//        if (l.trim().startsWith("n")) {
+//            for (; ;) {
+//                l = console.readLine("Number of nodes [1] >");
+//                if (l.trim().isEmpty()) {
+//                    System.out.println("Used default..");
+//                    nodeNumber = 1;
+//                    break;
+//                } else {
+//                    try {
+//                        nodeNumber = Integer.valueOf(l);
+//                        if (nodeNumber < 1) {
+//                            console.writer().write("Node number must be 1 or more.");
+//                            console.writer().flush();
+//                        }
+//                    } catch (Exception ex) {
+//                        console.writer().write("Invalid number. ");
+//                        console.writer().flush();
+//                    }
+//                }
+//            }
+//        }
+//
+//        console.writer().println("\r\nEach node can either use a default configuration or you can specify\r\n" +
+//                "the location on your local system where this task will source the config file from when\r\n" +
+//                "it creates the executable jar file.\r\n");
+//
+//        configFiles = new String[nodeNumber];
+//
+//        for (int t = 0; t < nodeNumber; t++) {
+//            for (; ;) {
+//                l = console.readLine("Local config file for node" + t);
+//                l = l.trim();
+//                if (l.trim().isEmpty()) {
+//                    break;
+//                }
+//                configFiles[t] = l;
+//            }
+//        }
+//
+//        console.writer().println("\r\nCreating installer..\r\n");
+//
+//        File root = project(':installer').file("build/layout");
+//        File image = new File(root, "image");
+//
+//
+//        //
+//        // Delete is exists.
+//        //
+//        if (root.exists()) {
+//            org.apache.commons.io.FileUtils.deleteDirectory(root);
+//        }
+//
+//        root.mkdirs();
+//        image.mkdirs();
+//
+//        File output = project(':installer').file("build/installers");
+//        output.mkdirs();
+//
+//
+//
+//        File f = new File(image,"libs");
+//        f.mkdirs();
+//
+//        //
+//        // Copy jars to target dir.
+//        //
+//
+//        org.apache.commons.io.FileUtils.copyFile(
+//                    project(':common').file("build/libs/common.jar"),
+//                    new File(f,"common.jar"));
+//
+//        org.apache.commons.io.FileUtils.copyFile(
+//                project(':crypto').file("build/libs/crypto.jar"),
+//                new File(f,"crypto.jar"));
+//
+//        org.apache.commons.io.FileUtils.copyFile(
+//                project(':mixnet').file("build/libs/mixnet.jar"),
+//                new File(f,"mixnet.jar"));
+//
+////        //
+////        // Copy in installer runnable classes.
+////        //
+////                                                                          ß
+////        org.apache.commons.io.FileUtils.copyDirectory(new File(project(':installer').buildDir,"classes/main/"), image);
+//
+//
+//        //
+//        // Build the jar file.
+//        //
+//        jar {
+//            manifest {
+//               attributes("Main-Class":"org.cryptoworkshop.ximix.installer.Installer");
+//            }
+//
+//            from([project(':installer').file("classes/main/"),root]);
+//            into(output);
+//        }
+//
+//
+//
+//
+//    } else {
+//        logger.error "Unable to obtain a console.";
+//    }
+//}
+
+
 /**
  * Fetch a file at url and save it into the directory.
  * The filename used is taken from the url.
  */
-void fetchFile(String url, File directory)
-{
+void fetchFile(String url, File directory) {
     URL u = new URL(url);
     String f = u.getFile();
-    f = f.substring(f.lastIndexOf("/")+1);
-    System.out.print("Fetching '"+f+"' from '"+url+"' ... ");
-    org.apache.commons.io.FileUtils.copyURLToFile(u, new File(directory,f));
+    f = f.substring(f.lastIndexOf("/") + 1);
+    System.out.print("Fetching '" + f + "' from '" + url + "' ... ");
+    org.apache.commons.io.FileUtils.copyURLToFile(u, new File(directory, f));
     System.out.println("Complete");
 }

@@ -4,8 +4,10 @@ import org.cryptoworkshop.ximix.installer.ui.steps.AbstractInstallerStep;
 import org.cryptoworkshop.ximix.installer.ui.steps.ConfirmStep;
 import org.cryptoworkshop.ximix.installer.ui.steps.SelectInstallLocation;
 import org.cryptoworkshop.ximix.installer.ui.steps.SelectNumberOfNodes;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,10 +37,10 @@ public class InstallerConfig
             @Override
             public void node(Node n)
             {
-               if ("installation".equals(n.getNodeName()))
-               {
-                   installation = new Installation(n);
-               }
+                if ("installation".equals(n.getNodeName()))
+                {
+                    installation = new Installation(n);
+                }
             }
         });
 
@@ -65,6 +67,7 @@ public class InstallerConfig
         private String name = null;
         private String description = null;
         private List<Object> operations = new ArrayList<>();
+        private HashMap<String, Object> props = new HashMap<>();
 
         public Installation(Node n)
         {
@@ -91,6 +94,49 @@ public class InstallerConfig
                     } else if ("step".equals(n.getNodeName()))
                     {
                         operations.add(new Step(n));
+                    } else if ("property".equals(n.getNodeName()))
+                    {
+                        NamedNodeMap attr = n.getAttributes();
+
+                        String name = attr.getNamedItem("name").getTextContent();
+
+
+                        //
+                        // Properties can be overridden from command line using -D<name>=<value
+                        //
+
+                        String value = System.getProperty(name,null);
+
+                        if (attr.getNamedItem("value") != null)
+                        {
+                            value = attr.getNamedItem("value").getTextContent();
+                        }
+
+                        String type = attr.getNamedItem("type").getTextContent();
+                        switch (type)
+                        {
+                            case "int":
+                                props.put(
+                                        attr.getNamedItem("name").getTextContent(),
+                                        Integer.valueOf(attr.getNamedItem("value").getTextContent())
+                                );
+                                break;
+
+                            case "string":
+                                props.put(
+                                        attr.getNamedItem("name").getTextContent(),
+                                        attr.getNamedItem("value").getTextContent()
+                                );
+                                break;
+
+                            case "file":
+                                props.put(
+                                        attr.getNamedItem("name").getTextContent(),
+                                        new File(attr.getNamedItem("value").getTextContent())
+                                );
+                                break;
+                        }
+
                     }
                 }
             });
@@ -146,16 +192,6 @@ public class InstallerConfig
 
         }
 
-        public AbstractInstallerStep getStepInstance()
-        {
-            return stepInstance;
-        }
-
-        public void setStepInstance(AbstractInstallerStep stepInstance)
-        {
-            this.stepInstance = stepInstance;
-        }
-
         public Step(Node n)
         {
             Util.traverseAttributes(n, new Util.NodeTraversal()
@@ -183,6 +219,16 @@ public class InstallerConfig
                     }
                 }
             });
+        }
+
+        public AbstractInstallerStep getStepInstance()
+        {
+            return stepInstance;
+        }
+
+        public void setStepInstance(AbstractInstallerStep stepInstance)
+        {
+            this.stepInstance = stepInstance;
         }
     }
 
@@ -284,6 +330,9 @@ public class InstallerConfig
                     } else if ("destName".equals(n.getNodeName()))
                     {
                         destName = n.getTextContent().trim();
+                    }   else if ("recursive".equals(n.getNodeName()))
+                    {
+                        recursive = Boolean.valueOf(n.getTextContent().trim());
                     }
                 }
             });
