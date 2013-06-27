@@ -26,10 +26,10 @@ public interface KeyGenerationService
      * Return the public key associated with key ID keyID.
      *
      * @param keyID the id of the key we are looking for.
-     * @param nodeNames the names of the nodes to take part.
      * @param thresholdNumber the number of nodes that should be required to recover a message.
+     * @param nodeNames the names of the nodes to take part.
      * @return a byte[] array of the SubjectPublicKeyInfo object representing the key.
      */
-    byte[] generatePublicKey(String keyID, Set<String> nodeNames, int thresholdNumber)
+    byte[] generatePublicKey(String keyID, int thresholdNumber, String... nodeNames)
         throws ServiceConnectionException;
 }

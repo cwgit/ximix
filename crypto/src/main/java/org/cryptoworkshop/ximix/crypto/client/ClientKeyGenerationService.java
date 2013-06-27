@@ -16,7 +16,8 @@
 package org.cryptoworkshop.ximix.crypto.client;
 
 import java.math.BigInteger;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.HashSet;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
@@ -59,12 +60,12 @@ public class ClientKeyGenerationService
     }
 
     @Override
-    public byte[] generatePublicKey(String keyID, Set<String> nodeNames, int thresholdNumber)
+    public byte[] generatePublicKey(String keyID, int thresholdNumber, String... nodeNames)
         throws ServiceConnectionException
     {
         // TODO: need to generate h from appropriate EC domain parameters
         BigInteger h = BigInteger.valueOf(1000);
-        MessageReply reply = connection.sendThresholdMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, thresholdNumber, new GenerateKeyPairMessage(keyID, nodeNames, thresholdNumber, h));
+        MessageReply reply = connection.sendThresholdMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, thresholdNumber, new GenerateKeyPairMessage(keyID, thresholdNumber, h, new HashSet(Arrays.asList(nodeNames))));
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {

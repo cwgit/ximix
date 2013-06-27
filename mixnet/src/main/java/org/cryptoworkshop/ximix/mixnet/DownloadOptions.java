@@ -20,6 +20,7 @@ public class DownloadOptions
     public static class Builder
     {
         private String keyID;
+        private int threshold;
 
         public Builder()
         {
@@ -33,6 +34,13 @@ public class DownloadOptions
             return this;
         }
 
+        public Builder setThreshold(int threshold)
+        {
+            this.threshold = threshold;
+
+            return this;
+        }
+
         public DownloadOptions build()
         {
             return new DownloadOptions(this);
@@ -40,14 +48,21 @@ public class DownloadOptions
     }
 
     private final String keyID;
+    private final int threshold;
 
     private DownloadOptions(Builder builder)
     {
         this.keyID = builder.keyID;
+        this.threshold = builder.threshold;
     }
 
     public String getKeyID()
     {
-        return  keyID;
+        return keyID;
+    }
+
+    public int getThreshold()
+    {
+        return threshold;
     }
 }

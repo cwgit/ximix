@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <node>
     <portNo>11001</portNo>
-    <keystore>NODE2</keystore>
+    <name>B</name>
     <services>
         <service>
             <implementation>org.cryptoworkshop.ximix.mixnet.service.BoardHostingService</implementation>
@@ -20,6 +20,9 @@
         </service>
         <service>
             <implementation>org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService</implementation>
+        </service>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeDecryptionService</implementation>
         </service>
         <service>
             <implementation>org.cryptoworkshop.ximix.crypto.service.NodeSigningService</implementation>

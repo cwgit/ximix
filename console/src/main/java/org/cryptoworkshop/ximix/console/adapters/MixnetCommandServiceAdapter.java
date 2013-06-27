@@ -24,7 +24,7 @@ import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
-import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
+import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
@@ -42,8 +42,8 @@ public class MixnetCommandServiceAdapter
 
     protected File configFile = null;
     protected XimixRegistrar registrar = null;
-    protected MixnetCommandService commandService = null;
-    protected Class commandType = MixnetCommandService.class;
+    protected CommandService commandService = null;
+    protected Class commandType = CommandService.class;
     protected Config config = null;
 
 
@@ -90,7 +90,7 @@ public class MixnetCommandServiceAdapter
         try
         {
             registrar = XimixRegistrarFactory.createAdminServiceRegistrar(configFile);
-            commandService = registrar.connect(MixnetCommandService.class);
+            commandService = registrar.connect(CommandService.class);
         } catch (Exception ex)
         {
             throw new RuntimeException(ex); // TODO handle this better.

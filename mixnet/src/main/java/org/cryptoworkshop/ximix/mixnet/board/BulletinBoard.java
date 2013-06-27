@@ -15,6 +15,8 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
+import java.util.List;
+
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
 public interface BulletinBoard
@@ -27,4 +29,6 @@ public interface BulletinBoard
     Transform[] getTransforms();
 
     Transform getTransform(String transformName);
+
+    List<byte[]> getMessages(int maxNumberOfMessages);
 }

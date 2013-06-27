@@ -23,9 +23,7 @@ import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.ec.ECPairTransform;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.prng.FixedSecureRandom;
-import org.bouncycastle.math.ec.ECCurve;
-import org.cryptoworkshop.ximix.mixnet.board.asn1.PairSequence;
+import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 
 public class MultiColumnRowTransform
     implements Transform

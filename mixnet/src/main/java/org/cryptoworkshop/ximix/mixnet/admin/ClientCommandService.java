@@ -15,29 +15,42 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.ECPair;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
+import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
+import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
+import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 
-public class ClientMixnetCommandService
-    implements MixnetCommandService
+public class ClientCommandService
+    implements CommandService
 {
     private Executor decouple = Executors.newSingleThreadExecutor();
     private Executor executor = Executors.newScheduledThreadPool(4);
 
     private AdminServicesConnection connection;
 
-    public ClientMixnetCommandService(AdminServicesConnection connection)
+    public ClientCommandService(AdminServicesConnection connection)
     {
         this.connection = connection;
     }
@@ -177,24 +190,85 @@ public class ClientMixnetCommandService
         {
             try
             {
-//                connection.sendMessage(CommandMessage.Type.SUSPEND_BOARD, new BoardMessage(boardName));
+                connection.sendMessage(CommandMessage.Type.SUSPEND_BOARD, new BoardMessage(boardName));
 
-//                for (int i = 0; i != nodes.length; i++)
-//                {
-//                    String curNode = nodes[i];
-//                    String nextNode = nodes[(i + 1) % nodes.length];
-//
-//                    connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(boardName, options.getTransformName(), options.getKeyID(), nextNode));
-//                }
+                if (options.getKeyID() != null)
+                {
+                    String[] nodes = connection.getActiveNodeNames().toArray(new String[connection.getActiveNodeNames().size()]);
 
-                notifier.messageDownloaded(new byte[100]);
-//
-//                connection.sendMessage(CommandMessage.Type.ACTIVATE_BOARD, new BoardMessage(boardName));
+                    // TODO: need to download in batches...
+                    for (;;)
+                    {
+                        MessageReply reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
+
+                        MessageBlock data = MessageBlock.getInstance(reply.getPayload());
+
+                        if (data.size() == 0)
+                        {
+                            break;
+                        }
+
+                        MessageReply[] partialDecryptResponsess = new MessageReply[options.getThreshold()];
+
+                        // TODO: deal with drop outs
+                        for (int i = 0; i != options.getThreshold(); i++)
+                        {
+                            String curNode = nodes[i];
+
+                            partialDecryptResponsess[i] = connection.sendMessage(curNode, CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), data.getMessages()));
+                        }
+
+                        X9ECParameters params = SECNamedCurves.getByName("secp256r1"); // TODO: should be on the context!!
+                        ECDomainParameters domainParams = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+
+                        LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(options.getThreshold(), domainParams.getN());
+
+                        BigInteger[] weights = calculator.computeWeights(partialDecryptResponsess);
+
+                        // weighting
+                        List<byte[]>[] partialDecrypts = new List[options.getThreshold()];
+
+                        for (int i = 0; i != partialDecrypts.length; i++)
+                        {
+                            partialDecrypts[i] = MessageBlock.getInstance(partialDecryptResponsess[i].getPayload()).getMessages();
+                        }
+
+                        for (int messageIndex = 0; messageIndex != partialDecrypts[0].size(); messageIndex++)
+                        {
+                            PairSequence ps = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[0].get(messageIndex));
+                            ECPoint[] weightedDecryptions = new ECPoint[ps.size()];
+                            ECPair[]  partials = ps.getECPairs();
+                            ECPoint[] fulls = new ECPoint[ps.size()];
+
+                            for (int i = 0; i != weightedDecryptions.length; i++)
+                            {
+                                weightedDecryptions[i] = partials[i].getX().multiply(weights[0]);
+                            }
+                            for (int wIndex = 1; wIndex < weights.length; wIndex++)
+                            {
+                                for (int i = 0; i != weightedDecryptions.length; i++)
+                                {
+                                    weightedDecryptions[i] = weightedDecryptions[i].add(partials[i].getX().multiply(weights[wIndex]));
+                                }
+                            }
+
+                            for (int i = 0; i != weightedDecryptions.length; i++)
+                            {
+                                fulls[i] = partials[i].getY().add(weightedDecryptions[i].negate());
+                            }
+
+                            notifier.messageDownloaded(new PointSequence(fulls).getEncoded());
+                        }
+                    }
+                }
+
+                connection.sendMessage(CommandMessage.Type.ACTIVATE_BOARD, new BoardMessage(boardName));
 
                 notifier.completed();
             }
             catch (Exception e)
             {
+                e.printStackTrace();
                 notifier.failed(e.toString());
             }
         }

@@ -23,22 +23,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.common.message.BoardDetails;
+import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
+import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.MoveMessage;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.UploadMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.mixnet.task.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.mixnet.task.UploadTask;
@@ -108,6 +109,13 @@ public class BoardHostingService
                 UploadMessage uploadMessage = UploadMessage.getInstance(message.getPayload());
                 serviceContext.scheduleTask(new UploadTask(serviceContext, boardRegistry, uploadMessage));
                 break;
+            case DOWNLOAD_BOARD_CONTENTS:
+                BoardDownloadMessage downloadRequest = BoardDownloadMessage.getInstance(message.getPayload());
+                BulletinBoard board = boardRegistry.getBoard(downloadRequest.getBoardName());
+
+                List<byte[]> messages = board.getMessages(downloadRequest.getMaxNumberOfMessages());
+
+                return new MessageReply(MessageReply.Type.OKAY, new MessageBlock(messages));
             default:
                 System.err.println("unknown command");
             }
@@ -133,6 +141,7 @@ public class BoardHostingService
             || type == CommandMessage.Type.SUSPEND_BOARD
             || type == CommandMessage.Type.ACTIVATE_BOARD
             || type == CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE
+            || type == CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS
             || type == CommandMessage.Type.TRANSFER_TO_BOARD;
     }
 

@@ -16,9 +16,11 @@
 package org.cryptoworkshop.ximix.common.message;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -40,7 +42,12 @@ public class GenerateKeyPairMessage
     private final int threshold;
     private final BigInteger h;
 
-    public GenerateKeyPairMessage(String keyID, Set<String> nodesToUse, int threshold, BigInteger h)
+    public GenerateKeyPairMessage(String keyID, int threshold, BigInteger h, String... nodesToUse)
+    {
+        this(keyID, threshold, h, new HashSet<>(Arrays.asList((String[])nodesToUse)));
+    }
+
+    public GenerateKeyPairMessage(String keyID, int threshold, BigInteger h, Set<String> nodesToUse)
     {
         // TODO: just in case order is important,,, trying to avoid this if possible.
         Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());

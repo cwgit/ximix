@@ -70,6 +70,30 @@ public class BulletinBoardImpl
         return transforms.get(transformName);
     }
 
+    @Override
+    public List<byte[]> getMessages(int maxNumberOfMessages)
+    {
+        int count;
+
+        if (messages.size() > maxNumberOfMessages)
+        {
+            count = maxNumberOfMessages;
+        }
+        else
+        {
+            count = messages.size();
+        }
+
+        List<byte[]> rv = new ArrayList<>(count);
+
+        for (int i = 0; i != count; i++)
+        {
+            rv.add(messages.remove(0));
+        }
+
+        return rv;
+    }
+
     public Iterator<byte[]> iterator()
     {
         return new ArrayList<byte[]>(messages).iterator();
