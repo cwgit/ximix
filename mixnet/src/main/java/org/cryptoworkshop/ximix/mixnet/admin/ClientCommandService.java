@@ -196,7 +196,6 @@ public class ClientCommandService
                 {
                     String[] nodes = connection.getActiveNodeNames().toArray(new String[connection.getActiveNodeNames().size()]);
 
-                    // TODO: need to download in batches...
                     for (;;)
                     {
                         MessageReply reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
