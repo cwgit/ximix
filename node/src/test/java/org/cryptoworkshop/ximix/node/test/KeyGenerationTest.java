@@ -234,22 +234,6 @@ public class KeyGenerationTest
 
                     return service.handle(message);
                 }
-
-                @Override
-                public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
-                    throws ServiceConnectionException
-                {
-                    for (String nodeName : connectionMaps[nodeNo].keySet())
-                    {
-                        Message message = Message.getInstance(messagePayload);
-
-                        Service service = context.getService(message.getType());
-
-                        service.handle(message);
-                    }
-
-                    return null;
-                }
             });
         }
 

@@ -65,7 +65,7 @@ public class ClientKeyGenerationService
     {
         // TODO: need to generate h from appropriate EC domain parameters
         BigInteger h = BigInteger.valueOf(1000);
-        MessageReply reply = connection.sendThresholdMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, thresholdNumber, new GenerateKeyPairMessage(keyID, thresholdNumber, h, new HashSet(Arrays.asList(nodeNames))));
+        MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, new GenerateKeyPairMessage(keyID, thresholdNumber, h, new HashSet(Arrays.asList(nodeNames))));
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {

@@ -247,41 +247,21 @@ public class XimixRegistrarFactory
         {
             try
             {
-                if (type instanceof ClientMessage.Type)
+                synchronized (this)
                 {
-                    cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
+                    if (type instanceof ClientMessage.Type)
+                    {
+                        cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
+                    }
+                    else
+                    {
+                        cOut.write(new CommandMessage((CommandMessage.Type)type, messagePayload).getEncoded());
+                    }
+                    return MessageReply.getInstance(new ASN1InputStream(cIn, 100000).readObject());      // TODO
                 }
-                else
-                {
-                    cOut.write(new CommandMessage((CommandMessage.Type)type, messagePayload).getEncoded());
-                }
-                return MessageReply.getInstance(new ASN1InputStream(cIn, 1000000).readObject());      // TODO
             }
             catch (Exception e)
             {                                     e.printStackTrace();
-                // TODO: this should only happen when we've run out of nodes.
-                throw new ServiceConnectionException("couldn't send");
-            }
-        }
-
-        public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
-            throws ServiceConnectionException
-        {
-            try
-            {         // TODO: needs to go to a minimum number of clients
-                if (type instanceof ClientMessage.Type)
-                {
-                    cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
-                }
-                else
-                {
-                    cOut.write(new CommandMessage((CommandMessage.Type)type, messagePayload).getEncoded());
-                }
-
-                return MessageReply.getInstance(new ASN1InputStream(cIn).readObject());
-            }
-            catch (Exception e)
-            {                                         e.printStackTrace();
                 // TODO: this should only happen when we've run out of nodes.
                 throw new ServiceConnectionException("couldn't send");
             }
@@ -360,20 +340,6 @@ public class XimixRegistrarFactory
                 return resetConnection().sendMessage(type, messagePayload);
             }
         }
-
-        @Override
-        public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
-            throws ServiceConnectionException
-        {
-            try
-            {
-                return getConnection().sendThresholdMessage(type, minimumNumberOfPeers, messagePayload);
-            }
-            catch (Exception e)
-            {
-                return resetConnection().sendMessage(type, messagePayload);
-            }
-        }
     }
 
     private static class AdminServicesConnectionImpl
@@ -423,13 +389,6 @@ public class XimixRegistrarFactory
         }
 
         @Override
-        public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
-            throws ServiceConnectionException
-        {
-            return connectionMap.get(connectionMap.keySet().iterator().next()).sendThresholdMessage(type, minimumNumberOfPeers, messagePayload);
-        }
-
-        @Override
         public Set<String> getActiveNodeNames()
         {
             // TODO: this should only return names with an active connection
@@ -439,7 +398,6 @@ public class XimixRegistrarFactory
         public MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            System.err.println(nodeName + " " + connectionMap.keySet());
             return connectionMap.get(nodeName).sendMessage(type, messagePayload);
         }
     }

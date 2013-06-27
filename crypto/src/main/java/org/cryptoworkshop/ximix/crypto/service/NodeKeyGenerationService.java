@@ -134,10 +134,7 @@ public class NodeKeyGenerationService
                 {
                     try
                     {
-                        synchronized (nodeContext)  // TODO: proxy?
-                        {
                         MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, initiateMessage);
-                        }
                     }
                     catch (ServiceConnectionException e)
                     {
@@ -181,10 +178,7 @@ public class NodeKeyGenerationService
                         {
                             try
                             {
-                                synchronized (nodeContext)  // TODO: need a single threaded proxy for this...
-                                {
                                 MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.STORE_SHARE, new StoreSecretShareMessage(keyID, messages[counter]));
-                                }
                             }
                             catch (ServiceConnectionException e)
                             {
