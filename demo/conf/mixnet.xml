@@ -3,9 +3,11 @@
     <node>
         <host>localhost</host>
         <portNo>11000</portNo>
+        <name>A</name>
     </node>
     <node>
         <host>localhost</host>
         <portNo>11001</portNo>
+        <name>B</name>
     </node>
 </nodes>

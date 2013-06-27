@@ -17,8 +17,6 @@ package org.cryptoworkshop.ximix.crypto.threshold;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.math.ec.ECPoint;
-
 /**
  * A basic calculator for Lagrangian weights for a given number of peers in a given field.
  */

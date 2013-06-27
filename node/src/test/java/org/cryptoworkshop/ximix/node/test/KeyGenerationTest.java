@@ -107,9 +107,8 @@ public class KeyGenerationTest
         BigInteger h = BigInteger.valueOf(1000001);
 
         final ServicesConnection connection = context.getPeerMap().get("B");
-
         final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
-        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", peers, 4, h);
+        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", 4, h, peers);
 
         MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 
@@ -159,7 +158,7 @@ public class KeyGenerationTest
                 {
                     XimixNodeContext context = contextMap.get(nodeName);
 
-                    partialDecs[index++] = context.performPartialDecrype("ECKEY", cipherText.getX());
+                    partialDecs[index++] = context.performPartialDecrypt("ECKEY", cipherText.getX());
                 }
 
                 LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(peers.size(), pubKey1.getParameters().getN());
@@ -235,22 +234,6 @@ public class KeyGenerationTest
 
                     return service.handle(message);
                 }
-
-                @Override
-                public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
-                    throws ServiceConnectionException
-                {
-                    for (String nodeName : connectionMaps[nodeNo].keySet())
-                    {
-                        Message message = Message.getInstance(messagePayload);
-
-                        Service service = context.getService(message.getType());
-
-                        service.handle(message);
-                    }
-
-                    return null;
-                }
             });
         }
 
@@ -265,7 +248,7 @@ public class KeyGenerationTest
                     continue;
                 }
 
-                connectionMaps[i].put(node, connectionMap.get(node));
+                nodeMap.get(nodeName).getPeerMap().put(node, connectionMap.get(node));
             }
         }
 
@@ -282,10 +265,11 @@ public class KeyGenerationTest
             Document document = documentBuilder.newDocument();
             Element rootElement = document.createElement("config");
 
-            Element portNo = document.createElement("name");
+            Element name = document.createElement("name");
 
-            rootElement.appendChild(portNo);
-            portNo.appendChild(document.createTextNode(nodeName));
+            rootElement.appendChild(name);
+
+            name.appendChild(document.createTextNode(nodeName));
 
             Element services = document.createElement("services");
             rootElement.appendChild(services);

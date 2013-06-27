@@ -38,6 +38,7 @@ public class XimixNodeFactory
         return new XimixNode()
         {
             private final Config nodeConfig = new Config(config);
+
             private final XimixNodeContext nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
 
             final int portNo = nodeConfig.getIntegerProperty("portNo");

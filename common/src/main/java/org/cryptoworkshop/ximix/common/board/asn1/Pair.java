@@ -13,44 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.board.asn1;
+package org.cryptoworkshop.ximix.common.board.asn1;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.math.ec.ECCurve;
 
-public class PairSequence
+class Pair
     extends ASN1Object
 {
-    private final ECPair[] ecPairs;
+    private final ECPair ecPair;
+    private ECPair pair;
 
-    public PairSequence(ECPair ecPair)
+    public Pair(ECPair ecPair)
     {
-        this.ecPairs = new ECPair[] { ecPair };
-    }
-
-    public PairSequence(ECPair... ecPairs)
-    {
-        this.ecPairs = ecPairs.clone();
-    }
-
-    private PairSequence(ECCurve curve, ASN1Sequence s)
-    {
-        ecPairs = new ECPair[s.size()];
-
-        for (int i = 0; i != ecPairs.length; i++)
-        {
-            ecPairs[i] = Pair.getInstance(curve, s.getObjectAt(i)).getECPair();
-        }
+        this.ecPair = ecPair;
     }
 
     /**
      * <pre>
-     *     PairSequence ::= SEQUENCE OF Pair
+     *     Pair ::= SEQUENCE {
+     *         x OCTET STRING,
+     *         y OCTET STRING
+     *     }
      * </pre>
      *
      * @return an encoding of an ASN.1 sequence
@@ -59,30 +50,33 @@ public class PairSequence
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        for (ECPair pair : ecPairs)
-        {
-            v.add(new Pair(pair));
-        }
+        v.add(new DEROctetString(ecPair.getX().getEncoded()));
+        v.add(new DEROctetString(ecPair.getY().getEncoded()));
 
         return new DERSequence(v);
     }
 
-    public static PairSequence getInstance(ECCurve curve, Object o)
+    public static Pair getInstance(ECCurve curve, Object o)
     {
-        if (o instanceof PairSequence)
+        if (o instanceof Pair)
         {
-            return (PairSequence)o;
+            return (Pair)o;
         }
         if (o != null)
         {
-            return new PairSequence(curve, ASN1Sequence.getInstance(o));
+            ASN1Sequence s = ASN1Sequence.getInstance(o);
+
+            byte[] encX = ASN1OctetString.getInstance(s.getObjectAt(0)).getOctets();
+            byte[] encY = ASN1OctetString.getInstance(s.getObjectAt(1)).getOctets();
+
+            return new Pair(new ECPair(curve.decodePoint(encX), curve.decodePoint(encY)));
         }
 
         return null;
     }
 
-    public ECPair[] getECPairs()
+    public ECPair getECPair()
     {
-        return ecPairs;
+        return ecPair;
     }
 }

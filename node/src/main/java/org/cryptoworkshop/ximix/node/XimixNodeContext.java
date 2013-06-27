@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,8 +65,11 @@ public class XimixNodeContext
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, Config nodeConfig)
         throws ConfigException
     {
-        this.peerMap = peerMap;
+        this.peerMap = new HashMap<>(peerMap);
+
         this.name = nodeConfig.getStringProperty("name");  // TODO:
+
+        this.peerMap.remove(this.name);
 
         List<ServiceConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
         for (ServiceConfig config : configs)
@@ -197,7 +201,7 @@ public class XimixNodeContext
         return null;
     }
 
-    public ECPoint performPartialDecrype(String keyID, ECPoint cipherText)
+    public ECPoint performPartialDecrypt(String keyID, ECPoint cipherText)
     {
         return cipherText.multiply(keyManager.getPartialPrivateKey(keyID));
     }

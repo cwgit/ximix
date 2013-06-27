@@ -45,11 +45,14 @@ import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.SpecificServicesConnection;
+import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.crypto.client.KeyService;
 import org.cryptoworkshop.ximix.crypto.client.SigningService;
 import org.cryptoworkshop.ximix.crypto.client.ClientSigningService;
-import org.cryptoworkshop.ximix.mixnet.admin.ClientMixnetCommandService;
-import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
+import org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService;
+import org.cryptoworkshop.ximix.mixnet.admin.ClientCommandService;
+import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
+import org.cryptoworkshop.ximix.mixnet.admin.KeyGenerationCommandService;
 import org.cryptoworkshop.ximix.mixnet.client.ClientUploadService;
 import org.cryptoworkshop.ximix.mixnet.client.UploadService;
 import org.w3c.dom.Node;
@@ -95,9 +98,17 @@ public class XimixRegistrarFactory
             public <T> T connect(Class<T> serviceClass)
                 throws RegistrarServiceException
             {
-                if (serviceClass.isAssignableFrom(MixnetCommandService.class))
+                if (serviceClass.isAssignableFrom(CommandService.class))
                 {
-                    return (T)new ClientMixnetCommandService(new AdminServicesConnectionImpl(nodes));
+                    return (T)new ClientCommandService(new AdminServicesConnectionImpl(nodes));
+                }
+                if (serviceClass.isAssignableFrom(KeyGenerationService.class))
+                {
+                    return (T)new KeyGenerationCommandService(new AdminServicesConnectionImpl(nodes));
+                }
+                if (serviceClass.isAssignableFrom(UploadService.class))
+                {
+                    return (T)new ClientUploadService(new AdminServicesConnectionImpl(nodes));
                 }
 
                 throw new RegistrarServiceException("Unable to identify service");
@@ -121,8 +132,7 @@ public class XimixRegistrarFactory
         {
             NodeConfig node = nodes.get(i);
 
-            // TODO: this needs to be fetched from a certificate
-            final String name = Integer.toString(node.getPortNo());
+            final String name = node.getName();
             final List<NodeConfig> thisNode = Collections.singletonList(node);
 
             rMap.put(name, new ServicesConnectionImpl(thisNode));
@@ -135,6 +145,7 @@ public class XimixRegistrarFactory
     {
         private InetAddress address;
         private int portNo;
+        private String name;
         private Exception throwable;
 
         NodeConfig(Node configNode)
@@ -160,6 +171,10 @@ public class XimixRegistrarFactory
                 {
                     portNo = Integer.parseInt(xmlNode.getTextContent());
                 }
+                else if (xmlNode.getNodeName().equals("name"))
+                {
+                    name = xmlNode.getTextContent().trim();
+                }
             }
         }
 
@@ -176,6 +191,11 @@ public class XimixRegistrarFactory
         public int getPortNo()
         {
             return portNo;
+        }
+
+        public String getName()
+        {
+            return name;
         }
     }
 
@@ -227,41 +247,21 @@ public class XimixRegistrarFactory
         {
             try
             {
-                if (type instanceof ClientMessage.Type)
+                synchronized (this)
                 {
-                    cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
+                    if (type instanceof ClientMessage.Type)
+                    {
+                        cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
+                    }
+                    else
+                    {
+                        cOut.write(new CommandMessage((CommandMessage.Type)type, messagePayload).getEncoded());
+                    }
+                    return MessageReply.getInstance(new ASN1InputStream(cIn, 100000).readObject());      // TODO
                 }
-                else
-                {
-                    cOut.write(new CommandMessage((CommandMessage.Type)type, messagePayload).getEncoded());
-                }
-                return MessageReply.getInstance(new ASN1InputStream(cIn, 30000).readObject());      // TODO
             }
             catch (Exception e)
             {                                     e.printStackTrace();
-                // TODO: this should only happen when we've run out of nodes.
-                throw new ServiceConnectionException("couldn't send");
-            }
-        }
-
-        public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
-            throws ServiceConnectionException
-        {
-            try
-            {         // TODO: needs to go to a minimum number of clients
-                if (type instanceof ClientMessage.Type)
-                {
-                    cOut.write(new ClientMessage((ClientMessage.Type)type, messagePayload).getEncoded());
-                }
-                else
-                {
-                    cOut.write(new CommandMessage((CommandMessage.Type)type, messagePayload).getEncoded());
-                }
-
-                return MessageReply.getInstance(new ASN1InputStream(cIn).readObject());
-            }
-            catch (Exception e)
-            {                                         e.printStackTrace();
                 // TODO: this should only happen when we've run out of nodes.
                 throw new ServiceConnectionException("couldn't send");
             }
@@ -340,20 +340,6 @@ public class XimixRegistrarFactory
                 return resetConnection().sendMessage(type, messagePayload);
             }
         }
-
-        @Override
-        public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
-            throws ServiceConnectionException
-        {
-            try
-            {
-                return getConnection().sendThresholdMessage(type, minimumNumberOfPeers, messagePayload);
-            }
-            catch (Exception e)
-            {
-                return resetConnection().sendMessage(type, messagePayload);
-            }
-        }
     }
 
     private static class AdminServicesConnectionImpl
@@ -399,24 +385,7 @@ public class XimixRegistrarFactory
         public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            for (String name : connectionMap.keySet())
-            {
-                connectionMap.get(name).sendMessage(type, messagePayload);
-            }
-
-            return null; // TODO: need to work out a composite reply
-        }
-
-        @Override
-        public MessageReply sendThresholdMessage(MessageType type, int minimumNumberOfPeers, ASN1Encodable messagePayload)
-            throws ServiceConnectionException
-        {
-            for (String name : connectionMap.keySet())
-            {
-                connectionMap.get(name).sendThresholdMessage(type, minimumNumberOfPeers, messagePayload);
-            }
-
-            return null; // TODO: need to work out a composite reply
+            return connectionMap.get(connectionMap.keySet().iterator().next()).sendMessage(type, messagePayload);
         }
 
         @Override

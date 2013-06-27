@@ -58,7 +58,7 @@ class XimixServices
                 Message message = Message.getInstance(o);
 
                 Service service = nodeContext.getService(message.getType());
-
+                System.err.println("message received: " + message.getType() + " " + service);
                 MessageReply reply = service.handle(message);
 
                 System.err.println("message received: " + reply);

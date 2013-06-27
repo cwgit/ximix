@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.board.asn1;
+package org.cryptoworkshop.ximix.common.board.asn1;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -22,26 +22,37 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
 
-class Pair
+public class PointSequence
     extends ASN1Object
 {
-    private final ECPair ecPair;
-    private ECPair pair;
+    private final ECPoint[] ecPoints;
 
-    public Pair(ECPair ecPair)
+    public PointSequence(ECPoint ecPoint)
     {
-        this.ecPair = ecPair;
+        this.ecPoints = new ECPoint[] { ecPoint };
+    }
+
+    public PointSequence(ECPoint... ecPoints)
+    {
+        this.ecPoints = ecPoints.clone();
+    }
+
+    private PointSequence(ECCurve curve, ASN1Sequence s)
+    {
+        ecPoints = new ECPoint[s.size()];
+
+        for (int i = 0; i != ecPoints.length; i++)
+        {
+            ecPoints[i] = curve.decodePoint(ASN1OctetString.getInstance(s.getObjectAt(i)).getOctets());
+        }
     }
 
     /**
      * <pre>
-     *     Pair ::= SEQUENCE {
-     *         x OCTET STRING,
-     *         y OCTET STRING
-     *     }
+     *     PointSequence ::= SEQUENCE OF Point
      * </pre>
      *
      * @return an encoding of an ASN.1 sequence
@@ -50,33 +61,35 @@ class Pair
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new DEROctetString(ecPair.getX().getEncoded()));
-        v.add(new DEROctetString(ecPair.getY().getEncoded()));
+        for (ECPoint point : ecPoints)
+        {
+            v.add(new DEROctetString(point.getEncoded()));
+        }
 
         return new DERSequence(v);
     }
 
-    public static Pair getInstance(ECCurve curve, Object o)
+    public static PointSequence getInstance(ECCurve curve, Object o)
     {
-        if (o instanceof Pair)
+        if (o instanceof PointSequence)
         {
-            return (Pair)o;
+            return (PointSequence)o;
         }
         if (o != null)
         {
-            ASN1Sequence s = ASN1Sequence.getInstance(o);
-
-            byte[] encX = ASN1OctetString.getInstance(s.getObjectAt(0)).getOctets();
-            byte[] encY = ASN1OctetString.getInstance(s.getObjectAt(1)).getOctets();
-
-            return new Pair(new ECPair(curve.decodePoint(encX), curve.decodePoint(encY)));
+            return new PointSequence(curve, ASN1Sequence.getInstance(o));
         }
 
         return null;
     }
 
-    public ECPair getECPair()
+    public ECPoint[] getECPoints()
     {
-        return ecPair;
+        return ecPoints;
+    }
+
+    public int size()
+    {
+        return ecPoints.length;
     }
 }

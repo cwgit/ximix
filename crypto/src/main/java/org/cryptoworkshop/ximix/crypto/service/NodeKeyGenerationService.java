@@ -27,6 +27,7 @@ import org.cryptoworkshop.ximix.common.message.GenerateKeyPairMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
+import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -65,20 +66,8 @@ public class NodeKeyGenerationService
                 //
                 // start everyone else
                 //
-                for (String name : peersToInitiate)
-                {
-                    if (!name.equals(nodeContext.getName()))
-                    {
-                        try
-                        {
-                            MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, initiateMessage);
-                        }
-                        catch (ServiceConnectionException e)
-                        {
-                            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                        }
-                    }
-                }
+
+                nodeContext.scheduleTask(new InitiateKeyGenTask(initiateMessage));
 
                 //
                 // send our shares.
@@ -91,8 +80,11 @@ public class NodeKeyGenerationService
             final GenerateKeyPairMessage generateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
             final Set<String>            involvedPeers = generateMessage.getNodesToUse();
 
+
             if (involvedPeers.contains(nodeContext.getName()))
             {
+                System.err.println("Generate: " + nodeContext.getName());
+
                 ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), generateMessage.getH());
 
                 nodeContext.scheduleTask(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
@@ -102,7 +94,7 @@ public class NodeKeyGenerationService
         case STORE_SHARE:
             final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
             final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getKeyID()).getCurve(), sssMessage.getSecretShareMessage());
-
+            System.err.println("Store: " + nodeContext.getName());
             // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
             // till we can validate them.
             nodeContext.scheduleTask(new StoreShareTask(sssMessage.getKeyID(), shareMessage));
@@ -119,6 +111,38 @@ public class NodeKeyGenerationService
         return type == CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR
             || type == CommandMessage.Type.GENERATE_KEY_PAIR
             || type == CommandMessage.Type.STORE_SHARE;
+    }
+
+    private class InitiateKeyGenTask
+        implements Runnable
+    {
+        private final GenerateKeyPairMessage initiateMessage;
+        private final Set<String> peersToInitiate;
+
+        InitiateKeyGenTask(GenerateKeyPairMessage initiateMessage)
+        {
+            this.initiateMessage = initiateMessage;
+            this.peersToInitiate = initiateMessage.getNodesToUse();
+        }
+
+        @Override
+        public void run()
+        {
+            for (String name : peersToInitiate)
+            {
+                if (!name.equals(nodeContext.getName()))
+                {
+                    try
+                    {
+                        MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, initiateMessage);
+                    }
+                    catch (ServiceConnectionException e)
+                    {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                }
+            }
+        }
     }
 
     private class SendShareTask
@@ -138,22 +162,31 @@ public class NodeKeyGenerationService
         public void run()
         {
             int index = 0;
-            for (String name : peers)
+            for (final String name : peers)
             {
+                System.err.println("sending: " + nodeContext.getName() + " to " + name);
                 if (name.equals(nodeContext.getName()))
                 {
                     nodeContext.storeThresholdKeyShare(keyID, messages[index++]);
                 }
                 else
                 {
-                    try
+                    final int counter = index++;
+                    nodeContext.scheduleTask(new Runnable()
                     {
-                        MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.STORE_SHARE, new StoreSecretShareMessage(keyID, messages[index++]));
-                    }
-                    catch (ServiceConnectionException e)
-                    {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
+                        public void run()
+                        {
+                            try
+                            {
+                                MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.STORE_SHARE, new StoreSecretShareMessage(keyID, messages[counter]));
+                            }
+                            catch (ServiceConnectionException e)
+                            {
+                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                            }
+                        }
+                    });
+
                 }
             }
         }

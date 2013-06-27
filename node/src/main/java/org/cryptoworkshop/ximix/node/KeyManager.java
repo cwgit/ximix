@@ -49,10 +49,14 @@ class KeyManager
             kpGen.init(new ECKeyGenerationParameters(new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()), new SecureRandom()));
 
             kp =  kpGen.generateKeyPair();
-
+            System.err.println("init: " + numberOfPeers);
             latchMap.put(keyID, new CountDownLatch(numberOfPeers));
             hMap.put(keyID, h);
             keyMap.put(keyID, kp);
+        }
+        else
+        {
+            System.err.println("duplicate key request!!!");
         }
 
         return kp;
@@ -77,42 +81,53 @@ class KeyManager
         return kp;
     }
 
-    public synchronized SubjectPublicKeyInfo fetchPublicKey(String keyID)
+    public SubjectPublicKeyInfo fetchPublicKey(String keyID)
         throws IOException
     {
-        ECPoint q = sharedPublicKeyMap.get(keyID);
+        boolean partialKey = false;
 
-        if (q != null)
+        synchronized (this)
+        {
+           partialKey = latchMap.containsKey(keyID);
+        }
+
+        if (partialKey)
         {
             try
             {
                 if (latchMap.get(keyID).await(TIME_OUT, TimeUnit.SECONDS))
                 {
-                    X9ECParameters params = SECNamedCurves.getByName("secp256r1");
+                    synchronized (this)
+                    {
+                        System.err.println("here@@@");
+                        ECPoint q = sharedPublicKeyMap.get(keyID);
+                        X9ECParameters params = SECNamedCurves.getByName("secp256r1");
 
-                    return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q,
-                                   new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()))).getEncoded());
+                        return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q,
+                            new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()))).getEncoded());
+
+                    }
                 }
                 else
                 {
+                    System.err.println("timeout!!!");
                     // TODO: log timeout
                     return null;
                 }
-
             }
             catch (InterruptedException e)
             {
                 Thread.currentThread().interrupt();
             }
         }
-
+            // TODO: smoke and mirrors code, clean up
         AsymmetricCipherKeyPair kp = keyMap.get(keyID);
 
         if (kp == null)
         {
             return null;
         }
-               // TODO: work around for BC 1.49 issues
+        // TODO: work around for BC 1.49 issues
         return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()).getEncoded());
     }
 
@@ -146,7 +161,7 @@ class KeyManager
             {
                 sharedPublicKeyMap.put(keyID, message.getQ());
             }
-
+             System.err.println("latch: " + latchMap.get(keyID).getCount());
             latchMap.get(keyID).countDown();
         }
         else

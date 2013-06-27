@@ -16,86 +16,98 @@
 package org.cryptoworkshop.ximix.demo.admin;
 
 import java.io.File;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 
-import org.cryptoworkshop.ximix.common.message.BoardDetails;
+import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.operation.Operation;
+import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
+import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.DownloadOperationListener;
-import org.cryptoworkshop.ximix.mixnet.admin.MixnetCommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.ShuffleOperationListener;
+import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
+import org.cryptoworkshop.ximix.mixnet.client.UploadService;
 import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 public class Main
 {
+    private static ECPoint generatePoint(ECDomainParameters params, SecureRandom rand)
+    {
+        return params.getG().multiply(getRandomInteger(params.getN(), rand));
+    }
+
+    private static BigInteger getRandomInteger(BigInteger n, SecureRandom rand)
+    {
+        BigInteger r;
+        int maxbits = n.bitLength();
+        do
+        {
+            r = new BigInteger(maxbits, rand);
+        }
+        while (r.compareTo(n) >= 0);
+        return r;
+    }
+
     public static void main(String[] args)
         throws Exception
     {
+        SecureRandom random = new SecureRandom();
+
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(new File(args[0]));
 
-        MixnetCommandService commandService = adminRegistrar.connect(MixnetCommandService.class);
+        KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
-        // TODO: at the moment the name of the node is taken from it's port no
-        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ENCKEY").build(), "11000", "11001");
+        byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", 2, "A", "B");
 
-        shuffleOp.addListener(new ShuffleOperationListener()
+        UploadService client = adminRegistrar.connect(UploadService.class);
+
+        ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
+
+        ECElGamalEncryptor encryptor = new ECElGamalEncryptor();
+
+        encryptor.init(pubKey);
+
+        // set up 100 random messages
+        ECPoint[] plainText = new ECPoint[100];
+        for (int i = 0; i != plainText.length; i++)
         {
-            @Override
-            public void completed()
-            {
-                System.err.println("done");
-            }
+            plainText[i] = generatePoint(pubKey.getParameters(), random);
 
-            @Override
-            public void failed(String errorObject)
-            {
-                System.err.println("failed: " + errorObject);
-            }
-        });
+            PairSequence encrypted = new PairSequence(encryptor.encrypt(plainText[i]));
 
-        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().setKeyID("ENCKEY").build(), new DownloadOperationListener()
+            client.uploadMessage("FRED", encrypted.getEncoded());
+        }
+
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().setKeyID("ECKEY").setThreshold(2).build(), new DownloadOperationListener()
         {
 
             @Override
             public void messageDownloaded(byte[] message)
             {
-                //To change body of implemented methods use File | Settings | File Templates.
+                System.err.println("message downloaded!!!");
             }
 
             @Override
             public void completed()
             {
-                //To change body of implemented methods use File | Settings | File Templates.
+                System.err.println("completed");
             }
 
             @Override
             public void failed(String errorObject)
             {
-                //To change body of implemented methods use File | Settings | File Templates.
+                System.err.println("failed");
             }
         });
-
-       op.addListener(new DownloadOperationListener()
-       {
-           @Override
-           public void completed()
-           {
-               System.err.println("done");
-           }
-
-           @Override
-           public void failed(String errorObject)
-           {
-               System.err.println("failed: " + errorObject);
-           }
-
-           @Override
-           public void messageDownloaded(byte[] message)
-           {
-               System.err.println("message");
-           }
-       });
     }
 }

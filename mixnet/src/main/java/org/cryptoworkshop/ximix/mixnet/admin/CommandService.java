@@ -19,7 +19,7 @@ import java.util.List;
 
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
-public interface MixnetCommandService
+public interface CommandService
     extends ShuffleOperation, DownloadOperation
 {
     /**
