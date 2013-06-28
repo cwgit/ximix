@@ -20,11 +20,13 @@ import java.math.BigInteger;
 
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.GenerateKeyPairMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 
 public class KeyGenerationCommandService
@@ -38,13 +40,13 @@ public class KeyGenerationCommandService
     }
 
     @Override
-    public byte[] generatePublicKey(String keyID, int thresholdNumber, String... nodeNames)
+    public byte[] generatePublicKey(String keyID, KeyGenerationOptions keyGenOptions)
         throws ServiceConnectionException
     {
         BigInteger h = BigInteger.valueOf(1000001); // TODO
-        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage(keyID, thresholdNumber, h, nodeNames);
+        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage(keyID, new ECKeyGenParams(h, keyGenOptions.getParameters()[0]), keyGenOptions.getThreshold(), keyGenOptions.getNodesToUse());
 
-        MessageReply reply = connection.sendMessage(nodeNames[0], CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
+        MessageReply reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 
         try
         {

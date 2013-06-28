@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
+import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 
 class KeyManager
@@ -36,22 +37,22 @@ class KeyManager
         return keyMap.containsKey(keyID);
     }
 
-    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, String n, int numberOfPeers, BigInteger h)
+    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, String n, int numberOfPeers, ECKeyGenParams keyGenParams)
     {
         AsymmetricCipherKeyPair kp = keyMap.get(keyID);
 
         if (kp == null)        // TODO: error? overwrite?
         {
-            X9ECParameters params = SECNamedCurves.getByName("secp256r1");
+            X9ECParameters params = ECNamedCurveTable.getByName(keyGenParams.getDomainParameters());
 
             ECKeyPairGenerator kpGen = new ECKeyPairGenerator();
 
             kpGen.init(new ECKeyGenerationParameters(new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()), new SecureRandom()));
 
             kp =  kpGen.generateKeyPair();
-            System.err.println("init: " + numberOfPeers);
+
             latchMap.put(keyID, new CountDownLatch(numberOfPeers));
-            hMap.put(keyID, h);
+            hMap.put(keyID, keyGenParams.getH());
             keyMap.put(keyID, kp);
         }
         else
@@ -62,29 +63,10 @@ class KeyManager
         return kp;
     }
 
-    public synchronized AsymmetricCipherKeyPair getKeyPair(String keyID)
-    {
-        AsymmetricCipherKeyPair kp = keyMap.get(keyID);
-
-        if (kp == null)
-        {
-            X9ECParameters params = SECNamedCurves.getByName("secp256r1");
-
-            ECKeyPairGenerator kpGen = new ECKeyPairGenerator();
-
-            kpGen.init(new ECKeyGenerationParameters(new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()), new SecureRandom()));
-
-            kp =  kpGen.generateKeyPair();
-
-            keyMap.put(keyID, kp);
-        }
-        return kp;
-    }
-
     public SubjectPublicKeyInfo fetchPublicKey(String keyID)
         throws IOException
     {
-        boolean partialKey = false;
+        boolean partialKey;
 
         synchronized (this)
         {
@@ -99,13 +81,10 @@ class KeyManager
                 {
                     synchronized (this)
                     {
-                        System.err.println("here@@@");
                         ECPoint q = sharedPublicKeyMap.get(keyID);
-                        X9ECParameters params = SECNamedCurves.getByName("secp256r1");
+                        ECDomainParameters params = ((ECPublicKeyParameters)keyMap.get(keyID).getPublic()).getParameters();
 
-                        return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q,
-                            new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()))).getEncoded());
-
+                        return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q,params)).getEncoded());
                     }
                 }
                 else
@@ -120,22 +99,13 @@ class KeyManager
                 Thread.currentThread().interrupt();
             }
         }
-            // TODO: smoke and mirrors code, clean up
-        AsymmetricCipherKeyPair kp = keyMap.get(keyID);
 
-        if (kp == null)
-        {
-            return null;
-        }
-        // TODO: work around for BC 1.49 issues
-        return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()).getEncoded());
+        return null;
     }
 
     public synchronized void buildSharedKey(String keyID, ECCommittedSecretShareMessage message)
     {
-        X9ECParameters params = SECNamedCurves.getByName("secp256r1");
-        ECDomainParameters domainParams = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
-
+        ECDomainParameters domainParams = ((ECPublicKeyParameters)keyMap.get(keyID).getPublic()).getParameters();
         ECCommittedSecretShare share = new ECCommittedSecretShare(message.getValue(), message.getWitness(), message.getCommitmentFactors());
 
         if (share.isRevealed(message.getIndex(), domainParams, hMap.get(keyID)))
@@ -161,7 +131,7 @@ class KeyManager
             {
                 sharedPublicKeyMap.put(keyID, message.getQ());
             }
-             System.err.println("latch: " + latchMap.get(keyID).getCount());
+
             latchMap.get(keyID).countDown();
         }
         else

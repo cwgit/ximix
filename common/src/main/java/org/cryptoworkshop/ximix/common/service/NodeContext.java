@@ -22,6 +22,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
+import org.cryptoworkshop.ximix.common.message.KeyGenerationParameters;
 
 public interface NodeContext
 {
@@ -36,11 +37,9 @@ public interface NodeContext
 
     void scheduleTask(Runnable task);
 
-    <T> T getPrivateKey(String keyID);
-
     SubjectPublicKeyInfo getPublicKey(String keyID);
 
-    ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, BigInteger h);
+    ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, KeyGenerationParameters kGenParams);
 
     void storeThresholdKeyShare(String keyID, ECCommittedSecretShareMessage message);
 

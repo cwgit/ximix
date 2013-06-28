@@ -53,7 +53,7 @@ public class NodeSigningService
 
         try
         {
-            CipherParameters privKey = nodeContext.getPrivateKey(keyID);
+            CipherParameters privKey = null; // nodeContext.performPartialSign(keyID);
 
             signer.init(true, privKey);
 

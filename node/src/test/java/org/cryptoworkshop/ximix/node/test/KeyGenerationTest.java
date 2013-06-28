@@ -29,12 +29,15 @@ import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.common.message.GenerateKeyPairMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
+import org.cryptoworkshop.ximix.crypto.KeyType;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.junit.Assert;
@@ -57,7 +60,7 @@ public class KeyGenerationTest
         try
         {
             Set<String> peers = new HashSet(Arrays.asList("A", "B", "C"));
-            ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", peers, 4, BigInteger.valueOf(1000001));
+            ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", peers, 4, new ECKeyGenParams(BigInteger.valueOf(1000001), "secp256r1"));
 
             Assert.fail("no exception!");
         }
@@ -78,13 +81,13 @@ public class KeyGenerationTest
 
         XimixNodeContext context = contextMap.get("A");
 
-        BigInteger h = BigInteger.valueOf(1000001);
         Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
-        ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", peers, 4, h);
+        ECKeyGenParams kGenParams = new ECKeyGenParams(BigInteger.valueOf(1000001), "secp256r1");
+        ECCommittedSecretShareMessage[] messages = context.generateThresholdKey("EC_KEY", peers, 4, kGenParams);
 
         Assert.assertEquals(5, messages.length);
 
-        X9ECParameters params = SECNamedCurves.getByName("secp256r1"); // TODO: should be on the context!!
+        X9ECParameters params = SECNamedCurves.getByName("secp256r1");
         ECDomainParameters domainParams = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
 
         for (int i = 0; i != messages.length; i++)
@@ -92,7 +95,7 @@ public class KeyGenerationTest
             ECCommittedSecretShareMessage message = ECCommittedSecretShareMessage.getInstance(params.getCurve(), messages[i].getEncoded());
             ECCommittedSecretShare share = new ECCommittedSecretShare(message.getValue(), message.getWitness(), message.getCommitmentFactors());
 
-            Assert.assertTrue(share.isRevealed(i, domainParams, h));
+            Assert.assertTrue(share.isRevealed(i, domainParams, kGenParams.getH()));
         }
     }
 
@@ -108,7 +111,7 @@ public class KeyGenerationTest
 
         final ServicesConnection connection = context.getPeerMap().get("B");
         final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
-        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", 4, h, peers);
+        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", new ECKeyGenParams(BigInteger.valueOf(1000001), "secp256r1"), 4, peers);
 
         MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 

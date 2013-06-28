@@ -25,6 +25,8 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.operation.Operation;
+import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
+import org.cryptoworkshop.ximix.crypto.KeyType;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
@@ -65,7 +67,12 @@ public class Main
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
-        byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", 2, "A", "B");
+        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC, "secp256r1")
+                                                   .setThreshold(2)
+                                                   .setNodes("A", "B")
+                                                   .build();
+
+        byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
 
         UploadService client = adminRegistrar.connect(UploadService.class);
 

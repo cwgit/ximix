@@ -15,21 +15,19 @@
  */
 package org.cryptoworkshop.ximix.crypto.client;
 
-import java.util.Set;
-
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 
 public interface KeyGenerationService
     extends KeyService
 {
     /**
-     * Return the public key associated with key ID keyID.
+     * Generate a public key and associate it with key ID keyID. The key is returned if generated successfully.
      *
      * @param keyID the id of the key we are looking for.
-     * @param thresholdNumber the number of nodes that should be required to recover a message.
-     * @param nodeNames the names of the nodes to take part.
+     * @param keyGenOptions options applicable to this key generation.
      * @return a byte[] array of the SubjectPublicKeyInfo object representing the key.
      */
-    byte[] generatePublicKey(String keyID, int thresholdNumber, String... nodeNames)
+    byte[] generatePublicKey(String keyID, KeyGenerationOptions keyGenOptions)
         throws ServiceConnectionException;
 }

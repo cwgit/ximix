@@ -42,6 +42,8 @@ import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
+import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.common.message.KeyGenerationParameters;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
@@ -114,11 +116,6 @@ public class XimixNodeContext
     {
         multiTaskExecutor.execute(task);
     }
-                                                                        // TODO: replace with private key info
-    public AsymmetricKeyParameter getPrivateKey(String keyID)
-    {
-        return keyManager.getKeyPair(keyID).getPrivate();
-    }
 
     public SubjectPublicKeyInfo getPublicKey(String keyID)
     {
@@ -133,13 +130,14 @@ public class XimixNodeContext
         }
     }
 
-    public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, BigInteger h)
+    public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, KeyGenerationParameters kGenParams)
     {
+        ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)kGenParams;
                 // TODO: should have a source of randomness.
-        AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, this.getName(), peers.size(), h);
+        AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, this.getName(), peers.size(), ecKeyGenParams);
 
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)keyPair.getPrivate();
-        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(peers.size(), minimumNumberOfPeers, h, privKey.getParameters(), new SecureRandom());
+        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(peers.size(), minimumNumberOfPeers, ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
 
         ECCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getD());
         ECCommittedSecretShare[] shares = splitSecret.getCommittedShares();

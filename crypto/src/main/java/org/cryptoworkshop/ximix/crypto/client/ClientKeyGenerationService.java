@@ -22,11 +22,13 @@ import java.util.HashSet;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.GenerateKeyPairMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 
 public class ClientKeyGenerationService
     implements KeyGenerationService
@@ -54,18 +56,19 @@ public class ClientKeyGenerationService
             return SubjectPublicKeyInfo.getInstance(reply.getPayload().toASN1Primitive()).getEncoded();
         }
         catch (Exception e)
-        {                                 e.printStackTrace();
+        {
             throw new ServiceConnectionException("Malformed public key response.");
         }
     }
 
     @Override
-    public byte[] generatePublicKey(String keyID, int thresholdNumber, String... nodeNames)
+    public byte[] generatePublicKey(String keyID, KeyGenerationOptions keyGenOptions)
         throws ServiceConnectionException
     {
         // TODO: need to generate h from appropriate EC domain parameters
         BigInteger h = BigInteger.valueOf(1000);
-        MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, new GenerateKeyPairMessage(keyID, thresholdNumber, h, new HashSet(Arrays.asList(nodeNames))));
+        MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR,
+            new GenerateKeyPairMessage(keyID, new ECKeyGenParams(h, keyGenOptions.getParameters()[0]), keyGenOptions.getThreshold(), new HashSet(Arrays.asList(keyGenOptions.getNodesToUse()))));
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {
