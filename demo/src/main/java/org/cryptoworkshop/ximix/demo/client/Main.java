@@ -22,16 +22,15 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.crypto.client.SigningService;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
+import org.cryptoworkshop.ximix.crypto.client.KeyService;
+import org.cryptoworkshop.ximix.crypto.client.SigningService;
 import org.cryptoworkshop.ximix.mixnet.client.UploadService;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
@@ -71,14 +70,12 @@ public class Main
     public static void main(String[] args)
         throws Exception
     {
-        SHA256Digest sha256 = new SHA256Digest();
-
         XimixRegistrar registrar = XimixRegistrarFactory.createServicesRegistrar(new File(args[0]));
 
+        KeyService    keyFetcher = registrar.connect(KeyService.class);
         UploadService client = registrar.connect(UploadService.class);
-        SigningService signingService = registrar.connect(SigningService.class);
 
-        byte[] encPubKey = signingService.fetchPublicKey("ENCKEY");
+        byte[] encPubKey = keyFetcher.fetchPublicKey("ECKEY");
 
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
 
@@ -98,38 +95,6 @@ public class Main
 
         PairSequence ballot = new PairSequence(encCandidate1, encCandidate2);
 
-        byte[] message = ballot.getEncoded();
-        byte[] hash = new byte[sha256.getDigestSize()];
-
-        sha256.update(message, 0, message.length);
-
-        sha256.doFinal(hash, 0);
-
-        //
-        // append signature of encrypted message to upload message
-        //
-        byte[] dsaSig = signingService.generateSignature("SIGKEY", hash);
-
-        client.uploadMessage("FRED", message);
-
-        //
-        // check the signature locally.
-        //
-        ECDSASigner signer = new ECDSASigner();
-
-        ECPublicKeyParameters sigPubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(signingService.fetchPublicKey("SIGKEY"));
-
-        signer.init(false, sigPubKey);
-
-        BigInteger[] rs = decodeSig(dsaSig);
-
-        if (signer.verifySignature(hash, rs[0], rs[1]))
-        {
-            System.out.println("sig verified!");
-        }
-        else
-        {
-            System.out.println("sig failed...");
-        }
+        client.uploadMessage("FRED", ballot.getEncoded());
     }
 }
