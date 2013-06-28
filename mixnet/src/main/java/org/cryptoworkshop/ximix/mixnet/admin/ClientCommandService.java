@@ -21,18 +21,21 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import org.bouncycastle.asn1.sec.SECNamedCurves;
-import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
 import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
-import org.cryptoworkshop.ximix.common.message.MessageBlock;
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
+import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.operation.Operation;
@@ -207,47 +210,52 @@ public class ClientCommandService
                             break;
                         }
 
-                        MessageReply[] partialDecryptResponsess = new MessageReply[options.getThreshold()];
+
+                        MessageReply[] partialDecryptResponses = new MessageReply[options.getThreshold()];
 
                         // TODO: deal with drop outs
                         for (int i = 0; i != options.getThreshold(); i++)
                         {
                             String curNode = nodes[i];
 
-                            partialDecryptResponsess[i] = connection.sendMessage(curNode, CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), data.getMessages()));
+                            partialDecryptResponses[i] = connection.sendMessage(curNode, CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), data.getMessages()));
                         }
 
-                        X9ECParameters params = SECNamedCurves.getByName("secp256r1"); // TODO: should be on the context!!
-                        ECDomainParameters domainParams = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+                        MessageReply keyReply = connection.sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, new FetchPublicKeyMessage(options.getKeyID()));
+
+                        SubjectPublicKeyInfo pubKeyInfo = SubjectPublicKeyInfo.getInstance(keyReply.getPayload());
+
+                        ECDomainParameters domainParams = ((ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo)).getParameters();
 
                         LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(options.getThreshold(), domainParams.getN());
 
-                        BigInteger[] weights = calculator.computeWeights(partialDecryptResponsess);
+                        BigInteger[] weights = calculator.computeWeights(partialDecryptResponses);
 
                         // weighting
                         List<byte[]>[] partialDecrypts = new List[options.getThreshold()];
 
                         for (int i = 0; i != partialDecrypts.length; i++)
                         {
-                            partialDecrypts[i] = MessageBlock.getInstance(partialDecryptResponsess[i].getPayload()).getMessages();
+                            partialDecrypts[i] = MessageBlock.getInstance(partialDecryptResponses[i].getPayload()).getMessages();
                         }
 
                         for (int messageIndex = 0; messageIndex != partialDecrypts[0].size(); messageIndex++)
                         {
                             PairSequence ps = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[0].get(messageIndex));
                             ECPoint[] weightedDecryptions = new ECPoint[ps.size()];
-                            ECPair[]  partials = ps.getECPairs();
                             ECPoint[] fulls = new ECPoint[ps.size()];
 
+                            ECPair[]  partials = ps.getECPairs();
                             for (int i = 0; i != weightedDecryptions.length; i++)
                             {
                                 weightedDecryptions[i] = partials[i].getX().multiply(weights[0]);
                             }
                             for (int wIndex = 1; wIndex < weights.length; wIndex++)
                             {
+                                ECPair[]  nPartials = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex)).getECPairs();
                                 for (int i = 0; i != weightedDecryptions.length; i++)
                                 {
-                                    weightedDecryptions[i] = weightedDecryptions[i].add(partials[i].getX().multiply(weights[wIndex]));
+                                    weightedDecryptions[i] = weightedDecryptions[i].add(nPartials[i].getX().multiply(weights[wIndex]));
                                 }
                             }
 
@@ -257,6 +265,28 @@ public class ClientCommandService
                             }
 
                             notifier.messageDownloaded(new PointSequence(fulls).getEncoded());
+                        }
+                    }
+                }
+                else
+                {
+                    // assume plain text
+                    for (;;)
+                    {
+                        MessageReply reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
+
+                        MessageBlock data = MessageBlock.getInstance(reply.getPayload());
+
+                        if (data.size() == 0)
+                        {
+                            break;
+                        }
+
+                        List<byte[]> messages = data.getMessages();
+
+                        for (int i = 0 ; i != messages.size(); i++)
+                        {
+                            notifier.messageDownloaded(messages.get(i));
                         }
                     }
                 }

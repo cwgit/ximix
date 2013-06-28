@@ -134,7 +134,7 @@ public class XimixNodeContext
     {
         ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)kGenParams;
                 // TODO: should have a source of randomness.
-        AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, this.getName(), peers.size(), ecKeyGenParams);
+        AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, peers.size(), ecKeyGenParams);
 
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)keyPair.getPrivate();
         ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(peers.size(), minimumNumberOfPeers, ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());

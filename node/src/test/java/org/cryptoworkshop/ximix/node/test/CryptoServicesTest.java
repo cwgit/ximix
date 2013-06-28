@@ -1,8 +1,10 @@
 package org.cryptoworkshop.ximix.node.test;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,13 +27,16 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.common.message.GenerateKeyPairMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.service.Service;
@@ -49,7 +54,7 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class KeyGenerationTest
+public class CryptoServicesTest
 {
     @Test
     public void testBasicGenerationNoPeers()
@@ -110,8 +115,8 @@ public class KeyGenerationTest
         BigInteger h = BigInteger.valueOf(1000001);
 
         final ServicesConnection connection = context.getPeerMap().get("B");
-        final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
-        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", new ECKeyGenParams(BigInteger.valueOf(1000001), "secp256r1"), 4, peers);
+        final Set<String> peers = new HashSet(Arrays.asList("A", "B")); //, "C", "D", "E"));
+        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", new ECKeyGenParams(BigInteger.valueOf(1000001), "secp256r1"), 2, peers);
 
         MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 
@@ -157,11 +162,30 @@ public class KeyGenerationTest
                 int index = 0;
                 ECPoint[] partialDecs = new ECPoint[peers.size()];
 
+                Map<String, ServicesConnection> fullMap = new HashMap<>();
+
+                fullMap.put("A", contextMap.get("B").getPeerMap().get("A"));
+                fullMap.put("B", contextMap.get("A").getPeerMap().get("B"));
+                fullMap.put("C", contextMap.get("A").getPeerMap().get("C"));
+                fullMap.put("D", contextMap.get("A").getPeerMap().get("D"));
+                fullMap.put("E", contextMap.get("A").getPeerMap().get("E"));
+
                 for (String nodeName : genKeyPairMessage.getNodesToUse())
                 {
-                    XimixNodeContext context = contextMap.get(nodeName);
-
-                    partialDecs[index++] = context.performPartialDecrypt("ECKEY", cipherText.getX());
+                    MessageReply decReply = null;
+                    try
+                    {
+                        decReply = fullMap.get(nodeName).sendMessage(CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage("ECKEY", Collections.singletonList(new PairSequence(cipherText).getEncoded())));
+                    }
+                    catch (ServiceConnectionException e)
+                    {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                    catch (IOException e)
+                    {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                    partialDecs[index++] = PairSequence.getInstance(pubKey1.getParameters().getCurve(), MessageBlock.getInstance(decReply.getPayload()).getMessages().get(0)).getECPairs()[0].getX();
                 }
 
                 LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(peers.size(), pubKey1.getParameters().getN());
@@ -283,6 +307,7 @@ public class KeyGenerationTest
             services.appendChild(createService(document, "org.cryptoworkshop.ximix.crypto.service.NodeKeyRetrievalService"));
             services.appendChild(createService(document, "org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService"));
             services.appendChild(createService(document, "org.cryptoworkshop.ximix.crypto.service.NodeSigningService"));
+            services.appendChild(createService(document, "org.cryptoworkshop.ximix.crypto.service.NodeDecryptionService"));
 
             return rootElement;
         }

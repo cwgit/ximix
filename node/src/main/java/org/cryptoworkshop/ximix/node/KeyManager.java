@@ -37,7 +37,7 @@ class KeyManager
         return keyMap.containsKey(keyID);
     }
 
-    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, String n, int numberOfPeers, ECKeyGenParams keyGenParams)
+    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, int numberOfPeers, ECKeyGenParams keyGenParams)
     {
         AsymmetricCipherKeyPair kp = keyMap.get(keyID);
 
@@ -148,7 +148,10 @@ class KeyManager
         {
             if (latchMap.get(keyID).await(TIME_OUT, TimeUnit.SECONDS))
             {
-                return sharedPrivateKeyMap.get(keyID);
+                synchronized (this)
+                {
+                    return sharedPrivateKeyMap.get(keyID);
+                }
             }
             else
             {

@@ -20,22 +20,21 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
+import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.KeyType;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
-import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.DownloadOperationListener;
-import org.cryptoworkshop.ximix.mixnet.admin.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.mixnet.client.UploadService;
-import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
@@ -67,7 +66,7 @@ public class Main
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
-        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC, "secp256r1")
+        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
                                                    .setThreshold(2)
                                                    .setNodes("A", "B")
                                                    .build();
@@ -76,19 +75,21 @@ public class Main
 
         UploadService client = adminRegistrar.connect(UploadService.class);
 
-        ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
+        final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
 
-        ECElGamalEncryptor encryptor = new ECElGamalEncryptor();
+        final ECElGamalEncryptor encryptor = new ECElGamalEncryptor();
 
         encryptor.init(pubKey);
 
         // set up 100 random messages
-        ECPoint[] plainText = new ECPoint[100];
-        for (int i = 0; i != plainText.length; i++)
+        final ECPoint[] plainText1 = new ECPoint[100];
+        final ECPoint[] plainText2 = new ECPoint[100];
+        for (int i = 0; i != plainText1.length; i++)
         {
-            plainText[i] = generatePoint(pubKey.getParameters(), random);
+            plainText1[i] = generatePoint(pubKey.getParameters(), random);
+            plainText2[i] = generatePoint(pubKey.getParameters(), random);
 
-            PairSequence encrypted = new PairSequence(encryptor.encrypt(plainText[i]));
+            PairSequence encrypted = new PairSequence(new ECPair[] { encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i]) });
 
             client.uploadMessage("FRED", encrypted.getEncoded());
         }
@@ -97,11 +98,21 @@ public class Main
 
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().setKeyID("ECKEY").setThreshold(2).build(), new DownloadOperationListener()
         {
+            int counter = 0;
 
             @Override
             public void messageDownloaded(byte[] message)
             {
-                System.err.println("message downloaded!!!");
+                PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
+
+                if (!decrypted.getECPoints()[0].equals(plainText1[counter]) || !decrypted.getECPoints()[1].equals(plainText2[counter++]))
+                {
+                    System.err.println("decryption failed");
+                }
+                else
+                {
+                    System.err.println("message downloaded successfully");
+                }
             }
 
             @Override
