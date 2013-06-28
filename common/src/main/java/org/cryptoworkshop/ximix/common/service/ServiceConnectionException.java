@@ -22,4 +22,15 @@ public class ServiceConnectionException
     {
         super(message);
     }
+
+    /**
+     * Protected to prevent constructor been used on remote side of connection...
+     *
+     * @param message the message to carry.
+     * @param cause underlying cause of the exception.
+     */
+    protected ServiceConnectionException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }

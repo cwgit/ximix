@@ -37,7 +37,8 @@ public class CommandMessage
         INITIATE_GENERATE_KEY_PAIR,
         GENERATE_KEY_PAIR,
         STORE_SHARE,
-        PARTIAL_DECRYPT
+        PARTIAL_DECRYPT,
+        PARTIAL_ECDSA_SIGN
     }
 
     public CommandMessage(Type type, ASN1Encodable payload)

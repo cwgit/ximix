@@ -32,7 +32,6 @@ import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -202,6 +201,12 @@ public class XimixNodeContext
     public ECPoint performPartialDecrypt(String keyID, ECPoint cipherText)
     {
         return cipherText.multiply(keyManager.getPartialPrivateKey(keyID));
+    }
+
+    @Override
+    public BigInteger performPartialSign(String keyID, BigInteger r)
+    {
+        return r.multiply(keyManager.getPartialPrivateKey(keyID));
     }
 
     private class ServiceConfig

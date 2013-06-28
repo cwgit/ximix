@@ -22,10 +22,12 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
@@ -74,6 +76,7 @@ public class Main
 
         KeyService    keyFetcher = registrar.connect(KeyService.class);
         UploadService client = registrar.connect(UploadService.class);
+        SigningService signingService = registrar.connect(SigningService.class);
 
         byte[] encPubKey = keyFetcher.fetchPublicKey("ECKEY");
 
@@ -95,6 +98,38 @@ public class Main
 
         PairSequence ballot = new PairSequence(encCandidate1, encCandidate2);
 
-        client.uploadMessage("FRED", ballot.getEncoded());
+        SHA256Digest sha256 = new SHA256Digest();
+
+        byte[] message = ballot.getEncoded();
+        byte[] hash = new byte[sha256.getDigestSize()];
+
+        sha256.update(message, 0, message.length);
+
+        sha256.doFinal(hash, 0);
+
+        //
+        // append signature of encrypted message to upload message
+        //
+        byte[] dsaSig = signingService.generateSignature("ECKEY", hash);
+
+        //
+        // check the signature locally.
+        //
+        ECDSASigner signer = new ECDSASigner();
+
+        ECPublicKeyParameters sigPubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(signingService.fetchPublicKey("ECKEY"));
+
+        signer.init(false, sigPubKey);
+
+        BigInteger[] rs = decodeSig(dsaSig);
+
+        if (signer.verifySignature(hash, rs[0], rs[1]))
+        {
+            System.out.println("sig verified!");
+        }
+        else
+        {
+            System.out.println("sig failed...");
+        }
     }
 }

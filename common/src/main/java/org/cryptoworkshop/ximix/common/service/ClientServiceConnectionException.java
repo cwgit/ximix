@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.client;
+package org.cryptoworkshop.ximix.common.service;
 
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.crypto.client.KeyService;
-
-public interface SigningService
-    extends KeyService
+public class ClientServiceConnectionException
+    extends ServiceConnectionException
 {
-    byte[] generateSignature(String keyID, byte[] message)
-        throws ServiceConnectionException;
+    public ClientServiceConnectionException(String message)
+    {
+        super(message);
+    }
+
+    public ClientServiceConnectionException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }

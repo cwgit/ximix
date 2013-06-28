@@ -48,4 +48,6 @@ public interface NodeContext
     boolean hasPrivateKey(String keyID);
 
     ECPoint performPartialDecrypt(String keyID, ECPoint cipherText);
+
+    BigInteger performPartialSign(String keyID, BigInteger r);
 }
