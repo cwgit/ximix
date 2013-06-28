@@ -19,28 +19,23 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CreateSignatureMessage;
 import org.cryptoworkshop.ximix.common.message.ECDSACreateMessage;
 import org.cryptoworkshop.ximix.common.message.ECDSAResponseMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.ClientServiceConnectionException;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 
 public class ClientSigningService
@@ -118,11 +113,6 @@ public class ClientSigningService
                 s = k.modInverse(n).multiply(e.add(dMultr)).mod(n);
             }
             while (s.equals(BigInteger.ZERO));
-
-            BigInteger[] res = new BigInteger[2];
-
-            res[0] = r;
-            res[1] = s;
 
             ASN1EncodableVector v = new ASN1EncodableVector();
 
