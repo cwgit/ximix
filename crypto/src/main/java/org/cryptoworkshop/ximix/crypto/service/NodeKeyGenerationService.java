@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.crypto.service;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.message.Capability;
@@ -50,58 +51,65 @@ public class NodeKeyGenerationService
     public MessageReply handle(Message message)
     {
         // TODO: sort out the reply messages
-        switch (((CommandMessage)message).getType())
+        try
         {
-        case INITIATE_GENERATE_KEY_PAIR:
-            final GenerateKeyPairMessage initiateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
-            final Set<String>            peersToInitiate = initiateMessage.getNodesToUse();
-
-            if (initiateMessage.getNodesToUse().contains(nodeContext.getName()))
+            switch (((CommandMessage)message).getType())
             {
-                //
-                // generate our part
-                //
-                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate, initiateMessage.getThreshold(), initiateMessage.getKeyGenParameters());
+            case INITIATE_GENERATE_KEY_PAIR:
+                final GenerateKeyPairMessage initiateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
+                final Set<String>            peersToInitiate = initiateMessage.getNodesToUse();
 
-                //
-                // start everyone else
-                //
+                if (initiateMessage.getNodesToUse().contains(nodeContext.getName()))
+                {
+                    //
+                    // generate our part
+                    //
+                    ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate, initiateMessage.getThreshold(), initiateMessage.getKeyGenParameters());
 
-                nodeContext.scheduleTask(new InitiateKeyGenTask(initiateMessage));
+                    //
+                    // start everyone else
+                    //
 
-                //
-                // send our shares.
-                //
-                nodeContext.scheduleTask(new SendShareTask(initiateMessage.getKeyID(), peersToInitiate, messages));
+                    nodeContext.scheduleTask(new InitiateKeyGenTask(initiateMessage));
+
+                    //
+                    // send our shares.
+                    //
+                    nodeContext.scheduleTask(new SendShareTask(initiateMessage.getKeyID(), peersToInitiate, messages));
+                }
+
+                return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
+            case GENERATE_KEY_PAIR:
+                final GenerateKeyPairMessage generateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
+                final Set<String>            involvedPeers = generateMessage.getNodesToUse();
+
+                if (involvedPeers.contains(nodeContext.getName()))
+                {
+                    ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)generateMessage.getKeyGenParameters();
+                    ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), ecKeyGenParams);
+
+                    nodeContext.scheduleTask(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
+                }
+
+                return new MessageReply(MessageReply.Type.OKAY);
+            case STORE_SHARE:
+                final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
+                final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getKeyID()).getCurve(), sssMessage.getSecretShareMessage());
+                System.err.println("Store: " + nodeContext.getName());
+                // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
+                // till we can validate them.
+                nodeContext.scheduleTask(new StoreShareTask(sssMessage.getKeyID(), shareMessage));
+
+                return new MessageReply(MessageReply.Type.OKAY);
+            default:
+                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeKeyGenerationService."));
             }
-
-            return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
-        case GENERATE_KEY_PAIR:
-            final GenerateKeyPairMessage generateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
-            final Set<String>            involvedPeers = generateMessage.getNodesToUse();
-
-            if (involvedPeers.contains(nodeContext.getName()))
-            {
-                ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)generateMessage.getKeyGenParameters();
-                ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), ecKeyGenParams);
-
-                nodeContext.scheduleTask(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
-            }
-
-            return new MessageReply(MessageReply.Type.OKAY);
-        case STORE_SHARE:
-            final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
-            final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getKeyID()).getCurve(), sssMessage.getSecretShareMessage());
-            System.err.println("Store: " + nodeContext.getName());
-            // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
-            // till we can validate them.
-            nodeContext.scheduleTask(new StoreShareTask(sssMessage.getKeyID(), shareMessage));
-
-            return new MessageReply(MessageReply.Type.OKAY);
-        default:
-            System.err.println("unknown command");
         }
-        return null;  // TODO:
+        catch (Exception e)
+        {
+            return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("NodeKeyGenerationService failure: " + e.getMessage()));
+        }
+
     }
 
     public boolean isAbleToHandle(Enum type)

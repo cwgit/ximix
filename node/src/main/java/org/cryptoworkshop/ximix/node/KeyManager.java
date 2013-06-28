@@ -41,7 +41,7 @@ class KeyManager
     {
         AsymmetricCipherKeyPair kp = keyMap.get(keyID);
 
-        if (kp == null)        // TODO: error? overwrite?
+        if (kp == null)
         {
             X9ECParameters params = ECNamedCurveTable.getByName(keyGenParams.getDomainParameters());
 
@@ -57,7 +57,7 @@ class KeyManager
         }
         else
         {
-            System.err.println("duplicate key request!!!");
+            throw new IllegalStateException("key " + keyID + " already exists.");
         }
 
         return kp;

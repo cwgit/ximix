@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.mixnet.admin;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1String;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
@@ -48,13 +49,25 @@ public class KeyGenerationCommandService
 
         MessageReply reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 
+        if (reply.getType() != MessageReply.Type.OKAY)
+        {
+            if (reply.getPayload() instanceof ASN1String)
+            {
+                throw new ServiceConnectionException(((ASN1String)reply.getPayload()).getString());
+            }
+            else
+            {
+                throw new ServiceConnectionException("Unknown connection failure.");
+            }
+        }
+
         try
         {
             return reply.getPayload().toASN1Primitive().getEncoded();
         }
         catch (IOException e)
         {
-            throw new ServiceConnectionException("malformed public key returned: " + e.getMessage());
+            throw new ServiceConnectionException("Malformed public key returned: " + e.getMessage());
         }
     }
 
