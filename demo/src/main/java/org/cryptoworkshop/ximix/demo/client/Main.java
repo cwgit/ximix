@@ -98,6 +98,8 @@ public class Main
 
         PairSequence ballot = new PairSequence(encCandidate1, encCandidate2);
 
+        client.uploadMessage("FRED", ballot.getEncoded());
+
         SHA256Digest sha256 = new SHA256Digest();
 
         byte[] message = ballot.getEncoded();
