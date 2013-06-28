@@ -31,10 +31,13 @@ import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.KeyType;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
+import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.DownloadOperationListener;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
+import org.cryptoworkshop.ximix.mixnet.admin.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.mixnet.client.UploadService;
+import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
@@ -95,6 +98,23 @@ public class Main
         }
 
         CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECKEY").build(), "A", "B");
+
+        shuffleOp.addListener(new ShuffleOperationListener()
+        {
+            @Override
+            public void completed()
+            {
+                System.err.println("done");
+            }
+
+            @Override
+            public void failed(String errorObject)
+            {
+                System.err.println("failed: " + errorObject);
+            }
+        });
 
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().setKeyID("ECKEY").setThreshold(2).build(), new DownloadOperationListener()
         {

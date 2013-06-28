@@ -51,75 +51,9 @@ public class ClientSigningService
     public byte[] generateSignature(String keyID, byte[] message)
         throws ServiceConnectionException
     {
-        MessageReply keyReply = connection.sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, new FetchPublicKeyMessage(keyID));
-
         try
         {
-            SubjectPublicKeyInfo pubKeyInfo = SubjectPublicKeyInfo.getInstance(keyReply.getPayload());
-            ECDomainParameters domainParams = ((ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo)).getParameters();
-
-            BigInteger n = domainParams.getN();
-            BigInteger e = calculateE(n, message);
-            BigInteger r = null;
-            BigInteger s = null;
-
-            // 5.3.2
-            do // generate s
-            {
-                BigInteger k = null;
-                int nBitLength = n.bitLength();
-
-                do // generate r
-                {
-                    do
-                    {
-                        k = new BigInteger(nBitLength, new SecureRandom());
-                    }
-                    while (k.equals(BigInteger.ZERO) || k.compareTo(n) >= 0);
-
-                    ECPoint p = domainParams.getG().multiply(k);
-
-                    // 5.3.3
-                    BigInteger x = p.getX().toBigInteger();
-
-                    r = x.mod(n);
-                }
-                while (r.equals(BigInteger.ZERO));
-
-                MessageReply sigReply = connection.sendMessage(ClientMessage.Type.CREATE_SIGNATURE, new ECDSACreateMessage(keyID, r));
-
-                ASN1Sequence seq = ASN1Sequence.getInstance(sigReply.getPayload());
-                BigInteger[] dMultrVals = new BigInteger[seq.size()];
-
-                for (int i = 0; i != seq.size(); i++)
-                {
-                    dMultrVals[i] = ECDSAResponseMessage.getInstance(seq.getObjectAt(i)).getValue();
-                }
-
-                LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(dMultrVals.length, domainParams.getN());
-
-                BigInteger[] weights = calculator.computeWeights(dMultrVals);
-
-                // weighting
-                BigInteger dMultr = dMultrVals[0].multiply(weights[0]);
-                for (int i = 1; i < weights.length; i++)
-                {
-                    if (dMultrVals[i] != null)
-                    {
-                        dMultr = dMultr.add(dMultrVals[i].multiply(weights[i]));
-                    }
-                }
-
-                s = k.modInverse(n).multiply(e.add(dMultr)).mod(n);
-            }
-            while (s.equals(BigInteger.ZERO));
-
-            ASN1EncodableVector v = new ASN1EncodableVector();
-
-            v.add(new ASN1Integer(r));
-            v.add(new ASN1Integer(s));
-
-            return new DERSequence(v).getEncoded();
+            return connection.sendMessage(ClientMessage.Type.CREATE_SIGNATURE, new ECDSACreateMessage(keyID, message)).getPayload().toASN1Primitive().getEncoded();
         }
         catch (RuntimeException e)
         {
@@ -148,25 +82,6 @@ public class ClientSigningService
         catch (Exception e)
         {                                 e.printStackTrace();
             throw new ServiceConnectionException("Malformed public key response.");
-        }
-    }
-
-    private BigInteger calculateE(BigInteger n, byte[] message)
-    {
-        int log2n = n.bitLength();
-        int messageBitLength = message.length * 8;
-
-        if (log2n >= messageBitLength)
-        {
-            return new BigInteger(1, message);
-        }
-        else
-        {
-            BigInteger trunc = new BigInteger(1, message);
-
-            trunc = trunc.shiftRight(messageBitLength - log2n);
-
-            return trunc;
         }
     }
 }

@@ -23,37 +23,36 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class ECDSACreateMessage
+public class ECDSAPartialCreateMessage
     extends ASN1Object
 {
     private final String keyID;
-    private final byte[] message;
+    private final BigInteger r;
 
-    public ECDSACreateMessage(String keyID, byte[] message)
+    public ECDSAPartialCreateMessage(String keyID, BigInteger r)
     {
         this.keyID = keyID;
-        this.message = message;
+        this.r = r;
     }
 
-    private ECDSACreateMessage(ASN1Sequence seq)
+    private ECDSAPartialCreateMessage(ASN1Sequence seq)
     {
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.message = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
+        this.r = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue();
     }
 
-    public static final ECDSACreateMessage getInstance(Object o)
+    public static final ECDSAPartialCreateMessage getInstance(Object o)
     {
-        if (o instanceof ECDSACreateMessage)
+        if (o instanceof ECDSAPartialCreateMessage)
         {
-            return (ECDSACreateMessage)o;
+            return (ECDSAPartialCreateMessage)o;
         }
         else if (o != null)
         {
-            return new ECDSACreateMessage(ASN1Sequence.getInstance(o));
+            return new ECDSAPartialCreateMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -65,7 +64,7 @@ public class ECDSACreateMessage
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new DERUTF8String(keyID));
-        v.add(new DEROctetString(message));
+        v.add(new ASN1Integer(r));
 
         return new DERSequence(v);
     }
@@ -75,8 +74,8 @@ public class ECDSACreateMessage
         return keyID;
     }
 
-    public byte[] getMessage()
+    public BigInteger getR()
     {
-        return message;
+        return r;
     }
 }

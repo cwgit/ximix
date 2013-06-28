@@ -81,7 +81,12 @@ public class KeyGenerationCommandService
 
         try
         {
-            return reply.getPayload().toASN1Primitive().getEncoded();
+            if (reply.getPayload() != null)
+            {
+                return reply.getPayload().toASN1Primitive().getEncoded();
+            }
+
+            return null;
         }
         catch (IOException e)
         {
