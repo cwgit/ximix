@@ -11,7 +11,7 @@ public class SelectInstallLocation extends AbstractInstallerStep
 
     File installLocation = new File("./ximix/");
 
-    public static final String ID = "install_location";
+    public static final String ID = "installDir";
 
 
 

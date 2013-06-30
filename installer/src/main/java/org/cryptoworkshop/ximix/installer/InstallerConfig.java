@@ -94,7 +94,7 @@ public class InstallerConfig
                     } else if ("step".equals(n.getNodeName()))
                     {
                         operations.add(new Step(n));
-                    } else if ("property".equals(n.getNodeName()))
+                    } else if ("prop".equals(n.getNodeName()))
                     {
                         NamedNodeMap attr = n.getAttributes();
 
@@ -180,6 +180,16 @@ public class InstallerConfig
         public void setOperations(List<Object> operations)
         {
             this.operations = operations;
+        }
+
+        public HashMap<String, Object> getProps()
+        {
+            return props;
+        }
+
+        public void setProps(HashMap<String, Object> props)
+        {
+            this.props = props;
         }
     }
 
@@ -312,6 +322,46 @@ public class InstallerConfig
         public Movement()
         {
 
+        }
+
+        public boolean isRecursive()
+        {
+            return recursive;
+        }
+
+        public void setRecursive(boolean recursive)
+        {
+            this.recursive = recursive;
+        }
+
+        public String getSrc()
+        {
+            return src;
+        }
+
+        public void setSrc(String src)
+        {
+            this.src = src;
+        }
+
+        public String getDest()
+        {
+            return dest;
+        }
+
+        public void setDest(String dest)
+        {
+            this.dest = dest;
+        }
+
+        public String getDestName()
+        {
+            return destName;
+        }
+
+        public void setDestName(String destName)
+        {
+            this.destName = destName;
         }
 
         public Movement(Node node)

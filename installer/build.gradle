@@ -6,61 +6,68 @@ dependencies {
 
 
 
-//jar {
-//
-//    doFirst {
-//        File root = project(':installer').file("build/layout");
-//        File image = new File(root, "image");
-//
-//        // Delete is exists.
-//        //
-//        if (root.exists()) {
-//            org.apache.commons.io.FileUtils.deleteDirectory(root);
-//        }
-//
-//        root.mkdirs();
-//        image.mkdirs();
-//
-//        File output = project(':installer').file("build/installers");
-//        output.mkdirs();
-//
-//
-//
-//        File f = new File(image, "libs");
-//        f.mkdirs();
-//
-//        //
-//        // Copy jars to target dir.
-//        //
-//
-//        org.apache.commons.io.FileUtils.copyFile(
-//                project(':common').file("build/libs/common.jar"),
-//                new File(f, "common.jar"));
-//
-//        org.apache.commons.io.FileUtils.copyFile(
-//                project(':crypto').file("build/libs/crypto.jar"),
-//                new File(f, "crypto.jar"));
-//
-//        org.apache.commons.io.FileUtils.copyFile(
-//                project(':mixnet').file("build/libs/mixnet.jar"),
-//                new File(f, "mixnet.jar"));
-//
-//
-//        File confDir = new File(image,"conf");
-//        confDir.mkdirs();
-//
-//    }
-//
-//    into('image') {
-//        from image;
-//    }
-//
-//    into('sequence.xml') {
-//        from new File(System.properties.get("",project(':installer').file("src/main/resources/sequence.xml")));
-//    }
-//
-//    manifest {
-//        attributes("Main-Class": "org.cryptoworkshop.ximix.installer.Installer");
-//    }
-//
-//}
+jar {
+
+    doFirst {
+        File root = project(':installer').file("build/layout");
+
+
+       //
+       // The image directory holds the files that are available for installation.
+       //
+
+        File node = new File(root, "node");
+
+        // Delete is exists.
+        //
+        if (root.exists()) {
+            org.apache.commons.io.FileUtils.deleteDirectory(root);
+        }
+
+        root.mkdirs();
+        node.mkdirs();
+
+        File output = project(':installer').file("build/installers");
+        output.mkdirs();
+
+
+
+        File f = new File(node, "libs");
+        f.mkdirs();
+
+        //
+        // Copy jars to target dir.
+        //
+
+        org.apache.commons.io.FileUtils.copyFile(
+                project(':common').file("build/libs/common.jar"),
+                new File(f, "common.jar"));
+
+        org.apache.commons.io.FileUtils.copyFile(
+                project(':crypto').file("build/libs/crypto.jar"),
+                new File(f, "crypto.jar"));
+
+        org.apache.commons.io.FileUtils.copyFile(
+                project(':mixnet').file("build/libs/mixnet.jar"),
+                new File(f, "mixnet.jar"));
+
+
+        File confDir = new File(node,"conf");
+        confDir.mkdirs();
+
+    }
+
+    from (project(':installer').file("build/layout/node"))   {
+        into "node"
+    };
+
+    from (project(':installer').file("src/main/resources/sequence.xml")) {
+       "/installer.xml"
+    }
+
+
+    manifest {
+        attributes("Main-Class": "org.cryptoworkshop.ximix.installer.Installer");
+    }
+
+}

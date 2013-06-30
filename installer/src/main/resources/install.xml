@@ -10,7 +10,7 @@
 
         <movements>
             <id>1</id>
-            <movement src="image" dest="node" recursive="true"></movement>
+            <movement src="node/"  recursive="true"></movement>
         </movements>
 
 

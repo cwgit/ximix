@@ -4,6 +4,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 
 /**
  *
@@ -43,4 +47,26 @@ public class Util {
     public static interface NodeTraversal {
         void node(Node n);
     }
+
+
+    public static interface ZipTraversal {
+        void entry(ZipEntry ze);
+    }
+
+
+    public static void zipDir(String name, ZipFile file, ZipTraversal traversal)
+    {
+        Enumeration<? extends ZipEntry> entries = file.entries();
+        while(entries.hasMoreElements())
+        {
+            ZipEntry ze = entries.nextElement();
+            if (ze.getName().startsWith(name))
+            {
+                traversal.entry(ze);
+            }
+        }
+
+
+    }
+
 }
