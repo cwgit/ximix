@@ -53,7 +53,7 @@ public class TestNodeStartStop
 
         final AtomicBoolean res = new AtomicBoolean(false);
 
-        ExtendedFuture<XimixNodeContext> future = node.stop(10, TimeUnit.SECONDS, new FutureComplete()
+        ExtendedFuture future = node.stop(10, TimeUnit.SECONDS, new FutureComplete()
         {
             @Override
             public void handle(ExtendedFuture future)
@@ -62,7 +62,7 @@ public class TestNodeStartStop
             }
         });
 
-        future.sync();
+        future.await();
 
         if (!res.get())
         {
@@ -108,7 +108,7 @@ public class TestNodeStartStop
 
         ExtendedFuture<XimixNodeContext> future = node.stop(10, TimeUnit.SECONDS, null);
 
-        future.sync();
+        future.await();
 
 
         TestCase.assertTrue("Future is done.", future.isDone());

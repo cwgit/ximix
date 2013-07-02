@@ -3,7 +3,7 @@ package org.cryptoworkshop.ximix.common.util;
 import java.util.concurrent.*;
 
 /**
- * Extends the standard future interface and adds sync methods.
+ * Extends the standard future interface and adds await methods.
  * Adds the concepts of syncing and call backs to the standard Future.
  * To allow simple blocking for an outcome to occur.
  */
@@ -129,7 +129,7 @@ public abstract class ExtendedFuture<T> implements Future<T>
      *
      * @throws InterruptedException
      */
-    public void sync() throws InterruptedException
+    public void await() throws InterruptedException
     {
         latch.await();
     }
@@ -142,7 +142,7 @@ public abstract class ExtendedFuture<T> implements Future<T>
      * @return true of the event occurs, false if it timesout.
      * @throws InterruptedException
      */
-    public boolean sync(int timeout, TimeUnit timeunit) throws InterruptedException
+    public boolean await(int timeout, TimeUnit timeunit) throws InterruptedException
     {
         return latch.await(timeout, timeunit);
     }
