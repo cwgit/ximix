@@ -12,84 +12,89 @@ public abstract class ExtendedFuture<T> implements Future<T>
     protected CountDownLatch latch = null;
     protected T value = null;
     protected Throwable executionException = null;
-    protected  boolean timedOut = false;
+    protected boolean timedOut = false;
 
     protected FutureComplete<T> completedHandler = null;
-    protected FutureComplete<T> onThrowable = null;
-    protected FutureComplete<T> onTimeOut = null;
+
 
     public ExtendedFuture()
     {
         latch = new CountDownLatch(1);
     }
 
-    public ExtendedFuture<T> onComplete(FutureComplete<T> completedHandler)
+    public synchronized ExtendedFuture<T> withHandler(FutureComplete<T> completedHandler)
     {
         this.completedHandler = completedHandler;
         return this;
     }
 
-
-    public ExtendedFuture<T> onThrowable(FutureComplete<T> onThrowable)
-    {
-        this.onThrowable = onThrowable;
-        return this;
-    }
-
-    public ExtendedFuture<T> onTimeOut(FutureComplete<T> onTimeOut)
-    {
-        this.onTimeOut = onTimeOut;
-        return this;
-    }
-
-
-    public void setValue(T value)
+    public synchronized void setValue(T value)
     {
         this.value = value;
     }
 
-    public void finish()
+    public synchronized void finish()
     {
         finish(null);
     }
 
-    public void finish(T finalValue)
+    public synchronized void finish(T finalValue)
     {
         this.value = finalValue;
+        if (this.completedHandler != null)
+        {
+            completedHandler.handle(this);
+        }
         latch.countDown();
     }
 
-    protected void timedOut()
+    protected synchronized void timedOut()
     {
        timedOut(null);
     }
 
-    protected void timedOut(T finalValue)
+    protected synchronized void timedOut(T finalValue)
     {
         timedOut = true;
         this.value = finalValue;
-        latch.countDown();
-    }
 
-    protected void failed(Throwable th)
-    {
-        failed(th, null);
-    }
-
-
-    protected void failed(Throwable th, T value)
-    {
-        executionException = th;
-        this.value = value;
-
-        if (onThrowable != null)
+        if (completedHandler != null)
         {
-            onThrowable.handle(this);
+            completedHandler.handle(this);
         }
 
         latch.countDown();
     }
 
+    protected synchronized  void failed(Throwable th)
+    {
+        failed(th, null);
+    }
+
+
+    protected synchronized void failed(Throwable th, T value)
+    {
+        executionException = th;
+        this.value = value;
+
+        if (completedHandler != null)
+        {
+            completedHandler.handle(this);
+        }
+
+        latch.countDown();
+    }
+
+
+    public boolean isTimedOut()
+    {
+        return timedOut;
+    }
+
+    public void setExecutionException(Throwable executionException)
+    {
+        this.executionException = executionException;
+    }
 
     @Override
     public abstract boolean cancel(boolean mayInterruptIfRunning);
@@ -98,19 +103,19 @@ public abstract class ExtendedFuture<T> implements Future<T>
     public abstract boolean isCancelled();
 
     @Override
-    public boolean isDone()
+    public synchronized  boolean isDone()
     {
         return latch.getCount() == 0;
     }
 
     @Override
-    public T get() throws InterruptedException, ExecutionException
+    public synchronized T get() throws InterruptedException, ExecutionException
     {
         return value;
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+    public synchronized T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
     {
         if (latch.await(timeout, unit))
         {

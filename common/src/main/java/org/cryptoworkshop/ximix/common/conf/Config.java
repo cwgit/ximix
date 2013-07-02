@@ -19,9 +19,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,28 +34,47 @@ public class Config
     private Element xmlNode;
 
     public Config(File configFile)
-        throws ConfigException
+            throws ConfigException
+    {
+        try
+        {
+            init(new FileInputStream(configFile));
+        } catch (Exception e)
+        {
+            throw new ConfigException("error: " + e.getMessage(), e);
+        }
+
+    }
+
+
+    public Config(InputStream stream)
+            throws ConfigException
+    {
+        init(stream);
+    }
+
+
+    public Config(Node xmlNode)
+            throws ConfigException
+    {
+        this.xmlNode = (Element) xmlNode;
+    }
+
+    private void init(InputStream inputStream) throws ConfigException
     {
         try
         {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = dbFactory.newDocumentBuilder();
 
-            Document doc = docBuilder.parse(configFile);
+            Document doc = docBuilder.parse(inputStream);
 
             xmlNode = doc.getDocumentElement();
 
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             throw new ConfigException("error: " + e.getMessage(), e);
         }
-    }
-
-    public Config(Node xmlNode)
-        throws ConfigException
-    {
-        this.xmlNode = (Element)xmlNode;
     }
 
 //    public static String getValueOf(NodeList nl, String name)
@@ -80,7 +102,7 @@ public class Config
 //    }
 
     public int getIntegerProperty(String name)
-        throws ConfigException
+            throws ConfigException
     {
         String[] path = name.split("\\.");
 
@@ -120,7 +142,7 @@ public class Config
     }
 
     public String getStringProperty(String name)
-        throws ConfigException
+            throws ConfigException
     {
         String[] path = name.split("\\.");
 

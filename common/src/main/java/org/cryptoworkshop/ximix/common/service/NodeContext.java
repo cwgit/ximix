@@ -25,6 +25,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.common.message.KeyGenerationParameters;
 import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
+import org.cryptoworkshop.ximix.common.util.FutureComplete;
 
 
 public interface NodeContext
@@ -54,7 +55,7 @@ public interface NodeContext
 
     BigInteger performPartialSign(String keyID, BigInteger r);
 
-    ExtendedFuture signalShutdown(int time, TimeUnit timeUnit);
+    ExtendedFuture signalShutdown(int time, TimeUnit timeUnit, FutureComplete handler);
 
     boolean isStopCalled();
 

@@ -45,6 +45,7 @@ import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
+import org.cryptoworkshop.ximix.common.util.FutureComplete;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSplitSecret;
 import org.cryptoworkshop.ximix.crypto.threshold.ECNewDKGSecretSplitter;
@@ -228,9 +229,10 @@ public class XimixNodeContext
     }
 
     @Override
-    public ExtendedFuture signalShutdown(final int time, final TimeUnit timeUnit)
+    public ExtendedFuture signalShutdown(final int time, final TimeUnit timeUnit, FutureComplete handler)
     {
-        stopFuture = new NodeStoppedFuture(this);
+
+        stopFuture = (NodeStoppedFuture)new NodeStoppedFuture(this).withHandler(handler);
 
         //
         // Launch low priority thread to manage shutdown of executor

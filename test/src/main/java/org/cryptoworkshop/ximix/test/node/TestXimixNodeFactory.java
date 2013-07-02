@@ -15,9 +15,18 @@ import java.util.Map;
  */
 public class TestXimixNodeFactory extends XimixNodeFactory
 {
-    public static XimixNode createNode(Map<String, ServicesConnection> servicesMap, Config config, ThrowableHandler throwableHandler) throws RegistrarConnectionException, ConfigException {
-        XimixNode node = new XimixNodeImpl(servicesMap,config);
-        ((XimixNodeImpl)node).setUnhandledThrowableHandler(throwableHandler);
+    public static XimixNode createNode(Map<String, ServicesConnection> servicesMap, Config config, ThrowableHandler throwableHandler) throws RegistrarConnectionException, ConfigException
+    {
+        XimixNode node = new XimixNodeImpl(servicesMap, config);
+        ((XimixNodeImpl) node).setUnhandledThrowableHandler(throwableHandler);
+        return node;
+    }
+
+
+    public static XimixNode createNode(String servicesPath, String configPath, ThrowableHandler throwableHandler) throws RegistrarConnectionException, ConfigException
+    {
+        XimixNode node = XimixNodeFactory.createNode(TestXimixNodeFactory.class.getResourceAsStream(servicesPath), TestXimixNodeFactory.class.getResourceAsStream(configPath));
+        ((XimixNodeImpl) node).setUnhandledThrowableHandler(throwableHandler);
         return node;
     }
 

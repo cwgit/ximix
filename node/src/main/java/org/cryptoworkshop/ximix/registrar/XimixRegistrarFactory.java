@@ -116,6 +116,15 @@ public class XimixRegistrarFactory
         };
     }
 
+
+    public static Map<String, ServicesConnection> createServicesRegistrarMap(InputStream config)
+            throws ConfigException
+    {
+        final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
+
+        return createServicesRegistrarMap(nodes);
+    }
+
     public static Map<String, ServicesConnection> createServicesRegistrarMap(File config)
         throws ConfigException
     {

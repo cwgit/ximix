@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.node;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
@@ -25,11 +26,20 @@ import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
+import org.cryptoworkshop.ximix.common.util.FutureComplete;
 import org.cryptoworkshop.ximix.registrar.RegistrarConnectionException;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 public class XimixNodeFactory
 {
+
+    public static XimixNode createNode(InputStream peersConfig, InputStream config)  throws RegistrarConnectionException, ConfigException
+    {
+        Map<String, ServicesConnection> servicesMap = XimixRegistrarFactory.createServicesRegistrarMap(peersConfig);
+        XimixNode node = new XimixNodeImpl(servicesMap,new Config(config));
+        return node;
+    }
+
     public static XimixNode createNode(final File peersConfig, final File config)
             throws RegistrarConnectionException, ConfigException
     {
@@ -130,9 +140,9 @@ public class XimixNodeFactory
         }
 
         @Override
-        public ExtendedFuture stop(int timeout, TimeUnit unit)
+        public ExtendedFuture stop(int timeout, TimeUnit unit, FutureComplete handler)
         {
-            return nodeContext.signalShutdown(timeout, unit);
+            return nodeContext.signalShutdown(timeout, unit, handler);
         }
 
         public Map<String, ServicesConnection> getServicesMap()
