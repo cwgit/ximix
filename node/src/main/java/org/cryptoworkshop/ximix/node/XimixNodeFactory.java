@@ -15,13 +15,6 @@
  */
 package org.cryptoworkshop.ximix.node;
 
-import java.io.File;
-import java.io.InputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
@@ -30,13 +23,21 @@ import org.cryptoworkshop.ximix.common.util.FutureComplete;
 import org.cryptoworkshop.ximix.registrar.RegistrarConnectionException;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
+import java.io.File;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 public class XimixNodeFactory
 {
 
-    public static XimixNode createNode(InputStream peersConfig, InputStream config)  throws RegistrarConnectionException, ConfigException
+    public static XimixNode createNode(InputStream peersConfig, InputStream config) throws RegistrarConnectionException, ConfigException
     {
         Map<String, ServicesConnection> servicesMap = XimixRegistrarFactory.createServicesRegistrarMap(peersConfig);
-        XimixNode node = new XimixNodeImpl(servicesMap,new Config(config));
+        XimixNode node = new XimixNodeImpl(servicesMap, new Config(config));
         return node;
     }
 
@@ -46,7 +47,7 @@ public class XimixNodeFactory
         final Map<String, ServicesConnection> servicesMap = XimixRegistrarFactory.createServicesRegistrarMap(peersConfig);
 
 
-        XimixNode node = new XimixNodeImpl(servicesMap,config);
+        XimixNode node = new XimixNodeImpl(servicesMap, config);
 
         return node;
 
@@ -97,6 +98,8 @@ public class XimixNodeFactory
         private XimixNodeContext nodeContext = null;
         private int portNo = 1234;
         private ThrowableHandler unhandledThrowableHandler = null;
+        private boolean stop = false;
+
 
         public XimixNodeImpl(Map<String, ServicesConnection> servicesMap, File config) throws ConfigException, RegistrarConnectionException
         {
@@ -114,19 +117,38 @@ public class XimixNodeFactory
             portNo = nodeConfig.getIntegerProperty("portNo");
         }
 
-
         @Override
         public void start()
         {
-            boolean stop = false;
+
             try
             {
                 ServerSocket ss = new ServerSocket(portNo);
+                ss.setSoTimeout(1000);
+
                 while (!stop)
                 {
-                    Socket s = ss.accept();
-                    nodeContext.addConnection(new XimixServices(nodeContext, s));
+                    Socket s = null;
+                    try
+                    {
+
+                        s = ss.accept();
+                    } catch (SocketTimeoutException ste)
+                    {
+                       // Deliberately ignored.. //TODO suggest move to NIO and selectors for the accept part.
+                    }
+
+
+                    if (s != null)
+                    {
+                        s.setSoTimeout(15000);
+                        nodeContext.addConnection(new XimixServices(nodeContext, s));
+                    }
+
+
                 }
+
+                ss.close();
             } catch (Exception e)
             {
                 if (unhandledThrowableHandler != null)
@@ -142,6 +164,8 @@ public class XimixNodeFactory
         @Override
         public ExtendedFuture stop(int timeout, TimeUnit unit, FutureComplete handler)
         {
+            stop = true;
+
             return nodeContext.signalShutdown(timeout, unit, handler);
         }
 
@@ -195,7 +219,6 @@ public class XimixNodeFactory
             this.unhandledThrowableHandler = unhandledThrowableHandler;
         }
     }
-
 
 
 }

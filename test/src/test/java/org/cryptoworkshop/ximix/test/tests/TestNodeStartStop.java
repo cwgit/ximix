@@ -26,7 +26,7 @@ public class TestNodeStartStop
     @org.junit.Test
     public void testNodeStopWithFutureHandler() throws Exception
     {
-        XimixNode node = TestXimixNodeFactory.createNode("/conf/mixnet.xml", "/conf/node1.xml", new ThrowableHandler()
+       final  XimixNode node = TestXimixNodeFactory.createNode("/conf/mixnet.xml", "/conf/node1.xml", new ThrowableHandler()
         {
             @Override
             public boolean throwable(Throwable throwable)
@@ -35,6 +35,19 @@ public class TestNodeStartStop
                 return false;
             }
         });
+
+        Thread th = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                node.start();
+            }
+        });
+        th.setPriority(Thread.MIN_PRIORITY);
+        th.start();
+
+
 
         Thread.sleep(1000);
 
@@ -68,7 +81,7 @@ public class TestNodeStartStop
     @org.junit.Test
     public void testNodeStopWithFuture() throws Exception
     {
-        XimixNode node = TestXimixNodeFactory.createNode("/conf/mixnet.xml", "/conf/node1.xml", new ThrowableHandler()
+        final XimixNode node = TestXimixNodeFactory.createNode("/conf/mixnet.xml", "/conf/node1.xml", new ThrowableHandler()
         {
             @Override
             public boolean throwable(Throwable throwable)
@@ -77,6 +90,18 @@ public class TestNodeStartStop
                 return false;
             }
         });
+
+        Thread th = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                node.start();
+            }
+        });
+        th.setPriority(Thread.MIN_PRIORITY);
+        th.start();
+
 
         Thread.sleep(1000);
 
