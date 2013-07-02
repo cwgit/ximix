@@ -32,7 +32,11 @@ public class MessageReply
     public static enum Type
     {
         OKAY,
-        ERROR
+        ERROR,
+        /**
+         * Sent when a node is receiving messages but is in the process of a graceful shutdown.
+         */
+        EXITING
     }
 
     public MessageReply(Type type)

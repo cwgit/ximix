@@ -18,11 +18,14 @@ package org.cryptoworkshop.ximix.common.service;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.common.message.KeyGenerationParameters;
+import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
+
 
 public interface NodeContext
 {
@@ -50,4 +53,9 @@ public interface NodeContext
     ECPoint performPartialDecrypt(String keyID, ECPoint cipherText);
 
     BigInteger performPartialSign(String keyID, BigInteger r);
+
+    ExtendedFuture signalShutdown(int time, TimeUnit timeUnit);
+
+    boolean isStopCalled();
+
 }

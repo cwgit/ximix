@@ -15,7 +15,16 @@
  */
 package org.cryptoworkshop.ximix.node;
 
+
+import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
+
+import java.util.concurrent.TimeUnit;
+
 public interface XimixNode
 {
     void start();
+
+    ExtendedFuture stop(int timeout, TimeUnit unit);
+
+
 }

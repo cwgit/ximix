@@ -16,53 +16,176 @@
 package org.cryptoworkshop.ximix.node;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
 import org.cryptoworkshop.ximix.registrar.RegistrarConnectionException;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 public class XimixNodeFactory
 {
     public static XimixNode createNode(final File peersConfig, final File config)
-        throws RegistrarConnectionException, ConfigException
+            throws RegistrarConnectionException, ConfigException
     {
         final Map<String, ServicesConnection> servicesMap = XimixRegistrarFactory.createServicesRegistrarMap(peersConfig);
 
-        return new XimixNode()
+
+        XimixNode node = new XimixNodeImpl(servicesMap,config);
+
+        return node;
+
+//        return new XimixNode()
+//        {
+//            private final Config nodeConfig = new Config(config);
+//
+//            private final XimixNodeContext nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
+//
+//            final int portNo = nodeConfig.getIntegerProperty("portNo");
+//
+//            public void start()
+//            {
+//                boolean stop = false;
+//
+//                try
+//                {
+//                    ServerSocket ss = new ServerSocket(portNo);
+//
+//                    while (!stop)
+//                    {
+//                        Socket s = ss.accept();
+//
+//                        nodeContext.addConnection(new XimixServices(nodeContext, s));
+//                    }
+//                } catch (IOException e)
+//                {
+//                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//                }
+//            }
+//
+//
+//            @Override
+//            public StopFuture stop(int timeout, TimeUnit unit)
+//            {
+//                return nodeContext.signalShutdown(timeout, unit);
+//            }
+//        };
+    }
+
+    /**
+     *
+     */
+    protected static class XimixNodeImpl implements XimixNode
+    {
+        private Map<String, ServicesConnection> servicesMap = null;
+        private Config nodeConfig = null;
+        private XimixNodeContext nodeContext = null;
+        private int portNo = 1234;
+        private ThrowableHandler unhandledThrowableHandler = null;
+
+        public XimixNodeImpl(Map<String, ServicesConnection> servicesMap, File config) throws ConfigException, RegistrarConnectionException
         {
-            private final Config nodeConfig = new Config(config);
+            this.nodeConfig = new Config(config);
+            this.servicesMap = servicesMap;
+            nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
+            portNo = nodeConfig.getIntegerProperty("portNo");
+        }
 
-            private final XimixNodeContext nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
+        public XimixNodeImpl(Map<String, ServicesConnection> servicesMap, Config config) throws ConfigException, RegistrarConnectionException
+        {
+            this.nodeConfig = config;
+            this.servicesMap = servicesMap;
+            nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
+            portNo = nodeConfig.getIntegerProperty("portNo");
+        }
 
-            final int portNo = nodeConfig.getIntegerProperty("portNo");
 
-            public void start()
+        @Override
+        public void start()
+        {
+            boolean stop = false;
+            try
             {
-                boolean stop = false;
-
-                try
+                ServerSocket ss = new ServerSocket(portNo);
+                while (!stop)
                 {
-                    ServerSocket ss = new ServerSocket(portNo);
-
-                    while (!stop)
-                    {
-                         Socket s = ss.accept();
-
-                         nodeContext.addConnection(new XimixServices(nodeContext, s));
-                    }
+                    Socket s = ss.accept();
+                    nodeContext.addConnection(new XimixServices(nodeContext, s));
                 }
-                catch (IOException e)
+            } catch (Exception e)
+            {
+                if (unhandledThrowableHandler != null)
                 {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    unhandledThrowableHandler.throwable(e);
+                } else
+                {
+                    e.printStackTrace();
                 }
             }
-        };
+        }
+
+        @Override
+        public ExtendedFuture stop(int timeout, TimeUnit unit)
+        {
+            return nodeContext.signalShutdown(timeout, unit);
+        }
+
+        public Map<String, ServicesConnection> getServicesMap()
+        {
+            return servicesMap;
+        }
+
+        public void setServicesMap(Map<String, ServicesConnection> servicesMap)
+        {
+            this.servicesMap = servicesMap;
+        }
+
+        public Config getNodeConfig()
+        {
+            return nodeConfig;
+        }
+
+        public void setNodeConfig(Config nodeConfig)
+        {
+            this.nodeConfig = nodeConfig;
+        }
+
+        public XimixNodeContext getNodeContext()
+        {
+            return nodeContext;
+        }
+
+        public void setNodeContext(XimixNodeContext nodeContext)
+        {
+            this.nodeContext = nodeContext;
+        }
+
+        public int getPortNo()
+        {
+            return portNo;
+        }
+
+        public void setPortNo(int portNo)
+        {
+            this.portNo = portNo;
+        }
+
+        public ThrowableHandler getUnhandledThrowableHandler()
+        {
+            return unhandledThrowableHandler;
+        }
+
+        public void setUnhandledThrowableHandler(ThrowableHandler unhandledThrowableHandler)
+        {
+            this.unhandledThrowableHandler = unhandledThrowableHandler;
+        }
     }
+
+
+
 }

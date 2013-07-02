@@ -1,0 +1,9 @@
+dependencies {
+    compile project(':common')
+    compile project(':crypto')
+    compile project(':mixnet')
+    compile project(':node')
+}
+
+
+

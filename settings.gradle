@@ -5,4 +5,4 @@ include "node"
 include "installer"
 include "console"
 include "demo"
-
+include "test"

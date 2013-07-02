@@ -25,8 +25,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -39,13 +40,11 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.Capability;
-import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.common.message.KeyGenerationParameters;
+import org.cryptoworkshop.ximix.common.message.*;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSplitSecret;
 import org.cryptoworkshop.ximix.crypto.threshold.ECNewDKGSecretSplitter;
@@ -53,18 +52,21 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class XimixNodeContext
-    implements NodeContext
+        implements NodeContext
 {
     private Map<String, ServicesConnection> peerMap;
     private final KeyManager keyManager;
 
-    private Executor multiTaskExecutor = Executors.newCachedThreadPool();
+    private ExecutorService multiTaskExecutor = Executors.newCachedThreadPool();
 
     private List<Service> services = new ArrayList<Service>();
-    private final String  name;
+    private final String name;
+    private NodeStoppedFuture stopFuture = null;
+
+
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, Config nodeConfig)
-        throws ConfigException
+            throws ConfigException
     {
         this.peerMap = new HashMap<>(peerMap);
 
@@ -86,12 +88,12 @@ public class XimixNodeContext
 
     public String getName()
     {
-         return name;
+        return name;
     }
 
     public Capability[] getCapabilities()
     {
-        List<Capability>  capabilityList = new ArrayList<Capability>();
+        List<Capability> capabilityList = new ArrayList<Capability>();
 
         for (Service service : services)
         {
@@ -103,6 +105,18 @@ public class XimixNodeContext
 
     public void addConnection(Runnable task)
     {
+        //
+        // If stop is called we cannot schedule any more tasks once the executor is put into shutdown mode.
+        //
+        if (isStopCalled())
+        {
+            if (task instanceof XimixServices)
+            {
+                ((XimixServices) task).respondImmediately(new MessageReply(MessageReply.Type.EXITING), true);
+            }
+            return;
+        }
+
         multiTaskExecutor.execute(task);
     }
 
@@ -121,21 +135,26 @@ public class XimixNodeContext
         try
         {
             return keyManager.fetchPublicKey(keyID);
-        }
-        catch (IOException e)
+        } catch (IOException e)
         {
             e.printStackTrace();  // TODO:
             return null;
         }
     }
 
+    @Override
+    public boolean isStopCalled()
+    {
+        return multiTaskExecutor.isShutdown() || multiTaskExecutor.isTerminated();
+    }
+
     public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, KeyGenerationParameters kGenParams)
     {
-        ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)kGenParams;
-                // TODO: should have a source of randomness.
+        ECKeyGenParams ecKeyGenParams = (ECKeyGenParams) kGenParams;
+        // TODO: should have a source of randomness.
         AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, peers.size(), ecKeyGenParams);
 
-        ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)keyPair.getPrivate();
+        ECPrivateKeyParameters privKey = (ECPrivateKeyParameters) keyPair.getPrivate();
         ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(peers.size(), minimumNumberOfPeers, ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
 
         ECCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getD());
@@ -153,7 +172,7 @@ public class XimixNodeContext
         for (int i = 0; i != shares.length; i++)
         {
             messages[i] = new ECCommittedSecretShareMessage(i, shares[i].getValue(), shares[i].getWitness(), shares[i].getCommitmentFactors(),
-                            ((ECPublicKeyParameters)keyPair.getPublic()).getQ(), qCommitments);
+                    ((ECPublicKeyParameters) keyPair.getPublic()).getQ(), qCommitments);
         }
 
         return messages;
@@ -164,9 +183,8 @@ public class XimixNodeContext
     {
         try
         {
-        keyManager.buildSharedKey(keyID, message);
-        }
-        catch (Exception e)
+            keyManager.buildSharedKey(keyID, message);
+        } catch (Exception e)
         {
             e.printStackTrace();
         }
@@ -176,7 +194,7 @@ public class XimixNodeContext
     public <T> T getDomainParameters(String keyID)
     {
         X9ECParameters params = SECNamedCurves.getByName("secp256r1");
-        return (T)new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+        return (T) new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
     }
 
     @Override
@@ -207,6 +225,42 @@ public class XimixNodeContext
     public BigInteger performPartialSign(String keyID, BigInteger r)
     {
         return r.multiply(keyManager.getPartialPrivateKey(keyID));
+    }
+
+    @Override
+    public ExtendedFuture signalShutdown(final int time, final TimeUnit timeUnit)
+    {
+        stopFuture = new NodeStoppedFuture(this);
+
+        //
+        // Launch low priority thread to manage shutdown of executor
+        // and to call Call future when complete.
+        //
+        Thread th = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                multiTaskExecutor.shutdown();
+                try
+                {
+                    if (!multiTaskExecutor.awaitTermination(time, timeUnit))
+                    {
+                        multiTaskExecutor.shutdownNow();
+                    }
+                    stopFuture.finish();
+                } catch (InterruptedException ex)
+                {
+                    multiTaskExecutor.shutdownNow(); // Force it to shutdown.
+                    stopFuture.finish();
+                }
+            }
+        });
+        th.setPriority(Thread.MIN_PRIORITY);
+        th.start();
+
+
+        return stopFuture;
     }
 
     private class ServiceConfig
@@ -242,31 +296,25 @@ public class XimixNodeContext
 
                                 Constructor constructor = clazz.getConstructor(NodeContext.class, Config.class);
 
-                                Service impl = (Service)constructor.newInstance(XimixNodeContext.this, new Config(xmlNode));
+                                Service impl = (Service) constructor.newInstance(XimixNodeContext.this, new Config(xmlNode));
 
                                 services.add(impl);
-                            }
-                            catch (ClassNotFoundException e)
+                            } catch (ClassNotFoundException e)
                             {
                                 throwable = e;
-                            }
-                            catch (NoSuchMethodException e)
+                            } catch (NoSuchMethodException e)
                             {
                                 throwable = e;
-                            }
-                            catch (InvocationTargetException e)
+                            } catch (InvocationTargetException e)
                             {
                                 throwable = e;
-                            }
-                            catch (InstantiationException e)
+                            } catch (InstantiationException e)
                             {
                                 throwable = e;
-                            }
-                            catch (IllegalAccessException e)
+                            } catch (IllegalAccessException e)
                             {
                                 throwable = e;
-                            }
-                            catch (ConfigException e)
+                            } catch (ConfigException e)
                             {
                                 throwable = e;
                             }
@@ -283,7 +331,7 @@ public class XimixNodeContext
     }
 
     private class NodeConfigFactory
-        implements ConfigObjectFactory<ServiceConfig>
+            implements ConfigObjectFactory<ServiceConfig>
     {
         public ServiceConfig createObject(Node configNode)
         {
