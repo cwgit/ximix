@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.node;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.registrar.RegistrarConnectionException;
@@ -35,6 +36,10 @@ public class Main
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
         catch (RegistrarConnectionException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        catch (FileNotFoundException e)
         {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }

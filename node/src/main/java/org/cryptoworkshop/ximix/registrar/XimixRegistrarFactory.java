@@ -16,6 +16,8 @@
 package org.cryptoworkshop.ximix.registrar;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -126,11 +128,9 @@ public class XimixRegistrarFactory
     }
 
     public static Map<String, ServicesConnection> createServicesRegistrarMap(File config)
-        throws ConfigException
+        throws ConfigException, FileNotFoundException
     {
-        final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
-
-        return createServicesRegistrarMap(nodes);
+        return createServicesRegistrarMap(new FileInputStream(config));
     }
 
     private static Map<String, ServicesConnection> createServicesRegistrarMap(List<NodeConfig> nodes)

@@ -107,18 +107,6 @@ public class XimixNodeContext
 
     public void addConnection(Runnable task)
     {
-        //
-        // If stop is called we cannot schedule any more tasks once the executor is put into shutdown mode.
-        //
-        if (isStopCalled())
-        {
-            if (task instanceof XimixServices)
-            {
-                ((XimixServices) task).respondImmediately(new MessageReply(MessageReply.Type.EXITING), true);
-            }
-            return;
-        }
-
         multiTaskExecutor.execute(task);
     }
 
@@ -142,18 +130,6 @@ public class XimixNodeContext
             e.printStackTrace();  // TODO:
             return null;
         }
-    }
-
-    @Override
-    public boolean isStopCalled()
-    {
-        return multiTaskExecutor.isShutdown() || multiTaskExecutor.isTerminated();
-    }
-
-    @Override
-    public ScheduledExecutorService getScheduledExecutor()
-    {
-        return multiTaskExecutor;
     }
 
     public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, KeyGenerationParameters kGenParams)
@@ -235,41 +211,26 @@ public class XimixNodeContext
         return r.multiply(keyManager.getPartialPrivateKey(keyID));
     }
 
+
     @Override
-    public ExtendedFuture signalShutdown(final int time, final TimeUnit timeUnit, FutureComplete handler)
+    public boolean isStopCalled()
     {
+        return multiTaskExecutor.isShutdown() || multiTaskExecutor.isTerminated();
+    }
 
-        stopFuture = (NodeStoppedFuture)new NodeStoppedFuture(this).withHandler(handler);
+    @Override
+    public ScheduledExecutorService getScheduledExecutor()
+    {
+        return multiTaskExecutor;
+    }
 
-        //
-        // Launch low priority thread to manage shutdown of executor
-        // and to call Call future when complete.
-        //
-        Thread th = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                multiTaskExecutor.shutdown();
-                try
-                {
-                    if (!multiTaskExecutor.awaitTermination(time, timeUnit))
-                    {
-                        multiTaskExecutor.shutdownNow();
-                    }
-                    stopFuture.finish();
-                } catch (InterruptedException ex)
-                {
-                    multiTaskExecutor.shutdownNow(); // Force it to shutdown.
-                    stopFuture.finish();
-                }
-            }
-        });
-        th.setPriority(Thread.MIN_PRIORITY);
-        th.start();
+    @Override
+    public boolean shutdown(final int time, final TimeUnit timeUnit)
+        throws InterruptedException
+    {
+        multiTaskExecutor.shutdown();
 
-
-        return stopFuture;
+        return multiTaskExecutor.awaitTermination(time, timeUnit);
     }
 
     private class ServiceConfig

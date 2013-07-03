@@ -15,25 +15,12 @@
  */
 package org.cryptoworkshop.ximix.node;
 
-
-import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
-import org.cryptoworkshop.ximix.common.util.FutureComplete;
-
 import java.util.concurrent.TimeUnit;
 
 public interface XimixNode
 {
     void start();
 
-    /**
-     * Call stop on the node.
-     *
-     * @param timeout The timeout.
-     * @param unit    The unit.
-     * @param handler Optional, can be null, A callback invoked when the stop is completed, times out or throws and exception..
-     * @return The future.
-     */
-    ExtendedFuture stop(int timeout, TimeUnit unit, FutureComplete handler);
-
-
+    boolean shutdown(int timeout, TimeUnit unit)
+        throws InterruptedException;
 }

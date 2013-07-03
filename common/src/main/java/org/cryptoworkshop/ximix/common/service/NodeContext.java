@@ -61,7 +61,8 @@ public interface NodeContext
 
     BigInteger performPartialSign(String keyID, BigInteger r);
 
-    ExtendedFuture signalShutdown(int time, TimeUnit timeUnit, FutureComplete handler);
+    boolean shutdown(int time, TimeUnit timeUnit)
+        throws InterruptedException;
 
     boolean isStopCalled();
 

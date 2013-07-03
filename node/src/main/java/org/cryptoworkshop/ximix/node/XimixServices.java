@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DEROutputStream;
@@ -28,11 +30,12 @@ import org.cryptoworkshop.ximix.common.message.NodeInfo;
 import org.cryptoworkshop.ximix.common.service.Service;
 
 class XimixServices
-        implements Runnable
+    implements Runnable
 {
     private final Socket s;
     private final XimixNodeContext nodeContext;
 
+    private final AtomicBoolean stopped = new AtomicBoolean(false);
 
     private int maxInputSize = 32 * 1024;  //TODO should be config item.
 
@@ -40,72 +43,55 @@ class XimixServices
     {
         this.s = s;
         this.nodeContext = nodeContext;
-
     }
 
     public void run()
     {
         try
         {
-            InputStream sIn = s.getInputStream();
-            OutputStream sOut = s.getOutputStream();
-
-            ASN1InputStream aIn = new ASN1InputStream(sIn, maxInputSize);       // TODO: should be a config item
-            DEROutputStream aOut = new DEROutputStream(sOut);
-
-            aOut.writeObject(new NodeInfo(nodeContext.getName(), nodeContext.getCapabilities()));
-
-            Object o;
-
-            while ((o = aIn.readObject()) != null)
+            while (!stopped.get())
             {
-                Message message = Message.getInstance(o);
+                try
+                {
+                    s.setSoTimeout(15000);    // TODO: should be a config item
 
-                Service service = nodeContext.getService(message.getType());
-                System.err.println("message received: " + message.getType() + " " + service);
-                MessageReply reply = service.handle(message);
+                    InputStream sIn = s.getInputStream();
+                    OutputStream sOut = s.getOutputStream();
 
-                System.err.println("message received: " + reply);
-                aOut.writeObject(reply);
+                    ASN1InputStream aIn = new ASN1InputStream(sIn, maxInputSize);       // TODO: should be a config item
+                    DEROutputStream aOut = new DEROutputStream(sOut);
+
+                    aOut.writeObject(new NodeInfo(nodeContext.getName(), nodeContext.getCapabilities()));
+
+                    Object o;
+
+                    while ((o = aIn.readObject()) != null && !nodeContext.isStopCalled())
+                    {
+                        Message message = Message.getInstance(o);
+
+                        Service service = nodeContext.getService(message.getType());
+                        System.err.println("message received: " + message.getType() + " " + service);
+                        MessageReply reply = service.handle(message);
+
+                        System.err.println("message received: " + reply);
+                        aOut.writeObject(reply);
+                    }
+                }
+                catch (SocketTimeoutException e)
+                {
+                     continue;
+                }
             }
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             //TODO logging.
             e.printStackTrace();
         }
     }
 
-
-    /**
-     * Reply immediately to the message with optional socket close.
-     * @param reply The reply.
-     * @param close The close.
-     */
-    protected void respondImmediately(MessageReply reply, boolean close)
+    public void stop()
     {
-
-        try
-        {
-            InputStream sIn = s.getInputStream();
-            OutputStream sOut = s.getOutputStream();
-
-            ASN1InputStream aIn = new ASN1InputStream(sIn, maxInputSize);       // TODO: should be a config item
-            DEROutputStream aOut = new DEROutputStream(sOut);
-
-            aOut.writeObject(reply);
-            aOut.flush();
-            aOut.close();
-
-            if (close)
-            {
-                s.close();
-            }
-
-        } catch (Exception ex)
-        {
-            //TODO logging.
-            ex.printStackTrace();
-        }
+        stopped.set(true);
     }
-
 }
