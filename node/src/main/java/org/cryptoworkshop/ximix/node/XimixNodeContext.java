@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.sec.SECNamedCurves;
@@ -58,7 +59,7 @@ public class XimixNodeContext
     private Map<String, ServicesConnection> peerMap;
     private final KeyManager keyManager;
 
-    private ExecutorService multiTaskExecutor = Executors.newCachedThreadPool();
+    private ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);
 
     private List<Service> services = new ArrayList<Service>();
     private final String name;
@@ -84,7 +85,7 @@ public class XimixNodeContext
             }
         }
 
-        keyManager = new KeyManager();
+        keyManager = new KeyManager(multiTaskExecutor);
     }
 
     public String getName()
@@ -147,6 +148,12 @@ public class XimixNodeContext
     public boolean isStopCalled()
     {
         return multiTaskExecutor.isShutdown() || multiTaskExecutor.isTerminated();
+    }
+
+    @Override
+    public ScheduledExecutorService getScheduledExecutor()
+    {
+        return multiTaskExecutor;
     }
 
     public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, KeyGenerationParameters kGenParams)

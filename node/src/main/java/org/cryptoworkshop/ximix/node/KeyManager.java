@@ -5,7 +5,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -21,6 +21,8 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
+import org.cryptoworkshop.ximix.crypto.util.SharedBigIntegerMap;
+import org.cryptoworkshop.ximix.crypto.util.SharedPointMap;
 
 class KeyManager
 {
@@ -28,9 +30,14 @@ class KeyManager
 
     private final Map<String, AsymmetricCipherKeyPair> keyMap = new HashMap<>();
     private final Map<String, BigInteger> hMap = new HashMap<>();
-    private final Map<String, CountDownLatch> latchMap = new HashMap<>();
-    private final Map<String, BigInteger> sharedPrivateKeyMap = new HashMap<>();
-    private final Map<String, ECPoint> sharedPublicKeyMap = new HashMap<>();
+    private final SharedBigIntegerMap sharedPrivateKeyMap;
+    private final SharedPointMap sharedPublicKeyMap;
+
+    KeyManager(ScheduledExecutorService executor)
+    {
+        sharedPublicKeyMap = new SharedPointMap(executor);
+        sharedPrivateKeyMap = new SharedBigIntegerMap(executor);
+    }
 
     public synchronized boolean hasPrivateKey(String keyID)
     {
@@ -51,7 +58,9 @@ class KeyManager
 
             kp =  kpGen.generateKeyPair();
 
-            latchMap.put(keyID, new CountDownLatch(numberOfPeers));
+            sharedPrivateKeyMap.init(keyID, numberOfPeers);
+            sharedPublicKeyMap.init(keyID, numberOfPeers);
+
             hMap.put(keyID, keyGenParams.getH());
             keyMap.put(keyID, kp);
         }
@@ -66,38 +75,12 @@ class KeyManager
     public SubjectPublicKeyInfo fetchPublicKey(String keyID)
         throws IOException
     {
-        boolean partialKey;
-
-        synchronized (this)
+        if (sharedPublicKeyMap.containsKey(keyID))
         {
-           partialKey = latchMap.containsKey(keyID);
-        }
+            ECPoint q = sharedPublicKeyMap.getValue(keyID, TIME_OUT, TimeUnit.SECONDS);
+            ECDomainParameters params = ((ECPublicKeyParameters)keyMap.get(keyID).getPublic()).getParameters();
 
-        if (partialKey)
-        {
-            try
-            {
-                if (latchMap.get(keyID).await(TIME_OUT, TimeUnit.SECONDS))
-                {
-                    synchronized (this)
-                    {
-                        ECPoint q = sharedPublicKeyMap.get(keyID);
-                        ECDomainParameters params = ((ECPublicKeyParameters)keyMap.get(keyID).getPublic()).getParameters();
-
-                        return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q,params)).getEncoded());
-                    }
-                }
-                else
-                {
-                    System.err.println("timeout!!!");
-                    // TODO: log timeout
-                    return null;
-                }
-            }
-            catch (InterruptedException e)
-            {
-                Thread.currentThread().interrupt();
-            }
+            return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q, params)).getEncoded());
         }
 
         return null;
@@ -110,29 +93,8 @@ class KeyManager
 
         if (share.isRevealed(message.getIndex(), domainParams, hMap.get(keyID)))
         {
-            BigInteger myD = sharedPrivateKeyMap.get(keyID);
-
-            if (myD != null)
-            {
-                sharedPrivateKeyMap.put(keyID, myD.add(message.getValue()));
-            }
-            else
-            {
-                sharedPrivateKeyMap.put(keyID, message.getValue());
-            }
-
-            ECPoint jointPubKey = sharedPublicKeyMap.get(keyID);
-
-            if (jointPubKey != null)
-            {
-                sharedPublicKeyMap.put(keyID, jointPubKey.add(message.getQ()));
-            }
-            else
-            {
-                sharedPublicKeyMap.put(keyID, message.getQ());
-            }
-
-            latchMap.get(keyID).countDown();
+            sharedPrivateKeyMap.addValue(keyID, message.getValue());
+            sharedPublicKeyMap.addValue(keyID, message.getQ());
         }
         else
         {
@@ -144,26 +106,6 @@ class KeyManager
 
     public BigInteger getPartialPrivateKey(String keyID)
     {
-        try
-        {
-            if (latchMap.get(keyID).await(TIME_OUT, TimeUnit.SECONDS))
-            {
-                synchronized (this)
-                {
-                    return sharedPrivateKeyMap.get(keyID);
-                }
-            }
-            else
-            {
-                // TODO: log timeout.
-                return null;
-            }
-        }
-        catch (InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-            // TODO: log
-            return null;
-        }
+        return sharedPrivateKeyMap.getValue(keyID);
     }
 }

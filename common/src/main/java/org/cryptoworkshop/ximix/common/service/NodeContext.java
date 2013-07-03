@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.common.service;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -39,6 +40,11 @@ public interface NodeContext
 
     Map<String, ServicesConnection> getPeerMap();
 
+    /**
+     * TODO: remove
+     * @deprecated
+     * @param task
+     */
     void scheduleTask(Runnable task);
 
     SubjectPublicKeyInfo getPublicKey(String keyID);
@@ -59,4 +65,5 @@ public interface NodeContext
 
     boolean isStopCalled();
 
+    ScheduledExecutorService getScheduledExecutor();
 }
