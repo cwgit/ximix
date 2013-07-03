@@ -111,7 +111,7 @@ public class XimixNodeFactory
             OutputStream sOut = s.getOutputStream();
 
             DEROutputStream aOut = new DEROutputStream(sOut);
-
+           // TODO: NodeInfo actually is the first object in the protocol
             aOut.writeObject(new MessageReply(MessageReply.Type.EXITING));
             aOut.flush();
             aOut.close();
