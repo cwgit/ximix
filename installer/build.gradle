@@ -61,8 +61,8 @@ jar {
         into "node"
     };
 
-    from (project(':installer').file("src/main/resources/sequence.xml")) {
-       "/installer.xml"
+    from (project(':installer').file("src/main/resources/install.xml")) {
+       "/install.xml"
     }
 
 
