@@ -59,7 +59,8 @@ public class XimixNodeContext
     private Map<String, ServicesConnection> peerMap;
     private final KeyManager keyManager;
 
-    private ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(6);   // TODO configurable or linked to threshold
+    private ExecutorService connectionExecutor = Executors.newCachedThreadPool();   // TODO configurable or linked to threshold
+    private ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);   // TODO configurable or linked to threshold
 
     private List<Service> services = new ArrayList<Service>();
     private final String name;
@@ -104,9 +105,9 @@ public class XimixNodeContext
         return capabilityList.toArray(new Capability[capabilityList.size()]);
     }
 
-    public void addConnection(Runnable task)
+    public void addConnection(XimixServices task)
     {
-        multiTaskExecutor.execute(task);
+        connectionExecutor.execute(task);
     }
 
     public Map<String, ServicesConnection> getPeerMap()
@@ -116,7 +117,6 @@ public class XimixNodeContext
 
     public void scheduleTask(Runnable task)
     {
-        System.out.println(task);
         multiTaskExecutor.execute(task);
     }
 
@@ -228,6 +228,15 @@ public class XimixNodeContext
     public boolean shutdown(final int time, final TimeUnit timeUnit)
         throws InterruptedException
     {
+        List<Runnable> tasks = connectionExecutor.shutdownNow();
+
+        for (Runnable task : tasks)
+        {
+            XimixServices connection = (XimixServices)task;
+
+            connection.stop();
+        }
+
         multiTaskExecutor.shutdown();
 
         return multiTaskExecutor.awaitTermination(time, timeUnit);
