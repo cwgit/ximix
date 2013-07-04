@@ -179,7 +179,7 @@ public class NodeKeyGenerationService
                 else
                 {
                     final int counter = index++;
-                    nodeContext.getScheduledExecutor().scheduleWithFixedDelay(new Runnable()
+                    nodeContext.getScheduledExecutor().schedule(new Runnable()
                     {
                         public void run()
                         {
@@ -192,7 +192,7 @@ public class NodeKeyGenerationService
                                 e.printStackTrace(); // TODO handle.
                             }
                         }
-                    }, 2000, 2000, TimeUnit.MILLISECONDS);  //TODO make configurable.
+                    }, 2000, TimeUnit.MILLISECONDS);  //TODO make configurable.
 
                 }
             }
