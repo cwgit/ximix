@@ -111,6 +111,7 @@ public abstract class ExtendedFuture<T> implements Future<T>
     @Override
     public synchronized T get() throws InterruptedException, ExecutionException
     {
+        latch.await();
         return value;
     }
 

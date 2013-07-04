@@ -24,6 +24,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,33 +35,34 @@ public class Config
     private Element xmlNode;
 
     public Config(File configFile)
-            throws ConfigException
+        throws ConfigException, FileNotFoundException
     {
         try
         {
             init(new FileInputStream(configFile));
-        } catch (Exception e)
-        {
-            throw new ConfigException("error: " + e.getMessage(), e);
         }
-
+        catch (FileNotFoundException fnf)
+        {
+            throw fnf;
+        }
     }
 
 
     public Config(InputStream stream)
-            throws ConfigException
+        throws ConfigException
     {
         init(stream);
     }
 
 
     public Config(Node xmlNode)
-            throws ConfigException
+        throws ConfigException
     {
-        this.xmlNode = (Element) xmlNode;
+        this.xmlNode = (Element)xmlNode;
     }
 
-    private void init(InputStream inputStream) throws ConfigException
+    private void init(InputStream inputStream)
+        throws ConfigException
     {
         try
         {
@@ -71,7 +73,8 @@ public class Config
 
             xmlNode = doc.getDocumentElement();
 
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new ConfigException("error: " + e.getMessage(), e);
         }
@@ -102,7 +105,7 @@ public class Config
 //    }
 
     public int getIntegerProperty(String name)
-            throws ConfigException
+        throws ConfigException
     {
         String[] path = name.split("\\.");
 
@@ -119,7 +122,7 @@ public class Config
     }
 
     public int getIntegerProperty(String name, int def)
-            throws ConfigException
+        throws ConfigException
     {
         String[] path = name.split("\\.");
 
@@ -142,7 +145,7 @@ public class Config
     }
 
     public String getStringProperty(String name)
-            throws ConfigException
+        throws ConfigException
     {
         String[] path = name.split("\\.");
 
@@ -159,7 +162,7 @@ public class Config
     }
 
     public String getStringProperty(String name, String def)
-            throws ConfigException
+        throws ConfigException
     {
         String[] path = name.split("\\.");
 
@@ -197,7 +200,7 @@ public class Config
 //    }
 
     public <T> List<T> getConfigObjects(String name, ConfigObjectFactory<T> factory)
-            throws ConfigException
+        throws ConfigException
 
     {
         List<T> configs = new ArrayList<T>();

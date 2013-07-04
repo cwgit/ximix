@@ -63,7 +63,7 @@ import org.w3c.dom.NodeList;
 public class XimixRegistrarFactory
 {
     public static XimixRegistrar createServicesRegistrar(File config)
-        throws ConfigException
+        throws ConfigException, FileNotFoundException
     {
         final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
 
@@ -91,7 +91,7 @@ public class XimixRegistrarFactory
     }
 
     public static XimixRegistrar createAdminServiceRegistrar(File config)
-        throws ConfigException
+        throws ConfigException, FileNotFoundException
     {
         final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
 
@@ -118,24 +118,34 @@ public class XimixRegistrarFactory
         };
     }
 
-
-    public static Map<String, ServicesConnection> createServicesRegistrarMap(InputStream config)
-            throws ConfigException
+    /**
+     * @param config
+     * @return
+     * @throws ConfigException
+     */
+    public static Map<String, ServicesConnection> createServicesRegistrarMap(Config config)
+        throws ConfigException
     {
-        final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
+        final List<NodeConfig> nodes = config.getConfigObjects("node", new NodeConfigFactory());
 
         return createServicesRegistrarMap(nodes);
     }
 
+    /**
+     * @param config
+     * @return
+     * @throws ConfigException
+     * @throws FileNotFoundException
+     */
     public static Map<String, ServicesConnection> createServicesRegistrarMap(File config)
         throws ConfigException, FileNotFoundException
     {
-        return createServicesRegistrarMap(new FileInputStream(config));
+        return createServicesRegistrarMap(new Config(config));
     }
 
     private static Map<String, ServicesConnection> createServicesRegistrarMap(List<NodeConfig> nodes)
     {
-        Map <String, ServicesConnection> rMap = new HashMap<String, ServicesConnection>();
+        Map<String, ServicesConnection> rMap = new HashMap<String, ServicesConnection>();
 
         for (int i = 0; i != nodes.size(); i++)
         {
@@ -270,7 +280,8 @@ public class XimixRegistrarFactory
                 }
             }
             catch (Exception e)
-            {                                     e.printStackTrace();
+            {
+                e.printStackTrace();
                 // TODO: this should only happen when we've run out of nodes.
                 throw new ServiceConnectionException("couldn't send");
             }

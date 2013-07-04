@@ -27,22 +27,22 @@ public class Main
     {
         try
         {
-            XimixNode node = XimixNodeFactory.createNode(new File(args[0]), new File(args[1]));
+
+            XimixNodeBuilder builder = new XimixNodeBuilder(new File(args[0]));
+
+            XimixNode node = builder.build(new File(args[1]));
 
             node.start();
         }
         catch (ConfigException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-        catch (RegistrarConnectionException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
         catch (FileNotFoundException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
+
     }
 
 }

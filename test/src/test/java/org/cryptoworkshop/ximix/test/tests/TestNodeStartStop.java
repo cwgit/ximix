@@ -1,11 +1,14 @@
 package org.cryptoworkshop.ximix.test.tests;
 
 import junit.framework.TestCase;
+import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
 import org.cryptoworkshop.ximix.common.util.FutureComplete;
 import org.cryptoworkshop.ximix.node.ThrowableHandler;
 import org.cryptoworkshop.ximix.node.XimixNode;
+import org.cryptoworkshop.ximix.node.XimixNodeBuilder;
 import org.cryptoworkshop.ximix.node.XimixNodeContext;
+import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.TestXimixNodeFactory;
 
 import java.util.concurrent.TimeUnit;
@@ -24,17 +27,21 @@ public class TestNodeStartStop
      * @throws Exception
      */
     @org.junit.Test
-    public void testNodeStopWithFutureHandler() throws Exception
+    public void testNodeStopWithFutureHandler()
+        throws Exception
     {
-       final  XimixNode node = TestXimixNodeFactory.createNode("/conf/mixnet.xml", "/conf/node1.xml", new ThrowableHandler()
+
+        XimixNodeBuilder builder = new XimixNodeBuilder(ResourceAnchor.load("/conf/mixnet.xml")).withThrowableHandler(new ThrowableHandler()
         {
             @Override
-            public boolean throwable(Throwable throwable)
+            public void handle(Throwable throwable)
             {
                 throwable.printStackTrace();
-                return false;
             }
         });
+
+       final XimixNode node = builder.build(ResourceAnchor.load("/conf/node1.xml"));
+
 
         Thread th = new Thread(new Runnable()
         {
@@ -47,73 +54,10 @@ public class TestNodeStartStop
         th.setPriority(Thread.MIN_PRIORITY);
         th.start();
 
-
-
         Thread.sleep(1000);
-
-        final AtomicBoolean res = new AtomicBoolean(false);
-
-        ExtendedFuture future = node.stop(10, TimeUnit.SECONDS, new FutureComplete()
-        {
-            @Override
-            public void handle(ExtendedFuture future)
-            {
-                res.set(true);
-            }
-        });
-
-        future.await();
-
-        if (!res.get())
-        {
-            TestCase.fail("Future callback for shutdown was not called.");
-        }
-
-        TestCase.assertTrue("Future is done.", future.isDone());
-
+        TestCase.assertTrue(node.shutdown(15, TimeUnit.SECONDS));
     }
 
-    /**
-     * Tests shutdown without a future handler.
-     *
-     * @throws Exception
-     */
-    @org.junit.Test
-    public void testNodeStopWithFuture() throws Exception
-    {
-        final XimixNode node = TestXimixNodeFactory.createNode("/conf/mixnet.xml", "/conf/node1.xml", new ThrowableHandler()
-        {
-            @Override
-            public boolean throwable(Throwable throwable)
-            {
-                throwable.printStackTrace();
-                return false;
-            }
-        });
-
-        Thread th = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                node.start();
-            }
-        });
-        th.setPriority(Thread.MIN_PRIORITY);
-        th.start();
-
-
-        Thread.sleep(1000);
-
-
-        ExtendedFuture<XimixNodeContext> future = node.stop(10, TimeUnit.SECONDS, null);
-
-        future.await();
-
-
-        TestCase.assertTrue("Future is done.", future.isDone());
-
-    }
 
 
 }

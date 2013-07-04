@@ -24,3 +24,4 @@ public interface XimixNode
     boolean shutdown(int timeout, TimeUnit unit)
         throws InterruptedException;
 }
+

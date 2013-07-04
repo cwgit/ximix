@@ -5,5 +5,10 @@ package org.cryptoworkshop.ximix.node;
  */
 public interface ThrowableHandler
 {
-    boolean throwable(Throwable throwable);
+    /**
+     * Handle a throwable.
+     *
+     * @param throwable The throwable.
+     */
+    void handle(Throwable throwable);
 }

@@ -5,29 +5,28 @@ import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.node.ThrowableHandler;
 import org.cryptoworkshop.ximix.node.XimixNode;
-import org.cryptoworkshop.ximix.node.XimixNodeFactory;
+import org.cryptoworkshop.ximix.node.XimixNodeBuilder;
 import org.cryptoworkshop.ximix.registrar.RegistrarConnectionException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Map;
 
 /**
  *
  */
-public class TestXimixNodeFactory extends XimixNodeFactory
+public class TestXimixNodeFactory extends XimixNodeBuilder
 {
-    public static XimixNode createNode(Map<String, ServicesConnection> servicesMap, Config config, ThrowableHandler throwableHandler) throws RegistrarConnectionException, ConfigException
+    public TestXimixNodeFactory(Config peersConfig)
     {
-        XimixNode node = new XimixNodeImpl(servicesMap, config);
-        ((XimixNodeImpl) node).setUnhandledThrowableHandler(throwableHandler);
-        return node;
+        super(peersConfig);
     }
 
-
-    public static XimixNode createNode(String servicesPath, String configPath, ThrowableHandler throwableHandler) throws RegistrarConnectionException, ConfigException
+    public TestXimixNodeFactory(File file)
+        throws ConfigException, FileNotFoundException
     {
-        XimixNode node = XimixNodeFactory.createNode(TestXimixNodeFactory.class.getResourceAsStream(servicesPath), TestXimixNodeFactory.class.getResourceAsStream(configPath));
-        ((XimixNodeImpl) node).setUnhandledThrowableHandler(throwableHandler);
-        return node;
+        super(file);
     }
+
 
 }
