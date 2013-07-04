@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<node>
+    <portNo>11004</portNo>
+    <name>E</name>
+    <services>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.mixnet.service.BoardHostingService</implementation>
+            <board>
+                <name>FRED</name>
+                <transform>
+                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform</implementation>
+                </transform>
+                <transform>
+                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.NullTransform</implementation>
+                </transform>
+            </board>
+        </service>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeKeyRetrievalService</implementation>
+        </service>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService</implementation>
+        </service>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeDecryptionService</implementation>
+        </service>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeSigningService</implementation>
+        </service>
+    </services>
+</node>

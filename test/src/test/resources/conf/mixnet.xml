@@ -10,4 +10,19 @@
         <portNo>11001</portNo>
         <name>B</name>
     </node>
+    <node>
+        <host>localhost</host>
+        <portNo>11002</portNo>
+        <name>C</name>
+    </node>
+    <node>
+        <host>localhost</host>
+        <portNo>11003</portNo>
+        <name>D</name>
+    </node>
+    <node>
+        <host>localhost</host>
+        <portNo>11004</portNo>
+        <name>E</name>
+    </node>
 </nodes>
