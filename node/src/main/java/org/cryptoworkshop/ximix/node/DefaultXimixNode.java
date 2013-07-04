@@ -25,17 +25,17 @@ public class DefaultXimixNode
     private final XimixNodeContext nodeContext;
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private final int portNo;
-    private ThrowableHandler exceptionHandler = null;
-    private final Map<String, ServicesConnection> servicesMap;
+    private final ThrowableHandler exceptionHandler;
+
 
 
     public DefaultXimixNode(Config config, Map<String, ServicesConnection> servicesMap, ThrowableHandler exceptionHandler)
         throws ConfigException
     {
         this.nodeConfig = config;
-        this.servicesMap = servicesMap;
         this.portNo = nodeConfig.getIntegerProperty("portNo");
         this.nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
+        this.exceptionHandler = exceptionHandler;
     }
 
 
