@@ -93,7 +93,14 @@ public class XimixRegistrarFactory
     public static XimixRegistrar createAdminServiceRegistrar(File config)
         throws ConfigException, FileNotFoundException
     {
-        final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
+        return createAdminServiceRegistrar(new Config(config));
+    }
+
+
+    public static XimixRegistrar createAdminServiceRegistrar(Config config)
+        throws ConfigException, FileNotFoundException
+    {
+        final List<NodeConfig> nodes = config.getConfigObjects("node", new NodeConfigFactory());
 
         return new XimixRegistrar()
         {
@@ -247,8 +254,10 @@ public class XimixRegistrarFactory
             }
 
             ASN1InputStream aIn = new ASN1InputStream(cIn, 30000); // TODO:
-
-            nodeInfo = NodeInfo.getInstance(aIn.readObject());
+            synchronized (this)
+            {
+                nodeInfo = NodeInfo.getInstance(aIn.readObject());
+            }
         }
 
         public String getName()
@@ -418,7 +427,14 @@ public class XimixRegistrarFactory
         public MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            return connectionMap.get(nodeName).sendMessage(type, messagePayload);
+
+            NodeServicesConnection connection = connectionMap.get(nodeName);
+            if (connection == null)
+            {
+                throw new ServiceConnectionException("Connection '" + nodeName + "' was not found.");
+            }
+
+            return connection.sendMessage(type, messagePayload);
         }
     }
 }

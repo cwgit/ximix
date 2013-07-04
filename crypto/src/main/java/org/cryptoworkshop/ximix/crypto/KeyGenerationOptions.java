@@ -31,14 +31,14 @@ public class KeyGenerationOptions
             this.parameters = parameters;
         }
 
-        public Builder setThreshold(int threshold)
+        public Builder withThreshold(int threshold)
         {
             this.threshold = threshold;
 
             return this;
         }
 
-        public Builder setNodes(String... nodesToUse)
+        public Builder withNodes(String... nodesToUse)
         {
             this.nodesToUse = nodesToUse;
 

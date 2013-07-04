@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.crypto.service;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -55,54 +56,54 @@ public class NodeKeyGenerationService
         {
             switch (((CommandMessage)message).getType())
             {
-            case INITIATE_GENERATE_KEY_PAIR:
-                final GenerateKeyPairMessage initiateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
-                final Set<String>            peersToInitiate = initiateMessage.getNodesToUse();
+                case INITIATE_GENERATE_KEY_PAIR:
+                    final GenerateKeyPairMessage initiateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
+                    final Set<String> peersToInitiate = initiateMessage.getNodesToUse();
 
-                if (initiateMessage.getNodesToUse().contains(nodeContext.getName()))
-                {
-                    //
-                    // generate our part
-                    //
-                    ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate, initiateMessage.getThreshold(), initiateMessage.getKeyGenParameters());
+                    if (initiateMessage.getNodesToUse().contains(nodeContext.getName()))
+                    {
+                        //
+                        // generate our part
+                        //
+                        ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate, initiateMessage.getThreshold(), initiateMessage.getKeyGenParameters());
 
-                    //
-                    // start everyone else
-                    //
+                        //
+                        // start everyone else
+                        //
 
-                    nodeContext.scheduleTask(new InitiateKeyGenTask(initiateMessage));
+                        nodeContext.scheduleTask(new InitiateKeyGenTask(initiateMessage));
 
-                    //
-                    // send our shares.
-                    //
-                    nodeContext.scheduleTask(new SendShareTask(initiateMessage.getKeyID(), peersToInitiate, messages));
-                }
+                        //
+                        // send our shares.
+                        //
+                        nodeContext.scheduleTask(new SendShareTask(initiateMessage.getKeyID(), peersToInitiate, messages));
+                    }
 
-                return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
-            case GENERATE_KEY_PAIR:
-                final GenerateKeyPairMessage generateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
-                final Set<String>            involvedPeers = generateMessage.getNodesToUse();
+                    return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
+                case GENERATE_KEY_PAIR:
+                    final GenerateKeyPairMessage generateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
+                    final Set<String> involvedPeers = generateMessage.getNodesToUse();
 
-                if (involvedPeers.contains(nodeContext.getName()))
-                {
-                    ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)generateMessage.getKeyGenParameters();
-                    ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), ecKeyGenParams);
+                    if (involvedPeers.contains(nodeContext.getName()))
+                    {
+                        ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)generateMessage.getKeyGenParameters();
+                        ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), ecKeyGenParams);
 
-                    nodeContext.scheduleTask(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
-                }
+                        nodeContext.scheduleTask(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
+                    }
 
-                return new MessageReply(MessageReply.Type.OKAY);
-            case STORE_SHARE:
-                final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
-                final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getKeyID()).getCurve(), sssMessage.getSecretShareMessage());
-                System.err.println("Store: " + nodeContext.getName());
-                // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
-                // till we can validate them.
-                nodeContext.scheduleTask(new StoreShareTask(sssMessage.getKeyID(), shareMessage));
+                    return new MessageReply(MessageReply.Type.OKAY);
+                case STORE_SHARE:
+                    final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
+                    final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getKeyID()).getCurve(), sssMessage.getSecretShareMessage());
+                    System.err.println("Store: " + nodeContext.getName());
+                    // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
+                    // till we can validate them.
+                    nodeContext.scheduleTask(new StoreShareTask(sssMessage.getKeyID(), shareMessage));
 
-                return new MessageReply(MessageReply.Type.OKAY);
-            default:
-                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeKeyGenerationService."));
+                    return new MessageReply(MessageReply.Type.OKAY);
+                default:
+                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeKeyGenerationService."));
             }
         }
         catch (Exception e)
@@ -155,7 +156,7 @@ public class NodeKeyGenerationService
         implements Runnable
     {
         private final String keyID;
-        private final Set<String>  peers;
+        private final Set<String> peers;
         private final ECCommittedSecretShareMessage[] messages;
 
         SendShareTask(String keyID, Set<String> peers, ECCommittedSecretShareMessage[] messages)
@@ -178,7 +179,7 @@ public class NodeKeyGenerationService
                 else
                 {
                     final int counter = index++;
-                    nodeContext.scheduleTask(new Runnable()
+                    nodeContext.getScheduledExecutor().scheduleWithFixedDelay(new Runnable()
                     {
                         public void run()
                         {
@@ -188,10 +189,10 @@ public class NodeKeyGenerationService
                             }
                             catch (ServiceConnectionException e)
                             {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                e.printStackTrace(); // TODO handle.
                             }
                         }
-                    });
+                    }, 2000, 2000, TimeUnit.MILLISECONDS);  //TODO make configurable.
 
                 }
             }
@@ -211,17 +212,17 @@ public class NodeKeyGenerationService
         }
 
         @Override
-       public void run()
-       {
-           if (nodeContext.hasPrivateKey(keyID))
-           {
-               nodeContext.storeThresholdKeyShare(keyID, message);
-           }
-           else
-           {
-               // TODO: there needs to be a limit on how long we do this!
-               nodeContext.scheduleTask(StoreShareTask.this);
-           }
-       }
+        public void run()
+        {
+            if (nodeContext.hasPrivateKey(keyID))
+            {
+                nodeContext.storeThresholdKeyShare(keyID, message);
+            }
+            else
+            {
+                // TODO: there needs to be a limit on how long we do this!
+                nodeContext.scheduleTask(StoreShareTask.this);
+            }
+        }
     }
 }

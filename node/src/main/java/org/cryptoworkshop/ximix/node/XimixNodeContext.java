@@ -59,11 +59,10 @@ public class XimixNodeContext
     private Map<String, ServicesConnection> peerMap;
     private final KeyManager keyManager;
 
-    private ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);
+    private ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(6);   // TODO configurable or linked to threshold
 
     private List<Service> services = new ArrayList<Service>();
     private final String name;
-    private NodeStoppedFuture stopFuture = null;
 
 
 
@@ -117,6 +116,7 @@ public class XimixNodeContext
 
     public void scheduleTask(Runnable task)
     {
+        System.out.println(task);
         multiTaskExecutor.execute(task);
     }
 

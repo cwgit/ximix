@@ -51,7 +51,7 @@ public class BoardHostingService
     implements Service
 {
     private final NodeContext serviceContext;
-    private BulletinBoardRegistry boardRegistry = new BulletinBoardRegistry();
+    protected BulletinBoardRegistry boardRegistry = new BulletinBoardRegistry();
 
     public BoardHostingService(NodeContext context, Config config)
         throws ConfigException

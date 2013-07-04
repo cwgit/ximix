@@ -70,8 +70,8 @@ public class Main
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
         KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
-                                                   .setThreshold(2)
-                                                   .setNodes("A", "B")
+                                                   .withThreshold(2)
+                                                   .withNodes("A", "B")
                                                    .build();
 
         byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
