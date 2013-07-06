@@ -229,7 +229,9 @@ public class ECDSASignerEngine
                 BigInteger eComponent = partialMessage.getE();
                 BigInteger dComponent = nodeContext.performPartialSign(partialMessage.getKeyID(), rMap.get(sigID));
 
-                return replyOkay(new BigIntegerMessage(kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getValue(sigID))));
+                MessageReply reply = replyOkay(new BigIntegerMessage(kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getValue(sigID))));
+                // TODO: need to clean up state tables here.
+                return reply;
             default:
                 return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeSigningService."));
             }
