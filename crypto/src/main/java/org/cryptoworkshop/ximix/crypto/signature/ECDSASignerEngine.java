@@ -79,7 +79,6 @@ public class ECDSASignerEngine
     {
         GENERATE,
         INIT_K_AND_P,
-        INIT_P,
         INIT_A,
         INIT_B,
         INIT_C,
@@ -136,7 +135,6 @@ public class ECDSASignerEngine
                     ECDSAInitialiseMessage initialiseMessage = new ECDSAInitialiseMessage(sigID.getID(), ecdsaCreate.getKeyID(), ecdsaCreate.getThreshold(), domainParams.getN(), ecdsaCreate.getNodesToUse());
 
                     sendInitialiseMessage(Type.INIT_K_AND_P, initialiseMessage);
-                    sendInitialiseMessage(Type.INIT_P, initialiseMessage);
                     sendInitialiseMessage(Type.INIT_A, initialiseMessage);
                     sendInitialiseMessage(Type.INIT_B, initialiseMessage);
                     sendInitialiseMessage(Type.INIT_C, initialiseMessage);
