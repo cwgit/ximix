@@ -33,6 +33,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.crypto.threshold.ShamirSecretSplitter;
+import org.cryptoworkshop.ximix.crypto.threshold.SplitSecret;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -48,6 +49,183 @@ public class BasicShamirSharingTest
     public void testBasicThreshold6()
     {
         doTestOnPeers(6);
+    }
+
+    @Test
+    public void testMultiplicationProtocol()
+    {
+        X9ECParameters params = SECNamedCurves.getByName("secp256r1");
+        SecureRandom random = new SecureRandom();
+
+        ECDomainParameters domainParams = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+
+        int numberOfPeers = 10;
+        int threshold = 3;
+        BigInteger p = params.getN();
+
+        ShamirSecretSplitter secretSplitter = new ShamirSecretSplitter(numberOfPeers, threshold, p, random);
+
+        // The k shares
+        //
+        BigInteger[] kVals = new BigInteger[numberOfPeers];
+        BigInteger[][] kShares = new BigInteger[numberOfPeers][];
+        for (int i = 0; i < numberOfPeers; i++)
+        {
+            kVals[i] = getRandomInteger(p, random);
+            SplitSecret split = secretSplitter.split(kVals[i]);
+
+            kShares[i] = split.getShares();
+        }
+
+        BigInteger kVal = BigInteger.ZERO;
+        for (BigInteger v : kVals)
+        {
+            kVal = kVal.add(v).mod(p);
+        }
+        BigInteger k = computeValue(numberOfPeers, threshold, p, kShares);
+        BigInteger[] weights;
+        BigInteger[] finalKShares = new BigInteger[numberOfPeers];
+        for (int i = 0; i < numberOfPeers; i++)
+        {
+            finalKShares[i] = kShares[0][i];
+            for (int j = 1; j < numberOfPeers; j++)
+            {
+                finalKShares[i] = finalKShares[i].add(kShares[j][i]);
+            }
+        }
+        //
+        // divided by numberOfPeers as numberOfPeers polynomials
+        Assert.assertEquals(k, kVal);
+
+        // The a shares
+        //
+        BigInteger[] aVals = new BigInteger[numberOfPeers];
+        BigInteger[][] aShares = new BigInteger[numberOfPeers][];
+        for (int i = 0; i < numberOfPeers; i++)
+        {
+            aVals[i] = getRandomInteger(params.getN(), random);
+            aShares[i] = secretSplitter.split(aVals[i]).getShares();
+        }
+
+        BigInteger aVal = BigInteger.ZERO;
+        for (BigInteger v : aVals)
+        {
+            aVal = aVal.add(v).mod(p);
+        }
+        BigInteger a = computeValue(numberOfPeers, threshold, p, aShares);
+        BigInteger[] finalAShares = new BigInteger[numberOfPeers];
+        for (int i = 0; i < numberOfPeers; i++)
+        {
+            finalAShares[i] = aShares[0][i];
+            for (int j = 1; j < numberOfPeers; j++)
+            {
+                finalAShares[i] = finalAShares[i].add(aShares[j][i]);
+            }
+        }
+        //
+        // divided by numberOfPeers as numberOfPeers polynomials
+        Assert.assertEquals(a, aVal);
+
+        // create the splitter for the peers/threshold over the order of the curve.
+        secretSplitter = new ShamirSecretSplitter(numberOfPeers, 2 * threshold, domainParams.getN(), random);
+
+        // The z shares
+        //
+        BigInteger[][] zShares = new BigInteger[numberOfPeers][];
+
+        for (int i = 0; i < numberOfPeers; i++)
+        {
+            zShares[i] = secretSplitter.split(BigInteger.ZERO).getShares();
+        }
+
+        BigInteger[] finalZShares = new BigInteger[numberOfPeers];
+        for (int i = 0; i < numberOfPeers; i++)
+        {
+            finalZShares[i] = zShares[0][i];
+            for (int j = 1; j < numberOfPeers; j++)
+            {
+                finalZShares[i] = finalZShares[i].add(zShares[j][i]);
+            }
+        }
+        // Simulates distributing shares and combining them
+        // v(i) = k(i)a(i) + z(i)
+//        BigInteger[] finalVShares = new BigInteger[numberOfPeers];
+//        for (int i = 0; i < numberOfPeers; i++)
+//        {
+//            finalVShares[i] = kShares[0][i].multiply(aShares[0][i]).add(zShares[0][i]).mod(p);
+//            for (int j = 1; j < numberOfPeers; j++)
+//            {
+//                finalVShares[i] = finalVShares[i].add(kShares[j][i].multiply(aShares[j][i]).add(zShares[j][i])).mod(p);
+//            }
+//        }
+
+        BigInteger[] finalVShares = new BigInteger[numberOfPeers];
+
+            for (int i = 0; i < numberOfPeers; i++)
+            {
+                finalVShares[i] = finalKShares[i].multiply(finalAShares[i]).add(finalZShares[i]).mod(p);
+            }
+
+        BigInteger[] alpha = new BigInteger[numberOfPeers];
+        for (int i = 0; i < numberOfPeers; i++)
+        {
+            alpha[i] = BigInteger.valueOf(i + 1);
+        }
+
+//        BWDecoder bwDecU = new BWDecoder(
+//      				alpha,
+//      				finalVShares,
+//      			    2 * threshold,
+//      				p);
+//      	BigInteger mu1 = bwDecU.interpolate(BigInteger.ZERO);
+
+        //
+        // in this case these should come out the same.
+        LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(numberOfPeers, domainParams.getN());
+        BigInteger[] weights1 = lagrangeWeightCalculator.computeWeights(finalVShares);
+
+        BigInteger mu2 = finalVShares[0].multiply(weights1[0]).mod(p);
+        for (int i = 1; i < weights1.length; i++)
+        {
+            if (finalVShares[i] != null)
+            {
+               mu2 = mu2.add(finalVShares[i].multiply(weights1[i])).mod(p);
+            }
+        }
+
+       // Assert.assertEquals(mu1, mu2);
+
+        //
+        // check values for mu
+        //
+        Assert.assertEquals(mu2, k.multiply(a).mod(p));
+    }
+
+    private BigInteger computeValue(int numberOfPeers, int threshold, BigInteger p, BigInteger[][] shares)
+    {
+        LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(numberOfPeers, p);
+
+        BigInteger[] finalShares = new BigInteger[numberOfPeers];
+        for (int i = 0; i < numberOfPeers; i++)
+        {
+            finalShares[i] = shares[0][i];
+            for (int j = 1; j < numberOfPeers; j++)
+            {
+                finalShares[i] = finalShares[i].add(shares[j][i]).mod(p);
+            }
+        }
+
+        BigInteger[] weights = lagrangeWeightCalculator.computeWeights(finalShares);
+
+        BigInteger rv = finalShares[0].multiply(weights[0]);
+        for (int i = 1; i < weights.length; i++)
+        {
+            if (finalShares[i] != null)
+            {
+                rv = rv.add(finalShares[i].multiply(weights[i]).mod(p)).mod(p);
+            }
+        }
+        return rv;
     }
 
     private void doTestOnPeers(int numberOfPeers)

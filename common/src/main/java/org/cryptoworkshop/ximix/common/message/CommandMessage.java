@@ -38,7 +38,7 @@ public class CommandMessage
         GENERATE_KEY_PAIR,
         STORE_SHARE,
         PARTIAL_DECRYPT,
-        PARTIAL_ECDSA_SIGN
+        SIGNATURE_MESSAGE
     }
 
     public CommandMessage(Type type, ASN1Encodable payload)
@@ -63,7 +63,7 @@ public class CommandMessage
 
             if (!seq.getObjectAt(0).equals(COMMAND_LEVEL))
             {
-                throw new IllegalArgumentException("malformed client message");
+                throw new IllegalArgumentException("malformed command message");
             }
 
             return new CommandMessage(seq);

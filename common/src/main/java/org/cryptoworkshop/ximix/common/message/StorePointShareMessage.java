@@ -23,41 +23,41 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class StoreSecretShareMessage
+public class StorePointShareMessage
     extends ASN1Object
 {
-    private final String id;
+    private final String keyID;
     private final ASN1Encodable secretShareMessage;
 
-    public StoreSecretShareMessage(String id, ASN1Encodable secretShareMessage)
+    public StorePointShareMessage(String keyID, ASN1Encodable secretShareMessage)
     {
-        this.id = id;
+        this.keyID = keyID;
         this.secretShareMessage = secretShareMessage;
     }
 
-    public StoreSecretShareMessage(ASN1Sequence sequence)
+    public StorePointShareMessage(ASN1Sequence sequence)
     {
-        this.id = DERUTF8String.getInstance(sequence.getObjectAt(0)).getString();
+        this.keyID = DERUTF8String.getInstance(sequence.getObjectAt(0)).getString();
         this.secretShareMessage = sequence.getObjectAt(1);
     }
 
-    public static final StoreSecretShareMessage getInstance(Object o)
+    public static final StorePointShareMessage getInstance(Object o)
     {
-        if (o instanceof StoreSecretShareMessage)
+        if (o instanceof StorePointShareMessage)
         {
-            return (StoreSecretShareMessage)o;
+            return (StorePointShareMessage)o;
         }
         else if (o != null)
         {
-            return new StoreSecretShareMessage(ASN1Sequence.getInstance(o));
+            return new StorePointShareMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
     }
 
-    public String getID()
+    public String getKeyID()
     {
-        return id;
+        return keyID;
     }
 
     public ASN1Encodable getSecretShareMessage()
@@ -70,7 +70,7 @@ public class StoreSecretShareMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new DERUTF8String(id));
+        v.add(new DERUTF8String(keyID));
         v.add(secretShareMessage);
 
         return new DERSequence(v);

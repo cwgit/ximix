@@ -115,8 +115,8 @@ public class CryptoServicesTest
         BigInteger h = BigInteger.valueOf(1000001);
 
         final ServicesConnection connection = context.getPeerMap().get("B");
-        final Set<String> peers = new HashSet(Arrays.asList("A", "B")); //, "C", "D", "E"));
-        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", new ECKeyGenParams(BigInteger.valueOf(1000001), "secp256r1"), 2, peers);
+        final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
+        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage("ECKEY", new ECKeyGenParams(BigInteger.valueOf(1000001), "secp256r1"), 3, peers);
 
         MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 

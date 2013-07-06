@@ -54,7 +54,7 @@ import org.cryptoworkshop.ximix.crypto.client.ClientSigningService;
 import org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService;
 import org.cryptoworkshop.ximix.mixnet.admin.ClientCommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
-import org.cryptoworkshop.ximix.mixnet.admin.KeyGenerationCommandService;
+import org.cryptoworkshop.ximix.crypto.client.KeyGenerationCommandService;
 import org.cryptoworkshop.ximix.mixnet.client.ClientUploadService;
 import org.cryptoworkshop.ximix.mixnet.client.UploadService;
 import org.w3c.dom.Node;
@@ -76,11 +76,11 @@ public class XimixRegistrarFactory
                 {
                     return (T)new ClientUploadService(new ServicesConnectionImpl(nodes));
                 }
-                else if (serviceClass.isAssignableFrom(KeyService.class))
+                if (serviceClass.isAssignableFrom(KeyService.class))
                 {
                     return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
                 }
-                else if (serviceClass.isAssignableFrom(SigningService.class))
+                if (serviceClass.isAssignableFrom(SigningService.class))
                 {
                     return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
                 }
@@ -118,6 +118,10 @@ public class XimixRegistrarFactory
                 if (serviceClass.isAssignableFrom(UploadService.class))
                 {
                     return (T)new ClientUploadService(new AdminServicesConnectionImpl(nodes));
+                }
+                if (serviceClass.isAssignableFrom(SigningService.class))
+                {
+                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
                 }
 
                 throw new RegistrarServiceException("Unable to identify service");

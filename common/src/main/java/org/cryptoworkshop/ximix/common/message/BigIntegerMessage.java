@@ -21,30 +21,30 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 
-public class ECDSAResponseMessage
+public class BigIntegerMessage
     extends ASN1Object
 {
     private final BigInteger value;
 
-    public ECDSAResponseMessage(BigInteger value)
+    public BigIntegerMessage(BigInteger value)
     {
         this.value = value;
     }
 
-    private ECDSAResponseMessage(ASN1Integer integer)
+    private BigIntegerMessage(ASN1Integer integer)
     {
         this.value = integer.getValue();
     }
 
-    public static final ECDSAResponseMessage getInstance(Object o)
+    public static final BigIntegerMessage getInstance(Object o)
     {
-        if (o instanceof ECDSAResponseMessage)
+        if (o instanceof BigIntegerMessage)
         {
-            return (ECDSAResponseMessage)o;
+            return (BigIntegerMessage)o;
         }
         else if (o != null)
         {
-            return new ECDSAResponseMessage(ASN1Integer.getInstance(o));
+            return new BigIntegerMessage(ASN1Integer.getInstance(o));
         }
 
         return null;

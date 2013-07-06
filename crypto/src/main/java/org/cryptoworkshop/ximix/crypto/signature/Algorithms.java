@@ -13,15 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.client;
+package org.cryptoworkshop.ximix.crypto.signature;
 
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
-import org.cryptoworkshop.ximix.crypto.client.KeyService;
-
-public interface SigningService
-    extends KeyService
+public interface Algorithms
 {
-    byte[] generateSignature(String keyID, SignatureGenerationOptions options, byte[] message)
-        throws ServiceConnectionException;
+    static final int ECDSA = 1;
 }

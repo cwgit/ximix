@@ -17,26 +17,20 @@ package org.cryptoworkshop.ximix.crypto.client;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.SecureRandom;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
-import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.ECDSACreateMessage;
-import org.cryptoworkshop.ximix.common.message.ECDSAResponseMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.SignatureMessage;
+import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
+import org.cryptoworkshop.ximix.crypto.signature.Algorithms;
+import org.cryptoworkshop.ximix.crypto.signature.ECDSASignerEngine;
+import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.ClientServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 
 public class ClientSigningService
     implements SigningService
@@ -48,12 +42,19 @@ public class ClientSigningService
         this.connection = connection;
     }
 
-    public byte[] generateSignature(String keyID, byte[] message)
+    public byte[] generateSignature(String keyID, SignatureGenerationOptions sigGenOptions, byte[] message)
         throws ServiceConnectionException
     {
         try
         {
-            return connection.sendMessage(ClientMessage.Type.CREATE_SIGNATURE, new ECDSACreateMessage(keyID, message)).getPayload().toASN1Primitive().getEncoded();
+            MessageReply reply = connection.sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new SignatureMessage(Algorithms.ECDSA, ECDSASignerEngine.Type.GENERATE, new ECDSACreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse())));
+
+            if (reply.getType() == MessageReply.Type.OKAY)
+            {
+                return reply.getPayload().toASN1Primitive().getEncoded();
+            }
+
+            throw new ClientServiceConnectionException("Unable to create signature");
         }
         catch (RuntimeException e)
         {

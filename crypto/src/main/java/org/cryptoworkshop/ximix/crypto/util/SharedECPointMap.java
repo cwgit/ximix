@@ -23,18 +23,18 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.math.ec.ECPoint;
 
-public class SharedPointMap
+public class SharedECPointMap<T>
 {
-    private final Map<Object, CountDownLatch> latchMap = new HashMap<>();
-    private final Map<Object, ECPoint> sharedMap = new HashMap<>();
+    private final Map<T, CountDownLatch> latchMap = new HashMap<>();
+    private final Map<T, ECPoint> sharedMap = new HashMap<>();
     private final ScheduledExecutorService executor;
 
-    public SharedPointMap(ScheduledExecutorService executor)
+    public SharedECPointMap(ScheduledExecutorService executor)
     {
         this.executor = executor;
     }
 
-    public void init(Object id, int numberOfParties)
+    public void init(T id, int numberOfParties)
     {
         synchronized (this)
         {
@@ -42,7 +42,7 @@ public class SharedPointMap
         }
     }
 
-    public boolean containsKey(String id)
+    public boolean containsKey(T id)
     {
         synchronized (this)
         {
@@ -50,12 +50,29 @@ public class SharedPointMap
         }
     }
 
-    public void addValue(Object id, ECPoint value)
+    public void waitFor(T id)
+    {
+        CountDownLatch latch;
+        synchronized (this)
+        {
+            latch = latchMap.get(id);
+        }
+        try
+        {
+            latch.await();
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public void addValue(T id, ECPoint value)
     {
          executor.execute(new AddTask(id, value));
     }
 
-    public ECPoint getValue(Object id)
+    public ECPoint getValue(T id)
     {
         try
         {
@@ -77,7 +94,7 @@ public class SharedPointMap
         }
     }
 
-    public ECPoint getValue(Object id, long timeout, TimeUnit timeUnit)
+    public ECPoint getValue(T id, long timeout, TimeUnit timeUnit)
     {
         try
         {
@@ -110,10 +127,10 @@ public class SharedPointMap
     private class AddTask
         implements Runnable
     {
-        private final Object id;
+        private final T id;
         private final ECPoint value;
 
-        AddTask(Object id, ECPoint value)
+        AddTask(T id, ECPoint value)
         {
 
             this.id = id;
@@ -123,7 +140,7 @@ public class SharedPointMap
         @Override
         public void run()
         {
-            synchronized (SharedPointMap.this)
+            synchronized (SharedECPointMap.this)
             {
                 // other values may have arrived before we get a message
                 // starting the process.

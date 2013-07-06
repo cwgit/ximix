@@ -22,7 +22,7 @@ import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.util.SharedBigIntegerMap;
-import org.cryptoworkshop.ximix.crypto.util.SharedPointMap;
+import org.cryptoworkshop.ximix.crypto.util.SharedECPointMap;
 
 class KeyManager
 {
@@ -31,11 +31,11 @@ class KeyManager
     private final Map<String, AsymmetricCipherKeyPair> keyMap = new HashMap<>();
     private final Map<String, BigInteger> hMap = new HashMap<>();
     private final SharedBigIntegerMap sharedPrivateKeyMap;
-    private final SharedPointMap sharedPublicKeyMap;
+    private final SharedECPointMap sharedPublicKeyMap;
 
     KeyManager(ScheduledExecutorService executor)
     {
-        sharedPublicKeyMap = new SharedPointMap(executor);
+        sharedPublicKeyMap = new SharedECPointMap(executor);
         sharedPrivateKeyMap = new SharedBigIntegerMap(executor);
     }
 

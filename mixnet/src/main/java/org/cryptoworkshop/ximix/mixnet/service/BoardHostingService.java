@@ -103,11 +103,11 @@ public class BoardHostingService
                 break;
             case SHUFFLE_AND_MOVE_BOARD_TO_NODE:
                 PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                serviceContext.scheduleTask(new TransformShuffleAndMoveTask(serviceContext, boardRegistry, pAndmMessage));
+                serviceContext.execute(new TransformShuffleAndMoveTask(serviceContext, boardRegistry, pAndmMessage));
                 break;
             case TRANSFER_TO_BOARD:
                 UploadMessage uploadMessage = UploadMessage.getInstance(message.getPayload());
-                serviceContext.scheduleTask(new UploadTask(serviceContext, boardRegistry, uploadMessage));
+                serviceContext.execute(new UploadTask(serviceContext, boardRegistry, uploadMessage));
                 break;
             case DOWNLOAD_BOARD_CONTENTS:
                 BoardDownloadMessage downloadRequest = BoardDownloadMessage.getInstance(message.getPayload());
@@ -126,7 +126,7 @@ public class BoardHostingService
             {
             case UPLOAD_TO_BOARD:
                 UploadMessage uploadMessage = UploadMessage.getInstance(message.getPayload());
-                serviceContext.scheduleTask(new UploadTask(serviceContext, boardRegistry, uploadMessage));
+                serviceContext.execute(new UploadTask(serviceContext, boardRegistry, uploadMessage));
                 break;
             default:
                 System.err.println("unknown command");

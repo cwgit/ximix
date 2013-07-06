@@ -56,54 +56,54 @@ public class NodeKeyGenerationService
         {
             switch (((CommandMessage)message).getType())
             {
-                case INITIATE_GENERATE_KEY_PAIR:
-                    final GenerateKeyPairMessage initiateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
-                    final Set<String> peersToInitiate = initiateMessage.getNodesToUse();
+            case INITIATE_GENERATE_KEY_PAIR:
+                final GenerateKeyPairMessage initiateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
+                final Set<String> peersToInitiate = initiateMessage.getNodesToUse();
 
-                    if (initiateMessage.getNodesToUse().contains(nodeContext.getName()))
-                    {
-                        //
-                        // generate our part
-                        //
-                        ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate, initiateMessage.getThreshold(), initiateMessage.getKeyGenParameters());
+                if (initiateMessage.getNodesToUse().contains(nodeContext.getName()))
+                {
+                    //
+                    // generate our part
+                    //
+                    ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate, initiateMessage.getThreshold(), initiateMessage.getKeyGenParameters());
 
-                        //
-                        // start everyone else
-                        //
+                    //
+                    // start everyone else
+                    //
 
-                        nodeContext.scheduleTask(new InitiateKeyGenTask(initiateMessage));
+                    nodeContext.execute(new InitiateKeyGenTask(initiateMessage));
 
-                        //
-                        // send our shares.
-                        //
-                        nodeContext.scheduleTask(new SendShareTask(initiateMessage.getKeyID(), peersToInitiate, messages));
-                    }
+                    //
+                    // send our shares.
+                    //
+                    nodeContext.execute(new SendShareTask(initiateMessage.getKeyID(), peersToInitiate, messages));
+                }
 
-                    return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
-                case GENERATE_KEY_PAIR:
-                    final GenerateKeyPairMessage generateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
-                    final Set<String> involvedPeers = generateMessage.getNodesToUse();
+                return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
+            case GENERATE_KEY_PAIR:
+                final GenerateKeyPairMessage generateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
+                final Set<String> involvedPeers = generateMessage.getNodesToUse();
 
-                    if (involvedPeers.contains(nodeContext.getName()))
-                    {
-                        ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)generateMessage.getKeyGenParameters();
-                        ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), ecKeyGenParams);
+                if (involvedPeers.contains(nodeContext.getName()))
+                {
+                    ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)generateMessage.getKeyGenParameters();
+                    ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), ecKeyGenParams);
 
-                        nodeContext.scheduleTask(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
-                    }
+                    nodeContext.execute(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
+                }
 
-                    return new MessageReply(MessageReply.Type.OKAY);
-                case STORE_SHARE:
-                    final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
-                    final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getKeyID()).getCurve(), sssMessage.getSecretShareMessage());
-                    System.err.println("Store: " + nodeContext.getName());
-                    // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
-                    // till we can validate them.
-                    nodeContext.scheduleTask(new StoreShareTask(sssMessage.getKeyID(), shareMessage));
+                return new MessageReply(MessageReply.Type.OKAY);
+            case STORE_SHARE:
+                final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
+                final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getID()).getCurve(), sssMessage.getSecretShareMessage());
+                System.err.println("Store: " + nodeContext.getName());
+                // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
+                // till we can validate them.
+                nodeContext.execute(new StoreShareTask(sssMessage.getID(), shareMessage));
 
-                    return new MessageReply(MessageReply.Type.OKAY);
-                default:
-                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeKeyGenerationService."));
+                return new MessageReply(MessageReply.Type.OKAY);
+            default:
+                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeKeyGenerationService."));
             }
         }
         catch (Exception e)
@@ -179,7 +179,7 @@ public class NodeKeyGenerationService
                 else
                 {
                     final int counter = index++;
-                    nodeContext.getScheduledExecutor().schedule(new Runnable()
+                    nodeContext.schedule(new Runnable()
                     {
                         public void run()
                         {
@@ -221,7 +221,7 @@ public class NodeKeyGenerationService
             else
             {
                 // TODO: there needs to be a limit on how long we do this!
-                nodeContext.scheduleTask(StoreShareTask.this);
+                nodeContext.execute(StoreShareTask.this);
             }
         }
     }

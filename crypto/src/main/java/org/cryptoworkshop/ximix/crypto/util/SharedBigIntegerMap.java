@@ -22,12 +22,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-
-public class SharedBigIntegerMap
+public class SharedBigIntegerMap<T>
 {
-    private final Map<Object, CountDownLatch> latchMap = new HashMap<>();
-    private final Map<Object, BigInteger> sharedMap = new HashMap<>();
+    private final Map<T, CountDownLatch> latchMap = new HashMap<>();
+    private final Map<T, BigInteger> sharedMap = new HashMap<>();
     private final ScheduledExecutorService executor;
 
     public SharedBigIntegerMap(ScheduledExecutorService executor)
@@ -35,7 +33,7 @@ public class SharedBigIntegerMap
         this.executor = executor;
     }
 
-    public void init(Object id, int numberOfParties)
+    public void init(T id, int numberOfParties)
     {
         synchronized (this)
         {
@@ -43,12 +41,37 @@ public class SharedBigIntegerMap
         }
     }
 
-    public void addValue(Object id, BigInteger value)
+    public boolean containsKey(T id)
+    {
+        synchronized (this)
+        {
+            return latchMap.containsKey(id);
+        }
+    }
+
+    public void waitFor(T id)
+    {
+        CountDownLatch latch;
+        synchronized (this)
+        {
+            latch = latchMap.get(id);
+        }
+        try
+        {
+            latch.await();
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public void addValue(T id, BigInteger value)
     {
          executor.execute(new AddTask(id, value));
     }
 
-    public BigInteger getValue(Object id)
+    public BigInteger getValue(T id)
     {
         try
         {
@@ -71,7 +94,7 @@ public class SharedBigIntegerMap
         }
     }
 
-    public BigInteger getValue(Object id, long timeout, TimeUnit timeUnit)
+    public BigInteger getValue(T id, long timeout, TimeUnit timeUnit)
     {
         try
         {
@@ -104,10 +127,10 @@ public class SharedBigIntegerMap
     private class AddTask
         implements Runnable
     {
-        private final Object id;
+        private final T id;
         private final BigInteger value;
 
-        AddTask(Object id, BigInteger value)
+        AddTask(T id, BigInteger value)
         {
 
             this.id = id;

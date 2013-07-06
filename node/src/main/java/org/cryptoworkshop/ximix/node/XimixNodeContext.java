@@ -115,9 +115,15 @@ public class XimixNodeContext
         return peerMap;
     }
 
-    public void scheduleTask(Runnable task)
+    public void execute(Runnable task)
     {
         multiTaskExecutor.execute(task);
+    }
+
+    @Override
+    public void schedule(Runnable task, long time, TimeUnit timeUnit)
+    {
+        multiTaskExecutor.schedule(task, time, timeUnit);
     }
 
     public SubjectPublicKeyInfo getPublicKey(String keyID)
@@ -210,7 +216,6 @@ public class XimixNodeContext
     {
         return r.multiply(keyManager.getPartialPrivateKey(keyID));
     }
-
 
     @Override
     public boolean isStopCalled()

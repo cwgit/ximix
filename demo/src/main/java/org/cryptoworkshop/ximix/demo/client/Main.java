@@ -75,7 +75,7 @@ public class Main
         XimixRegistrar registrar = XimixRegistrarFactory.createServicesRegistrar(new File(args[0]));
 
         KeyService    keyFetcher = registrar.connect(KeyService.class);
-        UploadService client = registrar.connect(UploadService.class);
+        //UploadService client = registrar.connect(UploadService.class);
         SigningService signingService = registrar.connect(SigningService.class);
 
         byte[] encPubKey = keyFetcher.fetchPublicKey("ECKEY");
@@ -98,7 +98,7 @@ public class Main
 
         PairSequence ballot = new PairSequence(encCandidate1, encCandidate2);
 
-        client.uploadMessage("FRED", ballot.getEncoded());
+       // client.uploadMessage("FRED", ballot.getEncoded());
 
         SHA256Digest sha256 = new SHA256Digest();
 

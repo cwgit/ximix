@@ -40,13 +40,6 @@ public interface NodeContext
 
     Map<String, ServicesConnection> getPeerMap();
 
-    /**
-     * TODO: remove
-     * @deprecated
-     * @param task
-     */
-    void scheduleTask(Runnable task);
-
     SubjectPublicKeyInfo getPublicKey(String keyID);
 
     ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, KeyGenerationParameters kGenParams);
@@ -65,6 +58,10 @@ public interface NodeContext
         throws InterruptedException;
 
     boolean isStopCalled();
+
+    void execute(Runnable task);
+
+    void schedule(Runnable task, long time, TimeUnit timeUnit);
 
     ScheduledExecutorService getScheduledExecutor();
 }

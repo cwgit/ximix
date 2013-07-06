@@ -13,56 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.message;
+package org.cryptoworkshop.ximix.crypto.signature.message;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
 
-public class StoreSecretShareMessage
+public class ECDSAPointMessage
     extends ASN1Object
 {
-    private final String id;
-    private final ASN1Encodable secretShareMessage;
+    private final String keyID;
+    private final byte[] point;
 
-    public StoreSecretShareMessage(String id, ASN1Encodable secretShareMessage)
+    public ECDSAPointMessage(String keyID, ECPoint point)
     {
-        this.id = id;
-        this.secretShareMessage = secretShareMessage;
+        this.keyID = keyID;
+        this.point = point.getEncoded();
     }
 
-    public StoreSecretShareMessage(ASN1Sequence sequence)
+    private ECDSAPointMessage(ASN1Sequence seq)
     {
-        this.id = DERUTF8String.getInstance(sequence.getObjectAt(0)).getString();
-        this.secretShareMessage = sequence.getObjectAt(1);
+        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
+        this.point = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
     }
 
-    public static final StoreSecretShareMessage getInstance(Object o)
+    public static ECDSAPointMessage getInstance(Object o)
     {
-        if (o instanceof StoreSecretShareMessage)
+        if (o instanceof ECDSAPointMessage)
         {
-            return (StoreSecretShareMessage)o;
+            return (ECDSAPointMessage)o;
         }
-        else if (o != null)
+        if (o != null)
         {
-            return new StoreSecretShareMessage(ASN1Sequence.getInstance(o));
+            return new ECDSAPointMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
-    }
-
-    public String getID()
-    {
-        return id;
-    }
-
-    public ASN1Encodable getSecretShareMessage()
-    {
-        return secretShareMessage;
     }
 
     @Override
@@ -70,10 +63,19 @@ public class StoreSecretShareMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new DERUTF8String(id));
-        v.add(secretShareMessage);
+        v.add(new DERUTF8String(keyID));
+        v.add(new DEROctetString(point));
 
         return new DERSequence(v);
+    }
 
+    public String getKeyID()
+    {
+        return keyID;
+    }
+
+    public byte[] getPoint()
+    {
+        return point;
     }
 }

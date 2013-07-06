@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.message;
+package org.cryptoworkshop.ximix.crypto.signature.message;
 
-import java.math.BigInteger;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -23,36 +23,43 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class ECDSAPartialCreateMessage
+public class ECDSACreateMessage
     extends ASN1Object
 {
     private final String keyID;
-    private final BigInteger r;
+    private final byte[] message;
+    private final Set<String> nodesToUse;
+    private final int threshold;
 
-    public ECDSAPartialCreateMessage(String keyID, BigInteger r)
+    public ECDSACreateMessage(String keyID, byte[] message, int threshold, String... nodesToUse)
     {
+        this.nodesToUse = MessageUtils.toOrderedSet(nodesToUse);
+        this.threshold = threshold;
         this.keyID = keyID;
-        this.r = r;
+        this.message = message;
     }
 
-    private ECDSAPartialCreateMessage(ASN1Sequence seq)
+    private ECDSACreateMessage(ASN1Sequence seq)
     {
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.r = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue();
+        this.threshold = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue().intValue();
+        this.message = ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets();
+        this.nodesToUse = MessageUtils.toOrderedSet(ASN1Sequence.getInstance(seq.getObjectAt(3)));
     }
 
-    public static final ECDSAPartialCreateMessage getInstance(Object o)
+    public static final ECDSACreateMessage getInstance(Object o)
     {
-        if (o instanceof ECDSAPartialCreateMessage)
+        if (o instanceof ECDSACreateMessage)
         {
-            return (ECDSAPartialCreateMessage)o;
+            return (ECDSACreateMessage)o;
         }
         else if (o != null)
         {
-            return new ECDSAPartialCreateMessage(ASN1Sequence.getInstance(o));
+            return new ECDSACreateMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -64,7 +71,9 @@ public class ECDSAPartialCreateMessage
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new DERUTF8String(keyID));
-        v.add(new ASN1Integer(r));
+        v.add(new ASN1Integer(threshold));
+        v.add(new DEROctetString(message));
+        v.add(MessageUtils.toASN1Sequence(nodesToUse));
 
         return new DERSequence(v);
     }
@@ -74,8 +83,18 @@ public class ECDSAPartialCreateMessage
         return keyID;
     }
 
-    public BigInteger getR()
+    public byte[] getMessage()
     {
-        return r;
+        return message;
+    }
+
+    public Set<String> getNodesToUse()
+    {
+        return nodesToUse;
+    }
+
+    public int getThreshold()
+    {
+        return threshold;
     }
 }

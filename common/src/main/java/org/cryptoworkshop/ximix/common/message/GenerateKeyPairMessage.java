@@ -88,7 +88,7 @@ public class GenerateKeyPairMessage
         v.add(new DERUTF8String(keyID));
         v.add(keyGenParameters);
         v.add(new ASN1Integer(threshold));
-        v.add(toASN1Set(nodesToUse));
+        v.add(toASN1Set(nodesToUse));      // TODO: should be sequence?
 
         return new DERSequence(v);
     }

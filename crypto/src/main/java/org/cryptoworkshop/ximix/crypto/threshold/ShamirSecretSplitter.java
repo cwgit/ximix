@@ -37,11 +37,6 @@ public class ShamirSecretSplitter
      */
     public ShamirSecretSplitter(int numberOfPeers, int threshold, BigInteger fieldSize, SecureRandom random)
     {
-        if (numberOfPeers < threshold)
-        {
-            throw new IllegalArgumentException("numberOfPeers must at least be as big as the threshold value.");
-        }
-
         this.numberOfPeers = numberOfPeers;
         this.k = threshold;
         this.fieldSize = fieldSize;

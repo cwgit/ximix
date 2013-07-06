@@ -13,47 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.message;
+package org.cryptoworkshop.ximix.crypto.signature.message;
 
 import java.math.BigInteger;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class ECDSACreateMessage
+public class ECDSAPartialCreateMessage
     extends ASN1Object
 {
+    private final String sigID;
     private final String keyID;
-    private final byte[] message;
+    private final Set<String> nodesToUse;
+    private final BigInteger e;
 
-    public ECDSACreateMessage(String keyID, byte[] message)
+    public ECDSAPartialCreateMessage(String sigID, String keyID, BigInteger e, BigInteger n, Set<String> nodesToUse)
     {
+        this.sigID = sigID;
         this.keyID = keyID;
-        this.message = message;
+        this.e = e;
+        this.nodesToUse = MessageUtils.toOrderedSet(nodesToUse);
     }
 
-    private ECDSACreateMessage(ASN1Sequence seq)
+    private ECDSAPartialCreateMessage(ASN1Sequence seq)
     {
-        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.message = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
+        this.sigID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
+        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+        this.e = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue();
+        this.nodesToUse = MessageUtils.toOrderedSet(ASN1Sequence.getInstance(seq.getObjectAt(3)));
     }
 
-    public static final ECDSACreateMessage getInstance(Object o)
+    public static final ECDSAPartialCreateMessage getInstance(Object o)
     {
-        if (o instanceof ECDSACreateMessage)
+        if (o instanceof ECDSAPartialCreateMessage)
         {
-            return (ECDSACreateMessage)o;
+            return (ECDSAPartialCreateMessage)o;
         }
         else if (o != null)
         {
-            return new ECDSACreateMessage(ASN1Sequence.getInstance(o));
+            return new ECDSAPartialCreateMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -64,10 +69,17 @@ public class ECDSACreateMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
+        v.add(new DERUTF8String(sigID));
         v.add(new DERUTF8String(keyID));
-        v.add(new DEROctetString(message));
+        v.add(new ASN1Integer(e));
+        v.add(MessageUtils.toASN1Sequence(nodesToUse));
 
         return new DERSequence(v);
+    }
+
+    public String getSigID()
+    {
+        return sigID;
     }
 
     public String getKeyID()
@@ -75,8 +87,14 @@ public class ECDSACreateMessage
         return keyID;
     }
 
-    public byte[] getMessage()
+    public BigInteger getE()
     {
-        return message;
+        return e;
     }
+
+    public Set<String> getNodesToUse()
+    {
+        return nodesToUse;
+    }
+
 }
