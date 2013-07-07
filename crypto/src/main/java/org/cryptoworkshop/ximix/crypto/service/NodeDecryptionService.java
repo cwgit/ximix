@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
@@ -31,7 +32,10 @@ import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.Service;
+import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
+import org.cryptoworkshop.ximix.crypto.operator.ECPrivateKeyOperator;
 
 public class NodeDecryptionService
     implements Service
@@ -45,7 +49,7 @@ public class NodeDecryptionService
 
     public Capability getCapability()
     {
-        return new Capability(Capability.Type.SIGNING, new ASN1Encodable[0]); // TODO:
+        return new Capability(Capability.Type.DECRYPTION, new ASN1Encodable[0]); // TODO:
     }
 
     public MessageReply handle(Message message)
@@ -57,7 +61,16 @@ public class NodeDecryptionService
             List<byte[]>       messages = decMessage.getMessages();
             List<byte[]>       partialDecrypts = new ArrayList<>(messages.size());
 
-            ECDomainParameters domainParameters = nodeContext.getDomainParameters(decMessage.getKeyID());
+            PrivateKeyOperator operator = nodeContext.getPrivateKeyOperator(decMessage.getKeyID());
+
+            if (!(operator instanceof BcECPrivateKeyOperator))
+            {
+                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Inappropriate key type"));
+            }
+
+            ECPrivateKeyOperator ecOperator = (ECPrivateKeyOperator)operator;
+
+            ECDomainParameters domainParameters = ecOperator.getDomainParameters();
 
             for (int i = 0; i != messages.size(); i++)
             {
@@ -65,7 +78,7 @@ public class NodeDecryptionService
                 ECPair[] pairs = ps.getECPairs();
                 for (int j = 0; j != pairs.length; j++)
                 {
-                    pairs[j] = new ECPair(nodeContext.performPartialDecrypt(decMessage.getKeyID(), pairs[j].getX()), pairs[j].getY());
+                    pairs[j] = new ECPair(ecOperator.transform(pairs[j].getX()), pairs[j].getY());
                 }
                 try
                 {

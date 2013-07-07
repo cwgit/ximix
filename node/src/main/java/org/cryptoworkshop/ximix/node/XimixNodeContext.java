@@ -37,16 +37,19 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.common.message.*;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
-import org.cryptoworkshop.ximix.common.util.FutureComplete;
+import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
+import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSplitSecret;
 import org.cryptoworkshop.ximix.crypto.threshold.ECNewDKGSecretSplitter;
@@ -64,8 +67,6 @@ public class XimixNodeContext
 
     private List<Service> services = new ArrayList<Service>();
     private final String name;
-
-
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, Config nodeConfig)
             throws ConfigException
@@ -193,6 +194,43 @@ public class XimixNodeContext
         return keyManager.hasPrivateKey(keyID);
     }
 
+    @Override
+    public PublicKeyOperator getPublicKeyOperator(String keyID)
+    {
+        try
+        {
+            SubjectPublicKeyInfo pubInfo = keyManager.fetchPublicKey(keyID);
+            ECPublicKeyParameters keyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubInfo);
+
+            return new BcECPublicKeyOperator(keyParameters.getParameters());
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+        return null;
+    }
+
+    @Override
+    public PrivateKeyOperator getPrivateKeyOperator(String keyID)
+    {
+        try
+        {
+            SubjectPublicKeyInfo pubInfo = keyManager.fetchPublicKey(keyID);
+            ECPublicKeyParameters keyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubInfo);
+
+            return new BcECPrivateKeyOperator(keyParameters.getParameters(), keyManager.getPartialPrivateKey(keyID));
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+        return null;
+
+    }
+
     public Service getService(Enum type)
     {
         for (Service service : services)
@@ -204,17 +242,6 @@ public class XimixNodeContext
         }
 
         return null;
-    }
-
-    public ECPoint performPartialDecrypt(String keyID, ECPoint cipherText)
-    {
-        return cipherText.multiply(keyManager.getPartialPrivateKey(keyID));
-    }
-
-    @Override
-    public BigInteger performPartialSign(String keyID, BigInteger r)
-    {
-        return r.multiply(keyManager.getPartialPrivateKey(keyID));
     }
 
     @Override
