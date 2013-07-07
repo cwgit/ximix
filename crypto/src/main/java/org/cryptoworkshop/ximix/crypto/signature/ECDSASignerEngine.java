@@ -40,8 +40,10 @@ import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
+import org.cryptoworkshop.ximix.crypto.operator.ECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAFetchMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAInitialiseMessage;
@@ -223,11 +225,19 @@ public class ECDSASignerEngine
                 ECDSAPartialCreateMessage partialMessage = ECDSAPartialCreateMessage.getInstance(message.getPayload());
 
                 sigID = new SigID(partialMessage.getSigID());
-                domainParams = paramsMap.get(partialMessage.getKeyID());
 
-                BigInteger kInvShare = sharedAMap.getValue(sigID).multiply(muMap.get(sigID).modInverse(domainParams.getN()));
+                PrivateKeyOperator operator = nodeContext.getPrivateKeyOperator(partialMessage.getKeyID());
+
+                if (!(operator instanceof ECPrivateKeyOperator))
+                {
+                    return new MessageReply(MessageReply.Type.ERROR); // TODO
+                }
+
+                ECPrivateKeyOperator ecOperator = (ECPrivateKeyOperator)operator;
+
+                BigInteger kInvShare = sharedAMap.getValue(sigID).multiply(muMap.get(sigID).modInverse(ecOperator.getDomainParameters().getN()));
                 BigInteger eComponent = partialMessage.getE();
-                BigInteger dComponent = nodeContext.performPartialSign(partialMessage.getKeyID(), rMap.get(sigID));
+                BigInteger dComponent = ecOperator.transform(rMap.get(sigID));
 
                 MessageReply reply = replyOkay(new BigIntegerMessage(kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getValue(sigID))));
                 // TODO: need to clean up state tables here.

@@ -15,19 +15,14 @@
  */
 package org.cryptoworkshop.ximix.common.service;
 
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.common.message.KeyGenerationParameters;
-import org.cryptoworkshop.ximix.common.util.ExtendedFuture;
-import org.cryptoworkshop.ximix.common.util.FutureComplete;
-
 
 public interface NodeContext
 {
@@ -46,13 +41,19 @@ public interface NodeContext
 
     void storeThresholdKeyShare(String keyID, ECCommittedSecretShareMessage message);
 
+    /**
+     * @deprecated
+     * @param keyID
+     * @param <T>
+     * @return
+     */
     <T> T getDomainParameters(String keyID);
 
     boolean hasPrivateKey(String keyID);
 
-    ECPoint performPartialDecrypt(String keyID, ECPoint cipherText);
+    PublicKeyOperator getPublicKeyOperator(String keyID);
 
-    BigInteger performPartialSign(String keyID, BigInteger r);
+    PrivateKeyOperator getPrivateKeyOperator(String keyID);
 
     boolean shutdown(int time, TimeUnit timeUnit)
         throws InterruptedException;

@@ -33,6 +33,7 @@ public class Capability
         implements MessageType
     {
         BOARD_HOSTING,
+        DECRYPTION,
         ENCRYPTION,
         KEY_RETRIEVAL,
         KEY_GENERATION,
