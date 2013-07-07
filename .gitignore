@@ -48,3 +48,4 @@ atlassian-ide-plugin.xml
 */build
 libs/*
 out/
+*/build/*
