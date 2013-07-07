@@ -47,12 +47,19 @@ class XimixServices
         /**
          * Set a throwable handler for any uncaught exceptions.
          *
-         * @param throwableHandler The handler, may be null.
-         * @return this object.
+         * @param throwableListener The listener, may be null.
+         * @return the current builder.
          */
-        public Builder withThrowableListener(ThrowableListener throwableHandler)
+        public Builder withThrowableListener(ThrowableListener throwableListener)
         {
-            this.throwableListener = throwableHandler;
+            if (throwableListener != null)
+            {
+                this.throwableListener = throwableListener;
+            }
+            else
+            {
+                this.throwableListener = XimixNodeBuilder.throwableListener;
+            }
 
             return this;
         }
