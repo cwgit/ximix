@@ -24,18 +24,18 @@ import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
-import org.cryptoworkshop.ximix.common.conf.Config;
-import org.cryptoworkshop.ximix.common.message.MessageBlock;
+import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.Service;
-import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.operator.ECPrivateKeyOperator;
+import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
 
 public class NodeDecryptionService
     implements Service

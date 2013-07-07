@@ -15,7 +15,11 @@
  */
 package org.cryptoworkshop.ximix.console.adapters;
 
-import org.cryptoworkshop.ximix.common.conf.Config;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
 import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -28,10 +32,6 @@ import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An adapter for the Mixnet commands service.

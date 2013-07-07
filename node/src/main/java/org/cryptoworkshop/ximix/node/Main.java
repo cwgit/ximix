@@ -18,8 +18,7 @@ package org.cryptoworkshop.ximix.node;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-import org.cryptoworkshop.ximix.common.conf.ConfigException;
-import org.cryptoworkshop.ximix.registrar.RegistrarConnectionException;
+import org.cryptoworkshop.ximix.common.config.ConfigException;
 
 public class Main
 {

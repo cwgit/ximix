@@ -18,7 +18,6 @@ package org.cryptoworkshop.ximix.crypto.client;
 import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
-import org.cryptoworkshop.ximix.crypto.client.KeyService;
 
 public interface SigningService
     extends KeyService

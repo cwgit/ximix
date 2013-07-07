@@ -1,7 +1,7 @@
 package org.cryptoworkshop.ximix.test.node;
 
-import org.cryptoworkshop.ximix.common.conf.Config;
-import org.cryptoworkshop.ximix.common.conf.ConfigException;
+import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.config.ConfigException;
 
 /**
  *

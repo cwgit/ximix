@@ -1,12 +1,14 @@
 package org.cryptoworkshop.ximix.test.node;
 
-import org.cryptoworkshop.ximix.common.conf.ConfigException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
 import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.node.XimixNodeBuilder;
-
-import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  *

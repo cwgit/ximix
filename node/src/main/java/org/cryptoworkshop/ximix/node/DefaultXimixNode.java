@@ -1,12 +1,5 @@
 package org.cryptoworkshop.ximix.node;
 
-import org.bouncycastle.asn1.DEROutputStream;
-import org.cryptoworkshop.ximix.common.conf.Config;
-import org.cryptoworkshop.ximix.common.conf.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
@@ -15,6 +8,13 @@ import java.net.SocketTimeoutException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.bouncycastle.asn1.DEROutputStream;
+import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.config.ConfigException;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
 /**
  * A default ximix node implementation.
@@ -28,7 +28,6 @@ public class DefaultXimixNode
     private final int portNo;
     private final ThrowableHandler exceptionHandler;
     private ServerSocket ss = null;
-
 
     public DefaultXimixNode(Config config, Map<String, ServicesConnection> servicesMap, ThrowableHandler exceptionHandler)
         throws ConfigException

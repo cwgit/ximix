@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.cryptoworkshop.ximix.common.conf.Config;
+import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;

@@ -15,15 +15,15 @@
  */
 package org.cryptoworkshop.ximix.node;
 
-import org.cryptoworkshop.ximix.common.conf.Config;
-import org.cryptoworkshop.ximix.common.conf.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Map;
+
+import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.config.ConfigException;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 public class XimixNodeBuilder
 {

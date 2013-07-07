@@ -1,6 +1,6 @@
 package org.cryptoworkshop.ximix.console.config;
 
-import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
+import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 

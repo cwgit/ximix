@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.conf;
+package org.cryptoworkshop.ximix.common.config;
 
-import org.w3c.dom.Node;
-
-public interface ConfigObjectFactory<T>
+public class ConfigException
+    extends Exception
 {
-    public T createObject(Node configNode);
+    public ConfigException(String message, Exception cause)
+    {
+        super(message, cause);
+    }
+
+    public ConfigException(String message)
+    {
+        super(message);
+    }
 }

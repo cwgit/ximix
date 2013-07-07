@@ -15,17 +15,15 @@
  */
 package org.cryptoworkshop.ximix.console;
 
-import org.cryptoworkshop.ximix.common.conf.Config;
+import java.util.List;
+import java.util.Map;
+
 import org.cryptoworkshop.ximix.console.config.AdapterConfig;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.console.model.Command;
 import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
-import org.w3c.dom.Node;
-
-import java.util.List;
-import java.util.Map;
 
 
 /**

@@ -15,7 +15,11 @@
  */
 package org.cryptoworkshop.ximix.console;
 
-import org.cryptoworkshop.ximix.common.conf.Config;
+import java.io.File;
+import java.security.SecureRandom;
+import java.util.List;
+
+import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfigFactory;
 import org.cryptoworkshop.ximix.console.handlers.ConsoleHandler;
@@ -25,10 +29,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
-
-import java.io.File;
-import java.security.SecureRandom;
-import java.util.List;
 
 /**
  *
