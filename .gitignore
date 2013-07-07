@@ -49,3 +49,6 @@ atlassian-ide-plugin.xml
 libs/*
 out/
 */build/*
+build/reports/tests
+build/test-results/binary/test
+build
