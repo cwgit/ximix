@@ -16,22 +16,21 @@
 package org.cryptoworkshop.ximix.crypto.client;
 
 import java.io.IOException;
-import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
+import org.cryptoworkshop.ximix.common.service.ClientServiceConnectionException;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.signature.Algorithms;
 import org.cryptoworkshop.ximix.crypto.signature.ECDSASignerEngine;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
-import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.service.ClientServiceConnectionException;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
 public class ClientSigningService
     implements SigningService
@@ -44,7 +43,7 @@ public class ClientSigningService
     }
 
     @Override
-    public void close(ThrowableHandler handler)
+    public void close(ThrowableListener handler)
     {
         connection.close(handler);
     }

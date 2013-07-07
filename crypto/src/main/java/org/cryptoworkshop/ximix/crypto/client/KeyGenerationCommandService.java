@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1String;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
@@ -41,7 +41,7 @@ public class KeyGenerationCommandService
     }
 
     @Override
-    public void close(ThrowableHandler throwableHandler)
+    public void close(ThrowableListener throwableHandler)
     {
         connection.close(throwableHandler);
     }
