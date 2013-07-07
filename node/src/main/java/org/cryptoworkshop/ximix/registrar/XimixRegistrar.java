@@ -29,4 +29,5 @@ public interface XimixRegistrar
      */
    <T> T connect(Class<T> serviceClass)
        throws RegistrarServiceException;
+
 }

@@ -27,10 +27,10 @@ public class RegistrarTest
     {
 
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"));
-
+        KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
         try
         {
-            KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
+
             KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
                 .withThreshold(2)
                 .withNodes("A", "B")
@@ -43,5 +43,9 @@ public class RegistrarTest
         {
             TestCase.assertTrue(true);
         }
+
+        keyGenerationService.close(null);
+
+
     }
 }

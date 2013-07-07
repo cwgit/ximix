@@ -15,32 +15,37 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
-import java.util.List;
-
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
+import java.util.List;
+
 public interface CommandService
-    extends ShuffleOperation, DownloadOperation
+    extends ShuffleOperation,
+    DownloadOperation
 {
     /**
      * Return a list of static details about the node.
-     * @return  The node.
+     *
+     * @return The node.
      * @throws ServiceConnectionException
      */
-    List<NodeDetail> getNodeDetails() throws ServiceConnectionException;
-
+    List<NodeDetail> getNodeDetails()
+        throws ServiceConnectionException;
 
     /**
      * Return a set of dynamic details about a node.
+     *
      * @param nodes The nodes.
      * @return
      * @throws ServiceConnectionException
      */
-    List<NodeHealth> getNodeHealth(String... nodes) throws ServiceConnectionException;
-
+    List<NodeHealth> getNodeHealth(String... nodes)
+        throws ServiceConnectionException;
 
     /**
      * Return processing statistics about a node.
+     *
      * @param nodes
      * @return
      */
@@ -48,15 +53,22 @@ public interface CommandService
 
     /**
      * Cause nodes to shutdown.
+     *
      * @param nodes
      */
     void shutdown(String... nodes);
 
-
     /**
      * Cause nodes to restart.
+     *
      * @param nodes
      */
     void restart(String... nodes);
 
+    /**
+     * Close any io used by this service.
+     *
+     * @param handler The exception handler.
+     */
+    void close(ThrowableHandler handler);
 }

@@ -1,4 +1,4 @@
-package org.cryptoworkshop.ximix.node;
+package org.cryptoworkshop.ximix.common.handlers;
 
 /**
  *

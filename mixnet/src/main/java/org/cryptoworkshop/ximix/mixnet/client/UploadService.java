@@ -15,10 +15,13 @@
  */
 package org.cryptoworkshop.ximix.mixnet.client;
 
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 public interface UploadService
 {
     void uploadMessage(String boardName, byte[] message)
         throws ServiceConnectionException;
+
+    void close(ThrowableHandler handler);
 }

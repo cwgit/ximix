@@ -6,4 +6,6 @@ dependencies {
 }
 
 
-
+test {
+    testLogging.showStandardStreams = true
+}

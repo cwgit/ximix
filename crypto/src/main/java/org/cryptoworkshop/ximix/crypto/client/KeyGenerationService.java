@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.crypto.client;
 
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 
@@ -30,4 +31,6 @@ public interface KeyGenerationService
      */
     byte[] generatePublicKey(String keyID, KeyGenerationOptions keyGenOptions)
         throws ServiceConnectionException;
+
+    void close(ThrowableHandler continuableThrowableHandler);
 }

@@ -3,10 +3,11 @@ package org.cryptoworkshop.ximix.node;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
-import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -26,7 +27,7 @@ public class DefaultXimixNode
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private final int portNo;
     private final ThrowableHandler exceptionHandler;
-
+    private ServerSocket ss = null;
 
 
     public DefaultXimixNode(Config config, Map<String, ServicesConnection> servicesMap, ThrowableHandler exceptionHandler)
@@ -38,12 +39,11 @@ public class DefaultXimixNode
         this.exceptionHandler = exceptionHandler;
     }
 
-
     public void start()
     {
         try
         {
-            ServerSocket ss = new ServerSocket(portNo);
+            ss = new ServerSocket(portNo);
 
             ss.setSoTimeout(1000);                       // TODO: should be a config item
 
@@ -55,7 +55,7 @@ public class DefaultXimixNode
 
                     if (!stopped.get())
                     {
-                        nodeContext.addConnection(new XimixServices(nodeContext, s));
+                        nodeContext.addConnection(new XimixServices(nodeContext, s).withThrowableHandler(exceptionHandler));
                     }
                     else
                     {
@@ -79,10 +79,16 @@ public class DefaultXimixNode
         throws InterruptedException
     {
         stopped.set(true);
+        try
+        {
+            ss.close();
+        }
+        catch (IOException e)
+        {
 
+        }
         return nodeContext.shutdown(timeout, unit);
     }
-
 
     /**
      * @param s

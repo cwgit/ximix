@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.mixnet.client;
 
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
@@ -27,9 +28,16 @@ public class ClientUploadService
 {
     private ServicesConnection connection;
 
+
     public ClientUploadService(ServicesConnection connection)
     {
         this.connection = connection;
+    }
+
+    @Override
+    public void close(ThrowableHandler handler)
+    {
+        this.connection.close(handler);
     }
 
     public void uploadMessage(String boardName, byte[] message)

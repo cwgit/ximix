@@ -15,50 +15,30 @@
  */
 package org.cryptoworkshop.ximix.registrar;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.cryptoworkshop.ximix.common.conf.Config;
 import org.cryptoworkshop.ximix.common.conf.ConfigException;
 import org.cryptoworkshop.ximix.common.conf.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.Capability;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.MessageType;
-import org.cryptoworkshop.ximix.common.message.NodeInfo;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.message.*;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.SpecificServicesConnection;
-import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
-import org.cryptoworkshop.ximix.crypto.client.KeyService;
-import org.cryptoworkshop.ximix.crypto.client.SigningService;
-import org.cryptoworkshop.ximix.crypto.client.ClientSigningService;
-import org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService;
+import org.cryptoworkshop.ximix.crypto.client.*;
 import org.cryptoworkshop.ximix.mixnet.admin.ClientCommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
-import org.cryptoworkshop.ximix.crypto.client.KeyGenerationCommandService;
 import org.cryptoworkshop.ximix.mixnet.client.ClientUploadService;
 import org.cryptoworkshop.ximix.mixnet.client.UploadService;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.io.*;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.*;
 
 public class XimixRegistrarFactory
 {
@@ -88,6 +68,8 @@ public class XimixRegistrarFactory
                 throw new RegistrarServiceException("Unable to identify service");
             }
         };
+
+
     }
 
     public static XimixRegistrar createAdminServiceRegistrar(File config)
@@ -95,7 +77,6 @@ public class XimixRegistrarFactory
     {
         return createAdminServiceRegistrar(new Config(config));
     }
-
 
     public static XimixRegistrar createAdminServiceRegistrar(Config config)
         throws ConfigException, FileNotFoundException
@@ -264,6 +245,19 @@ public class XimixRegistrarFactory
             }
         }
 
+        @Override
+        public void close(ThrowableHandler handler)
+        {
+            try
+            {
+                connection.close();
+            }
+            catch (Exception ex)
+            {
+                handler.handle(ex);
+            }
+        }
+
         public String getName()
         {
             return nodeInfo.getName();
@@ -331,6 +325,12 @@ public class XimixRegistrarFactory
             }
         }
 
+        @Override
+        public void close(ThrowableHandler throwableHandler)
+        {
+            connection.close(throwableHandler);
+        }
+
         private synchronized NodeServicesConnection resetConnection()
         {
             // TODO: need to look into possible connection leakage here. 2 threads may end up trying to reset at the same time.
@@ -349,6 +349,7 @@ public class XimixRegistrarFactory
                 }
                 catch (IOException e)
                 {
+                    //   System.out.print(e.getMessage());
                     // TODO:
                 }
             }
@@ -407,6 +408,16 @@ public class XimixRegistrarFactory
                 {
                     nodeConf.getThrowable().printStackTrace();
                 }
+            }
+        }
+
+        @Override
+        public void close(ThrowableHandler throwableHandler)
+        {
+            Iterator<NodeServicesConnection> e = connectionMap.values().iterator();
+            while (e.hasNext())
+            {
+                e.next().close(throwableHandler);
             }
         }
 

@@ -15,6 +15,14 @@
  */
 package org.cryptoworkshop.ximix.node;
 
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DEROutputStream;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.NodeInfo;
+import org.cryptoworkshop.ximix.common.service.Service;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,27 +30,43 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DEROutputStream;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.service.Service;
-
 class XimixServices
     implements Runnable
 {
     private final Socket s;
     private final XimixNodeContext nodeContext;
-
     private final AtomicBoolean stopped = new AtomicBoolean(false);
-
     private int maxInputSize = 32 * 1024;  //TODO should be config item.
+    private ThrowableHandler throwableHandler = null;
 
     public XimixServices(XimixNodeContext nodeContext, Socket s)
     {
         this.s = s;
         this.nodeContext = nodeContext;
+    }
+
+    protected void handle(Throwable ex)
+    {
+        if (throwableHandler == null)
+        {
+            ex.printStackTrace();
+        }
+        else
+        {
+            throwableHandler.handle(ex);
+        }
+    }
+
+    /**
+     * Set a throwable handler for any uncaught exceptions.
+     *
+     * @param throwableHandler The handler, may be null.
+     * @return this object.
+     */
+    public XimixServices withThrowableHandler(ThrowableHandler throwableHandler)
+    {
+        this.throwableHandler = throwableHandler;
+        return this;
     }
 
     public void run()
@@ -79,19 +103,19 @@ class XimixServices
                 }
                 catch (SocketTimeoutException e)
                 {
-                     continue;
+                    continue;
                 }
             }
         }
         catch (IOException e)
         {
-            //TODO logging.
-            e.printStackTrace();
+            handle(e); // TODO seek consultation.
         }
     }
 
     public void stop()
     {
         stopped.set(true);
+
     }
 }

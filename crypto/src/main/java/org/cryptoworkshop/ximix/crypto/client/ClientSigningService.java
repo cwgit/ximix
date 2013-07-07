@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
@@ -40,6 +41,12 @@ public class ClientSigningService
     public ClientSigningService(ServicesConnection connection)
     {
         this.connection = connection;
+    }
+
+    @Override
+    public void close(ThrowableHandler handler)
+    {
+        connection.close(handler);
     }
 
     public byte[] generateSignature(String keyID, SignatureGenerationOptions sigGenOptions, byte[] message)
