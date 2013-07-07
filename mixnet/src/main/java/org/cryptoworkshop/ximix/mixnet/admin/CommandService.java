@@ -15,10 +15,10 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-
 import java.util.List;
+
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 public interface CommandService
     extends ShuffleOperation,
@@ -70,5 +70,5 @@ public interface CommandService
      *
      * @param handler The exception handler.
      */
-    void close(ThrowableHandler handler);
+    void close(ThrowableListener handler);
 }

@@ -21,16 +21,16 @@ import java.util.Map;
 
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 public class XimixNodeBuilder
 {
-    private ThrowableHandler exceptionHandler = new ThrowableHandler()
+    private ThrowableListener throwableListener = new ThrowableListener()
     {
         @Override
-        public void handle(Throwable throwable)
+        public void notify(Throwable throwable)
         {
             throwable.printStackTrace(System.err);
         }
@@ -50,9 +50,10 @@ public class XimixNodeBuilder
         this(new Config(file));
     }
 
-    public XimixNodeBuilder withThrowableHandler(ThrowableHandler exceptionHandler)
+    public XimixNodeBuilder withThrowableListener(ThrowableListener throwableListener)
     {
-        this.exceptionHandler = exceptionHandler;
+        this.throwableListener = throwableListener;
+
         return this;
     }
 
@@ -60,7 +61,8 @@ public class XimixNodeBuilder
         throws ConfigException
     {
         final Map<String, ServicesConnection> servicesMap = XimixRegistrarFactory.createServicesRegistrarMap(peersConfig);
-        return new DefaultXimixNode(nodeConfig, servicesMap, exceptionHandler);
+
+        return new DefaultXimixNode(nodeConfig, servicesMap, throwableListener);
     }
 
     public XimixNode build(File file)

@@ -3,12 +3,12 @@ package org.cryptoworkshop.ximix.common.handlers;
 /**
  *
  */
-public interface ThrowableHandler
+public interface ThrowableListener
 {
     /**
-     * Handle a throwable.
+     * Notify of a throwable.
      *
      * @param throwable The throwable.
      */
-    void handle(Throwable throwable);
+    void notify(Throwable throwable);
 }

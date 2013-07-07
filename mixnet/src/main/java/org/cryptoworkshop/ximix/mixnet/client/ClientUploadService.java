@@ -15,13 +15,12 @@
  */
 package org.cryptoworkshop.ximix.mixnet.client;
 
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.UploadMessage;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
 public class ClientUploadService
     implements UploadService
@@ -35,7 +34,7 @@ public class ClientUploadService
     }
 
     @Override
-    public void close(ThrowableHandler handler)
+    public void close(ThrowableListener handler)
     {
         this.connection.close(handler);
     }

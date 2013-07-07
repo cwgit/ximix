@@ -1,19 +1,19 @@
 package org.cryptoworkshop.ximix.test.node;
 
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 
 /**
  * Test throwable handler.
  */
-public class SquelchingThrowableHandler implements ThrowableHandler
+public class SquelchingThrowableHandler implements ThrowableListener
 {
     private List<Class> squelchTypes = new ArrayList<Class>();
 
     @Override
-    public void handle(Throwable throwable)
+    public void notify(Throwable throwable)
     {
         if (squelchTypes.contains(throwable.getClass()))
         {

@@ -37,7 +37,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
@@ -266,7 +266,7 @@ public class XimixRegistrarFactory
         }
 
         @Override
-        public void close(ThrowableHandler handler)
+        public void close(ThrowableListener handler)
         {
             try
             {
@@ -274,7 +274,7 @@ public class XimixRegistrarFactory
             }
             catch (Exception ex)
             {
-                handler.handle(ex);
+                handler.notify(ex);
             }
         }
 
@@ -346,7 +346,7 @@ public class XimixRegistrarFactory
         }
 
         @Override
-        public void close(ThrowableHandler throwableHandler)
+        public void close(ThrowableListener throwableHandler)
         {
             connection.close(throwableHandler);
         }
@@ -432,7 +432,7 @@ public class XimixRegistrarFactory
         }
 
         @Override
-        public void close(ThrowableHandler throwableHandler)
+        public void close(ThrowableListener throwableHandler)
         {
             Iterator<NodeServicesConnection> e = connectionMap.values().iterator();
             while (e.hasNext())

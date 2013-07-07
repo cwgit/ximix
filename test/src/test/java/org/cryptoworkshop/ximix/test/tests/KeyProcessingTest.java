@@ -1,7 +1,10 @@
 package org.cryptoworkshop.ximix.test.tests;
 
+import java.net.SocketException;
+import java.security.SecureRandom;
+
 import junit.framework.TestCase;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.KeyType;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
@@ -12,9 +15,6 @@ import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
 import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;
 import org.junit.Test;
-
-import java.net.SocketException;
-import java.security.SecureRandom;
 
 import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
 
@@ -81,11 +81,11 @@ public class KeyProcessingTest extends TestCase
 
         NodeTestUtil.shutdownNodes();
 
-        keyGenerationService.close(new ThrowableHandler()
+        keyGenerationService.close(new ThrowableListener()
         {
 
             @Override
-            public void handle(Throwable throwable)
+            public void notify(Throwable throwable)
             {
                 throwable.printStackTrace();
             }

@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
@@ -26,16 +26,16 @@ public class DefaultXimixNode
     private final XimixNodeContext nodeContext;
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private final int portNo;
-    private final ThrowableHandler exceptionHandler;
+    private final ThrowableListener throwableListener;
     private ServerSocket ss = null;
 
-    public DefaultXimixNode(Config config, Map<String, ServicesConnection> servicesMap, ThrowableHandler exceptionHandler)
+    DefaultXimixNode(Config config, Map<String, ServicesConnection> servicesMap, ThrowableListener throwableListener)
         throws ConfigException
     {
         this.nodeConfig = config;
         this.portNo = nodeConfig.getIntegerProperty("portNo");
         this.nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
-        this.exceptionHandler = exceptionHandler;
+        this.throwableListener = throwableListener;
     }
 
     public void start()
@@ -46,6 +46,8 @@ public class DefaultXimixNode
 
             ss.setSoTimeout(1000);                       // TODO: should be a config item
 
+            XimixServices.Builder servicesBuilder = new XimixServices.Builder(nodeContext).withThrowableListener(throwableListener);
+
             while (!stopped.get())
             {
                 try
@@ -54,7 +56,7 @@ public class DefaultXimixNode
 
                     if (!stopped.get())
                     {
-                        nodeContext.addConnection(new XimixServices(nodeContext, s).withThrowableHandler(exceptionHandler));
+                        nodeContext.addConnection(servicesBuilder.build(s));
                     }
                     else
                     {
@@ -69,7 +71,7 @@ public class DefaultXimixNode
         }
         catch (Exception e)
         {
-            exceptionHandler.handle(e);
+            throwableListener.notify(e);
         }
     }
 

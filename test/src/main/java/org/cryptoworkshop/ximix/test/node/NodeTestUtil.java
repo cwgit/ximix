@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.node.XimixNodeBuilder;
 
@@ -51,10 +51,10 @@ public class NodeTestUtil
     }
 
 
-    public static XimixNode getXimixNode(String networkConfig, String nodeConfigPath, ThrowableHandler handler)
+    public static XimixNode getXimixNode(String networkConfig, String nodeConfigPath, ThrowableListener handler)
         throws ConfigException
     {
-        XimixNodeBuilder builder = new XimixNodeBuilder(ResourceAnchor.load(networkConfig)).withThrowableHandler(handler);
+        XimixNodeBuilder builder = new XimixNodeBuilder(ResourceAnchor.load(networkConfig)).withThrowableListener(handler);
 
         return builder.build(ResourceAnchor.load(nodeConfigPath));
     }
@@ -65,10 +65,10 @@ public class NodeTestUtil
         throws ConfigException
     {
 
-       return getXimixNode(networkConfig,nodeConfigPath,new ThrowableHandler()
+       return getXimixNode(networkConfig,nodeConfigPath,new ThrowableListener()
         {
             @Override
-            public void handle(Throwable throwable)
+            public void notify(Throwable throwable)
             {
                 throwable.printStackTrace();
             }

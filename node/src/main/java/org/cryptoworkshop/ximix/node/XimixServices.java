@@ -15,14 +15,6 @@
  */
 package org.cryptoworkshop.ximix.node;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DEROutputStream;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.service.Service;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,43 +22,60 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DEROutputStream;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
+import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.NodeInfo;
+import org.cryptoworkshop.ximix.common.service.Service;
+
 class XimixServices
     implements Runnable
 {
+    static class Builder
+    {
+        private final XimixNodeContext nodeContext;
+
+        private ThrowableListener throwableHandler;
+
+        Builder(XimixNodeContext nodeContext)
+        {
+            this.nodeContext = nodeContext;
+        }
+
+        /**
+         * Set a throwable handler for any uncaught exceptions.
+         *
+         * @param throwableHandler The handler, may be null.
+         * @return this object.
+         */
+        public Builder withThrowableListener(ThrowableListener throwableHandler)
+        {
+            this.throwableHandler = throwableHandler;
+
+            return this;
+        }
+
+        public XimixServices build(Socket s)
+        {
+            return new XimixServices(nodeContext, s, throwableHandler);
+        }
+    }
+
     private final Socket s;
     private final XimixNodeContext nodeContext;
-    private final AtomicBoolean stopped = new AtomicBoolean(false);
-    private int maxInputSize = 32 * 1024;  //TODO should be config item.
-    private ThrowableHandler throwableHandler = null;
+    private final ThrowableListener throwableHandler;
 
-    public XimixServices(XimixNodeContext nodeContext, Socket s)
+    private final AtomicBoolean stopped = new AtomicBoolean(false);
+
+    private int maxInputSize = 32 * 1024;  //TODO should be config item.
+
+    private XimixServices(XimixNodeContext nodeContext, Socket s, ThrowableListener throwableHandler)
     {
         this.s = s;
         this.nodeContext = nodeContext;
-    }
-
-    protected void handle(Throwable ex)
-    {
-        if (throwableHandler == null)
-        {
-            ex.printStackTrace();
-        }
-        else
-        {
-            throwableHandler.handle(ex);
-        }
-    }
-
-    /**
-     * Set a throwable handler for any uncaught exceptions.
-     *
-     * @param throwableHandler The handler, may be null.
-     * @return this object.
-     */
-    public XimixServices withThrowableHandler(ThrowableHandler throwableHandler)
-    {
         this.throwableHandler = throwableHandler;
-        return this;
     }
 
     public void run()
@@ -109,13 +118,12 @@ class XimixServices
         }
         catch (IOException e)
         {
-            handle(e); // TODO seek consultation.
+            throwableHandler.notify(e);
         }
     }
 
     public void stop()
     {
         stopped.set(true);
-
     }
 }

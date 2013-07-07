@@ -30,7 +30,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableHandler;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
@@ -262,7 +262,7 @@ public class CryptoServicesTest
                 }
 
                 @Override
-                public void close(ThrowableHandler continuableThrowableHandler)
+                public void close(ThrowableListener continuableThrowableHandler)
                 {
                     throw new RuntimeException("Not implemented.");
                 }
