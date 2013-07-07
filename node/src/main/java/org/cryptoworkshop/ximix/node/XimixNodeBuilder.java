@@ -27,7 +27,7 @@ import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 public class XimixNodeBuilder
 {
-    private ThrowableListener throwableListener = new ThrowableListener()
+    static ThrowableListener throwableListener = new ThrowableListener()
     {
         @Override
         public void notify(Throwable throwable)

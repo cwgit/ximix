@@ -37,7 +37,7 @@ class XimixServices
     {
         private final XimixNodeContext nodeContext;
 
-        private ThrowableListener throwableHandler;
+        private ThrowableListener throwableListener = XimixNodeBuilder.throwableListener;
 
         Builder(XimixNodeContext nodeContext)
         {
@@ -52,14 +52,14 @@ class XimixServices
          */
         public Builder withThrowableListener(ThrowableListener throwableHandler)
         {
-            this.throwableHandler = throwableHandler;
+            this.throwableListener = throwableHandler;
 
             return this;
         }
 
         public XimixServices build(Socket s)
         {
-            return new XimixServices(nodeContext, s, throwableHandler);
+            return new XimixServices(nodeContext, s, throwableListener);
         }
     }
 
