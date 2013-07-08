@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
-import org.cryptoworkshop.ximix.crypto.KeyType;
+import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;

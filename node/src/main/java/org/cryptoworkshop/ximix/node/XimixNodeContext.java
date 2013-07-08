@@ -43,7 +43,7 @@ import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
-import org.cryptoworkshop.ximix.crypto.KeyType;
+import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.KeyManager;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;

@@ -1,4 +1,4 @@
-package org.cryptoworkshop.ximix.crypto;
+package org.cryptoworkshop.ximix.common.service;
 
 public enum KeyType
 {

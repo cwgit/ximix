@@ -15,6 +15,8 @@
  */
 package org.cryptoworkshop.ximix.crypto;
 
+import org.cryptoworkshop.ximix.common.service.KeyType;
+
 public class SignatureGenerationOptions
 {
     public static class Builder
