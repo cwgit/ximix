@@ -28,5 +28,5 @@ public interface ServicesConnection
     MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
         throws ServiceConnectionException;
 
-    void close(ThrowableListener handler);
+    void close() throws ServiceConnectionException;
 }

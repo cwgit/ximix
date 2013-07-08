@@ -43,9 +43,9 @@ public class ClientSigningService
     }
 
     @Override
-    public void close(ThrowableListener handler)
+    public void shutdown() throws ServiceConnectionException
     {
-        connection.close(handler);
+        connection.close();
     }
 
     public byte[] generateSignature(String keyID, SignatureGenerationOptions sigGenOptions, byte[] message)

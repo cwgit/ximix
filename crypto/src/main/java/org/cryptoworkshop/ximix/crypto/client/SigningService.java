@@ -25,5 +25,5 @@ public interface SigningService
     byte[] generateSignature(String keyID, SignatureGenerationOptions options, byte[] message)
         throws ServiceConnectionException;
 
-    void close(ThrowableListener handler);
+    void shutdown() throws ServiceConnectionException;
 }

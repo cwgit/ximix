@@ -23,6 +23,11 @@ public class ServiceConnectionException
         super(message);
     }
 
+    public ServiceConnectionException(Throwable cause)
+    {
+        super(cause);
+    }
+
     /**
      * Protected to prevent constructor been used on remote side of connection...
      *
@@ -33,4 +38,7 @@ public class ServiceConnectionException
     {
         super(message, cause);
     }
+
+
+
 }

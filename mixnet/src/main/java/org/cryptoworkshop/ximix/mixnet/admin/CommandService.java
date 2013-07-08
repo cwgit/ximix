@@ -67,8 +67,6 @@ public interface CommandService
 
     /**
      * Close any io used by this service.
-     *
-     * @param handler The exception handler.
      */
-    void close(ThrowableListener handler);
+    void shutdown() throws ServiceConnectionException;
 }
