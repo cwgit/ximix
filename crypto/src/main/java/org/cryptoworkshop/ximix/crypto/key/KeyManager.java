@@ -21,8 +21,9 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
-import org.cryptoworkshop.ximix.crypto.util.SharedBigIntegerMap;
-import org.cryptoworkshop.ximix.crypto.util.SharedECPointMap;
+import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
+import org.cryptoworkshop.ximix.crypto.util.ECPointShare;
+import org.cryptoworkshop.ximix.crypto.util.ShareMap;
 
 public class KeyManager
 {
@@ -30,13 +31,13 @@ public class KeyManager
 
     private final Map<String, AsymmetricCipherKeyPair> keyMap = new HashMap<>();
     private final Map<String, BigInteger> hMap = new HashMap<>();
-    private final SharedBigIntegerMap sharedPrivateKeyMap;
-    private final SharedECPointMap sharedPublicKeyMap;
+    private final ShareMap<String, BigInteger> sharedPrivateKeyMap;
+    private final ShareMap<String, ECPoint> sharedPublicKeyMap;
 
     public KeyManager(ScheduledExecutorService executor)
     {
-        sharedPublicKeyMap = new SharedECPointMap(executor);
-        sharedPrivateKeyMap = new SharedBigIntegerMap(executor);
+        sharedPublicKeyMap = new ShareMap<>(executor);
+        sharedPrivateKeyMap = new ShareMap<>(executor);
     }
 
     public synchronized boolean hasPrivateKey(String keyID)
@@ -77,7 +78,7 @@ public class KeyManager
     {
         if (sharedPublicKeyMap.containsKey(keyID))
         {
-            ECPoint q = sharedPublicKeyMap.getValue(keyID, TIME_OUT, TimeUnit.SECONDS);
+            ECPoint q = sharedPublicKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS).getValue();
             ECDomainParameters params = ((ECPublicKeyParameters)keyMap.get(keyID).getPublic()).getParameters();
 
             return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q, params)).getEncoded());
@@ -93,8 +94,8 @@ public class KeyManager
 
         if (share.isRevealed(message.getIndex(), domainParams, hMap.get(keyID)))
         {
-            sharedPrivateKeyMap.addValue(keyID, message.getValue());
-            sharedPublicKeyMap.addValue(keyID, message.getQ());
+            sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(message.getIndex(), message.getValue()));
+            sharedPublicKeyMap.addValue(keyID, new ECPointShare(message.getIndex(), message.getQ()));
         }
         else
         {
@@ -106,6 +107,6 @@ public class KeyManager
 
     public BigInteger getPartialPrivateKey(String keyID)
     {
-        return sharedPrivateKeyMap.getValue(keyID);
+        return sharedPrivateKeyMap.getShare(keyID).getValue();
     }
 }

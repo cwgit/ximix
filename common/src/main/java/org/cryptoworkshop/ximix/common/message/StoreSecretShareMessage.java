@@ -17,6 +17,7 @@ package org.cryptoworkshop.ximix.common.message;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -28,17 +29,20 @@ public class StoreSecretShareMessage
 {
     private final String id;
     private final ASN1Encodable secretShareMessage;
+    private final int sequenceNo;
 
-    public StoreSecretShareMessage(String id, ASN1Encodable secretShareMessage)
+    public StoreSecretShareMessage(String id, int sequenceNo, ASN1Encodable secretShareMessage)
     {
         this.id = id;
+        this.sequenceNo = sequenceNo;
         this.secretShareMessage = secretShareMessage;
     }
 
     public StoreSecretShareMessage(ASN1Sequence sequence)
     {
         this.id = DERUTF8String.getInstance(sequence.getObjectAt(0)).getString();
-        this.secretShareMessage = sequence.getObjectAt(1);
+        this.sequenceNo = ASN1Integer.getInstance(sequence.getObjectAt(1)).getValue().intValue();
+        this.secretShareMessage = sequence.getObjectAt(2);
     }
 
     public static final StoreSecretShareMessage getInstance(Object o)
@@ -60,6 +64,11 @@ public class StoreSecretShareMessage
         return id;
     }
 
+    public int getSequenceNo()
+    {
+        return sequenceNo;
+    }
+
     public ASN1Encodable getSecretShareMessage()
     {
         return secretShareMessage;
@@ -71,6 +80,7 @@ public class StoreSecretShareMessage
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new DERUTF8String(id));
+        v.add(new ASN1Integer(sequenceNo));
         v.add(secretShareMessage);
 
         return new DERSequence(v);

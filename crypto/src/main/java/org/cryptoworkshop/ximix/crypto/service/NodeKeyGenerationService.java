@@ -28,10 +28,10 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
+import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
@@ -110,6 +110,7 @@ public class NodeKeyGenerationService
         }
         catch (Exception e)
         {
+            e.printStackTrace();
             return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("NodeKeyGenerationService failure: " + e.getMessage()));
         }
 
@@ -189,7 +190,7 @@ public class NodeKeyGenerationService
                         {
                             try
                             {
-                                MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.STORE_SHARE, new StoreSecretShareMessage(keyID, messages[counter]));
+                                MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.STORE_SHARE, new StoreSecretShareMessage(keyID, counter, messages[counter]));
                             }
                             catch (ServiceConnectionException e)
                             {

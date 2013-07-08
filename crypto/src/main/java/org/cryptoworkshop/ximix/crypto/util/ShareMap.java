@@ -15,25 +15,24 @@
  */
 package org.cryptoworkshop.ximix.crypto.util;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class SharedBigIntegerMap<T>
+public class ShareMap<K, V>
 {
-    private final Map<T, CountDownLatch> latchMap = new HashMap<>();
-    private final Map<T, BigInteger> sharedMap = new HashMap<>();
+    private final Map<K, CountDownLatch> latchMap = new HashMap<>();
+    private final Map<K, Share<V>> sharedMap = new HashMap<>();
     private final ScheduledExecutorService executor;
 
-    public SharedBigIntegerMap(ScheduledExecutorService executor)
+    public ShareMap(ScheduledExecutorService executor)
     {
         this.executor = executor;
     }
 
-    public void init(T id, int numberOfParties)
+    public void init(K id, int numberOfParties)
     {
         synchronized (this)
         {
@@ -41,7 +40,7 @@ public class SharedBigIntegerMap<T>
         }
     }
 
-    public boolean containsKey(T id)
+    public boolean containsKey(K id)
     {
         synchronized (this)
         {
@@ -49,7 +48,7 @@ public class SharedBigIntegerMap<T>
         }
     }
 
-    public void waitFor(T id)
+    public void waitFor(K id)
     {
         CountDownLatch latch;
         synchronized (this)
@@ -66,12 +65,12 @@ public class SharedBigIntegerMap<T>
         }
     }
 
-    public void addValue(T id, BigInteger value)
+    public void addValue(K id, Share<V> value)
     {
          executor.execute(new AddTask(id, value));
     }
 
-    public BigInteger getValue(T id)
+    public Share<V> getShare(K id)
     {
         try
         {
@@ -94,7 +93,7 @@ public class SharedBigIntegerMap<T>
         }
     }
 
-    public BigInteger getValue(T id, long timeout, TimeUnit timeUnit)
+    public Share<V> getShare(K id, long timeout, TimeUnit timeUnit)
     {
         try
         {
@@ -127,20 +126,19 @@ public class SharedBigIntegerMap<T>
     private class AddTask
         implements Runnable
     {
-        private final T id;
-        private final BigInteger value;
+        private final K id;
+        private final Share<V> share;
 
-        AddTask(T id, BigInteger value)
+        AddTask(K id, Share<V> share)
         {
-
             this.id = id;
-            this.value = value;
+            this.share = share;
         }
 
         @Override
         public void run()
         {
-            synchronized (SharedBigIntegerMap.this)
+            synchronized (ShareMap.this)
             {
                 // other values may have arrived before we get a message
                 // starting the process.
@@ -148,11 +146,11 @@ public class SharedBigIntegerMap<T>
                 {
                     if (sharedMap.containsKey(id))
                     {
-                        sharedMap.put(id, sharedMap.get(id).add(value));
+                        sharedMap.put(id, sharedMap.get(id).add(share));
                     }
                     else
                     {
-                        sharedMap.put(id, value);
+                        sharedMap.put(id, share);
                     }
                     latchMap.get(id).countDown();
                 }

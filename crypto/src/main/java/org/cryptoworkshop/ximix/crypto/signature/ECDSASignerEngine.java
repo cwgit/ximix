@@ -34,6 +34,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.common.message.ECPointMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
@@ -42,7 +43,6 @@ import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.crypto.operator.ECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAFetchMessage;
@@ -52,8 +52,9 @@ import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAPointMessage;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.crypto.threshold.ShamirSecretSplitter;
 import org.cryptoworkshop.ximix.crypto.threshold.SplitSecret;
-import org.cryptoworkshop.ximix.crypto.util.SharedBigIntegerMap;
-import org.cryptoworkshop.ximix.crypto.util.SharedECPointMap;
+import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
+import org.cryptoworkshop.ximix.crypto.util.ECPointShare;
+import org.cryptoworkshop.ximix.crypto.util.ShareMap;
 
 /**
  * Threshold ECDSA signer based on "A Robust Threshold Elliptic Curve Digital Signature Providing a New Verifiable Secret Sharing Scheme" by Ibrahim, Ali, Ibrahim, and El-sawi.
@@ -62,12 +63,12 @@ import org.cryptoworkshop.ximix.crypto.util.SharedECPointMap;
 public class ECDSASignerEngine
     extends SignerEngine
 {
-    private final SharedBigIntegerMap<SigID> sharedKMap;
-    private final SharedBigIntegerMap<SigID> sharedAMap;
-    private final SharedBigIntegerMap<SigID> sharedBMap;
-    private final SharedBigIntegerMap<SigID> sharedCMap;
-    private final SharedBigIntegerMap<SigID> sharedMuMap;
-    private final SharedECPointMap<SigID> sharedPMap;
+    private final ShareMap<SigID, BigInteger> sharedKMap;
+    private final ShareMap<SigID, BigInteger> sharedAMap;
+    private final ShareMap<SigID, BigInteger> sharedBMap;
+    private final ShareMap<SigID, BigInteger> sharedCMap;
+    private final ShareMap<SigID, BigInteger> sharedMuMap;
+    private final ShareMap<SigID, ECPoint> sharedPMap;
 
     private final Map<String, ECDomainParameters> paramsMap = Collections.synchronizedMap(new HashMap<String, ECDomainParameters>());
 
@@ -101,12 +102,12 @@ public class ECDSASignerEngine
     {
         super(Algorithms.ECDSA, nodeContext);
 
-        this.sharedKMap = new SharedBigIntegerMap<>(nodeContext.getScheduledExecutor());
-        this.sharedPMap = new SharedECPointMap<>(nodeContext.getScheduledExecutor());
-        this.sharedAMap = new SharedBigIntegerMap<>(nodeContext.getScheduledExecutor());
-        this.sharedBMap = new SharedBigIntegerMap<>(nodeContext.getScheduledExecutor());
-        this.sharedCMap = new SharedBigIntegerMap<>(nodeContext.getScheduledExecutor());
-        this.sharedMuMap = new SharedBigIntegerMap<>(nodeContext.getScheduledExecutor());
+        this.sharedKMap = new ShareMap<>(nodeContext.getScheduledExecutor());
+        this.sharedPMap = new ShareMap<>(nodeContext.getScheduledExecutor());
+        this.sharedAMap = new ShareMap<>(nodeContext.getScheduledExecutor());
+        this.sharedBMap = new ShareMap<>(nodeContext.getScheduledExecutor());
+        this.sharedCMap = new ShareMap<>(nodeContext.getScheduledExecutor());
+        this.sharedMuMap = new ShareMap<>(nodeContext.getScheduledExecutor());
     }
 
     public int getAlgorithm()
@@ -206,21 +207,22 @@ public class ECDSASignerEngine
                 sigID = new SigID(storeMessage.getID());
                 domainParams = paramsMap.get(pointMessage.getKeyID());
 
-                sharedPMap.addValue(sigID, domainParams.getCurve().decodePoint(pointMessage.getPoint()));
+                sharedPMap.addValue(sigID, new ECPointShare(storeMessage.getSequenceNo(), domainParams.getCurve().decodePoint(pointMessage.getPoint())));
 
                 return new MessageReply(MessageReply.Type.OKAY);
             case FETCH_P:
                 ECDSAFetchMessage fetchMessage = ECDSAFetchMessage.getInstance(message.getPayload());
                 sigID = new SigID(fetchMessage.getSigID());
 
-                return replyOkay(new ECPointMessage(sharedPMap.getValue(sigID)));
+                return replyOkay(new ECPointMessage(sharedPMap.getShare(sigID).getValue()));
             case FETCH_MU:
                 fetchMessage = ECDSAFetchMessage.getInstance(message.getPayload());
                 sigID = new SigID(fetchMessage.getSigID());
 
                 domainParams = paramsMap.get(fetchMessage.getKeyID());
 
-                return replyOkay(new BigIntegerMessage(sharedKMap.getValue(sigID).multiply(sharedAMap.getValue(sigID)).add(sharedBMap.getValue(sigID)).mod(domainParams.getN())));
+                return replyOkay(new BigIntegerMessage(sharedKMap.getShare(sigID).getValue().multiply(
+                                    sharedAMap.getShare(sigID).getValue()).add(sharedBMap.getShare(sigID).getValue()).mod(domainParams.getN())));
             case PRIVATE_KEY_SIGN:
                 ECDSAPartialCreateMessage partialMessage = ECDSAPartialCreateMessage.getInstance(message.getPayload());
 
@@ -235,11 +237,11 @@ public class ECDSASignerEngine
 
                 ECPrivateKeyOperator ecOperator = (ECPrivateKeyOperator)operator;
 
-                BigInteger kInvShare = sharedAMap.getValue(sigID).multiply(muMap.get(sigID).modInverse(ecOperator.getDomainParameters().getN()));
+                BigInteger kInvShare = sharedAMap.getShare(sigID).getValue().multiply(muMap.get(sigID).modInverse(ecOperator.getDomainParameters().getN()));
                 BigInteger eComponent = partialMessage.getE();
                 BigInteger dComponent = ecOperator.transform(rMap.get(sigID));
 
-                MessageReply reply = replyOkay(new BigIntegerMessage(kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getValue(sigID))));
+                MessageReply reply = replyOkay(new BigIntegerMessage(kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getShare(sigID).getValue())));
                 // TODO: need to clean up state tables here.
                 return reply;
             default:
@@ -270,12 +272,12 @@ public class ECDSASignerEngine
         }
     }
 
-    private void addValue(SharedBigIntegerMap sharedValueTable, SignatureMessage message)
+    private void addValue(ShareMap sharedValueTable, SignatureMessage message)
     {
         StoreSecretShareMessage storeMessage = StoreSecretShareMessage.getInstance(message.getPayload());
         SigID sigID = new SigID(storeMessage.getID());
 
-        sharedValueTable.addValue(sigID, ASN1Integer.getInstance(storeMessage.getSecretShareMessage()).getValue());
+        sharedValueTable.addValue(sigID, new BigIntegerShare(storeMessage.getSequenceNo(), ASN1Integer.getInstance(storeMessage.getSecretShareMessage()).getValue()));
     }
 
     private void generateAndSendKAndP(SignatureMessage message)
@@ -406,7 +408,7 @@ public class ECDSASignerEngine
         muMap.put(sigID, accumulateBigInt(ecdsaCreate.getNodesToUse(), Type.FETCH_MU, new ECDSAFetchMessage(ecdsaCreate.getSigID(), ecdsaCreate.getKeyID(), ecdsaCreate.getNodesToUse()), n));
     }
 
-    private void generateAndSendZeroShare(SignatureMessage message, Type type, SharedBigIntegerMap shareMap)
+    private void generateAndSendZeroShare(SignatureMessage message, Type type, ShareMap shareMap)
         throws IOException
     {
         ECDSAInitialiseMessage ecdsaCreate = ECDSAInitialiseMessage.getInstance(message.getPayload());
@@ -484,10 +486,10 @@ public class ECDSASignerEngine
         private final Type type;
         private final SigID sigID;
         private final Set<String> peers;
-        private final SharedBigIntegerMap sharedValueMap;
+        private final ShareMap sharedValueMap;
         private final BigInteger[] messages;
 
-        SendShareTask(SigID sigID, Type type, Set<String> peers, SharedBigIntegerMap sharedValueMap, BigInteger[] messages)
+        SendShareTask(SigID sigID, Type type, Set<String> peers, ShareMap sharedValueMap, BigInteger[] messages)
         {
             this.sigID = sigID;
             this.type = type;
@@ -504,18 +506,18 @@ public class ECDSASignerEngine
                 System.err.println("sending k: " + nodeContext.getName() + " to " + name);
                 if (name.equals(nodeContext.getName()))
                 {
-                    sharedValueMap.addValue(sigID, messages[index++]);
+                    sharedValueMap.addValue(sigID, new BigIntegerShare(index, messages[index]));
                 }
                 else
                 {
-                    final int counter = index++;
+                    final int counter = index;
                     execute(new Runnable()
                     {
                         public void run()
                         {
                             try
                             {
-                                MessageReply rep = sendMessage(name, type, new StoreSecretShareMessage(sigID.getID(), new ASN1Integer(messages[counter])));
+                                MessageReply rep = sendMessage(name, type, new StoreSecretShareMessage(sigID.getID(), counter, new ASN1Integer(messages[counter])));
                             }
                             catch (ServiceConnectionException e)
                             {
@@ -525,6 +527,7 @@ public class ECDSASignerEngine
                     });
 
                 }
+                index++;
             }
         }
     }
@@ -558,7 +561,7 @@ public class ECDSASignerEngine
 
                 if (name.equals(nodeContext.getName()))
                 {
-                    sharedPMap.addValue(sigID, p);
+                    sharedPMap.addValue(sigID, new ECPointShare(counter, p));
                 }
                 else
                 {
@@ -568,7 +571,7 @@ public class ECDSASignerEngine
                         {
                             try
                             {
-                                MessageReply rep = sendMessage(name, Type.STORE_P, new StoreSecretShareMessage(sigID.getID(), new ECDSAPointMessage(keyID, p)));
+                                MessageReply rep = sendMessage(name, Type.STORE_P, new StoreSecretShareMessage(sigID.getID(), counter, new ECDSAPointMessage(keyID, p)));
                             }
                             catch (ServiceConnectionException e)
                             {
