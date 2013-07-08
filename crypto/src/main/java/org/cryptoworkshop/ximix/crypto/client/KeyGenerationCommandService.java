@@ -15,20 +15,14 @@
  */
 package org.cryptoworkshop.ximix.crypto.client;
 
-import java.io.IOException;
-import java.math.BigInteger;
-
 import org.bouncycastle.asn1.ASN1String;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
-import org.cryptoworkshop.ximix.common.message.GenerateKeyPairMessage;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.*;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
+
+import java.io.IOException;
+import java.math.BigInteger;
 
 public class KeyGenerationCommandService
     implements KeyGenerationService
@@ -41,9 +35,10 @@ public class KeyGenerationCommandService
     }
 
     @Override
-    public void close(ThrowableListener throwableHandler)
+    public void shutdown()
+        throws ServiceConnectionException
     {
-        connection.close(throwableHandler);
+        connection.close();
     }
 
     @Override

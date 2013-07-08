@@ -23,5 +23,5 @@ public interface UploadService
     void uploadMessage(String boardName, byte[] message)
         throws ServiceConnectionException;
 
-    void close(ThrowableListener handler);
+    void shutdown() throws ServiceConnectionException;
 }

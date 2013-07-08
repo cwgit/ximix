@@ -44,7 +44,7 @@ public class RegistrarTest
             TestCase.assertTrue(true);
         }
 
-        keyGenerationService.close(null);
+        keyGenerationService.shutdown();
 
 
     }

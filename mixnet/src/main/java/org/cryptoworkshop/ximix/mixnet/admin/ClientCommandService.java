@@ -60,9 +60,9 @@ public class ClientCommandService
     }
 
     @Override
-    public void close(ThrowableListener handler)
+    public void shutdown() throws ServiceConnectionException
     {
-        connection.close(handler);
+        connection.close();
     }
 
     @Override

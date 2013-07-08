@@ -262,7 +262,7 @@ public class CryptoServicesTest
                 }
 
                 @Override
-                public void close(ThrowableListener continuableThrowableHandler)
+                public void close() throws ServiceConnectionException
                 {
                     throw new RuntimeException("Not implemented.");
                 }

@@ -135,9 +135,9 @@ public class ECDSAProcessingTest extends TestCase
         // Shutdown nodes and close services.
         //
         NodeTestUtil.shutdownNodes();
-        keyGenerationService.close(null);
-        signingService.close(null);
-        client.close(null);
+        keyGenerationService.shutdown();
+        signingService.shutdown();
+        client.shutdown();
 
     }
 
