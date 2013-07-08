@@ -1,4 +1,4 @@
-package org.cryptoworkshop.ximix.common.message;
+package org.cryptoworkshop.ximix.crypto.key.message;
 
 import java.math.BigInteger;
 

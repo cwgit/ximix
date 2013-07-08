@@ -1,4 +1,4 @@
-package org.cryptoworkshop.ximix.node;
+package org.cryptoworkshop.ximix.crypto.key;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -18,13 +18,13 @@ import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
+import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.util.SharedBigIntegerMap;
 import org.cryptoworkshop.ximix.crypto.util.SharedECPointMap;
 
-class KeyManager
+public class KeyManager
 {
     private static final int TIME_OUT = 20;
 
@@ -33,7 +33,7 @@ class KeyManager
     private final SharedBigIntegerMap sharedPrivateKeyMap;
     private final SharedECPointMap sharedPublicKeyMap;
 
-    KeyManager(ScheduledExecutorService executor)
+    public KeyManager(ScheduledExecutorService executor)
     {
         sharedPublicKeyMap = new SharedECPointMap(executor);
         sharedPrivateKeyMap = new SharedBigIntegerMap(executor);

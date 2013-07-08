@@ -13,43 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.message;
-
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Set;
-import java.util.TreeSet;
+package org.cryptoworkshop.ximix.crypto.key.message;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.DLSet;
 
-public class ECKeyGenParams
-    extends KeyGenerationParameters
+public class KeyGenParams
+    extends ASN1Object
 {
     private final String domainParameters;
-    private final BigInteger h;
 
-    public ECKeyGenParams(BigInteger h, String domainParameters)
+    public KeyGenParams(String domainParameters)
     {
-        super(EC_REG_CURVE);
         this.domainParameters = domainParameters;
-        this.h = h;
     }
 
-    ECKeyGenParams(ASN1Sequence seq)
+    private KeyGenParams(ASN1Sequence seq)
     {
-        super(EC_REG_CURVE);
-        this.domainParameters = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
-        this.h = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue();
+        this.domainParameters = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
+    }
+
+    public static final KeyGenParams getInstance(Object o)
+    {
+        if (o instanceof KeyGenParams)
+        {
+            return (KeyGenParams)o;
+        }
+        else if (o != null)
+        {
+            return new KeyGenParams(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     @Override
@@ -57,9 +56,7 @@ public class ECKeyGenParams
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(EC_REG_CURVE));
         v.add(new DERUTF8String(domainParameters));
-        v.add(new ASN1Integer(h));
 
         return new DERSequence(v);
     }
@@ -67,10 +64,5 @@ public class ECKeyGenParams
     public String getDomainParameters()
     {
         return domainParameters;
-    }
-
-    public BigInteger getH()
-    {
-        return h;
     }
 }

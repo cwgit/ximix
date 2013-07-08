@@ -18,13 +18,10 @@ package org.cryptoworkshop.ximix.node;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,29 +30,24 @@ import java.util.concurrent.TimeUnit;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
-import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.common.message.Capability;
-import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.common.message.KeyGenerationParameters;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
+import org.cryptoworkshop.ximix.crypto.KeyType;
+import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
+import org.cryptoworkshop.ximix.crypto.key.KeyManager;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
-import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
-import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSplitSecret;
-import org.cryptoworkshop.ximix.crypto.threshold.ECNewDKGSecretSplitter;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -142,48 +134,6 @@ public class XimixNodeContext
         }
     }
 
-    public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, KeyGenerationParameters kGenParams)
-    {
-        ECKeyGenParams ecKeyGenParams = (ECKeyGenParams) kGenParams;
-        // TODO: should have a source of randomness.
-        AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, peers.size(), ecKeyGenParams);
-
-        ECPrivateKeyParameters privKey = (ECPrivateKeyParameters) keyPair.getPrivate();
-        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(peers.size(), minimumNumberOfPeers, ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
-
-        ECCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getD());
-        ECCommittedSecretShare[] shares = splitSecret.getCommittedShares();
-        ECCommittedSecretShareMessage[] messages = new ECCommittedSecretShareMessage[shares.length];
-
-        BigInteger[] aCoefficients = splitSecret.getCoefficients();
-        ECPoint[] qCommitments = new ECPoint[aCoefficients.length];
-
-        for (int i = 0; i != qCommitments.length; i++)
-        {
-            qCommitments[i] = privKey.getParameters().getG().multiply(aCoefficients[i]);
-        }
-
-        for (int i = 0; i != shares.length; i++)
-        {
-            messages[i] = new ECCommittedSecretShareMessage(i, shares[i].getValue(), shares[i].getWitness(), shares[i].getCommitmentFactors(),
-                    ((ECPublicKeyParameters) keyPair.getPublic()).getQ(), qCommitments);
-        }
-
-        return messages;
-    }
-
-    @Override
-    public void storeThresholdKeyShare(String keyID, ECCommittedSecretShareMessage message)
-    {
-        try
-        {
-            keyManager.buildSharedKey(keyID, message);
-        } catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public <T> T getDomainParameters(String keyID)
     {
@@ -257,6 +207,12 @@ public class XimixNodeContext
     public ScheduledExecutorService getScheduledExecutor()
     {
         return multiTaskExecutor;
+    }
+
+    @Override
+    public ThresholdKeyPairGenerator getKeyPairGenerator(KeyType keyType)
+    {
+        return new ECNewDKGGenerator(keyType, keyManager);
     }
 
     @Override

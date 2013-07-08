@@ -1,15 +1,15 @@
-package org.cryptoworkshop.ximix.common.message.test;
+package org.cryptoworkshop.ximix.crypto.key.message.test;
 
 import java.io.IOException;
 import java.math.BigInteger;
 
-import org.junit.Assert;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Base64;
-import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
+import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class ECCommittedSecretShareMessageTest

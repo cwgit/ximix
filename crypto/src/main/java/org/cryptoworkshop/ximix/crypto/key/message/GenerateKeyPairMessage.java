@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.message;
+package org.cryptoworkshop.ximix.crypto.key.message;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,22 +36,24 @@ import org.bouncycastle.asn1.DLSet;
 public class GenerateKeyPairMessage
     extends ASN1Object
 {
+    private final int algorithm;
     private final Set<String> nodesToUse;
     private final String keyID;
     private final int threshold;
-    private final KeyGenerationParameters keyGenParameters;
+    private final KeyGenParams keyGenParameters;
 
-    public GenerateKeyPairMessage(String keyID, KeyGenerationParameters keyGenParameters, int threshold, String... nodesToUse)
+    public GenerateKeyPairMessage(int algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, String... nodesToUse)
     {
-        this(keyID, keyGenParameters, threshold, new HashSet<>(Arrays.asList((String[])nodesToUse)));
+        this(algorithm, keyID, keyGenParameters, threshold, new HashSet<>(Arrays.asList((String[])nodesToUse)));
     }
 
-    public GenerateKeyPairMessage(String keyID, KeyGenerationParameters keyGenParameters, int threshold, Set<String> nodesToUse)
+    public GenerateKeyPairMessage(int algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, Set<String> nodesToUse)
     {
         // TODO: just in case order is important,,, trying to avoid this if possible.
         Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());
         orderedSet.addAll(nodesToUse);
 
+        this.algorithm = algorithm;
         this.nodesToUse = Collections.unmodifiableSet(orderedSet);
         this.keyID = keyID;
         this.threshold = threshold;
@@ -60,10 +62,11 @@ public class GenerateKeyPairMessage
 
     private GenerateKeyPairMessage(ASN1Sequence seq)
     {
-        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.keyGenParameters = KeyGenerationParameters.getInstance(seq.getObjectAt(1));
-        this.threshold = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue();
-        this.nodesToUse = toOrderedSet(ASN1Set.getInstance(seq.getObjectAt(3)));
+        this.algorithm = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue();
+        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+        this.keyGenParameters = KeyGenParams.getInstance(seq.getObjectAt(2));
+        this.threshold = ASN1Integer.getInstance(seq.getObjectAt(3)).getValue().intValue();
+        this.nodesToUse = toOrderedSet(ASN1Set.getInstance(seq.getObjectAt(4)));
     }
 
     public static final GenerateKeyPairMessage getInstance(Object o)
@@ -85,6 +88,7 @@ public class GenerateKeyPairMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
+        v.add(new ASN1Integer(algorithm));
         v.add(new DERUTF8String(keyID));
         v.add(keyGenParameters);
         v.add(new ASN1Integer(threshold));
@@ -108,7 +112,7 @@ public class GenerateKeyPairMessage
         return threshold;
     }
 
-    public KeyGenerationParameters getKeyGenParameters()
+    public KeyGenParams getKeyGenParameters()
     {
         return keyGenParameters;
     }

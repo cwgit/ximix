@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.crypto.service;
 
+import java.math.BigInteger;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -24,15 +25,18 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.common.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.common.message.GenerateKeyPairMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.crypto.KeyType;
+import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
+import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
+import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.crypto.key.message.GenerateKeyPairMessage;
+import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
 
 public class NodeKeyGenerationService
     implements Service
@@ -58,38 +62,34 @@ public class NodeKeyGenerationService
             {
             case INITIATE_GENERATE_KEY_PAIR:
                 final GenerateKeyPairMessage initiateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
-                final Set<String> peersToInitiate = initiateMessage.getNodesToUse();
 
                 if (initiateMessage.getNodesToUse().contains(nodeContext.getName()))
                 {
-                    //
-                    // generate our part
-                    //
-                    ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(initiateMessage.getKeyID(), peersToInitiate, initiateMessage.getThreshold(), initiateMessage.getKeyGenParameters());
+                    KeyGenParams ecGenParams = KeyGenParams.getInstance(initiateMessage.getKeyGenParameters());
 
                     //
-                    // start everyone else
+                    // Generate H, start everyone else      TODO generate H
                     //
+                    ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
+                    ECKeyGenParams ecKeyGenParams = new ECKeyGenParams(initiateMessage.getKeyID(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
+                    ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
 
-                    nodeContext.execute(new InitiateKeyGenTask(initiateMessage));
-
-                    //
-                    // send our shares.
-                    //
-                    nodeContext.execute(new SendShareTask(initiateMessage.getKeyID(), peersToInitiate, messages));
+                    nodeContext.execute(new InitiateKeyGenTask(ecKeyGenParams));
+                    nodeContext.execute(new SendShareTask(generator, ecKeyGenParams.getKeyID(), ecKeyGenParams.getNodesToUse(), messages));
                 }
 
                 return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
             case GENERATE_KEY_PAIR:
-                final GenerateKeyPairMessage generateMessage = GenerateKeyPairMessage.getInstance(message.getPayload());
-                final Set<String> involvedPeers = generateMessage.getNodesToUse();
+                final ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)ECKeyGenParams.getInstance(message.getPayload());
+                final Set<String> involvedPeers = ecKeyGenParams.getNodesToUse();
 
                 if (involvedPeers.contains(nodeContext.getName()))
                 {
-                    ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)generateMessage.getKeyGenParameters();
-                    ECCommittedSecretShareMessage[] messages = nodeContext.generateThresholdKey(generateMessage.getKeyID(), involvedPeers, generateMessage.getThreshold(), ecKeyGenParams);
+                    ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
 
-                    nodeContext.execute(new SendShareTask(generateMessage.getKeyID(), involvedPeers, messages));
+                    ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
+
+                    nodeContext.execute(new SendShareTask(generator, ecKeyGenParams.getKeyID(), involvedPeers, messages));
                 }
 
                 return new MessageReply(MessageReply.Type.OKAY);
@@ -99,7 +99,9 @@ public class NodeKeyGenerationService
                 System.err.println("Store: " + nodeContext.getName());
                 // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
                 // till we can validate them.
-                nodeContext.execute(new StoreShareTask(sssMessage.getID(), shareMessage));
+                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
+
+                nodeContext.execute(new StoreShareTask(generator, sssMessage.getID(), shareMessage));
 
                 return new MessageReply(MessageReply.Type.OKAY);
             default:
@@ -123,10 +125,10 @@ public class NodeKeyGenerationService
     private class InitiateKeyGenTask
         implements Runnable
     {
-        private final GenerateKeyPairMessage initiateMessage;
+        private final ECKeyGenParams initiateMessage;
         private final Set<String> peersToInitiate;
 
-        InitiateKeyGenTask(GenerateKeyPairMessage initiateMessage)
+        InitiateKeyGenTask(ECKeyGenParams initiateMessage)
         {
             this.initiateMessage = initiateMessage;
             this.peersToInitiate = initiateMessage.getNodesToUse();
@@ -155,12 +157,14 @@ public class NodeKeyGenerationService
     private class SendShareTask
         implements Runnable
     {
+        private final ECNewDKGGenerator generator;
         private final String keyID;
         private final Set<String> peers;
         private final ECCommittedSecretShareMessage[] messages;
 
-        SendShareTask(String keyID, Set<String> peers, ECCommittedSecretShareMessage[] messages)
+        SendShareTask(ECNewDKGGenerator generator, String keyID, Set<String> peers, ECCommittedSecretShareMessage[] messages)
         {
+            this.generator = generator;
             this.keyID = keyID;
             this.peers = peers;
             this.messages = messages;
@@ -174,7 +178,7 @@ public class NodeKeyGenerationService
                 System.err.println("sending: " + nodeContext.getName() + " to " + name);
                 if (name.equals(nodeContext.getName()))
                 {
-                    nodeContext.storeThresholdKeyShare(keyID, messages[index++]);
+                    generator.storeThresholdKeyShare(keyID, messages[index++]);
                 }
                 else
                 {
@@ -202,11 +206,13 @@ public class NodeKeyGenerationService
     private class StoreShareTask
         implements Runnable
     {
+        private final ECNewDKGGenerator generator;
         private final String keyID;
         private final ECCommittedSecretShareMessage message;
 
-        StoreShareTask(String keyID, ECCommittedSecretShareMessage message)
+        StoreShareTask(ECNewDKGGenerator generator, String keyID, ECCommittedSecretShareMessage message)
         {
+            this.generator = generator;
             this.keyID = keyID;
             this.message = message;
         }
@@ -216,7 +222,7 @@ public class NodeKeyGenerationService
         {
             if (nodeContext.hasPrivateKey(keyID))
             {
-                nodeContext.storeThresholdKeyShare(keyID, message);
+                generator.storeThresholdKeyShare(keyID, message);
             }
             else
             {

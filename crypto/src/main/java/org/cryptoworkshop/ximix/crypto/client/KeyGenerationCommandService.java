@@ -15,14 +15,21 @@
  */
 package org.cryptoworkshop.ximix.crypto.client;
 
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.asn1.ASN1String;
-import org.cryptoworkshop.ximix.common.message.*;
+import org.bouncycastle.math.ec.ECConstants;
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
-
-import java.io.IOException;
-import java.math.BigInteger;
+import org.cryptoworkshop.ximix.crypto.key.message.GenerateKeyPairMessage;
+import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
 
 public class KeyGenerationCommandService
     implements KeyGenerationService
@@ -45,8 +52,7 @@ public class KeyGenerationCommandService
     public byte[] generatePublicKey(String keyID, KeyGenerationOptions keyGenOptions)
         throws ServiceConnectionException
     {
-        BigInteger h = BigInteger.valueOf(1000001); // TODO
-        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage(keyID, new ECKeyGenParams(h, keyGenOptions.getParameters()[0]), keyGenOptions.getThreshold(), keyGenOptions.getNodesToUse());
+        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage(keyGenOptions.getAlgorithm().ordinal(), keyID, new KeyGenParams(keyGenOptions.getParameters()[0]), keyGenOptions.getThreshold(), keyGenOptions.getNodesToUse());
 
         MessageReply reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
 
@@ -93,5 +99,18 @@ public class KeyGenerationCommandService
         {
             throw new ServiceConnectionException("malformed public key returned: " + e.getMessage());
         }
+    }
+
+    static BigInteger generateK(BigInteger n, SecureRandom random)
+    {
+        int                    nBitLength = n.bitLength();
+        BigInteger             k = new BigInteger(nBitLength, random);
+
+        while (k.equals(ECConstants.ZERO) || (k.compareTo(n) >= 0))
+        {
+            k = new BigInteger(nBitLength, random);
+        }
+
+        return k;
     }
 }

@@ -16,13 +16,11 @@
 package org.cryptoworkshop.ximix.common.service;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.cryptoworkshop.ximix.common.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.common.message.KeyGenerationParameters;
+import org.cryptoworkshop.ximix.crypto.KeyType;
 
 public interface NodeContext
 {
@@ -36,10 +34,6 @@ public interface NodeContext
     Map<String, ServicesConnection> getPeerMap();
 
     SubjectPublicKeyInfo getPublicKey(String keyID);
-
-    ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, Set<String> peers, int minimumNumberOfPeers, KeyGenerationParameters kGenParams);
-
-    void storeThresholdKeyShare(String keyID, ECCommittedSecretShareMessage message);
 
     /**
      * @deprecated
@@ -65,4 +59,6 @@ public interface NodeContext
     void schedule(Runnable task, long time, TimeUnit timeUnit);
 
     ScheduledExecutorService getScheduledExecutor();
+
+    ThresholdKeyPairGenerator getKeyPairGenerator(KeyType algorithm);
 }

@@ -16,7 +16,6 @@
 package org.cryptoworkshop.ximix.common.service;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.Capability;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
