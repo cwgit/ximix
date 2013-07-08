@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.node.XimixNode;
@@ -95,4 +96,23 @@ public class NodeTestUtil
         }
     }
 
+
+    /**
+     * Print ln..
+     * @param val
+     */
+    public static void printHexln(byte[] val)
+    {
+        System.out.println(new String(Hex.encode(val)));
+    }
+
+
+    /**
+     * Print ln..
+     * @param val
+     */
+    public static void printHexln(String prefix, byte[] val)
+    {
+        System.out.println(prefix+": "+new String(Hex.encode(val)));
+    }
 }
