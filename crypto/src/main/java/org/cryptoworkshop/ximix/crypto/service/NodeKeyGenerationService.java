@@ -74,8 +74,8 @@ public class NodeKeyGenerationService
                     ECKeyGenParams ecKeyGenParams = new ECKeyGenParams(initiateMessage.getKeyID(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
                     ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
 
-                    nodeContext.execute(new InitiateKeyGenTask(ecKeyGenParams));
                     nodeContext.execute(new SendShareTask(generator, ecKeyGenParams.getKeyID(), ecKeyGenParams.getNodesToUse(), messages));
+                    nodeContext.execute(new InitiateKeyGenTask(ecKeyGenParams));
                 }
 
                 return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));

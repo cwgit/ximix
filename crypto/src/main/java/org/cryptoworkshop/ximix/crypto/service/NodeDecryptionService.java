@@ -35,7 +35,6 @@ import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.crypto.operator.ECPrivateKeyOperator;
-import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
 
 public class NodeDecryptionService
     implements Service
@@ -63,7 +62,7 @@ public class NodeDecryptionService
 
             PrivateKeyOperator operator = nodeContext.getPrivateKeyOperator(decMessage.getKeyID());
 
-            if (!(operator instanceof BcECPrivateKeyOperator))
+            if (!(operator instanceof ECPrivateKeyOperator))
             {
                 return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Inappropriate key type"));
             }
@@ -77,7 +76,7 @@ public class NodeDecryptionService
                 PairSequence ps = PairSequence.getInstance(domainParameters.getCurve(), messages.get(i));
                 ECPair[] pairs = ps.getECPairs();
                 for (int j = 0; j != pairs.length; j++)
-                {
+                {                                                   System.err.println("Heeerrrre: " + nodeContext.getName());
                     pairs[j] = new ECPair(ecOperator.transform(pairs[j].getX()), pairs[j].getY());
                 }
                 try

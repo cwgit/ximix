@@ -114,8 +114,6 @@ public class CryptoServicesTest
 
         XimixNodeContext context = contextMap.get("A");
 
-        BigInteger h = BigInteger.valueOf(1000001);
-
         final ServicesConnection connection = context.getPeerMap().get("B");
         final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
         final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage(1, "ECKEY", new KeyGenParams("secp256r1"), 3, peers);

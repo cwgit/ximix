@@ -25,6 +25,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
@@ -34,7 +35,6 @@ import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.DownloadOperationListener;
-import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.mixnet.admin.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.mixnet.client.UploadService;
 import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
@@ -87,15 +87,15 @@ public class Main
         // set up 100 random messages
         final ECPoint[] plainText1 = new ECPoint[100];
         final ECPoint[] plainText2 = new ECPoint[100];
-//        for (int i = 0; i != plainText1.length; i++)
-//        {
-//            plainText1[i] = generatePoint(pubKey.getParameters(), random);
-//            plainText2[i] = generatePoint(pubKey.getParameters(), random);
-//
-//            PairSequence encrypted = new PairSequence(new ECPair[] { encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i]) });
-//
-//            client.uploadMessage("FRED", encrypted.getEncoded());
-//        }
+        for (int i = 0; i != plainText1.length; i++)
+        {
+            plainText1[i] = generatePoint(pubKey.getParameters(), random);
+            plainText2[i] = generatePoint(pubKey.getParameters(), random);
+
+            PairSequence encrypted = new PairSequence(new ECPair[] { encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i]) });
+
+            client.uploadMessage("FRED", encrypted.getEncoded());
+        }
 
         CommandService commandService = adminRegistrar.connect(CommandService.class);
 
@@ -116,7 +116,7 @@ public class Main
             }
         });
 
-        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().setKeyID("ECKEY").setThreshold(2).build(), new DownloadOperationListener()
+        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().withKeyID("ECKEY").withThreshold(2).withNodes("A", "B").build(), new DownloadOperationListener()
         {
             int counter = 0;
 

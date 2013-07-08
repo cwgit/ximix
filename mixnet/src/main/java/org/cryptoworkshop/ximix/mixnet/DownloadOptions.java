@@ -21,22 +21,30 @@ public class DownloadOptions
     {
         private String keyID;
         private int threshold;
+        private String[] nodesToUse;
 
         public Builder()
         {
 
         }
 
-        public Builder setKeyID(String keyID)
+        public Builder withKeyID(String keyID)
         {
             this.keyID = keyID;
 
             return this;
         }
 
-        public Builder setThreshold(int threshold)
+        public Builder withThreshold(int threshold)
         {
             this.threshold = threshold;
+
+            return this;
+        }
+
+        public Builder withNodes(String... nodesToUse)
+        {
+            this.nodesToUse = nodesToUse;
 
             return this;
         }
@@ -49,11 +57,13 @@ public class DownloadOptions
 
     private final String keyID;
     private final int threshold;
+    private final String[] nodesToUse;
 
     private DownloadOptions(Builder builder)
     {
         this.keyID = builder.keyID;
         this.threshold = builder.threshold;
+        this.nodesToUse = builder.nodesToUse.clone();
     }
 
     public String getKeyID()
@@ -64,5 +74,10 @@ public class DownloadOptions
     public int getThreshold()
     {
         return threshold;
+    }
+
+    public String[] getNodesToUse()
+    {
+        return nodesToUse.clone();
     }
 }

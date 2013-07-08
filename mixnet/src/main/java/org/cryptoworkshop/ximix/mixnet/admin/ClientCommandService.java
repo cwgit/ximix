@@ -17,7 +17,11 @@ package org.cryptoworkshop.ximix.mixnet.admin;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -29,7 +33,6 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
@@ -204,7 +207,7 @@ public class ClientCommandService
 
                 if (options.getKeyID() != null)
                 {
-                    String[] nodes = connection.getActiveNodeNames().toArray(new String[connection.getActiveNodeNames().size()]);
+                    String[] nodes = toOrderedSet(options.getNodesToUse()).toArray(new String[0]);
 
                     for (;;)
                     {
@@ -216,7 +219,6 @@ public class ClientCommandService
                         {
                             break;
                         }
-
 
                         MessageReply[] partialDecryptResponses = new MessageReply[options.getThreshold()];
 
@@ -307,6 +309,28 @@ public class ClientCommandService
                 e.printStackTrace();
                 notifier.failed(e.toString());
             }
+        }
+    }
+
+    static Set<String> toOrderedSet(String[] nodes)
+    {
+        Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());
+
+        for (String node : nodes)
+        {
+            orderedSet.add(node);
+        }
+
+        return Collections.unmodifiableSet(orderedSet);
+    }
+
+    private static class CaseInsensitiveComparator
+        implements Comparator<String>
+    {
+        @Override
+        public int compare(String s1, String s2)
+        {
+            return s1.compareToIgnoreCase(s2);
         }
     }
 }
