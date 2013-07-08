@@ -26,13 +26,13 @@ import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
 import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;
+import org.cryptoworkshop.ximix.test.node.ValueObject;
 import org.junit.Test;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
 
@@ -41,6 +41,8 @@ import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
  */
 public class KeyProcessingTest extends TestCase
 {
+
+
 
     private static ECPoint generatePoint(ECDomainParameters params, SecureRandom rand)
     {
@@ -162,8 +164,11 @@ public class KeyProcessingTest extends TestCase
         Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED", new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECKEY").build(), "A", "B", "C", "D", "E");
 
         final CountDownLatch shufflerLatch = new CountDownLatch(1);
-        final AtomicBoolean shuffleCompleted = new AtomicBoolean(false);
-        final AtomicBoolean shuffleFailed = new AtomicBoolean(false);
+
+        final ValueObject<Boolean> shuffleCompleted = new ValueObject<Boolean>(false);
+        final ValueObject<Boolean> shuffleFailed = new ValueObject<Boolean>(false);
+        final ValueObject<Thread> shuffleThread = new ValueObject<>();
+
 
         shuffleOp.addListener(new ShuffleOperationListener()
         {
@@ -171,6 +176,7 @@ public class KeyProcessingTest extends TestCase
             public void completed()
             {
                 shuffleCompleted.set(true);
+                shuffleThread.set(Thread.currentThread());
                 shufflerLatch.countDown();
             }
 
@@ -206,9 +212,11 @@ public class KeyProcessingTest extends TestCase
 
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];
-        final AtomicBoolean completed = new AtomicBoolean(false);
-        final AtomicBoolean failed = new AtomicBoolean(false);
+        final ValueObject<Boolean> downloadBoardCompleted = new ValueObject<Boolean>(false);
+        final ValueObject<Boolean> downloadBoardFailed = new ValueObject<Boolean>(false);
         final CountDownLatch encryptLatch = new CountDownLatch(1);
+        final ValueObject<Thread> decryptThread = new ValueObject<>();
+
 
 
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().setKeyID("ECKEY").setThreshold(4).build(), new DownloadOperationListener()
@@ -226,14 +234,15 @@ public class KeyProcessingTest extends TestCase
             @Override
             public void completed()
             {
-                completed.set(true);
+                downloadBoardCompleted.set(true);
+                decryptThread.set(Thread.currentThread());
                 encryptLatch.countDown();
             }
 
             @Override
             public void failed(String errorObject)
             {
-                failed.set(true);
+                downloadBoardFailed.set(true);
                 encryptLatch.countDown();
             }
         });
@@ -242,9 +251,12 @@ public class KeyProcessingTest extends TestCase
         TestCase.assertTrue(encryptLatch.await(20, TimeUnit.SECONDS));
 
 
-        TestCase.assertTrue("Complete method called in DownloadOperationListener", completed.get());
-        TestCase.assertFalse("Not failed.", failed.get());
-        TestCase.assertNotSame("Failed and complete must be different.", failed.get(), completed.get());
+        TestCase.assertNotSame("Failed and complete must be different.", downloadBoardFailed.get(), downloadBoardCompleted.get());
+        TestCase.assertTrue("Complete method called in DownloadOperationListener", downloadBoardCompleted.get());
+        TestCase.assertFalse("Not failed.", downloadBoardFailed.get());
+
+        TestCase.assertEquals("Shuffle and decrypt threads different.",decryptThread.get(), shuffleThread.get());
+
 
         //
         // Validate result points against plainText points.
