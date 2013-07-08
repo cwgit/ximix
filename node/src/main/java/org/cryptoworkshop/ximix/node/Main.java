@@ -24,6 +24,15 @@ public class Main
 {
     public static void main(String[] args)
     {
+
+        if (args.length < 2)
+        {
+            System.out.println("\r\nXimix Node executable jar.\r\n");
+            System.out.println("Usage: <mixnet config> <node config>");
+            System.out.println("Example: java -jar XimixNode.jar mixnet.xml node.xml\r\n");
+            System.exit(0);
+        }
+
         try
         {
 

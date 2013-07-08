@@ -40,6 +40,8 @@ public class DefaultXimixNode
 
     public void start()
     {
+        System.out.println("Starting node '"+nodeContext.getName()+"', listening on port: "+portNo);
+
         try
         {
             ss = new ServerSocket(portNo);

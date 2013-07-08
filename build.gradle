@@ -1,8 +1,3 @@
-import java.util.jar.Attributes
-import java.util.jar.JarOutputStream
-import java.util.jar.Manifest
-import java.util.zip.ZipEntry
-
 buildscript {
     repositories {
         mavenCentral()
@@ -57,7 +52,7 @@ dependencies {
 }
 
 task remove_betas << {
-    File root = new File(projectDir, 'libs/betas');
+    File root = new File(projectDir, betaJarPath);
     if (root.exists()) {
         org.apache.commons.io.FileUtils.deleteDirectory(root);
         System.out.println(" Removed betas, use 'gradle fetch_betas' to reload.");
@@ -65,11 +60,11 @@ task remove_betas << {
 }
 
 task fetch_betas << {
-    File root = new File(projectDir, 'libs/betas');
+    File root = new File(projectDir, betaJarPath);
     if (!root.exists()) {
         root.mkdirs();
     }
-    fetchFile('http://downloads.bouncycastle.org/betas/bcprov-jdk15on-150b01.jar', root);
+    fetchFile(betaRemoteUrl, root);
 }
 
 task test_foo << {
@@ -77,8 +72,11 @@ task test_foo << {
 }
 
 
-task make_installer_jar(dependsOn: 'compileJava') << {
-    File root = new File(projectDir, "/installer");
+task make_node_jar(dependsOn: 'compileJava') << {
+
+    println("\r\nMaking Node Executable Jar\r\n");
+
+    File root = new File(projectDir, "/installer/build/jars");
 
     //
     // Final jar will go in here.
@@ -91,17 +89,32 @@ task make_installer_jar(dependsOn: 'compileJava') << {
     //
     // Stage for installed node layout.
     //
-    File stageDir = new File(root,"/node_stage");
+    File stageDir = new File(root, "/node_stage");
     stageDir.mkdirs();
 
     //
-    // This makes a node stand alone.
+    // This makes a node stand alone uses the ant jar task..
     //
 
+    File jarFile = new File(root, "XimixNode.jar");
 
+    ant.jar(destfile: jarFile,  manifest: new File(projectDir,"installer/manifest/MANIFEST.MF")) {
+        fileset(dir: new File(projectDir, 'common/build/classes/main/'));
+        fileset(dir: new File(projectDir, 'crypto/build/classes/main/'));
+        fileset(dir: new File(projectDir, 'mixnet/build/classes/main/'));
+        fileset(dir: new File(projectDir, 'node/build/classes/main/'));
+
+        zipfileset(includes: '**/*.class', src: new File(projectDir,betaJarPath+betaJarName));
+    }
+
+    println("");
+    println("Created: "+jarFile);
+    println();
+    println("To run a demo node:\r\n");
+    println("java -jar "+jarFile+" demo/conf/mixnet.xml demo/conf/node1.xml");
+    println();
 
 }
-
 
 /**
  * Fetch a file at url and save it into the directory.

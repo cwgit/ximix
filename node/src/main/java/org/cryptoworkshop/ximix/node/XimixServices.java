@@ -93,6 +93,8 @@ class XimixServices
             {
                 try
                 {
+                    System.out.println("Connection from: "+s.getRemoteSocketAddress());
+
                     s.setSoTimeout(15000);    // TODO: should be a config item
 
                     InputStream sIn = s.getInputStream();
