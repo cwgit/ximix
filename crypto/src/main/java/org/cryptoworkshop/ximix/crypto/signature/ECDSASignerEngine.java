@@ -34,8 +34,8 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
-import org.cryptoworkshop.ximix.common.message.ECPointMessage;
+import org.cryptoworkshop.ximix.common.message.BigIntegerShareMessage;
+import org.cryptoworkshop.ximix.common.message.ECPointShareMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
@@ -54,6 +54,7 @@ import org.cryptoworkshop.ximix.crypto.threshold.ShamirSecretSplitter;
 import org.cryptoworkshop.ximix.crypto.threshold.SplitSecret;
 import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
 import org.cryptoworkshop.ximix.crypto.util.ECPointShare;
+import org.cryptoworkshop.ximix.crypto.util.Share;
 import org.cryptoworkshop.ximix.crypto.util.ShareMap;
 
 /**
@@ -214,15 +215,18 @@ public class ECDSASignerEngine
                 ECDSAFetchMessage fetchMessage = ECDSAFetchMessage.getInstance(message.getPayload());
                 sigID = new SigID(fetchMessage.getSigID());
 
-                return replyOkay(new ECPointMessage(sharedPMap.getShare(sigID).getValue()));
+                Share<ECPoint> share = sharedPMap.getShare(sigID);
+
+                return replyOkay(new ECPointShareMessage(share.getSequenceNo(), share.getValue()));
             case FETCH_MU:
                 fetchMessage = ECDSAFetchMessage.getInstance(message.getPayload());
                 sigID = new SigID(fetchMessage.getSigID());
 
                 domainParams = paramsMap.get(fetchMessage.getKeyID());
 
-                return replyOkay(new BigIntegerMessage(sharedKMap.getShare(sigID).getValue().multiply(
-                                    sharedAMap.getShare(sigID).getValue()).add(sharedBMap.getShare(sigID).getValue()).mod(domainParams.getN())));
+                Share<BigInteger> kShare = sharedKMap.getShare(sigID);
+                return replyOkay(new BigIntegerShareMessage(kShare.getSequenceNo(), kShare.getValue().multiply(
+                    sharedAMap.getShare(sigID).getValue()).add(sharedBMap.getShare(sigID).getValue()).mod(domainParams.getN())));
             case PRIVATE_KEY_SIGN:
                 ECDSAPartialCreateMessage partialMessage = ECDSAPartialCreateMessage.getInstance(message.getPayload());
 
@@ -237,11 +241,12 @@ public class ECDSASignerEngine
 
                 ECPrivateKeyOperator ecOperator = (ECPrivateKeyOperator)operator;
 
-                BigInteger kInvShare = sharedAMap.getShare(sigID).getValue().multiply(muMap.get(sigID).modInverse(ecOperator.getDomainParameters().getN()));
+                Share<BigInteger> aShare = sharedAMap.getShare(sigID);
+                BigInteger kInvShare = aShare.getValue().multiply(muMap.get(sigID).modInverse(ecOperator.getDomainParameters().getN()));
                 BigInteger eComponent = partialMessage.getE();
                 BigInteger dComponent = ecOperator.transform(rMap.get(sigID));
 
-                MessageReply reply = replyOkay(new BigIntegerMessage(kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getShare(sigID).getValue())));
+                MessageReply reply = replyOkay(new BigIntegerShareMessage(aShare.getSequenceNo(), kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getShare(sigID).getValue())));
                 // TODO: need to clean up state tables here.
                 return reply;
             default:
@@ -375,7 +380,7 @@ public class ECDSASignerEngine
             }
             else
             {
-                pVals[i] = ECPointMessage.getInstance(domainParams.getCurve(), replys[i].getPayload()).getPoint();
+                pVals[i] = ECPointShareMessage.getInstance(domainParams.getCurve(), replys[i].getPayload()).getPoint();
             }
         }
 

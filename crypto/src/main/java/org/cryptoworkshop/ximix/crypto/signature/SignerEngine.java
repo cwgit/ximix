@@ -5,12 +5,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.cryptoworkshop.ximix.common.message.BigIntegerShareMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 
 public abstract class SignerEngine
@@ -79,7 +79,7 @@ public abstract class SignerEngine
             }
             else
             {
-                valueShares[i] = BigIntegerMessage.getInstance(replys[i].getPayload()).getValue();
+                valueShares[i] = BigIntegerShareMessage.getInstance(replys[i].getPayload()).getValue();
             }
         }
 
