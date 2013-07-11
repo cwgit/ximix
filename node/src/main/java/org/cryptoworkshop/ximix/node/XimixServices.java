@@ -89,22 +89,21 @@ class XimixServices
     {
         try
         {
+            s.setSoTimeout(15000);    // TODO: should be a config item
+
+            InputStream sIn = s.getInputStream();
+            OutputStream sOut = s.getOutputStream();
+
+            ASN1InputStream aIn = new ASN1InputStream(sIn, maxInputSize);       // TODO: should be a config item
+            DEROutputStream aOut = new DEROutputStream(sOut);
+
+            aOut.writeObject(new NodeInfo(nodeContext.getName(), nodeContext.getCapabilities()));
+
             while (!stopped.get())
             {
                 try
                 {
-                    //System.out.println("Connection from: "+s.getRemoteSocketAddress());
-
-                    s.setSoTimeout(15000);    // TODO: should be a config item
-
-                    InputStream sIn = s.getInputStream();
-                    OutputStream sOut = s.getOutputStream();
-
-                    ASN1InputStream aIn = new ASN1InputStream(sIn, maxInputSize);       // TODO: should be a config item
-                    DEROutputStream aOut = new DEROutputStream(sOut);
-
-                    aOut.writeObject(new NodeInfo(nodeContext.getName(), nodeContext.getCapabilities()));
-
+                    //System.out.println("Connection from: "+s.getRemoteSocketAddress())
                     Object o;
 
                     while ((o = aIn.readObject()) != null && !nodeContext.isStopCalled())
