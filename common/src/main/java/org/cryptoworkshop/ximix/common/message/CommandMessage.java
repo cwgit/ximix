@@ -38,7 +38,8 @@ public class CommandMessage
         GENERATE_KEY_PAIR,
         STORE_SHARE,
         PARTIAL_DECRYPT,
-        SIGNATURE_MESSAGE
+        SIGNATURE_MESSAGE,
+        FETCH_NODE_INFO
     }
 
     public CommandMessage(Type type, ASN1Encodable payload)
