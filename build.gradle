@@ -20,7 +20,6 @@ allprojects {
 
     dependencies {
         compile fileTree(dir: new File(rootDir, 'libs'), include: '*.jar')
-        compile fileTree(dir: new File(rootDir, 'libs/betas'), include: '*.jar')
         compile 'org.jacoco:org.jacoco.agent:0.6.2.201302030002'
     }
 
@@ -51,20 +50,21 @@ dependencies {
     compile project(':node')
 }
 
-task remove_betas << {
-    File root = new File(projectDir, betaJarPath);
+task remove_libs << {
+    File root = new File(projectDir, libsJarPath);
     if (root.exists()) {
         org.apache.commons.io.FileUtils.deleteDirectory(root);
-        System.out.println(" Removed betas, use 'gradle fetch_betas' to reload.");
+        System.out.println(" Removed libs, use 'gradle fetch_libs' to reload.");
     }
 }
 
-task fetch_betas << {
-    File root = new File(projectDir, betaJarPath);
+task fetch_libs << {
+    File root = new File(projectDir, libsJarPath);
     if (!root.exists()) {
         root.mkdirs();
     }
-    fetchFile(betaRemoteUrl, root);
+    fetchFile(providerRemoteUrl, root);
+    fetchFile(pkixRemoteUrl, root);
 }
 
 task test_foo << {
@@ -104,7 +104,7 @@ task make_node_jar(dependsOn: 'compileJava') << {
         fileset(dir: new File(projectDir, 'mixnet/build/classes/main/'));
         fileset(dir: new File(projectDir, 'node/build/classes/main/'));
 
-        zipfileset(includes: '**/*.class', src: new File(projectDir,betaJarPath+betaJarName));
+        zipfileset(includes: '**/*.class', src: new File(projectDir,libsJarPath));
     }
 
     println("");
