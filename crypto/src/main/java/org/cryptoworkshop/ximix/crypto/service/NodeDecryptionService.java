@@ -25,7 +25,7 @@ import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.message.Capability;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
@@ -46,9 +46,9 @@ public class NodeDecryptionService
         this.nodeContext = nodeContext;
     }
 
-    public Capability getCapability()
+    public CapabilityMessage getCapability()
     {
-        return new Capability(Capability.Type.DECRYPTION, new ASN1Encodable[0]); // TODO:
+        return new CapabilityMessage(CapabilityMessage.Type.DECRYPTION, new ASN1Encodable[0]); // TODO:
     }
 
     public MessageReply handle(Message message)

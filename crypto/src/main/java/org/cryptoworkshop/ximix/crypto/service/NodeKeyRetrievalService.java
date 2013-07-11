@@ -17,7 +17,7 @@ package org.cryptoworkshop.ximix.crypto.service;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.message.Capability;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
@@ -36,9 +36,9 @@ public class NodeKeyRetrievalService
         this.nodeContext = nodeContext;
     }
 
-    public Capability getCapability()
+    public CapabilityMessage getCapability()
     {
-        return new Capability(Capability.Type.KEY_RETRIEVAL, new ASN1Encodable[0]); // TODO:
+        return new CapabilityMessage(CapabilityMessage.Type.KEY_RETRIEVAL, new ASN1Encodable[0]); // TODO:
     }
 
     public MessageReply handle(Message message)

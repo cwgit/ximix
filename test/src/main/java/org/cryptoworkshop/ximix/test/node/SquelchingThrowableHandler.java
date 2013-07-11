@@ -18,6 +18,7 @@ public class SquelchingThrowableHandler implements ThrowableListener
     {
         if (squelchTypes.contains(throwable.getClass()))
         {
+            System.out.println("SQUELCH: "+throwable.getMessage());
             return;
         }
         if (printOnly)

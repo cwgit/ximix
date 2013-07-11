@@ -24,9 +24,8 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DERUTF8String;
 
-public class Capability
+public class CapabilityMessage
     extends ASN1Object
 {
     public static enum Type
@@ -43,13 +42,13 @@ public class Capability
     private final Type type;
     private final ASN1Encodable[] details;
 
-    public Capability(Type type, ASN1Encodable[] details)
+    public CapabilityMessage(Type type, ASN1Encodable[] details)
     {
         this.type = type;
         this.details = details;
     }
 
-    private Capability(ASN1Sequence s)
+    private CapabilityMessage(ASN1Sequence s)
     {
         this.type = Type.values()[ASN1Enumerated.getInstance(s.getObjectAt(0)).getValue().intValue()];
         this.details = convertSet(ASN1Set.getInstance(s.getObjectAt(1)));
@@ -78,15 +77,15 @@ public class Capability
         return rv;
     }
     
-    public static Capability getInstance(Object o)
+    public static CapabilityMessage getInstance(Object o)
     {
-        if (o instanceof Capability)
+        if (o instanceof CapabilityMessage)
         {
-            return (Capability)o;
+            return (CapabilityMessage)o;
         }
         else if (o != null)
         {
-            return new Capability(ASN1Sequence.getInstance(o));
+            return new CapabilityMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
