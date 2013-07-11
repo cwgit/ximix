@@ -76,7 +76,7 @@ public class NodeDecryptionService
                 PairSequence ps = PairSequence.getInstance(domainParameters.getCurve(), messages.get(i));
                 ECPair[] pairs = ps.getECPairs();
                 for (int j = 0; j != pairs.length; j++)
-                {                                                   System.err.println("Heeerrrre: " + nodeContext.getName());
+                {
                     pairs[j] = new ECPair(ecOperator.transform(pairs[j].getX()), pairs[j].getY());
                 }
                 try
