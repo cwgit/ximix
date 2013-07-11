@@ -141,6 +141,11 @@ public class GenerateKeyPairMessage
         return new DLSet(v);
     }
 
+    public int getAlgorithm()
+    {
+        return algorithm;
+    }
+
     private static class CaseInsensitiveComparator
         implements Comparator<String>
     {

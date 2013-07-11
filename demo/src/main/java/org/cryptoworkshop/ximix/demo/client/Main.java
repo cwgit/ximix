@@ -79,7 +79,7 @@ public class Main
         //UploadService client = registrar.connect(UploadService.class);
         SigningService signingService = registrar.connect(SigningService.class);
 
-        byte[] encPubKey = keyFetcher.fetchPublicKey("ECKEY");
+        byte[] encPubKey = keyFetcher.fetchPublicKey("ECENCKEY");
 
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
 
@@ -115,14 +115,14 @@ public class Main
             .withNodes("A", "B")
             .build();
 
-        byte[] dsaSig = signingService.generateSignature("ECKEY", sigGenOptions, hash);
+        byte[] dsaSig = signingService.generateSignature("ECSIGKEY", sigGenOptions, hash);
 
         //
         // check the signature locally.
         //
         ECDSASigner signer = new ECDSASigner();
 
-        ECPublicKeyParameters sigPubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(signingService.fetchPublicKey("ECKEY"));
+        ECPublicKeyParameters sigPubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(signingService.fetchPublicKey("ECSIGKEY"));
 
         signer.init(false, sigPubKey);
 

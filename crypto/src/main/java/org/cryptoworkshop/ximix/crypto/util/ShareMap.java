@@ -17,6 +17,7 @@ package org.cryptoworkshop.ximix.crypto.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -121,6 +122,11 @@ public class ShareMap<K, V>
             Thread.currentThread().interrupt();
             return null;
         }
+    }
+
+    public Set<K> getIDs()
+    {
+        return sharedMap.keySet();
     }
 
     private class AddTask

@@ -1,4 +1,4 @@
-package org.cryptoworkshop.ximix.crypto.key.message.test;
+package org.cryptoworkshop.ximix.crypto.test;
 
 import java.io.IOException;
 import java.math.BigInteger;

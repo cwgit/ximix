@@ -28,8 +28,8 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
 import org.cryptoworkshop.ximix.common.operation.Operation;
-import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
@@ -74,7 +74,14 @@ public class Main
                                                    .withNodes("A", "B")
                                                    .build();
 
-        byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
+        byte[] encPubKey = keyGenerationService.generatePublicKey("ECENCKEY", keyGenOptions);
+
+        keyGenOptions = new KeyGenerationOptions.Builder(KeyType.ECDSA, "secp256r1")
+                                                   .withThreshold(2)
+                                                   .withNodes("A", "B")
+                                                   .build();
+
+        byte[] sigPubKey = keyGenerationService.generatePublicKey("ECSIGKEY", keyGenOptions);
 
         UploadService client = adminRegistrar.connect(UploadService.class);
 
@@ -99,7 +106,7 @@ public class Main
 
         CommandService commandService = adminRegistrar.connect(CommandService.class);
 
-        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECKEY").build(), "A", "B");
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECENCKEY").build(), "A", "B");
 
         shuffleOp.addListener(new ShuffleOperationListener()
         {
@@ -116,7 +123,7 @@ public class Main
             }
         });
 
-        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().withKeyID("ECKEY").withThreshold(2).withNodes("A", "B").build(), new DownloadOperationListener()
+        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().withKeyID("ECENCKEY").withThreshold(2).withNodes("A", "B").build(), new DownloadOperationListener()
         {
             int counter = 0;
 
