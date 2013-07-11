@@ -20,7 +20,6 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.*;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -264,7 +263,7 @@ public class XimixRegistrarFactory
             return nodeInfo.getName();
         }
 
-        public Capability[] getCapabilities()
+        public CapabilityMessage[] getCapabilities()
         {
             return nodeInfo.getCapabilities();
         }
@@ -358,7 +357,7 @@ public class XimixRegistrarFactory
             return connection;
         }
 
-        public Capability[] getCapabilities()
+        public CapabilityMessage[] getCapabilities()
         {
             return getConnection().getCapabilities();
         }
@@ -381,7 +380,7 @@ public class XimixRegistrarFactory
         implements AdminServicesConnection
     {
         private Map<String, NodeServicesConnection> connectionMap = new HashMap<String, NodeServicesConnection>();
-        private Set<Capability> capabilitySet = new HashSet<Capability>();
+        private Set<CapabilityMessage> capabilitySet = new HashSet<CapabilityMessage>();
 
         public AdminServicesConnectionImpl(List<NodeConfig> configList)
         {
@@ -422,9 +421,9 @@ public class XimixRegistrarFactory
             }
         }
 
-        public Capability[] getCapabilities()
+        public CapabilityMessage[] getCapabilities()
         {
-            return capabilitySet.toArray(new Capability[capabilitySet.size()]);
+            return capabilitySet.toArray(new CapabilityMessage[capabilitySet.size()]);
         }
 
         public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)

@@ -30,14 +30,8 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.message.Capability;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageBlock;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.MessageType;
+import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
@@ -239,7 +233,7 @@ public class CryptoServicesTest
             {
 
                 @Override
-                public Capability[] getCapabilities()
+                public CapabilityMessage[] getCapabilities()
                 {
                     return context.getCapabilities();
                 }

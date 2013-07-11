@@ -28,9 +28,9 @@ public class NodeInfo
     extends ASN1Object
 {
     private final String name;
-    private final Capability[] capabilities;
+    private final CapabilityMessage[] capabilities;
 
-    public NodeInfo(String name, Capability[] capabilities)
+    public NodeInfo(String name, CapabilityMessage[] capabilities)
     {
         this.name = name;
         this.capabilities = capabilities;
@@ -53,13 +53,13 @@ public class NodeInfo
         return new DERSequence(v);
     }
 
-    private Capability[] convertSet(ASN1Set strings)
+    private CapabilityMessage[] convertSet(ASN1Set strings)
     {
-        Capability[] rv = new Capability[strings.size()];
+        CapabilityMessage[] rv = new CapabilityMessage[strings.size()];
 
         for (int i = 0; i != rv.length; i++)
         {
-            rv[i] = Capability.getInstance(strings.getObjectAt(i));
+            rv[i] = CapabilityMessage.getInstance(strings.getObjectAt(i));
         }
 
         return rv;
@@ -84,7 +84,7 @@ public class NodeInfo
         return name;
     }
 
-    public Capability[] getCapabilities()
+    public CapabilityMessage[] getCapabilities()
     {
         return capabilities.clone();
     }

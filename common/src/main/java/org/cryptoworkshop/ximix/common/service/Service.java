@@ -15,13 +15,13 @@
  */
 package org.cryptoworkshop.ximix.common.service;
 
-import org.cryptoworkshop.ximix.common.message.Capability;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 
 public interface Service
 {
-    Capability getCapability();
+    CapabilityMessage getCapability();
 
     MessageReply handle(Message message);
 

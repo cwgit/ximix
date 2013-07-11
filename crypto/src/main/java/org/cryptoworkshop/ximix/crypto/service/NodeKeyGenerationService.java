@@ -23,11 +23,8 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.message.Capability;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
+import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
@@ -48,9 +45,9 @@ public class NodeKeyGenerationService
         this.nodeContext = nodeContext;
     }
 
-    public Capability getCapability()
+    public CapabilityMessage getCapability()
     {
-        return new Capability(Capability.Type.KEY_GENERATION, new ASN1Encodable[0]); // TODO:
+        return new CapabilityMessage(CapabilityMessage.Type.KEY_GENERATION, new ASN1Encodable[0]); // TODO:
     }
 
     public MessageReply handle(Message message)

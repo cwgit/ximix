@@ -26,17 +26,8 @@ import java.util.Set;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.BoardDetails;
-import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
-import org.cryptoworkshop.ximix.common.message.BoardMessage;
-import org.cryptoworkshop.ximix.common.message.Capability;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageBlock;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
-import org.cryptoworkshop.ximix.common.message.UploadMessage;
+import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
@@ -66,7 +57,7 @@ public class BoardHostingService
         }
     }
 
-    public Capability getCapability()
+    public CapabilityMessage getCapability()
     {
         String[] names = boardRegistry.getBoardNames();
         BoardDetails[] details = new BoardDetails[names.length];
@@ -84,7 +75,7 @@ public class BoardHostingService
             details[count++] = new BoardDetails(name, transformNames);
         }
 
-        return new Capability(Capability.Type.BOARD_HOSTING, details);
+        return new CapabilityMessage(CapabilityMessage.Type.BOARD_HOSTING, details);
     }
 
     public MessageReply handle(Message message)

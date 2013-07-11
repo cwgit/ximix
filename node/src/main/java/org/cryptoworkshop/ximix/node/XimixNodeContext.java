@@ -36,7 +36,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.Capability;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
@@ -89,16 +89,16 @@ public class XimixNodeContext
         return name;
     }
 
-    public Capability[] getCapabilities()
+    public CapabilityMessage[] getCapabilities()
     {
-        List<Capability> capabilityList = new ArrayList<Capability>();
+        List<CapabilityMessage> capabilityList = new ArrayList<CapabilityMessage>();
 
         for (Service service : services)
         {
             capabilityList.add(service.getCapability());
         }
 
-        return capabilityList.toArray(new Capability[capabilityList.size()]);
+        return capabilityList.toArray(new CapabilityMessage[capabilityList.size()]);
     }
 
     public void addConnection(XimixServices task)
