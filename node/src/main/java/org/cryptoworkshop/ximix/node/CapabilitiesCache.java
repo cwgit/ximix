@@ -3,197 +3,245 @@ package org.cryptoworkshop.ximix.node;
 import org.cryptoworkshop.ximix.common.message.*;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.Lock;
 
 /**
  * Maintains a cache of node capabilities within the mixnet
  */
 public class CapabilitiesCache
 {
-    private HashMap<CapabilityCacheKey, CapabilityCacheEntry> map = new HashMap<>();
-    private HashMap<CapabilityCacheKey, List<CapabilityResult>> interestedParties = new HashMap<>();
-
-
+    private static HashMap<NodeContext, CapabilitiesCache> cachePerContext = new HashMap<>();
+    long expireAfterPeriod = 2 * 60 * 1000; // TODO make configurable.
+    private HashMap<CapabilityCacheKey, List<CapabilityCacheEntry>> map = new HashMap<>();
     private NodeContext nodeContext = null;
 
     public CapabilitiesCache(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
+        cachePerContext.put(nodeContext, this);
     }
 
-    private synchronized CapabilityResult getCapability(final CapabilityCacheKey key)
+    /**
+     * Get a cache for a node context.
+     * @param context
+     * @return
+     */
+    public static CapabilitiesCache cache(NodeContext context)
     {
-        final CapabilityResult result = new CapabilityResult();
-
-
         //
-        //  Sync on cache for the initial lookup.
+        // Rather than put access to the cache in one spot.
+        // I thought this would be more flexable as long as the context is known
+        // A cache can be found..
         //
+
+        return cachePerContext.get(context);
+    }
+
+    /**
+     * Puts a copy of the capability.
+     *
+     * @param key   The key.
+     * @param entry The entry.
+     */
+    public void putCapability(CapabilityCacheKey key, CapabilityCacheEntry entry)
+    {
         synchronized (CapabilitiesCache.this)
         {
-            final CapabilityCacheEntry entry = map.get(key);
+            putCapabilityNoSynchronization(key, entry);
+        }
+    }
 
+    private void expireEntriesNoSynchronization(CapabilityCacheKey key)
+    {
+        List<CapabilityCacheEntry> l = map.get(key);
+        if (l == null || l.isEmpty())
+        {
+            return;
+        }
 
-            //
-            // Check for not found or not expired.
-            //
-            if (entry == null || entry.hasExpired(System.currentTimeMillis()))
+        long time = System.currentTimeMillis();
+        for (int t = l.size() - 1; t >= 0; t--)
+        {
+            if (l.get(t).hasExpired(time))
             {
-                //
-                // No value or expired then we need to look at forking and doing a lookup.
-                //
-                // 1. Check that we are not already waiting for a result.
-
-                List<CapabilityResult> parties = interestedParties.get(key);
-
-                //
-                // If parties is null then we are not already doing a lookup.
-                // In this case we can set up for and then schedule a lookup.
-                //
-                if (parties == null)
-                {
-                    parties = new ArrayList<>();
-                    parties.add(result);
-
-                    //
-                    // Schedule the lookup this runs in another thread.
-                    //
-                    nodeContext.execute(makeLookupRunnable(parties, key, entry));
-                }
-                else
-                {
-                    //
-                    // There is a lookup pending add this result to this list that will get notified of a result.
-                    // when the lookup completes.
-                    //
-                    parties.add(result);
-                }
-
+                l.remove(t);
             }
-            else
+        }
+    }
+
+    /**
+     * An unsynchronized addition of a capability.
+     *
+     * @param key   The key.
+     * @param entry The entry.
+     */
+    private void putCapabilityNoSynchronization(CapabilityCacheKey key, CapabilityCacheEntry entry)
+    {
+        if (!map.containsKey(key))
+        {
+            map.put(key, new ArrayList<CapabilityCacheEntry>());
+        }
+
+        //
+        // Remove existing entry.
+        //
+        List<CapabilityCacheEntry> l = map.get(key);
+        for (int t = l.size() - 1; t >= 0; t--)
+        {
+            if (l.get(t).equals(entry))
             {
-                //
-                // The entry was found in the cache and was valid so we return a copy of the cached value.
-                //
-                result.complete(entry.copy());
+                l.remove(t);
             }
         }
 
+        // Add new entry.
+        l.add(entry);
+    }
+
+    /**
+     * This method will move a provider from the head of the
+     * providers list to the back for  given key.
+     *
+     * @param key The key.
+     */
+    public void cycleProviders(CapabilityCacheKey key)
+    {
+        synchronized (CapabilitiesCache.this)
+        {
+            List<CapabilityCacheEntry> l = map.get(key);
+            if (l == null || l.isEmpty())
+            {
+                return; // May have been cleaned up in mean time.
+            }
+
+            CapabilityCacheEntry ent = l.remove(0);
+            l.add(ent);
+        }
+    }
+
+    public void putFromNodeInfo(NodeInfo info)
+    {
+        if (info.getCapabilities() == null)
+        {
+            return; //TODO Log this.
+        }
+
+        for (CapabilityMessage msg : info.getCapabilities())
+        {
+            putFromCapabilityMessage(msg, true, info.getName(), expireAfter());
+        }
+    }
+
+    private long expireAfter()
+    {
+        return System.currentTimeMillis() + expireAfterPeriod;
+    }
+
+    /**
+     * Get the capability.
+     *
+     * @param key The key.
+     * @return A future to the result.
+     */
+    public synchronized CapabilityResult getCapability(final CapabilityCacheKey key)
+    {
+        final CapabilityResult result = new CapabilityResult();
+
+        //
+        // TODO All capabilities searches result in scheduled job. Consider doing check in this thread first before invoking..
+        //
+
+        nodeContext.execute(makeLookupRunnable(result, key));
 
         return result;
     }
 
-    private Runnable makeLookupRunnable(final List<CapabilityResult> _parties, final CapabilityCacheKey key, final CapabilityCacheEntry entry)
+    private Runnable makeLookupRunnable(final CapabilityResult party, final CapabilityCacheKey key)
     {
         return new Runnable()
         {
             @Override
             public void run()
             {
-                if (entry == null)
+
+                //
+                // Expire entries for this key.
+                //
+                synchronized (CapabilitiesCache.this)
                 {
+                    expireEntriesNoSynchronization(key);
+                }
+
+
+                List<CapabilityCacheEntry> results = null;
+
+                //
+                // Query cache.
+                //
+                synchronized (CapabilitiesCache.this)
+                {
+                    results = map.get(key);
+                }
+
+
+                if (results == null || results.isEmpty())
+                {
+
                     //
                     // Nothing found in original search so we query every node looking for the capability.
                     //
                     Iterator<String> keys = nodeContext.getPeerMap().keySet().iterator();
+
                     while (keys.hasNext())
                     {
-                        requestUpdateNew(((NodeCapabilityCacheEntry)entry).getName(), _parties);
-                    }
-                }
-                else
-                {
-                    //
-                    // We had an expired value so we need to do a refresh.
-                    //
-                    requestUpdateNew(((NodeCapabilityCacheEntry)entry).getName(), _parties);
-                }
-
-
-                //
-                // At this point we have a done the lookup so we can retest the cache.
-                //
-
-                synchronized (CapabilitiesCache.this)
-                {
-                    CapabilityCacheEntry entry = map.get(key);
-
-                    //
-                    // Still not found.
-                    //
-                    if (entry == null)
-                    {
-                        for (CapabilityResult r : _parties)
+                        try
                         {
-                            r.notFound();
+                            requestCapabilitiesFromNode(keys.next(), true);
+                        }
+                        catch (Exception ex)
+                        {
+                            ex.printStackTrace(); // TODO
                         }
 
                     }
+
                     //
-                    // Still expired.
+                    // We have polled the network for the capability.
+                    // Check again.
                     //
-                    else if (entry.hasExpired(System.currentTimeMillis()))
+
+                    synchronized (CapabilitiesCache.this)
                     {
-                        for (CapabilityResult r : _parties)
-                        {
-                            r.couldNotUpdate();
-                        }
+                        results = map.get(key);
                     }
 
-
-                    interestedParties.remove(key);
-
+                    if (results == null || results.isEmpty())
+                    {
+                        // Nothing was found so signal party and exit.
+                        party.notFound();
+                        return;
+                    }
                 }
 
+                // TODO enable Round Robin. cycleProviders(key);
+                party.complete(results.get(0));
 
             }
         };
     }
 
-
-    /**
-     * Request info from a node and update it with new.
-     *
-     * @param name     The entry.
-     * @param _parties The list of interested parties.
-     */
-    private void requestUpdateNew(String name, List<CapabilityResult> _parties)
-    {
-        Map<CapabilityCacheKey, CapabilityCacheEntry> val = null;
-        try
-        {
-            val = requestCapabilities(name);
-            synchronized (CapabilitiesCache.this)
-            {
-                map.putAll(val);
-            }
-        }
-        catch (Exception e)
-        {
-            synchronized (CapabilitiesCache.this)
-            {
-                for (CapabilityResult r : _parties)
-                {
-                    r.failed(e);
-                }
-            }
-
-        }
-
-
-    }
-
-
     /**
      * Request new capability entries from remote node.
      *
      * @param node The node id.
-     * @return A map of new entries.
+     * @return A list of keys retrieved from that node.
      * @throws Exception throws all exceptions.
      */
-    private Map<CapabilityCacheKey, CapabilityCacheEntry> requestCapabilities(String node)
+    private void requestCapabilitiesFromNode(String node, boolean synchronize)
         throws Exception
     {
 
@@ -208,39 +256,69 @@ public class CapabilitiesCache
             throw new RuntimeException("Node " + node + " has no capabilities.");
         }
 
-        Map<CapabilityCacheKey, CapabilityCacheEntry> out = new HashMap<>();
-
-
-        long expireAfter = 2 * 60 * 1000; // TODO make configurable.
-
-
         for (CapabilityMessage msg : remote.getCapabilities())
         {
-            switch (msg.getType())
-            {
-                case BOARD_HOSTING:
+            putFromCapabilityMessage(msg, synchronize, node, expireAfter());
 
-                    break;
-
-                case DECRYPTION:
-                    break;
-
-                case ENCRYPTION:
-                    break;
-
-                case KEY_RETRIEVAL:
-                    break;
-
-                case KEY_GENERATION:
-                    break;
-
-                case SIGNING:
-                    break;
-            }
         }
 
+    }
 
-        return out;
+    /**
+     * Put from a capabilities message.
+     *
+     * @param msg         The message.
+     * @param synchronize true - will update the map synchronized on this.
+     * @param node        The name of the node.
+     * @param expireAfter the timestamp to expire the entry after.
+     */
+    private void putFromCapabilityMessage(CapabilityMessage msg, boolean synchronize, String node, long expireAfter)
+    {
+        SimpleCapabilityCacheKey key = null;
+        CapabilityCacheEntry val = null;
+
+        switch (msg.getType())
+        {
+            case BOARD_HOSTING:
+                key = SimpleCapabilityCacheKey.BOARD_HOSTING;
+                val = new NodeCapabilityCacheEntry(node, expireAfter);
+                break;
+
+            case DECRYPTION:
+                key = SimpleCapabilityCacheKey.DECRYPTION;
+                val = new NodeCapabilityCacheEntry(node, expireAfter);
+                break;
+
+            case ENCRYPTION:
+                key = SimpleCapabilityCacheKey.ENCRYPTION;
+                val = new NodeCapabilityCacheEntry(node, expireAfter);
+                break;
+
+            case KEY_RETRIEVAL:
+                key = SimpleCapabilityCacheKey.KEY_RETRIEVAL;
+                val = new NodeCapabilityCacheEntry(node, expireAfter);
+                break;
+
+            case KEY_GENERATION:
+                key = SimpleCapabilityCacheKey.KEY_GENERATION;
+                val = new NodeCapabilityCacheEntry(node, expireAfter);
+                break;
+
+            case SIGNING:
+                key = SimpleCapabilityCacheKey.SIGNING;
+                val = new NodeCapabilityCacheEntry(node, expireAfter);
+                break;
+        }
+
+        if (synchronize)
+        {
+            putCapability(key, val);
+        }
+        else
+        {
+            putCapabilityNoSynchronization(key, val);
+        }
+
     }
 
 
@@ -249,20 +327,38 @@ public class CapabilitiesCache
         boolean hasExpired(long timestamp);
 
         CapabilityCacheEntry copy();
+
+        boolean equals(Object o);
+
+        int hashCode();
+
     }
 
+
+    public static interface CapabilityCacheKey
+    {
+        boolean equals(Object o);
+
+        int hashCode();
+    }
 
     public static class NodeCapabilityCacheEntry
         implements CapabilityCacheEntry
     {
         protected long notAfter = Long.MIN_VALUE;
         protected String name = null;
-
+        protected CapabilityCacheKey key = null;
 
         public NodeCapabilityCacheEntry(String name, long notAfter)
         {
             this.notAfter = notAfter;
             this.name = name;
+        }
+
+        protected NodeCapabilityCacheEntry withKey(CapabilityCacheKey key)
+        {
+            this.key = key;
+            return this;
         }
 
         @Override
@@ -286,11 +382,6 @@ public class CapabilitiesCache
         {
             return name;
         }
-    }
-
-
-    public static interface CapabilityCacheKey
-    {
 
     }
 
@@ -304,18 +395,6 @@ public class CapabilitiesCache
         public static final SimpleCapabilityCacheKey KEY_RETRIEVAL = new SimpleCapabilityCacheKey(SimpleType.KEY_RETRIEVAL);
         public static final SimpleCapabilityCacheKey KEY_GENERATION = new SimpleCapabilityCacheKey(SimpleType.KEY_GENERATION);
         public static final SimpleCapabilityCacheKey SIGNING = new SimpleCapabilityCacheKey(SimpleType.SIGNING);
-
-
-        private static enum SimpleType
-        {
-            BOARD_HOSTING,
-            DECRYPTION,
-            ENCRYPTION,
-            KEY_RETRIEVAL,
-            KEY_GENERATION,
-            SIGNING
-        }
-
         private SimpleType type = null;
 
         private SimpleCapabilityCacheKey(SimpleType type)
@@ -349,6 +428,16 @@ public class CapabilitiesCache
         public int hashCode()
         {
             return type.hashCode();
+        }
+
+        private static enum SimpleType
+        {
+            BOARD_HOSTING,
+            DECRYPTION,
+            ENCRYPTION,
+            KEY_RETRIEVAL,
+            KEY_GENERATION,
+            SIGNING
         }
     }
 
@@ -390,7 +479,6 @@ public class CapabilitiesCache
             couldNotUpdate = true;
             latch.countDown();
         }
-
 
         @Override
         public boolean isCancelled()

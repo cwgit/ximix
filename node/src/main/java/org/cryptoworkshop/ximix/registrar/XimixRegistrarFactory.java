@@ -241,6 +241,7 @@ public class XimixRegistrarFactory
             synchronized (this)
             {
                 nodeInfo = NodeInfo.getInstance(aIn.readObject());
+
             }
         }
 
