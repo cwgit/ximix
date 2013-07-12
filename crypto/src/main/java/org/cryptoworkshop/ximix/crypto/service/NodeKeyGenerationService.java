@@ -17,7 +17,6 @@ package org.cryptoworkshop.ximix.crypto.service;
 
 import java.math.BigInteger;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -184,7 +183,7 @@ public class NodeKeyGenerationService
                 else
                 {
                     final int counter = index++;
-                    nodeContext.schedule(new Runnable()
+                    nodeContext.execute(new Runnable()
                     {
                         public void run()
                         {
@@ -197,7 +196,7 @@ public class NodeKeyGenerationService
                                 e.printStackTrace(); // TODO handle.
                             }
                         }
-                    }, 2000, TimeUnit.MILLISECONDS);  //TODO make configurable.
+                    });
 
                 }
             }

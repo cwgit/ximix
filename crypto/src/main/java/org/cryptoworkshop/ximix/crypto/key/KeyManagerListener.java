@@ -15,28 +15,7 @@
  */
 package org.cryptoworkshop.ximix.crypto.key;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-
-public interface KeyManager
+public interface KeyManagerListener
 {
-    String getID();
-
-    boolean hasPrivateKey(String keyID);
-
-    boolean isSigningKey(String keyID);
-
-    SubjectPublicKeyInfo fetchPublicKey(String keyID)
-        throws IOException;
-
-    byte[] getEncoded(char[] password)
-        throws IOException, GeneralSecurityException;
-
-    void load(char[] password, byte[] encoding)
-        throws IOException, GeneralSecurityException;
-
-    void addListener(KeyManagerListener listener);
-
+    void keyAdded(KeyManager keyManager, String keyID);
 }

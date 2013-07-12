@@ -71,14 +71,14 @@ public class Main
 
         KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
                                                    .withThreshold(2)
-                                                   .withNodes("A", "B")
+                                                   .withNodes("A", "B", "C", "D")
                                                    .build();
 
         byte[] encPubKey = keyGenerationService.generatePublicKey("ECENCKEY", keyGenOptions);
 
         keyGenOptions = new KeyGenerationOptions.Builder(KeyType.ECDSA, "secp256r1")
                                                    .withThreshold(2)
-                                                   .withNodes("A", "B")
+                                                   .withNodes("A", "B", "C", "D")
                                                    .build();
 
         byte[] sigPubKey = keyGenerationService.generatePublicKey("ECSIGKEY", keyGenOptions);

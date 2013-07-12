@@ -15,13 +15,18 @@
  */
 package org.cryptoworkshop.ximix.node;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,6 +38,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.util.io.Streams;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
@@ -46,25 +52,28 @@ import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
+import org.cryptoworkshop.ximix.crypto.key.KeyManager;
+import org.cryptoworkshop.ximix.crypto.key.KeyManagerListener;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class XimixNodeContext
-        implements NodeContext
+    implements NodeContext
 {
     private Map<String, ServicesConnection> peerMap;
     private final ECKeyManager keyManager;
 
     private ExecutorService connectionExecutor = Executors.newCachedThreadPool();   // TODO configurable or linked to threshold
     private ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);   // TODO configurable or linked to threshold
+    private ExecutorService decoupler = Executors.newSingleThreadExecutor();
 
     private List<Service> services = new ArrayList<Service>();
     private final String name;
 
-    public XimixNodeContext(Map<String, ServicesConnection> peerMap, Config nodeConfig)
-            throws ConfigException
+    public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
+        throws ConfigException
     {
         this.peerMap = new HashMap<>(peerMap);
 
@@ -82,6 +91,11 @@ public class XimixNodeContext
         }
 
         keyManager = new ECKeyManager(this);
+
+        if (nodeConfig.getHomeDirectory() != null)
+        {
+            setupKeyManager(nodeConfig.getHomeDirectory(), keyManager);
+        }
     }
 
     public String getName()
@@ -122,12 +136,19 @@ public class XimixNodeContext
         multiTaskExecutor.schedule(task, time, timeUnit);
     }
 
+    @Override
+    public Executor getDecoupler()
+    {
+        return decoupler;
+    }
+
     public SubjectPublicKeyInfo getPublicKey(String keyID)
     {
         try
         {
             return keyManager.fetchPublicKey(keyID);
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             e.printStackTrace();  // TODO:
             return null;
@@ -138,7 +159,7 @@ public class XimixNodeContext
     public <T> T getDomainParameters(String keyID)
     {
         X9ECParameters params = SECNamedCurves.getByName("secp256r1");
-        return (T) new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+        return (T)new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
     }
 
     @Override
@@ -233,6 +254,79 @@ public class XimixNodeContext
         return multiTaskExecutor.awaitTermination(time, timeUnit);
     }
 
+    /**
+     * Reload our previous state and register listener's if required.
+     *
+     * @param homeDirectory root of the node's config
+     * @param keyManager the key manager to be reloaded.
+     */
+    private void setupKeyManager(final File homeDirectory, KeyManager keyManager)
+    {
+        final File keyDir = new File(homeDirectory, "keys");
+        final File   store = new File(keyDir, keyManager.getID() + ".p12");
+
+        if (store.exists())
+        {
+            try
+            {
+                keyManager.load("Hello".toCharArray(), Streams.readAll(new FileInputStream(store)));
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+            catch (GeneralSecurityException e)
+            {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        }
+
+        keyManager.addListener(new KeyManagerListener()
+        {
+            @Override
+            public void keyAdded(KeyManager keyManager, String keyID)
+            {
+                if (homeDirectory != null)
+                {
+                    try
+                    {
+                        byte[] enc = keyManager.getEncoded("Hello".toCharArray());
+
+                        if (!keyDir.exists())
+                        {
+                            if (!keyDir.mkdir())
+                            {
+                                System.err.println("Eeeek!");  // TODO
+                            }
+                        }
+
+                        if (store.exists())
+                        {
+                            if (!store.renameTo(new File(keyDir, keyManager.getID() + ".p12.bak")))
+                            {
+                                System.err.println("Eeeek!"); // TODO
+                            }
+                        }
+
+                        FileOutputStream fOut = new FileOutputStream(store);
+
+                        fOut.write(enc);
+
+                        fOut.close();
+                    }
+                    catch (IOException e)
+                    {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                    catch (GeneralSecurityException e)
+                    {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                }
+            }
+        });
+    }
+
     private class ServiceConfig
     {
         private Exception throwable;
@@ -266,25 +360,31 @@ public class XimixNodeContext
 
                                 Constructor constructor = clazz.getConstructor(NodeContext.class, Config.class);
 
-                                Service impl = (Service) constructor.newInstance(XimixNodeContext.this, new Config(xmlNode));
+                                Service impl = (Service)constructor.newInstance(XimixNodeContext.this, new Config(xmlNode));
 
                                 services.add(impl);
-                            } catch (ClassNotFoundException e)
+                            }
+                            catch (ClassNotFoundException e)
                             {
                                 throwable = e;
-                            } catch (NoSuchMethodException e)
+                            }
+                            catch (NoSuchMethodException e)
                             {
                                 throwable = e;
-                            } catch (InvocationTargetException e)
+                            }
+                            catch (InvocationTargetException e)
                             {
                                 throwable = e;
-                            } catch (InstantiationException e)
+                            }
+                            catch (InstantiationException e)
                             {
                                 throwable = e;
-                            } catch (IllegalAccessException e)
+                            }
+                            catch (IllegalAccessException e)
                             {
                                 throwable = e;
-                            } catch (ConfigException e)
+                            }
+                            catch (ConfigException e)
                             {
                                 throwable = e;
                             }
@@ -301,7 +401,7 @@ public class XimixNodeContext
     }
 
     private class NodeConfigFactory
-            implements ConfigObjectFactory<ServiceConfig>
+        implements ConfigObjectFactory<ServiceConfig>
     {
         public ServiceConfig createObject(Node configNode)
         {

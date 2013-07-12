@@ -33,11 +33,15 @@ import org.w3c.dom.NodeList;
 
 public class Config
 {
+    private final File homeDirectory;
+
     private Element xmlNode;
 
     public Config(File configFile)
         throws ConfigException, FileNotFoundException
     {
+        this.homeDirectory = configFile.getParentFile();
+
         try
         {
             init(new FileInputStream(configFile));
@@ -52,6 +56,8 @@ public class Config
     public Config(InputStream stream)
         throws ConfigException
     {
+        this.homeDirectory = null;
+
         init(stream);
     }
 
@@ -59,6 +65,8 @@ public class Config
     public Config(Node xmlNode)
         throws ConfigException
     {
+        this.homeDirectory = null;
+
         this.xmlNode = (Element)xmlNode;
     }
 
@@ -81,29 +89,15 @@ public class Config
         }
     }
 
-//    public static String getValueOf(NodeList nl, String name)
-//    {
-//        for (int t = 0; t < nl.getLength(); t++)
-//        {
-//            if (name.equals(nl.item(t).getNodeName()))
-//            {
-//                return nl.item(t).getTextContent();
-//            }
-//        }
-//        return null;
-//    }
-
-//    public static Node getNodeOf(NodeList nl, String name) throws Exception
-//    {
-//        for (int t = 0; t < nl.getLength(); t++)
-//        {
-//            if (name.equals(nl.item(t).getNodeName()))
-//            {
-//                return nl.item(t);
-//            }
-//        }
-//        throw new ConfigException("Node '"+name+"' was not found.");
-//    }
+    /**
+     * Return the location of the file defining this config, if there is one.
+     *
+     * @return location of home directory, null otherwise.
+     */
+    public File getHomeDirectory()
+    {
+        return homeDirectory;
+    }
 
     public int getIntegerProperty(String name)
         throws ConfigException
@@ -184,21 +178,6 @@ public class Config
 
         return def;
     }
-
-//    public NodeList getNodeList(String name) throws ConfigException
-//    {
-//        String[] path = name.split("\\.");
-//
-//        for (String elementName : path)
-//        {
-//            NodeList list = xmlNode.getElementsByTagName(elementName);
-//            if (list.item(0).getNodeName().equals(path[path.length - 1]))
-//            {
-//                return list.item(0).getChildNodes();
-//            }
-//        }
-//        throw new ConfigException("property " + name + " not found");
-//    }
 
     public <T> List<T> getConfigObjects(String name, ConfigObjectFactory<T> factory)
         throws ConfigException

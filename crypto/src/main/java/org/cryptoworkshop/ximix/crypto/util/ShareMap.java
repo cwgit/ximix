@@ -19,18 +19,27 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
 
 public class ShareMap<K, V>
 {
     private final Map<K, CountDownLatch> latchMap = new HashMap<>();
     private final Map<K, Share<V>> sharedMap = new HashMap<>();
     private final ScheduledExecutorService executor;
+    private final ListenerHandler<ShareMapListener> listenerHandler;
+    private final ShareMapListener notifier;
 
-    public ShareMap(ScheduledExecutorService executor)
+    public ShareMap(ScheduledExecutorService executor, Executor decoupler)
     {
         this.executor = executor;
+
+        this.listenerHandler = new ListenerHandlerFactory(decoupler).createHandler(ShareMapListener.class);
+        this.notifier = listenerHandler.getNotifier();
     }
 
     public void init(K id, int numberOfParties)
@@ -69,6 +78,11 @@ public class ShareMap<K, V>
     public void addValue(K id, Share<V> value)
     {
          executor.execute(new AddTask(id, value));
+    }
+
+    public void addListener(ShareMapListener<K, V> listener)
+    {
+        listenerHandler.addListener(listener);
     }
 
     public Share<V> getShare(K id)
@@ -158,7 +172,12 @@ public class ShareMap<K, V>
                     {
                         sharedMap.put(id, share);
                     }
-                    latchMap.get(id).countDown();
+                    CountDownLatch latch = latchMap.get(id);
+                    latch.countDown();
+                    if (latch.getCount() == 0)
+                    {
+                        notifier.shareCompleted(ShareMap.this, id);
+                    }
                 }
                 else
                 {

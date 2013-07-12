@@ -76,12 +76,15 @@ import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
 import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
 import org.cryptoworkshop.ximix.crypto.util.ECPointShare;
 import org.cryptoworkshop.ximix.crypto.util.ShareMap;
+import org.cryptoworkshop.ximix.crypto.util.ShareMapListener;
 
 public class ECKeyManager
     implements KeyManager
@@ -94,13 +97,32 @@ public class ECKeyManager
     private final ShareMap<String, BigInteger> sharedPrivateKeyMap;
     private final ShareMap<String, ECPoint> sharedPublicKeyMap;
     private final NodeContext nodeContext;
+    private final ListenerHandler<KeyManagerListener> listenerHandler;
+    private final KeyManagerListener notifier;
 
     public ECKeyManager(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
+        this.listenerHandler = new ListenerHandlerFactory(nodeContext.getDecoupler()).createHandler(KeyManagerListener.class);
+        this.notifier = listenerHandler.getNotifier();
 
-        sharedPublicKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor());
-        sharedPrivateKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor());
+        sharedPublicKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
+        sharedPrivateKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
+
+        sharedPrivateKeyMap.addListener(new ShareMapListener<String, BigInteger>()
+        {
+            @Override
+            public void shareCompleted(ShareMap<String, BigInteger> shareMap, String id)
+            {
+                notifier.keyAdded(ECKeyManager.this, id);
+            }
+        });
+    }
+
+    @Override
+    public String getID()
+    {
+        return "StdEC";
     }
 
     @Override
@@ -115,7 +137,6 @@ public class ECKeyManager
         return signingKeys.contains(keyID);
     }
 
-    @Override
     public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, KeyType algorithm, int numberOfPeers, ECKeyGenParams keyGenParams)
     {
         ECDomainParameters domainParameters = paramsMap.get(keyID);
@@ -185,96 +206,122 @@ public class ECKeyManager
         return sharedPrivateKeyMap.getShare(keyID).getValue();
     }
 
-    public byte[] getEncoded(char[] password)
-        throws IOException, OperatorCreationException, GeneralSecurityException, PKCSException
+    public synchronized byte[] getEncoded(char[] password)
+        throws IOException, GeneralSecurityException
     {
         KeyFactory fact = KeyFactory.getInstance("ECDSA", "BC");
-        OutputEncryptor encOut = new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes256_CBC).setProvider("BC").build(password);
 
-        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
-        PKCS12PfxPduBuilder builder = new PKCS12PfxPduBuilder();
-
-        for (String keyID : sharedPrivateKeyMap.getIDs())
+        try
         {
-            ECDomainParameters domainParams = paramsMap.get(keyID);
-            PrivateKey privKey = fact.generatePrivate(
-                       new PKCS8EncodedKeySpec(
-                            PrivateKeyInfoFactory.createPrivateKeyInfo(
-                                new ECPrivateKeyParameters(sharedPrivateKeyMap.getShare(keyID).getValue(), domainParams)).getEncoded()));
-            SubjectPublicKeyInfo pubKey = this.fetchPublicKey(keyID);
+            OutputEncryptor encOut = new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes256_CBC).setProvider("BC").build(password);
 
-            PKCS12SafeBagBuilder eeCertBagBuilder = new PKCS12SafeBagBuilder(createCertificate(
-                                                             keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), privKey));
 
-            eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
+            JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+            PKCS12PfxPduBuilder builder = new PKCS12PfxPduBuilder();
 
-            SubjectKeyIdentifier pubKeyId = extUtils.createSubjectKeyIdentifier(pubKey);
+            for (String keyID : sharedPrivateKeyMap.getIDs())
+            {
+                ECDomainParameters domainParams = paramsMap.get(keyID);
+                PrivateKey privKey = fact.generatePrivate(
+                           new PKCS8EncodedKeySpec(
+                                PrivateKeyInfoFactory.createPrivateKeyInfo(
+                                    new ECPrivateKeyParameters(sharedPrivateKeyMap.getShare(keyID).getValue(), domainParams)).getEncoded()));
+                SubjectPublicKeyInfo pubKey = this.fetchPublicKey(keyID);
 
-            eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
+                PKCS12SafeBagBuilder eeCertBagBuilder = new PKCS12SafeBagBuilder(createCertificate(
+                                                                 keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), privKey));
 
-            PKCS12SafeBagBuilder keyBagBuilder = new JcaPKCS12SafeBagBuilder(privKey, encOut);
+                eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
 
-            keyBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
-            keyBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
+                SubjectKeyIdentifier pubKeyId = extUtils.createSubjectKeyIdentifier(pubKey);
 
-            builder.addData(keyBagBuilder.build());
+                eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
 
-            builder.addEncryptedData(new JcePKCSPBEOutputEncryptorBuilder(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC2_CBC).setProvider("BC").build(password), new PKCS12SafeBag[] { eeCertBagBuilder.build() });
+                PKCS12SafeBagBuilder keyBagBuilder = new JcaPKCS12SafeBagBuilder(privKey, encOut);
+
+                keyBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
+                keyBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
+
+                builder.addData(keyBagBuilder.build());
+
+                builder.addEncryptedData(new JcePKCSPBEOutputEncryptorBuilder(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC2_CBC).setProvider("BC").build(password), new PKCS12SafeBag[] { eeCertBagBuilder.build() });
+            }
+
+            PKCS12PfxPdu pfx = builder.build(new JcePKCS12MacCalculatorBuilder(NISTObjectIdentifiers.id_sha256), password);
+
+            return pfx.getEncoded(ASN1Encoding.DL);
         }
-
-        PKCS12PfxPdu pfx = builder.build(new JcePKCS12MacCalculatorBuilder(NISTObjectIdentifiers.id_sha256), password);
-
-        return pfx.getEncoded(ASN1Encoding.DL);
+        catch (PKCSException e)
+        {
+            throw new GeneralSecurityException("Unable to create key store: " + e.getMessage(), e);
+        }
+        catch (OperatorCreationException e)
+        {
+            throw new GeneralSecurityException("Unable to create operator: " + e.getMessage(), e);
+        }
     }
 
-    public void loadFromEncoding(char[] password, byte[] encoding)
-        throws IOException, OperatorCreationException, GeneralSecurityException, PKCSException
+    public synchronized void load(char[] password, byte[] encoding)
+        throws IOException, GeneralSecurityException
     {
-        PKCS12PfxPdu pfx = new PKCS12PfxPdu(encoding);
-        InputDecryptorProvider inputDecryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
-                                                              .setProvider("BC").build(password);
-        ContentInfo[] infos = pfx.getContentInfos();
-
-        for (int i = 0; i != infos.length; i++)
+        try
         {
-            if (infos[i].getContentType().equals(PKCSObjectIdentifiers.encryptedData))
+            PKCS12PfxPdu pfx = new PKCS12PfxPdu(encoding);
+            InputDecryptorProvider inputDecryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
+                .setProvider("BC").build(password);
+            ContentInfo[] infos = pfx.getContentInfos();
+
+            for (int i = 0; i != infos.length; i++)
             {
-                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i], inputDecryptorProvider);
-
-                PKCS12SafeBag[] bags = dataFact.getSafeBags();
-
-                Attribute[] attributes = bags[0].getAttributes();
-
-                X509CertificateHolder cert = (X509CertificateHolder)bags[0].getBagValue();
-
-                String keyID = getKeyID(attributes);
-                ECPublicKeyParameters publicKeyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
-
-                paramsMap.put(keyID, publicKeyParameters.getParameters());
-                sharedPublicKeyMap.init(keyID, 0);
-                sharedPublicKeyMap.addValue(keyID, new ECPointShare(
-                    ASN1Integer.getInstance(cert.getExtension(XimixObjectIdentifiers.ximixShareIdExtension).getParsedValue()).getValue().intValue(),
-                    publicKeyParameters.getQ()));
-
-                if (KeyUsage.fromExtensions(cert.getExtensions()).hasUsages(KeyUsage.digitalSignature))
+                if (infos[i].getContentType().equals(PKCSObjectIdentifiers.encryptedData))
                 {
-                    signingKeys.add(keyID);
+                    PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i], inputDecryptorProvider);
+
+                    PKCS12SafeBag[] bags = dataFact.getSafeBags();
+
+                    Attribute[] attributes = bags[0].getAttributes();
+
+                    X509CertificateHolder cert = (X509CertificateHolder)bags[0].getBagValue();
+
+                    String keyID = getKeyID(attributes);
+                    ECPublicKeyParameters publicKeyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
+
+                    paramsMap.put(keyID, publicKeyParameters.getParameters());
+                    sharedPublicKeyMap.init(keyID, 0);
+                    sharedPublicKeyMap.addValue(keyID, new ECPointShare(
+                        ASN1Integer.getInstance(cert.getExtension(XimixObjectIdentifiers.ximixShareIdExtension).getParsedValue()).getValue().intValue(),
+                        publicKeyParameters.getQ()));
+
+                    if (KeyUsage.fromExtensions(cert.getExtensions()).hasUsages(KeyUsage.digitalSignature))
+                    {
+                        signingKeys.add(keyID);
+                    }
+                }
+                else
+                {
+                    PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i]);
+
+                    PKCS12SafeBag[] bags = dataFact.getSafeBags();
+                    String keyID = getKeyID(bags[0].getAttributes());
+
+                    PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
+                    PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
+
+                    sharedPrivateKeyMap.init(keyID, 0);
+                    sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(0, ECPrivateKey.getInstance(info.parsePrivateKey()).getKey()));
                 }
             }
-            else
-            {
-                PKCS12SafeBagFactory dataFact = new PKCS12SafeBagFactory(infos[i]);
-
-                PKCS12SafeBag[] bags = dataFact.getSafeBags();
-                String keyID = getKeyID(bags[0].getAttributes());
-
-                PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
-                PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
-
-                sharedPrivateKeyMap.init(keyID, 0);
-                sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(0, ECPrivateKey.getInstance(info.parsePrivateKey()).getKey()));
-            }
         }
+        catch (PKCSException e)
+        {
+            throw new GeneralSecurityException("Unable to create key store: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void addListener(KeyManagerListener listener)
+    {
+        listenerHandler.addListener(listener);
     }
 
     // TODO: in this case we should get the private key from somewhere else - probably node config
@@ -298,7 +345,6 @@ public class ECKeyManager
             this.fetchPublicKey(keyID));
 
         // we use keyUsage extension to distinguish between signing and encryption keys
-        // TODO;  distinguish between ElGamal and ECDSA
 
         if (signingKeys.contains(keyID))
         {

@@ -17,19 +17,22 @@ package org.cryptoworkshop.ximix.node;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.security.Security;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 
 public class Main
 {
     public static void main(String[] args)
     {
+        Security.addProvider(new BouncyCastleProvider());
 
         if (args.length < 2)
         {
-            System.out.println("\r\nXimix Node executable jar.\r\n");
+            System.out.println("Ximix Node executable jar.");
             System.out.println("Usage: <mixnet config> <node config>");
-            System.out.println("Example: java -jar XimixNode.jar mixnet.xml node.xml\r\n");
+            System.out.println("Example: java -jar XimixNode.jar mixnet.xml node.xml");
             System.exit(0);
         }
 
@@ -50,7 +53,6 @@ public class Main
         {
             e.printStackTrace();
         }
-
     }
 
 }

@@ -112,7 +112,7 @@ public class Main
 
         SignatureGenerationOptions sigGenOptions = new SignatureGenerationOptions.Builder(KeyType.ECDSA)
             .withThreshold(2)
-            .withNodes("A", "B")
+            .withNodes("A", "B", "C", "D")
             .build();
 
         byte[] dsaSig = signingService.generateSignature("ECSIGKEY", sigGenOptions, hash);

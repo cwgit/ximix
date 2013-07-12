@@ -21,6 +21,7 @@ import java.security.KeyStore;
 import java.security.Security;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -126,7 +127,7 @@ public class ECKeyManagerTest
 
         ECKeyManager rebuiltKeyManager = new ECKeyManager(new MyNodeContext());
 
-        rebuiltKeyManager.loadFromEncoding(passwd, p12enc);
+        rebuiltKeyManager.load(passwd, p12enc);
 
         Assert.assertFalse(keyManager.isSigningKey("Test1"));
         Assert.assertFalse(rebuiltKeyManager.isSigningKey("Test1"));
@@ -168,7 +169,7 @@ public class ECKeyManagerTest
 
         ECKeyManager rebuiltKeyManager = new ECKeyManager(new MyNodeContext());
 
-        rebuiltKeyManager.loadFromEncoding(passwd, p12enc);
+        rebuiltKeyManager.load(passwd, p12enc);
 
         Assert.assertFalse(keyManager.isSigningKey("Test1"));
         Assert.assertFalse(rebuiltKeyManager.isSigningKey("Test1"));
@@ -252,6 +253,12 @@ public class ECKeyManagerTest
         public void schedule(Runnable task, long time, TimeUnit timeUnit)
         {
             //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public Executor getDecoupler()
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override

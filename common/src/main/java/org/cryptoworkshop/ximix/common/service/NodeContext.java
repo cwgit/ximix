@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.common.service;
 
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -56,6 +57,8 @@ public interface NodeContext
     void execute(Runnable task);
 
     void schedule(Runnable task, long time, TimeUnit timeUnit);
+
+    Executor getDecoupler();
 
     ScheduledExecutorService getScheduledExecutor();
 

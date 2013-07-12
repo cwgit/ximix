@@ -103,12 +103,12 @@ public class ECDSASignerEngine
     {
         super(Algorithms.ECDSA, nodeContext);
 
-        this.sharedKMap = new ShareMap<>(nodeContext.getScheduledExecutor());
-        this.sharedPMap = new ShareMap<>(nodeContext.getScheduledExecutor());
-        this.sharedAMap = new ShareMap<>(nodeContext.getScheduledExecutor());
-        this.sharedBMap = new ShareMap<>(nodeContext.getScheduledExecutor());
-        this.sharedCMap = new ShareMap<>(nodeContext.getScheduledExecutor());
-        this.sharedMuMap = new ShareMap<>(nodeContext.getScheduledExecutor());
+        this.sharedKMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
+        this.sharedPMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
+        this.sharedAMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
+        this.sharedBMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
+        this.sharedCMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
+        this.sharedMuMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
     }
 
     public int getAlgorithm()

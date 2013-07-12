@@ -15,95 +15,25 @@
  */
 package org.cryptoworkshop.ximix.common.operation;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executor;
+
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
 
 public class Operation<T extends OperationListener>
 {
     protected final T notifier;
-    private final NotifierHandler handler;
+    private final ListenerHandler<T> handler;
 
     protected Operation(Executor decoupler, Class listenerClass)
     {
-        handler = new NotifierHandler(decoupler);
+        handler = new ListenerHandlerFactory(decoupler).createHandler(listenerClass);
 
-        this.notifier = (T)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{listenerClass}, handler);
+        this.notifier = handler.getNotifier();
     }
 
     public void addListener(T listener)
     {
         handler.addListener(listener);
-    }
-
-    private class NotifierHandler
-        implements InvocationHandler
-    {
-        private final Executor decoupler;
-        private final List listeners = new ArrayList();
-
-        public NotifierHandler(Executor decoupler)
-        {
-            this.decoupler = decoupler;
-        }
-
-        void addListener(T listener)
-        {
-            synchronized (listeners)
-            {
-                listeners.add(listener);
-            }
-        }
-
-        @Override
-        public Object invoke(final Object o, final Method method, final Object[] objects)
-            throws Throwable
-        {
-            synchronized (listeners)
-            {
-                for (Object listener : listeners)
-                {
-                    decoupler.execute(new ObjectTask(listener, method, objects));
-                }
-            }
-
-            return null;
-        }
-
-        private class ObjectTask
-            implements Runnable
-        {
-            private final Object o;
-            private final Method method;
-            private final Object[] objects;
-
-            public ObjectTask(Object o, Method method, Object[] objects)
-            {
-                this.o = o;
-                this.method = method;
-                this.objects = objects;
-            }
-
-            @Override
-            public void run()
-            {
-                try
-                {
-                    method.invoke(o, objects);
-                }
-                catch (IllegalAccessException e)
-                {
-                    e.printStackTrace();  //TODO: this should never happen, but needs to be logged somewhere!
-                }
-                catch (InvocationTargetException e)
-                {
-                    e.printStackTrace();  //TODO: this should never happen, but needs to be logged somewhere!
-                }
-            }
-        }
     }
 }
