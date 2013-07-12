@@ -14,7 +14,7 @@ import java.util.concurrent.*;
  */
 public class CapabilitiesCache
 {
-    private static HashMap<NodeContext, CapabilitiesCache> cachePerContext = new HashMap<>();
+
     long expireAfterPeriod = 2 * 60 * 1000; // TODO make configurable.
     private HashMap<CapabilityCacheKey, List<CapabilityCacheEntry>> map = new HashMap<>();
     private NodeContext nodeContext = null;
@@ -22,24 +22,10 @@ public class CapabilitiesCache
     public CapabilitiesCache(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
-        cachePerContext.put(nodeContext, this);
+
     }
 
-    /**
-     * Get a cache for a node context.
-     * @param context
-     * @return
-     */
-    public static CapabilitiesCache cache(NodeContext context)
-    {
-        //
-        // Rather than put access to the cache in one spot.
-        // I thought this would be more flexable as long as the context is known
-        // A cache can be found..
-        //
 
-        return cachePerContext.get(context);
-    }
 
     /**
      * Puts a copy of the capability.

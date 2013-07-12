@@ -68,7 +68,7 @@ public class XimixNodeContext
     private ExecutorService connectionExecutor = Executors.newCachedThreadPool();   // TODO configurable or linked to threshold
     private ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);   // TODO configurable or linked to threshold
     private ExecutorService decoupler = Executors.newSingleThreadExecutor();
-
+    private CapabilitiesCache capabilitiesCache = null;
 
 
     private List<Service> services = new ArrayList<Service>();
@@ -99,14 +99,8 @@ public class XimixNodeContext
             setupKeyManager(nodeConfig.getHomeDirectory(), keyManager);
         }
 
-        //
-        // Set up cache.
-        //
-        // Cache can be found at: CapabilitiesCache.cache(NodeContext).xxx
-        //
 
-
-        new CapabilitiesCache(this);
+        capabilitiesCache = new CapabilitiesCache(this);
 
     }
 
