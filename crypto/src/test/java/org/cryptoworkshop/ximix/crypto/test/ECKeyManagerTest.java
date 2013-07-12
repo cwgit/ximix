@@ -115,6 +115,8 @@ public class ECKeyManagerTest
 
         keyManager.buildSharedKey("Test1", new ECCommittedSecretShareMessage(0, privKey.getD(), BigInteger.ONE, new ECPoint[] { commitment }, pubKey.getQ(), new ECPoint[] { pubKey.getQ() }));
 
+        keyManager.fetchPublicKey("Test1"); // make sure we've synced up
+
         byte[] p12enc = keyManager.getEncoded(passwd);
 
         KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
@@ -155,6 +157,9 @@ public class ECKeyManagerTest
         pubKey = (ECPublicKeyParameters)kp2.getPublic();
         commitment = pubKey.getParameters().getG().multiply(privKey.getD()).add(h);
         keyManager.buildSharedKey("Test2", new ECCommittedSecretShareMessage(0, privKey.getD(), BigInteger.ONE, new ECPoint[] { commitment }, pubKey.getQ(), new ECPoint[] { pubKey.getQ() }));
+
+        keyManager.fetchPublicKey("Test1"); // make sure we've synced up
+        keyManager.fetchPublicKey("Test2"); // make sure we've synced up
 
         byte[] p12enc = keyManager.getEncoded(passwd);
 
@@ -258,13 +263,13 @@ public class ECKeyManagerTest
         @Override
         public Executor getDecoupler()
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return Executors.newSingleThreadExecutor();
         }
 
         @Override
         public ScheduledExecutorService getScheduledExecutor()
         {
-            return Executors.newSingleThreadScheduledExecutor();
+            return Executors.newScheduledThreadPool(5);
         }
 
         @Override
