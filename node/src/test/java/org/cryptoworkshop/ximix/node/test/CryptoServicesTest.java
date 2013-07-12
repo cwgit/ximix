@@ -237,7 +237,6 @@ public class CryptoServicesTest
 
             connectionMap.put(nodeName, new ServicesConnection()
             {
-
                 @Override
                 public CapabilityMessage[] getCapabilities()
                 {
@@ -259,7 +258,7 @@ public class CryptoServicesTest
                         message = new ClientMessage((ClientMessage.Type)type, messagePayload);
                     }
 
-                    Service service = context.getService(message.getType());
+                    Service service = context.getService(message);
 
                     return service.handle(message);
                 }
@@ -270,8 +269,6 @@ public class CryptoServicesTest
                     throw new RuntimeException("Not implemented.");
                 }
             });
-
-
         }
 
         for (int i = 0; i != size; i++)

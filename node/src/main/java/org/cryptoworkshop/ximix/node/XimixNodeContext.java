@@ -23,6 +23,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -43,6 +45,10 @@ import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.NodeInfo;
 import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
@@ -62,22 +68,20 @@ import org.w3c.dom.NodeList;
 public class XimixNodeContext
     implements NodeContext
 {
+    private final ExecutorService connectionExecutor = Executors.newCachedThreadPool();   // TODO configurable or linked to threshold
+    private final ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);   // TODO configurable or linked to threshold
+    private final ExecutorService decoupler = Executors.newSingleThreadExecutor();
+    private final List<Service> services = new ArrayList<>();
+
+    private final String name;
     private Map<String, ServicesConnection> peerMap;
     private final ECKeyManager keyManager;
-
-    private ExecutorService connectionExecutor = Executors.newCachedThreadPool();   // TODO configurable or linked to threshold
-    private ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);   // TODO configurable or linked to threshold
-    private ExecutorService decoupler = Executors.newSingleThreadExecutor();
-    private CapabilitiesCache capabilitiesCache = null;
-
-
-    private List<Service> services = new ArrayList<Service>();
-    private final String name;
+    private final RemoteServicesCache remoteServicesCache;
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
     {
-        this.peerMap = new HashMap<>(peerMap);
+        this.peerMap = Collections.synchronizedMap(new HashMap<>(peerMap));
 
         this.name = nodeConfig.getStringProperty("name");  // TODO:
 
@@ -99,9 +103,7 @@ public class XimixNodeContext
             setupKeyManager(nodeConfig.getHomeDirectory(), keyManager);
         }
 
-
-        capabilitiesCache = new CapabilitiesCache(this);
-
+        remoteServicesCache = new RemoteServicesCache(this);
     }
 
     public String getName()
@@ -111,7 +113,7 @@ public class XimixNodeContext
 
     public CapabilityMessage[] getCapabilities()
     {
-        List<CapabilityMessage> capabilityList = new ArrayList<CapabilityMessage>();
+        List<CapabilityMessage> capabilityList = new ArrayList<>();
 
         for (Service service : services)
         {
@@ -211,17 +213,22 @@ public class XimixNodeContext
 
     }
 
-    public Service getService(Enum type)
+    public Service getService(Message message)
     {
         for (Service service : services)
         {
-            if (service.isAbleToHandle(type))
+            if (service.isAbleToHandle(message))
             {
                 return service;
             }
         }
 
-        return null;
+        if (message.getType() == CommandMessage.Type.FETCH_NODE_INFO)
+        {
+            return new NodeInfoService();
+        }
+
+        return remoteServicesCache.findRemoteService(message);
     }
 
     @Override
@@ -331,6 +338,28 @@ public class XimixNodeContext
                 }
             }
         });
+    }
+
+    private class NodeInfoService
+        implements Service
+    {
+        @Override
+        public CapabilityMessage getCapability()
+        {
+            return new CapabilityMessage(CapabilityMessage.Type.NODE_INFO, new ASN1Encodable[0]);
+        }
+
+        @Override
+        public MessageReply handle(Message message)
+        {
+            return new MessageReply(MessageReply.Type.OKAY, new NodeInfo(XimixNodeContext.this.getName(), XimixNodeContext.this.getCapabilities()));
+        }
+
+        @Override
+        public boolean isAbleToHandle(Message message)
+        {
+            return message.getType() == CommandMessage.Type.FETCH_NODE_INFO;
+        }
     }
 
     private class ServiceConfig

@@ -20,18 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.MoveMessage;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
-import org.cryptoworkshop.ximix.common.message.PermuteMessage;
-import org.cryptoworkshop.ximix.common.message.UploadMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
-import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
 public class TransformShuffleAndMoveTask
@@ -80,7 +77,7 @@ public class TransformShuffleAndMoveTask
 
             for (byte[] message : transformedMessages)
             {
-                MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new UploadMessage(board.getName(), message));
+                MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadMessage(board.getName(), message));
 
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {

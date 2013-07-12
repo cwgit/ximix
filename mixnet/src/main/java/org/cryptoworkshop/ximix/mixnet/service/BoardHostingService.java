@@ -26,8 +26,17 @@ import java.util.Set;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.message.BoardDetails;
+import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
+import org.cryptoworkshop.ximix.common.message.BoardMessage;
+import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageBlock;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
@@ -97,7 +106,7 @@ public class BoardHostingService
                 serviceContext.execute(new TransformShuffleAndMoveTask(serviceContext, boardRegistry, pAndmMessage));
                 break;
             case TRANSFER_TO_BOARD:
-                UploadMessage uploadMessage = UploadMessage.getInstance(message.getPayload());
+                BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
                 serviceContext.execute(new UploadTask(serviceContext, boardRegistry, uploadMessage));
                 break;
             case DOWNLOAD_BOARD_CONTENTS:
@@ -116,7 +125,7 @@ public class BoardHostingService
             switch (((ClientMessage)message).getType())
             {
             case UPLOAD_TO_BOARD:
-                UploadMessage uploadMessage = UploadMessage.getInstance(message.getPayload());
+                BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
                 serviceContext.execute(new UploadTask(serviceContext, boardRegistry, uploadMessage));
                 break;
             default:
@@ -126,8 +135,10 @@ public class BoardHostingService
         return new MessageReply(MessageReply.Type.OKAY);
     }
 
-    public boolean isAbleToHandle(Enum type)
+    public boolean isAbleToHandle(Message message)
     {
+        Enum type = message.getType();
+
         return type == ClientMessage.Type.UPLOAD_TO_BOARD
             || type == CommandMessage.Type.SUSPEND_BOARD
             || type == CommandMessage.Type.ACTIVATE_BOARD

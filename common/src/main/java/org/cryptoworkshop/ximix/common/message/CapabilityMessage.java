@@ -36,7 +36,8 @@ public class CapabilityMessage
         ENCRYPTION,
         KEY_RETRIEVAL,
         KEY_GENERATION,
-        SIGNING
+        SIGNING,
+        NODE_INFO
     }
 
     private final Type type;

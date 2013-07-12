@@ -19,7 +19,7 @@ import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 /**
  * A default ximix node implementation.
  */
-public class DefaultXimixNode
+class DefaultXimixNode
     implements XimixNode
 {
     private final Config nodeConfig;

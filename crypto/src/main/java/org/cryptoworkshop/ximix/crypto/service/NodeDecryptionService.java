@@ -96,8 +96,8 @@ public class NodeDecryptionService
         return null;  // TODO:
     }
 
-    public boolean isAbleToHandle(Enum type)
+    public boolean isAbleToHandle(Message message)
     {
-        return type == CommandMessage.Type.PARTIAL_DECRYPT;
+        return message.getType() == CommandMessage.Type.PARTIAL_DECRYPT;
     }
 }

@@ -162,13 +162,17 @@ public class ClientCommandService
                     connection.sendMessage(node, CommandMessage.Type.SUSPEND_BOARD, new BoardMessage(boardName));
                 }
 
-                for (int i = 0; i != nodes.length; i++)
+                String nextNode = nodes[0];
+                for (int i = 0; i <= nodes.length - 1; i++)
                 {
-                    String curNode = nodes[i];
-                    String nextNode = nodes[(i + 1) % nodes.length];
+                    String curNode = nextNode;
+
+                    nextNode = nodes[(i + 1)];
 
                     connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(boardName, options.getTransformName(), options.getKeyID(), nextNode));
                 }
+
+                connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD, new PermuteAndMoveMessage(boardName, options.getTransformName(), options.getKeyID(), null));
 
                 for (String node : nodes)
                 {

@@ -115,8 +115,10 @@ public class NodeKeyGenerationService
 
     }
 
-    public boolean isAbleToHandle(Enum type)
+    public boolean isAbleToHandle(Message message)
     {
+        Enum type = message.getType();
+
         return type == CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR
             || type == CommandMessage.Type.GENERATE_KEY_PAIR
             || type == CommandMessage.Type.STORE_SHARE;

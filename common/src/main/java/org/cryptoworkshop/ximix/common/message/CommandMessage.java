@@ -39,6 +39,7 @@ public class CommandMessage
         STORE_SHARE,
         PARTIAL_DECRYPT,
         SIGNATURE_MESSAGE,
+        SHUFFLE_AND_RETURN_BOARD,
         FETCH_NODE_INFO
     }
 

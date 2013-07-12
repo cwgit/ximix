@@ -8,8 +8,10 @@ import java.util.TreeSet;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.DLSet;
 
 class MessageUtils
 {
@@ -59,6 +61,18 @@ class MessageUtils
         }
 
         return new DLSequence(v);
+    }
+
+    static ASN1Set toASN1Set(Set<String> set)
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        for (String name : set)
+        {
+            v.add(new DERUTF8String(name));
+        }
+
+        return new DLSet(v);
     }
 
     private static class CaseInsensitiveComparator

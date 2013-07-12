@@ -38,7 +38,4 @@ public class ServiceConnectionException
     {
         super(message, cause);
     }
-
-
-
 }

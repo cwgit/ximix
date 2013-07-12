@@ -55,8 +55,8 @@ public class NodeKeyRetrievalService
         return null;  // TODO:
     }
 
-    public boolean isAbleToHandle(Enum type)
+    public boolean isAbleToHandle(Message message)
     {
-        return type == ClientMessage.Type.FETCH_PUBLIC_KEY;
+        return message.getType() == ClientMessage.Type.FETCH_PUBLIC_KEY;
     }
 }
