@@ -52,3 +52,4 @@ out/
 build/reports/tests
 build/test-results/binary/test
 build
+coverage/
