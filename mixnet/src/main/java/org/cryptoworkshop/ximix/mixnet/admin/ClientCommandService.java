@@ -164,6 +164,8 @@ public class ClientCommandService
 
                 String nextNode = nodes[0];
 
+                connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new BoardMessage(boardName));
+
                 MessageReply startRep = connection.sendMessage(CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(boardName, options.getTransformName(), options.getKeyID(), nextNode));
                 String boardHost = DERUTF8String.getInstance(startRep.getPayload()).getString();
 
@@ -174,11 +176,14 @@ public class ClientCommandService
                     whatForCompleteStatus(curNode);
 
                     nextNode = nodes[i];
+                    connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new BoardMessage(boardName));
 
                     connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(boardName, options.getTransformName(), options.getKeyID(), nextNode));
                 }
 
                 whatForCompleteStatus(nextNode);
+
+                connection.sendMessage(boardHost, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new BoardMessage(boardName));
 
                 connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD, new PermuteAndReturnMessage(boardName, options.getTransformName(), options.getKeyID()));
 

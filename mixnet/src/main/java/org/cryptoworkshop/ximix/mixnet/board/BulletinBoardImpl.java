@@ -53,8 +53,6 @@ public class BulletinBoardImpl
         {
             public void run()
             {
-                System.err.println("message posted");
-
                 messages.add(message);
             }
         });
@@ -116,6 +114,18 @@ public class BulletinBoardImpl
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
         return null; // TODO:
+    }
+
+    @Override
+    public void clear()
+    {
+        boardUpdateExecutor.execute(new Runnable()
+        {
+            public void run()
+            {
+                messages.clear();
+            }
+        });
     }
 
     public Iterator<byte[]> iterator()

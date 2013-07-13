@@ -31,4 +31,6 @@ public interface BulletinBoard
     Transform getTransform(String transformName);
 
     List<byte[]> getMessages(int maxNumberOfMessages);
+
+    void clear();
 }

@@ -222,6 +222,11 @@ public class BoardHostingService
                 PermuteAndReturnMessage pAndrMessage = PermuteAndReturnMessage.getInstance(message.getPayload());
                 nodeContext.execute(new TransformShuffleAndReturnTask(nodeContext, boardRegistry, pAndrMessage));
                 break;
+            case INITIATE_INTRANSIT_BOARD:
+                boardMessage = BoardMessage.getInstance(message.getPayload());
+                boardRegistry.markInTransit(boardMessage.getBoardName());
+                boardRegistry.getTransitBoard(boardMessage.getBoardName()).clear();
+                break;
             case TRANSFER_TO_BOARD:
                 BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
                 boardRegistry.markInTransit(uploadMessage.getBoardName());

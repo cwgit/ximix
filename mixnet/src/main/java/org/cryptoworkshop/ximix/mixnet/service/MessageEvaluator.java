@@ -82,6 +82,11 @@ class MessageEvaluator
                 return true;
             }
 
+            if (type == CommandMessage.Type.INITIATE_INTRANSIT_BOARD)
+            {
+                return true;
+            }
+
             if (type == CommandMessage.Type.TRANSFER_TO_BOARD)
             {
                 return true;
