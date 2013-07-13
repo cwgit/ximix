@@ -1,22 +1,24 @@
 package org.cryptoworkshop.ximix.installer;
 
-import org.cryptoworkshop.ximix.installer.ui.AbstractInstallerUI;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.Console;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import static org.cryptoworkshop.ximix.installer.InstallerConfig.Step;
 
 /**
  *
@@ -24,6 +26,7 @@ import static org.cryptoworkshop.ximix.installer.InstallerConfig.Step;
 public class Installer
 {
 
+    public static final String INSTALL_DIR = "installDir";
     private static HashMap<String, Object> properties = new HashMap<>();
     private File archive = null;
     private String configPath = null;
@@ -42,12 +45,12 @@ public class Installer
             if (jar != null)
             {
                 archive = new File(jar);
-            } else
+            }
+            else
             {
                 URL u = Installer.class.getProtectionDomain().getCodeSource().getLocation();
                 archive = new File(u.toURI());
             }
-            AbstractInstallerUI ui = null;
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = dbFactory.newDocumentBuilder();
@@ -58,21 +61,12 @@ public class Installer
             InstallerConfig config = new InstallerConfig(xmlNode);
 
 
-//            ui = new MainFrame();
-//
-//            //
-//            // TODO uncomment for production, defaults to std in.
-//            //
-//
-////            if (System.getProperty("os.name").indexOf("indows") > -1)
-////            {
-////                ui = new MainFrame();
-////            } else
-////            {
-////                ui = new MainConsole();
-////            }
-//
-//            ui.init(config);
+            Console console = System.console();
+            if (console == null)
+            {
+                JOptionPane.showMessageDialog(null, "Please run from command line.", "Problem.", JOptionPane.WARNING_MESSAGE);
+                System.exit(0);
+            }
 
 
             List<Object> operations = config.getInstallation().getOperations();
@@ -87,46 +81,49 @@ public class Installer
             {
                 Object opp = operations.get(t);
 
-                //
-                // Steps define some sort of human interaction.
-                //
-                if (opp instanceof Step)
+
+                if (opp instanceof InstallerConfig.Step)
                 {
-                    switch (ui.show(((Step) opp).getStepInstance()))
+                    String n = ((InstallerConfig.Step)opp).getName();
+                    if ("askInstallLocation".equals(n))
                     {
-                        case BACK:
-                            if (t > 0)
-                            {
-                                t -= 2;
-                            }
-                            break;
-                        case NEXT:
-                            continue;
-
-                        case CANCEL:
-                            System.exit(0);
-                            break;
+                        askInstallDir(console);
                     }
-
-
-                    continue;
                 }
-
-                if (opp instanceof InstallerConfig.MovementCollection)
+                else if (opp instanceof InstallerConfig.MovementCollection)
                 {
-                    for (InstallerConfig.Movement mv : ((InstallerConfig.MovementCollection) opp).getMovements())
+                    for (InstallerConfig.Movement mv : ((InstallerConfig.MovementCollection)opp).getMovements())
                     {
                         movement(mv);
                     }
-                } else if (opp instanceof InstallerConfig.Movement)
+                }
+                else if (opp instanceof InstallerConfig.Movement)
                 {
-                    movement((InstallerConfig.Movement) opp);
+                    movement((InstallerConfig.Movement)opp);
+                }
+                else if (opp instanceof InstallerConfig.PosixPerms)
+                {
+
+
+                    File f = new File((File)properties().get(INSTALL_DIR), ((InstallerConfig.PosixPerms)opp).getRelPath());
+                    if (!f.exists())
+                    {
+                        System.err.println("Unable to find file " + f);
+                    }
+
+                    Path p = Paths.get(f.toURI());
+
+                    // TODO consider the security implications where the relative path has elements like "../" etc.
+
+                    java.nio.file.Files.setPosixFilePermissions(p, PosixFilePermissions.fromString(((InstallerConfig.PosixPerms)opp).getPermissions()));
+
                 }
 
             }
 
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             ex.printStackTrace();
         }
@@ -137,14 +134,42 @@ public class Installer
         return properties;
     }
 
-    public static void main(String[] args) throws Exception
+    public static void main(String[] args)
+        throws Exception
     {
         if (args.length > 0)
         {
             new Installer(args[0]);
-        } else
+        }
+        else
         {
             new Installer(null);
+        }
+    }
+
+    private void askInstallDir(Console console)
+        throws Exception
+    {
+
+        System.out.println(console);
+
+        File dir = (File)properties().get(INSTALL_DIR);
+
+        for (; ; )
+        {
+            String i = console.readLine("Enter Install Directory [%s] >", dir.getCanonicalPath());
+            if (!i.isEmpty())
+            {
+                dir = new File(i);
+            }
+
+            i = console.readLine("Condfirm Install to '%s' Yes or [No] >", dir.getCanonicalPath());
+            if (i.toLowerCase().startsWith("y"))
+            {
+                properties().put(INSTALL_DIR, dir);
+                break;
+            }
+
         }
     }
 
@@ -155,14 +180,16 @@ public class Installer
         {
             copyDir(ze, jarFile, ze.getName());
 
-        } else
+        }
+        else
         {
             String dest = ze.getName();
-            File out = new File((File) properties().get("installDir"), dest);
+            File out = new File((File)properties().get(INSTALL_DIR), dest);
             try
             {
                 copy(jarFile.getInputStream(ze), out, true);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -184,24 +211,27 @@ public class Installer
 
                 if (ze.isDirectory())
                 {
-                    File out = new File((File) properties().get("installDir"), ze.getName());
+                    File out = new File((File)properties().get(INSTALL_DIR), ze.getName());
                     out.mkdirs();
                     try
                     {
                         copyDir(ze, file, prefix);
-                    } catch (Exception e)
+                    }
+                    catch (Exception e)
                     {
                         e.printStackTrace();
                     }
-                } else
+                }
+                else
                 {
 
-                    File out = new File((File) properties().get("installDir"), ze.getName());
+                    File out = new File((File)properties().get(INSTALL_DIR), ze.getName());
 
                     try
                     {
                         copy(file.getInputStream(ze), out, true);
-                    } catch (Exception e)
+                    }
+                    catch (Exception e)
                     {
                         throw new RuntimeException(e);
                     }
@@ -212,6 +242,9 @@ public class Installer
 
     public void copy(InputStream is, File f, boolean close)
     {
+
+        System.out.println("Unpacking: "+f);
+
         try
         {
             byte[] buf = new byte[4096];
@@ -232,7 +265,8 @@ public class Installer
                 is.close();
             }
 
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             throw new RuntimeException(ex);
         }

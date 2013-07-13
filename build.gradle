@@ -150,17 +150,17 @@ task coverage_report(dependsOn: 'compileTestJava') << {
     //
     // Delete source file..
     //
-    // new File("{$rootDir}/coverage/jacoco.exe").delete();
+     new File("{$rootDir}/coverage/jacoco.exe").delete();
 
 
 }
 
 
-task make_node_jar(dependsOn: 'compileJava') << {
+task make_node_installer(dependsOn: 'jar') << {
 
-    println("\r\nMaking Node Executable Jar\r\n");
+    println("\r\nMaking Node Installer Jar\r\n");
 
-    File root = new File(projectDir, "/installer/build/jars");
+    File root = new File(projectDir, "build/installers");
 
     //
     // Final jar will go in here.
@@ -171,32 +171,59 @@ task make_node_jar(dependsOn: 'compileJava') << {
     root.mkdirs();
 
     //
-    // Stage for installed node layout.
+    // Stage for jar layout.
     //
-    File stageDir = new File(root, "/node_stage");
-    stageDir.mkdirs();
+    File installerJarStageDir = new File(root, "/stage");
+    installerJarStageDir.mkdirs();
+
+
+    File nodeStageDir = new File(installerJarStageDir,"node");
+
+    org.apache.commons.io.FileUtils.copyFile( new File(project(':installer').projectDir, "src/main/resources/install_node.xml"),  new File(installerJarStageDir,"install.xml"));
+
+
+    //
+    // Assemble in stage.
+    //
+
+    File stagedLibs = new File(nodeStageDir,"/libs");
+    stagedLibs.mkdirs();
+
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':common').jar.archivePath, stagedLibs);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':crypto').jar.archivePath, stagedLibs);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':mixnet').jar.archivePath, stagedLibs);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':node').jar.archivePath, stagedLibs);
+
+    //
+    // The two betas.
+    //
+
+    org.apache.commons.io.FileUtils.copyDirectory(new File("${rootDir}/libs/"), stagedLibs);
+
+
+    org.apache.commons.io.FileUtils.copyDirectory(new File(project(':installer').projectDir,"includes/node/"), nodeStageDir );
+
+
 
     //
     // This makes a node stand alone uses the ant jar task..
     //
 
-    File jarFile = new File(root, "XimixNode.jar");
+    File jarFile = new File(root, "XimixNodeInstaller.jar");
 
     ant.jar(destfile: jarFile, manifest: new File(projectDir, "installer/manifest/MANIFEST.MF")) {
-        fileset(dir: new File(projectDir, 'common/build/classes/main/'));
-        fileset(dir: new File(projectDir, 'crypto/build/classes/main/'));
-        fileset(dir: new File(projectDir, 'mixnet/build/classes/main/'));
-        fileset(dir: new File(projectDir, 'node/build/classes/main/'));
-
-        zipfileset(includes: '**/*.class', src: new File(projectDir, libsJarPath));
+        fileset(dir: new File(projectDir, 'installer/build/classes/main/'));
+        fileset(dir: installerJarStageDir);
     }
 
-    println("");
-    println("Created: " + jarFile);
-    println();
-    println("To run a demo node:\r\n");
-    println("java -jar " + jarFile + " demo/conf/mixnet.xml demo/conf/node1.xml");
-    println();
+  //  println("");
+  //  println("Created: " + jarFile);
+  //  println();
+  //  println("To run a demo node:\r\n");
+  //  println("java -jar " + jarFile + " demo/conf/mixnet.xml demo/conf/node1.xml");
+  //  println();
+
+
 
 }
 

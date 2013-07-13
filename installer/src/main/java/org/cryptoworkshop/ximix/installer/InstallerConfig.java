@@ -1,6 +1,5 @@
 package org.cryptoworkshop.ximix.installer;
 
-import org.cryptoworkshop.ximix.installer.ui.steps.AbstractInstallerStep;
 import org.cryptoworkshop.ximix.installer.ui.steps.ConfirmStep;
 import org.cryptoworkshop.ximix.installer.ui.steps.SelectInstallLocation;
 import org.cryptoworkshop.ximix.installer.ui.steps.SelectNumberOfNodes;
@@ -76,25 +75,36 @@ public class InstallerConfig
                 @Override
                 public void node(Node n)
                 {
-                    if ("movements".equals(n.getNodeName()))
+
+                    if ("posix-exec".equals(n.getNodeName()))
+                    {
+                         operations.add(new PosixPerms(n));
+                    }
+                    else if ("movements".equals(n.getNodeName()))
                     {
                         operations.add(new MovementCollection(n));
-                    } else if ("movement".equals(n.getNodeName()))
+                    }
+                    else if ("movement".equals(n.getNodeName()))
                     {
                         operations.add(new Movement(n));
-                    } else if ("id".equals(n.getNodeName()))
+                    }
+                    else if ("id".equals(n.getNodeName()))
                     {
                         id = n.getTextContent();
-                    } else if ("name".equals(n.getNodeName()))
+                    }
+                    else if ("name".equals(n.getNodeName()))
                     {
                         name = n.getTextContent();
-                    } else if ("description".equals(n.getNodeName()))
+                    }
+                    else if ("description".equals(n.getNodeName()))
                     {
                         description = n.getTextContent();
-                    } else if ("step".equals(n.getNodeName()))
+                    }
+                    else if ("step".equals(n.getNodeName()))
                     {
                         operations.add(new Step(n));
-                    } else if ("prop".equals(n.getNodeName()))
+                    }
+                    else if ("prop".equals(n.getNodeName()))
                     {
                         NamedNodeMap attr = n.getAttributes();
 
@@ -105,7 +115,7 @@ public class InstallerConfig
                         // Properties can be overridden from command line using -D<name>=<value
                         //
 
-                        String value = System.getProperty(name,null);
+                        String value = System.getProperty(name, null);
 
                         if (attr.getNamedItem("value") != null)
                         {
@@ -117,22 +127,22 @@ public class InstallerConfig
                         {
                             case "int":
                                 props.put(
-                                        attr.getNamedItem("name").getTextContent(),
-                                        Integer.valueOf(attr.getNamedItem("value").getTextContent())
+                                    attr.getNamedItem("name").getTextContent(),
+                                    Integer.valueOf(attr.getNamedItem("value").getTextContent())
                                 );
                                 break;
 
                             case "string":
                                 props.put(
-                                        attr.getNamedItem("name").getTextContent(),
-                                        attr.getNamedItem("value").getTextContent()
+                                    attr.getNamedItem("name").getTextContent(),
+                                    attr.getNamedItem("value").getTextContent()
                                 );
                                 break;
 
                             case "file":
                                 props.put(
-                                        attr.getNamedItem("name").getTextContent(),
-                                        new File(attr.getNamedItem("value").getTextContent())
+                                    attr.getNamedItem("name").getTextContent(),
+                                    new File(attr.getNamedItem("value").getTextContent())
                                 );
                                 break;
                         }
@@ -193,9 +203,58 @@ public class InstallerConfig
         }
     }
 
+    public static class PosixPerms
+    {
+        String relPath = null;
+        String permissions = null;
+
+        public PosixPerms()
+        {
+
+        }
+
+        public PosixPerms(Node n)
+        {
+            Util.traverseAttributes(n, new Util.NodeTraversal()
+            {
+                @Override
+                public void node(Node n)
+                {
+                    if ("relpath".equals(n.getNodeName()))
+                    {
+                        relPath = n.getTextContent();
+                    } else if ("perm".equals(n.getNodeName()))
+                    {
+                        permissions = n.getTextContent();
+                    }
+                }
+            });
+        }
+
+        public String getPermissions()
+        {
+            return permissions;
+        }
+
+        public void setPermissions(String permissions)
+        {
+            this.permissions = permissions;
+        }
+
+        public String getRelPath()
+        {
+            return relPath;
+        }
+
+        public void setRelPath(String relPath)
+        {
+            this.relPath = relPath;
+        }
+    }
+
     public static class Step
     {
-        private AbstractInstallerStep stepInstance = null;
+        private String name = null;
 
         public Step()
         {
@@ -211,34 +270,20 @@ public class InstallerConfig
                 {
                     if ("name".equals(n.getNodeName()))
                     {
-                        String id = n.getTextContent();
-                        if (!idToStepClass.containsKey(id))
-                        {
-                            throw new RuntimeException("Step id " + id + " was not found.");
-                        }
-                        try
-                        {
-                            stepInstance = (AbstractInstallerStep) idToStepClass.get(id).newInstance();
-                        } catch (Exception e)
-                        {
-
-                            new RuntimeException(e);
-
-                        }
-
+                        name = n.getTextContent();
                     }
                 }
             });
         }
 
-        public AbstractInstallerStep getStepInstance()
+        public String getName()
         {
-            return stepInstance;
+            return name;
         }
 
-        public void setStepInstance(AbstractInstallerStep stepInstance)
+        public void setName(String name)
         {
-            this.stepInstance = stepInstance;
+            this.name = name;
         }
     }
 
@@ -261,7 +306,8 @@ public class InstallerConfig
                     if ("id".equals(n.getNodeName()))
                     {
                         id = Integer.valueOf(n.getTextContent());
-                    } else if ("movement".equals(n.getNodeName()))
+                    }
+                    else if ("movement".equals(n.getNodeName()))
                     {
                         movements.add(new Movement(n));
                     }
@@ -292,12 +338,21 @@ public class InstallerConfig
         @Override
         public boolean equals(Object o)
         {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
 
-            MovementCollection that = (MovementCollection) o;
+            MovementCollection that = (MovementCollection)o;
 
-            if (id != null ? !id.equals(that.id) : that.id != null) return false;
+            if (id != null ? !id.equals(that.id) : that.id != null)
+            {
+                return false;
+            }
 
             return true;
         }
@@ -322,6 +377,33 @@ public class InstallerConfig
         public Movement()
         {
 
+        }
+
+        public Movement(Node node)
+        {
+            Util.traverseAttributes(node, new Util.NodeTraversal()
+            {
+                @Override
+                public void node(Node n)
+                {
+                    if ("src".equals(n.getNodeName()))
+                    {
+                        src = n.getTextContent();
+                    }
+                    else if ("dest".equals(n.getNodeName()))
+                    {
+                        dest = n.getTextContent().trim();
+                    }
+                    else if ("destName".equals(n.getNodeName()))
+                    {
+                        destName = n.getTextContent().trim();
+                    }
+                    else if ("recursive".equals(n.getNodeName()))
+                    {
+                        recursive = Boolean.valueOf(n.getTextContent().trim());
+                    }
+                }
+            });
         }
 
         public boolean isRecursive()
@@ -362,30 +444,6 @@ public class InstallerConfig
         public void setDestName(String destName)
         {
             this.destName = destName;
-        }
-
-        public Movement(Node node)
-        {
-            Util.traverseAttributes(node, new Util.NodeTraversal()
-            {
-                @Override
-                public void node(Node n)
-                {
-                    if ("src".equals(n.getNodeName()))
-                    {
-                        src = n.getTextContent();
-                    } else if ("dest".equals(n.getNodeName()))
-                    {
-                        dest = n.getTextContent().trim();
-                    } else if ("destName".equals(n.getNodeName()))
-                    {
-                        destName = n.getTextContent().trim();
-                    }   else if ("recursive".equals(n.getNodeName()))
-                    {
-                        recursive = Boolean.valueOf(n.getTextContent().trim());
-                    }
-                }
-            });
         }
     }
 

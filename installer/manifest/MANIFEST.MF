@@ -1,1 +1,1 @@
-Main-Class: org.cryptoworkshop.ximix.node.Main
+Main-Class: org.cryptoworkshop.ximix.installer.Installer
