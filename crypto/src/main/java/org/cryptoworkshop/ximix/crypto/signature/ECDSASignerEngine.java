@@ -40,6 +40,7 @@ import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
+import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -103,12 +104,12 @@ public class ECDSASignerEngine
     {
         super(Algorithms.ECDSA, nodeContext);
 
-        this.sharedKMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
-        this.sharedPMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
-        this.sharedAMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
-        this.sharedBMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
-        this.sharedCMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
-        this.sharedMuMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
+        this.sharedKMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
+        this.sharedPMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
+        this.sharedAMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
+        this.sharedBMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
+        this.sharedCMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
+        this.sharedMuMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
     }
 
     public int getAlgorithm()

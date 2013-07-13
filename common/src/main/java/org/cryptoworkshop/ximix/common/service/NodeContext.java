@@ -61,7 +61,7 @@ public interface NodeContext
 
     void schedule(Runnable task, long time, TimeUnit timeUnit);
 
-    Executor getDecoupler();
+    Executor getDecoupler(Decoupler task);
 
     ScheduledExecutorService getScheduledExecutor();
 

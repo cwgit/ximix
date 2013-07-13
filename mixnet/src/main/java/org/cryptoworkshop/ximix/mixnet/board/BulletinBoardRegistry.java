@@ -25,7 +25,7 @@ import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
 public class BulletinBoardRegistry
 {
-    private Map<String, BulletinBoard> boards = new HashMap<String, BulletinBoard>();
+    private Map<String, BulletinBoard> boards = new HashMap<>();
     private Map<String, BulletinBoard> transitBoards = new HashMap<String, BulletinBoard>();
     private Set<String>                suspendedBoards = new HashSet<>();
     private Set<String>                dowloadLockedBoards = new HashSet<>();

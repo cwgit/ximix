@@ -74,6 +74,7 @@ import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
+import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
@@ -103,11 +104,11 @@ public class ECKeyManager
     public ECKeyManager(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
-        this.listenerHandler = new ListenerHandlerFactory(nodeContext.getDecoupler()).createHandler(KeyManagerListener.class);
+        this.listenerHandler = new ListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.LISTENER)).createHandler(KeyManagerListener.class);
         this.notifier = listenerHandler.getNotifier();
 
-        sharedPublicKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
-        sharedPrivateKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler());
+        sharedPublicKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
+        sharedPrivateKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
 
         sharedPrivateKeyMap.addListener(new ShareMapListener<String, BigInteger>()
         {

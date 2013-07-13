@@ -16,13 +16,13 @@
 package org.cryptoworkshop.ximix.mixnet.board;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
 
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
@@ -33,7 +33,7 @@ public class BulletinBoardImpl
     private final Executor boardUpdateExecutor;
     private final Map<String, Transform> transforms;
 
-    private List<byte[]> messages = new ArrayList<byte[]>();
+    private List<byte[]> messages = new ArrayList<>();
 
     public BulletinBoardImpl(String boardName, Map<String, Transform> transforms, Executor executor)
     {
@@ -71,27 +71,51 @@ public class BulletinBoardImpl
     }
 
     @Override
-    public List<byte[]> getMessages(int maxNumberOfMessages)
+    public List<byte[]> getMessages(final int maxNumberOfMessages)
     {
-        int count;
-
-        if (messages.size() > maxNumberOfMessages)
+        FutureTask<List<byte[]>> task = new FutureTask<>(new Callable<List<byte[]>>()
         {
-            count = maxNumberOfMessages;
-        }
-        else
+            @Override
+            public List<byte[]> call()
+                throws Exception
+            {
+                int count;
+
+                if (messages.size() > maxNumberOfMessages)
+                {
+                    count = maxNumberOfMessages;
+                }
+                else
+                {
+                    count = messages.size();
+                }
+
+                List<byte[]> rv = new ArrayList<>(count);
+
+                for (int i = 0; i != count; i++)
+                {
+                    rv.add(messages.remove(0));
+                }
+
+                return rv;
+            }
+        });
+
+        boardUpdateExecutor.execute(task);
+
+        try
         {
-            count = messages.size();
+            return task.get();
         }
-
-        List<byte[]> rv = new ArrayList<>(count);
-
-        for (int i = 0; i != count; i++)
+        catch (InterruptedException e)
         {
-            rv.add(messages.remove(0));
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
-
-        return rv;
+        catch (ExecutionException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        return null; // TODO:
     }
 
     public Iterator<byte[]> iterator()

@@ -45,6 +45,7 @@ import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
+import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
@@ -69,7 +70,7 @@ public class BoardHostingService
         throws ConfigException
     {
         this.nodeContext = context;
-        this.decoupler = nodeContext.getDecoupler();
+        this.decoupler = nodeContext.getDecoupler(Decoupler.SERVICES);
 
         Map<String, Transform> transforms;
 
@@ -84,7 +85,7 @@ public class BoardHostingService
             transforms = new HashMap<>();
         }
 
-        this.boardRegistry = new BulletinBoardRegistry(transforms, nodeContext.getDecoupler());
+        this.boardRegistry = new BulletinBoardRegistry(transforms, nodeContext.getDecoupler(Decoupler.BOARD_REGISTRY));
 
         if (config.hasConfig("boards"))
         {

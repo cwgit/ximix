@@ -49,6 +49,7 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.NodeInfo;
+import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
@@ -70,7 +71,7 @@ public class XimixNodeContext
 {
     private final ExecutorService connectionExecutor = Executors.newCachedThreadPool();   // TODO configurable or linked to threshold
     private final ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);   // TODO configurable or linked to threshold
-    private final ExecutorService decoupler = Executors.newSingleThreadExecutor();
+    private final Map<Decoupler, ExecutorService> decouplers = new HashMap<>();
     private final List<Service> services = new ArrayList<>();
 
     private final String name;
@@ -82,6 +83,11 @@ public class XimixNodeContext
         throws ConfigException
     {
         this.peerMap = Collections.synchronizedMap(new HashMap<>(peerMap));
+
+        this.decouplers.put(Decoupler.BOARD_REGISTRY, Executors.newSingleThreadExecutor());
+        this.decouplers.put(Decoupler.LISTENER, Executors.newSingleThreadExecutor());
+        this.decouplers.put(Decoupler.SERVICES, Executors.newSingleThreadExecutor());
+        this.decouplers.put(Decoupler.SHARING, Executors.newSingleThreadExecutor());
 
         this.name = nodeConfig.getStringProperty("name");  // TODO:
 
@@ -145,9 +151,9 @@ public class XimixNodeContext
     }
 
     @Override
-    public Executor getDecoupler()
+    public Executor getDecoupler(Decoupler task)
     {
-        return decoupler;
+        return decouplers.get(task);
     }
 
     public SubjectPublicKeyInfo getPublicKey(String keyID)
@@ -274,6 +280,8 @@ public class XimixNodeContext
 
             connection.stop();
         }
+
+        // TODOL need to deal with the decoupled executors.
 
         multiTaskExecutor.shutdown();
 

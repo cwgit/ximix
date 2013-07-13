@@ -34,6 +34,7 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
@@ -268,7 +269,7 @@ public class ECKeyManagerTest
         }
 
         @Override
-        public Executor getDecoupler()
+        public Executor getDecoupler(Decoupler task)
         {
             return Executors.newSingleThreadExecutor();
         }
