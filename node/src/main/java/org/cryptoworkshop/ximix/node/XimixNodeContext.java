@@ -34,10 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.io.Streams;
@@ -167,13 +164,6 @@ public class XimixNodeContext
             e.printStackTrace();  // TODO:
             return null;
         }
-    }
-
-    @Override
-    public <T> T getDomainParameters(String keyID)
-    {
-        X9ECParameters params = SECNamedCurves.getByName("secp256r1");
-        return (T)new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
     }
 
     @Override

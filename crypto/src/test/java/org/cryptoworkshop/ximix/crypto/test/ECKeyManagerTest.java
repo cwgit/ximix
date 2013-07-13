@@ -220,12 +220,6 @@ public class ECKeyManagerTest
         }
 
         @Override
-        public <T> T getDomainParameters(String keyID)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
         public boolean hasPrivateKey(String keyID)
         {
             return false;  //To change body of implemented methods use File | Settings | File Templates.

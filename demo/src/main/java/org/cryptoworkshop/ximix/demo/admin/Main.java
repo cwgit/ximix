@@ -136,17 +136,20 @@ public class Main
             @Override
             public void status(String statusObject)
             {
-                System.err.println("completed");
+                System.err.println("status: " + statusObject);
             }
 
             @Override
             public void failed(String errorObject)
             {
+                shuffleLatch.countDown();
                 System.err.println("failed: " + errorObject);
             }
         });
 
         shuffleLatch.await();
+
+        final CountDownLatch downloadLatch = new CountDownLatch(1);
 
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().withKeyID("ECENCKEY").withThreshold(2).withNodes("A", "B").build(), new DownloadOperationListener()
         {
@@ -170,20 +173,27 @@ public class Main
             @Override
             public void completed()
             {
+                downloadLatch.countDown();
                 System.err.println("completed");
             }
 
             @Override
             public void status(String statusObject)
             {
-                System.err.println("completed");
+                System.err.println("status: " + statusObject);
             }
 
             @Override
             public void failed(String errorObject)
             {
+                downloadLatch.countDown();
                 System.err.println("failed");
             }
         });
+
+        downloadLatch.await();
+
+        keyGenerationService.shutdown();
+        commandService.shutdown();
     }
 }

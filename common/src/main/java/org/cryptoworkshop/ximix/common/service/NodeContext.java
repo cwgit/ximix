@@ -38,14 +38,6 @@ public interface NodeContext
 
     SubjectPublicKeyInfo getPublicKey(String keyID);
 
-    /**
-     * @deprecated
-     * @param keyID
-     * @param <T>
-     * @return
-     */
-    <T> T getDomainParameters(String keyID);
-
     boolean hasPrivateKey(String keyID);
 
     PublicKeyOperator getPublicKeyOperator(String keyID);

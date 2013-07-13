@@ -319,6 +319,11 @@ public class ECKeyManager
         }
     }
 
+    public ECDomainParameters geParams(String keyID)
+    {
+        return paramsMap.get(keyID);
+    }
+
     @Override
     public void addListener(KeyManagerListener listener)
     {

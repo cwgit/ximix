@@ -138,7 +138,7 @@ public class CryptoServicesTest
         }
 
                 // Create a random plaintext
-        ECPoint plaintext = generatePoint(context.<ECDomainParameters>getDomainParameters("ECKEY"), new SecureRandom());
+        ECPoint plaintext = generatePoint(pubKey1.getParameters(), new SecureRandom());
 
         // Encrypt it using the joint public key
         ECEncryptor enc = new ECElGamalEncryptor();

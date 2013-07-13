@@ -20,7 +20,6 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
@@ -93,14 +92,13 @@ public class NodeKeyGenerationService
 
                 return new MessageReply(MessageReply.Type.OKAY);
             case STORE_SHARE:
-                final StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
-                final ECCommittedSecretShareMessage shareMessage = ECCommittedSecretShareMessage.getInstance(nodeContext.<ECDomainParameters>getDomainParameters(sssMessage.getID()).getCurve(), sssMessage.getSecretShareMessage());
-                System.err.println("Store: " + nodeContext.getName());
+                StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
+
                 // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
                 // till we can validate them.
                 ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
 
-                nodeContext.execute(new StoreShareTask(generator, sssMessage.getID(), shareMessage));
+                nodeContext.execute(new StoreShareTask(generator, sssMessage.getID(), sssMessage.getSecretShareMessage()));
 
                 return new MessageReply(MessageReply.Type.OKAY);
             default:
@@ -210,9 +208,9 @@ public class NodeKeyGenerationService
     {
         private final ECNewDKGGenerator generator;
         private final String keyID;
-        private final ECCommittedSecretShareMessage message;
+        private final ASN1Encodable message;
 
-        StoreShareTask(ECNewDKGGenerator generator, String keyID, ECCommittedSecretShareMessage message)
+        StoreShareTask(ECNewDKGGenerator generator, String keyID, ASN1Encodable message)
         {
             this.generator = generator;
             this.keyID = keyID;
@@ -224,7 +222,7 @@ public class NodeKeyGenerationService
         {
             if (nodeContext.hasPrivateKey(keyID))
             {
-                generator.storeThresholdKeyShare(keyID, message);
+                generator.storeThresholdKeyShare(keyID, ECCommittedSecretShareMessage.getInstance(generator.getParameters(keyID).getCurve(), message));
             }
             else
             {
