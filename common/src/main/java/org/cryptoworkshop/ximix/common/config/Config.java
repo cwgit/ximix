@@ -179,6 +179,22 @@ public class Config
         return def;
     }
 
+    public boolean hasConfig(String name)
+    {
+        String[] path = name.split("\\.");
+
+        for (String elementName : path)
+        {
+            NodeList list = xmlNode.getElementsByTagName(elementName);
+            if (list.getLength() != 0 && list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public <T> List<T> getConfigObjects(String name, ConfigObjectFactory<T> factory)
         throws ConfigException
 
@@ -190,7 +206,7 @@ public class Config
         for (String elementName : path)
         {
             NodeList list = xmlNode.getElementsByTagName(elementName);
-            if (list.item(0).getNodeName().equals(path[path.length - 1]))
+            if (list.getLength() != 0 && list.item(0).getNodeName().equals(path[path.length - 1]))
             {
                 for (int i = 0; i != list.getLength(); i++)
                 {

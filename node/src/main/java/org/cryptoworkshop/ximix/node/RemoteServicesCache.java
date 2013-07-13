@@ -33,15 +33,18 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.message.RequestCapabilities;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
+import org.cryptoworkshop.ximix.mixnet.service.BoardIndex;
 import org.cryptoworkshop.ximix.mixnet.service.RemoteBoardHostingService;
 
 public class RemoteServicesCache
 {
     private static final int TIME_OUT = 2;
+    private static final int LIFE_TIME = 2;
 
     private final NodeContext    nodeContext;
 
@@ -50,11 +53,15 @@ public class RemoteServicesCache
     private final Map<NodeEntry, Future<NodeInfo>> cache = new HashMap<>();
     private final Map<NodeEntry, Boolean> active = new HashMap<>();
     private final ScheduledExecutorService scheduler;
+    private final ListenerHandler<RemoteServicesListener> listenerHandler;
+    private final RemoteServicesListener notifier;
 
     public RemoteServicesCache(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
         this.scheduler = nodeContext.getScheduledExecutor();
+        this.listenerHandler = new ListenerHandlerFactory(nodeContext.getDecoupler()).createHandler(RemoteServicesListener.class);
+        this.notifier = listenerHandler.getNotifier();
     }
 
     private synchronized void checkEntry(final NodeEntry entry)
@@ -117,9 +124,9 @@ public class RemoteServicesCache
         scheduler.schedule(makeCurrentTask, 1, TimeUnit.SECONDS);
     }
 
-    private synchronized Future<NodeInfo> scheduleGetCollection(String qInfo, int lifeTimeInSeconds)
+    private synchronized Future<NodeInfo> scheduleGetCollection(String nodeName)
     {
-        final NodeEntry entry = new NodeEntry(qInfo, lifeTimeInSeconds);
+        final NodeEntry entry = new NodeEntry(nodeName);
         Future<NodeInfo> future = cache.get(entry);
 
         if (future != null)
@@ -141,7 +148,7 @@ public class RemoteServicesCache
 
         if (future == null)
         {
-            Callable<NodeInfo> task = makeCallable(qInfo);
+            Callable<NodeInfo> task = makeCallable(nodeName);
 
             future = nodeContext.getScheduledExecutor().submit(task);
 
@@ -156,7 +163,7 @@ public class RemoteServicesCache
                 }
             };
 
-            scheduler.schedule(checkEntryTask, lifeTimeInSeconds, TimeUnit.SECONDS);
+            scheduler.schedule(checkEntryTask, LIFE_TIME, TimeUnit.MINUTES);
         }
 
         return future;
@@ -173,7 +180,7 @@ public class RemoteServicesCache
             }
         };
 
-        scheduler.schedule(checkEntryTask, entry.getLifeTimeInSeconds(), TimeUnit.SECONDS);
+        scheduler.schedule(checkEntryTask, LIFE_TIME, TimeUnit.MINUTES);
     }
 
     private Callable<NodeInfo> makeCallable(final String nodeName)
@@ -183,7 +190,7 @@ public class RemoteServicesCache
             public NodeInfo call()
                 throws Exception
             {
-                MessageReply reply = nodeContext.getPeerMap().get(nodeName).sendMessage(CommandMessage.Type.FETCH_NODE_INFO, new RequestCapabilities(RequestCapabilities.Type.ALL));
+                MessageReply reply = nodeContext.getPeerMap().get(nodeName).sendMessage(CommandMessage.Type.NODE_INFO_UPDATE, new NodeInfo(nodeContext.getName(), nodeContext.getCapabilities()));
 
                 if (reply.getType() == MessageReply.Type.OKAY)
                 {
@@ -195,10 +202,22 @@ public class RemoteServicesCache
         };
     }
 
+    private Callable<NodeInfo> makeCallable(final NodeInfo nodeInfo)
+    {
+        return new Callable<NodeInfo>()
+        {
+            public NodeInfo call()
+                throws Exception
+            {
+                return nodeInfo;
+            }
+        };
+    }
+
     public NodeInfo fetchCapabilities(String nodeName)
         throws ServiceConnectionException
     {
-        return fetch(nodeName, 120);   // TODO:
+        return fetch(nodeName);   // TODO:
     }
 
     public NodeInfo fetchNetworkCapabilities()
@@ -227,12 +246,12 @@ public class RemoteServicesCache
         return new NodeInfo(nodeContext.getName(), capList.toArray(new CapabilityMessage[capList.size()]));
     }
 
-    private NodeInfo fetch(String qInf, int lifeTimeInSeconds)
+    private NodeInfo fetch(String nodeName)
         throws ServiceConnectionException
     {
         try
         {
-            return scheduleGetCollection(qInf, lifeTimeInSeconds).get(TIME_OUT, TimeUnit.MINUTES);
+            return scheduleGetCollection(nodeName).get(TIME_OUT, TimeUnit.MINUTES);
         }
         catch (Exception e)
         {
@@ -282,6 +301,53 @@ public class RemoteServicesCache
         return null;
     }
 
+    public void updateNodeInfo(NodeInfo nodeInfo)
+    {
+        Callable<NodeInfo> task = makeCallable(nodeInfo);
+        NodeEntry entry = new NodeEntry(nodeInfo.getName());
+
+        Future<NodeInfo> future = nodeContext.getScheduledExecutor().submit(task);
+
+        synchronized (RemoteServicesCache.this)
+        {
+            cache.put(entry, future);
+        }
+
+        notifier.nodeUpdate(nodeInfo);
+    }
+
+    public String findBoardHost(String boardName)
+    {
+        Set<String> peers = new HashSet<>(nodeContext.getPeerMap().keySet());
+
+        for (String nodeName : peers)
+        {
+            try
+            {
+                NodeInfo info = this.fetchCapabilities(nodeName);
+
+                for (CapabilityMessage capability : info.getCapabilities())
+                {
+                    if (capability.getType().equals(CapabilityMessage.Type.BOARD_HOSTING))
+                    {
+                        BoardIndex index = new BoardIndex(capability);
+
+                        if (index.hasBoard(boardName))
+                        {
+                            return nodeName;
+                        }
+                    }
+                }
+            }
+            catch (ServiceConnectionException e)
+            {
+                // ignore
+            }
+        }
+
+        return null;
+    }
+
     private class CapabilitiesCacheException
         extends ServiceConnectionException
     {
@@ -294,22 +360,15 @@ public class RemoteServicesCache
     private class NodeEntry
     {
         private final String name;
-        private final int lifeTimeInSeconds;
 
-        NodeEntry(String name, int lifeTimeInSeconds)
+        NodeEntry(String name)
         {
             this.name = name;
-            this.lifeTimeInSeconds = lifeTimeInSeconds;
         }
 
         String getName()
         {
             return name;
-        }
-
-        int getLifeTimeInSeconds()
-        {
-            return lifeTimeInSeconds;
         }
 
         @Override
@@ -324,7 +383,7 @@ public class RemoteServicesCache
             // if this isn't the case we've screwed up badly!
             NodeEntry other = (NodeEntry)o;
 
-            return this.lifeTimeInSeconds == other.lifeTimeInSeconds && this.name.equals(other.name);
+            return this.name.equals(other.name);
         }
     }
 }

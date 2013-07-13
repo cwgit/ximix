@@ -25,6 +25,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -35,6 +36,7 @@ import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
 import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
+import org.cryptoworkshop.ximix.common.message.BoardStatusMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
@@ -42,6 +44,7 @@ import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
+import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -157,27 +160,31 @@ public class ClientCommandService
         {
             try
             {
-                for (String node : nodes)
-                {
-                    connection.sendMessage(node, CommandMessage.Type.SUSPEND_BOARD, new BoardMessage(boardName));
-                }
+                connection.sendMessage(CommandMessage.Type.BOARD_SHUFFLE_LOCK, new BoardMessage(boardName));
 
                 String nextNode = nodes[0];
-                for (int i = 0; i <= nodes.length - 1; i++)
+
+                MessageReply startRep = connection.sendMessage(CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(boardName, options.getTransformName(), options.getKeyID(), nextNode));
+                String boardHost = DERUTF8String.getInstance(startRep.getPayload()).getString();
+
+                for (int i = 1; i < nodes.length; i++)
                 {
                     String curNode = nextNode;
 
-                    nextNode = nodes[(i + 1)];
+                    whatForCompleteStatus(curNode);
+
+                    nextNode = nodes[i];
 
                     connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(boardName, options.getTransformName(), options.getKeyID(), nextNode));
                 }
 
-                connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD, new PermuteAndMoveMessage(boardName, options.getTransformName(), options.getKeyID(), null));
+                whatForCompleteStatus(nextNode);
 
-                for (String node : nodes)
-                {
-                    connection.sendMessage(node, CommandMessage.Type.ACTIVATE_BOARD, new BoardMessage(boardName));
-                }
+                connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD, new PermuteAndReturnMessage(boardName, options.getTransformName(), options.getKeyID()));
+
+                whatForCompleteStatus(boardHost);
+
+                connection.sendMessage(CommandMessage.Type.BOARD_SHUFFLE_UNLOCK, new BoardMessage(boardName));
 
                 notifier.completed();
             }
@@ -185,6 +192,26 @@ public class ClientCommandService
             {
                 notifier.failed(e.toString());
             }
+        }
+
+        private void whatForCompleteStatus(String curNode)
+            throws ServiceConnectionException
+        {
+            MessageReply tReply;
+            do
+            {
+                try
+                {
+                    Thread.sleep(5000);  // TODO: configure?
+                }
+                catch (InterruptedException ex)
+                {
+                    Thread.currentThread().interrupt();
+                }
+
+                tReply = connection.sendMessage(curNode, CommandMessage.Type.FETCH_BOARD_STATUS, new BoardMessage(boardName));
+            }
+            while (tReply.getType() == MessageReply.Type.OKAY && BoardStatusMessage.getInstance(tReply.getPayload()).getStatus() != BoardStatusMessage.Status.COMPLETE);
         }
     }
 
@@ -207,7 +234,13 @@ public class ClientCommandService
         {
             try
             {
-                connection.sendMessage(CommandMessage.Type.SUSPEND_BOARD, new BoardMessage(boardName));
+                MessageReply reply = connection.sendMessage(CommandMessage.Type.BOARD_DOWNLOAD_LOCK, new BoardMessage(boardName));
+
+                if (reply.getType() != MessageReply.Type.OKAY)
+                {
+                    notifier.failed(reply.getPayload().toString());
+                    return;
+                }
 
                 if (options.getKeyID() != null)
                 {
@@ -215,7 +248,7 @@ public class ClientCommandService
 
                     for (;;)
                     {
-                        MessageReply reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
+                        reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
                         MessageBlock data = MessageBlock.getInstance(reply.getPayload());
 
@@ -286,7 +319,7 @@ public class ClientCommandService
                     // assume plain text
                     for (;;)
                     {
-                        MessageReply reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
+                        reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
                         MessageBlock data = MessageBlock.getInstance(reply.getPayload());
 
@@ -304,7 +337,7 @@ public class ClientCommandService
                     }
                 }
 
-                connection.sendMessage(CommandMessage.Type.ACTIVATE_BOARD, new BoardMessage(boardName));
+                connection.sendMessage(CommandMessage.Type.BOARD_DOWNLOAD_UNLOCK, new BoardMessage(boardName));
 
                 notifier.completed();
             }

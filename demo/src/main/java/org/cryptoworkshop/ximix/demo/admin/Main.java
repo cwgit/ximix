@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.demo.admin;
 import java.io.File;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.concurrent.CountDownLatch;
 
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
@@ -106,14 +107,24 @@ public class Main
 
         CommandService commandService = adminRegistrar.connect(CommandService.class);
 
-        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECENCKEY").build(), "A", "B");
+        // board is hosted on "B" move to "A" then to "C" then back to "B"
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECENCKEY").build(), "A", "C");
+
+        final CountDownLatch shuffleLatch = new CountDownLatch(1);
 
         shuffleOp.addListener(new ShuffleOperationListener()
         {
             @Override
             public void completed()
             {
+                shuffleLatch.countDown();
                 System.err.println("done");
+            }
+
+            @Override
+            public void status(String statusObject)
+            {
+                System.err.println("completed");
             }
 
             @Override
@@ -122,6 +133,8 @@ public class Main
                 System.err.println("failed: " + errorObject);
             }
         });
+
+        shuffleLatch.await();
 
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().withKeyID("ECENCKEY").withThreshold(2).withNodes("A", "B").build(), new DownloadOperationListener()
         {
@@ -144,6 +157,12 @@ public class Main
 
             @Override
             public void completed()
+            {
+                System.err.println("completed");
+            }
+
+            @Override
+            public void status(String statusObject)
             {
                 System.err.println("completed");
             }

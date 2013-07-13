@@ -21,6 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 
 public interface NodeContext
 {
@@ -32,6 +33,8 @@ public interface NodeContext
     String getName();
 
     Map<String, ServicesConnection> getPeerMap();
+
+    CapabilityMessage[] getCapabilities();
 
     SubjectPublicKeyInfo getPublicKey(String keyID);
 
@@ -63,4 +66,6 @@ public interface NodeContext
     ScheduledExecutorService getScheduledExecutor();
 
     ThresholdKeyPairGenerator getKeyPairGenerator(KeyType algorithm);
+
+    String getBoardHost(String boardName);
 }

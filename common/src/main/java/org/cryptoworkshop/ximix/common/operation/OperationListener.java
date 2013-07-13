@@ -19,5 +19,7 @@ public interface OperationListener<E>
 {
     void completed();
 
+    void status(E statusObject);
+
     void failed(E errorObject);
 }

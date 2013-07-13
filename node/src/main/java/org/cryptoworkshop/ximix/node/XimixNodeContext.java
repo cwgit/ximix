@@ -223,7 +223,7 @@ public class XimixNodeContext
             }
         }
 
-        if (message.getType() == CommandMessage.Type.FETCH_NODE_INFO)
+        if (message.getType() == CommandMessage.Type.NODE_INFO_UPDATE)
         {
             return new NodeInfoService();
         }
@@ -247,6 +247,19 @@ public class XimixNodeContext
     public ThresholdKeyPairGenerator getKeyPairGenerator(KeyType keyType)
     {
         return new ECNewDKGGenerator(keyType, keyManager);
+    }
+
+    @Override
+    public String getBoardHost(String boardName)
+    {
+        String host = remoteServicesCache.findBoardHost(boardName);
+
+        if (host != null)
+        {
+            return host;
+        }
+
+        return this.getName();
     }
 
     @Override
@@ -352,13 +365,15 @@ public class XimixNodeContext
         @Override
         public MessageReply handle(Message message)
         {
+            remoteServicesCache.updateNodeInfo(NodeInfo.getInstance(message.getPayload()));
+
             return new MessageReply(MessageReply.Type.OKAY, new NodeInfo(XimixNodeContext.this.getName(), XimixNodeContext.this.getCapabilities()));
         }
 
         @Override
         public boolean isAbleToHandle(Message message)
         {
-            return message.getType() == CommandMessage.Type.FETCH_NODE_INFO;
+            return message.getType() == CommandMessage.Type.NODE_INFO_UPDATE;
         }
     }
 

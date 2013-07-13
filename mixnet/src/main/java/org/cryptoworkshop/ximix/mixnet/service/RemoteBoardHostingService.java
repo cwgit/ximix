@@ -15,13 +15,8 @@
  */
 package org.cryptoworkshop.ximix.mixnet.service;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.cryptoworkshop.ximix.common.message.BoardDetails;
-import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
@@ -62,37 +57,6 @@ public class RemoteBoardHostingService
 
     public boolean isAbleToHandle(Message message)
     {
-        Enum type = message.getType();
-
-        if (type instanceof ClientMessage.Type)
-        {
-            if (type == ClientMessage.Type.UPLOAD_TO_BOARD)
-            {
-                BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
-
-                for (ASN1Encodable enc : capabilityMessage.getDetails())
-                {
-                    BoardDetails details = BoardDetails.getInstance(enc);
-
-                    if (details.getBoardName().equals(uploadMessage.getBoardName()))
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-        else
-        {
-            if  (type == CommandMessage.Type.SUSPEND_BOARD
-                || type == CommandMessage.Type.ACTIVATE_BOARD
-                || type == CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE
-                || type == CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS
-                || type == CommandMessage.Type.TRANSFER_TO_BOARD)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return new MessageEvaluator(capabilityMessage).isAbleToHandle(message);
     }
 }

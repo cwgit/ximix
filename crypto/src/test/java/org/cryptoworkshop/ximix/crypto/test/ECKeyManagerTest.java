@@ -33,6 +33,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
@@ -206,6 +207,12 @@ public class ECKeyManagerTest
         }
 
         @Override
+        public CapabilityMessage[] getCapabilities()
+        {
+            return new CapabilityMessage[0];
+        }
+
+        @Override
         public SubjectPublicKeyInfo getPublicKey(String keyID)
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
@@ -274,6 +281,12 @@ public class ECKeyManagerTest
 
         @Override
         public ThresholdKeyPairGenerator getKeyPairGenerator(KeyType algorithm)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public String getBoardHost(String boardName)
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }

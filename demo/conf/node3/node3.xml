@@ -5,15 +5,14 @@
     <services>
         <service>
             <implementation>org.cryptoworkshop.ximix.mixnet.service.BoardHostingService</implementation>
-            <board>
-                <name>FRED</name>
+            <transforms>
                 <transform>
                     <implementation>org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform</implementation>
                 </transform>
                 <transform>
                     <implementation>org.cryptoworkshop.ximix.mixnet.transform.NullTransform</implementation>
                 </transform>
-            </board>
+            </transforms>
         </service>
         <service>
             <implementation>org.cryptoworkshop.ximix.crypto.service.NodeKeyRetrievalService</implementation>
