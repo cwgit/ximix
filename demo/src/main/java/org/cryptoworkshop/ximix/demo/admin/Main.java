@@ -68,21 +68,33 @@ public class Main
 
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(new File(args[0]));
 
+
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
-        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
-                                                   .withThreshold(2)
-                                                   .withNodes("A", "B", "C", "D")
-                                                   .build();
+        byte[] encPubKey = keyGenerationService.fetchPublicKey("ECENCKEY");
 
-        byte[] encPubKey = keyGenerationService.generatePublicKey("ECENCKEY", keyGenOptions);
+        if (encPubKey == null)
+        {
+            KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
+                .withThreshold(2)
+                .withNodes("A", "B", "C", "D")
+                .build();
 
-        keyGenOptions = new KeyGenerationOptions.Builder(KeyType.ECDSA, "secp256r1")
-                                                   .withThreshold(2)
-                                                   .withNodes("A", "B", "C", "D")
-                                                   .build();
+            encPubKey = keyGenerationService.generatePublicKey("ECENCKEY", keyGenOptions);
+        }
 
-        byte[] sigPubKey = keyGenerationService.generatePublicKey("ECSIGKEY", keyGenOptions);
+        byte[] sigPubKey = keyGenerationService.fetchPublicKey("ECSIGKEY");
+
+        if (sigPubKey == null)
+        {
+            KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.ECDSA, "secp256r1")
+                                                       .withThreshold(2)
+                                                       .withNodes("A", "B", "C", "D")
+                                                       .build();
+
+
+            sigPubKey = keyGenerationService.generatePublicKey("ECSIGKEY", keyGenOptions);
+        }
 
         UploadService client = adminRegistrar.connect(UploadService.class);
 
@@ -107,7 +119,7 @@ public class Main
 
         CommandService commandService = adminRegistrar.connect(CommandService.class);
 
-        // board is hosted on "B" move to "A" then to "C" then back to "B"
+//        board is hosted on "B" move to "A" then to "C" then back to "B"
         Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECENCKEY").build(), "A", "C");
 
         final CountDownLatch shuffleLatch = new CountDownLatch(1);
