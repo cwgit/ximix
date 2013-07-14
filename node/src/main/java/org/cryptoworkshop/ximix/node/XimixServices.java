@@ -117,6 +117,11 @@ class XimixServices
                         System.err.println("message received: " + reply);
                         aOut.writeObject(reply);
                     }
+
+                    // if we are here we've either had a null (eof) of isStopCalled is true
+                    // we exit the loop
+                    // TODO: log if node stopped or client hung up
+                    break;
                 }
                 catch (SocketTimeoutException e)
                 {

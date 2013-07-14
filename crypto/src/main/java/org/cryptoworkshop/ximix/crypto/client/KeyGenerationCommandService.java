@@ -45,7 +45,7 @@ public class KeyGenerationCommandService
     public void shutdown()
         throws ServiceConnectionException
     {
-        connection.close();
+        // nothing to do here
     }
 
     @Override

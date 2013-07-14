@@ -22,7 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.bouncycastle.asn1.DERUTF8String;
@@ -55,8 +55,8 @@ import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 public class ClientCommandService
     implements CommandService
 {
-    private Executor decouple = Executors.newSingleThreadExecutor();
-    private Executor executor = Executors.newScheduledThreadPool(4);
+    private ExecutorService decouple = Executors.newSingleThreadExecutor();
+    private ExecutorService executor = Executors.newScheduledThreadPool(4);
 
     private AdminServicesConnection connection;
 
@@ -68,7 +68,8 @@ public class ClientCommandService
     @Override
     public void shutdown() throws ServiceConnectionException
     {
-        connection.close();
+        decouple.shutdown();
+        executor.shutdown();
     }
 
     @Override
