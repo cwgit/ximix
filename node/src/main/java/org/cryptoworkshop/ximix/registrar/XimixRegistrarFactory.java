@@ -399,7 +399,7 @@ public class XimixRegistrarFactory
     private static class AdminServicesConnectionImpl
         implements AdminServicesConnection
     {
-        private Map<String, NodeServicesConnection> connectionMap = new HashMap<String, NodeServicesConnection>();
+        private Map<String, NodeServicesConnection> connectionMap = Collections.synchronizedMap(new HashMap<String, NodeServicesConnection>());
         private Set<CapabilityMessage> capabilitySet = new HashSet<CapabilityMessage>();
 
         public AdminServicesConnectionImpl(List<NodeConfig> configList)
@@ -449,14 +449,14 @@ public class XimixRegistrarFactory
         public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            return connectionMap.get(connectionMap.keySet().iterator().next()).sendMessage(type, messagePayload);
+            return connectionMap.get(getActiveNodeNames().iterator().next()).sendMessage(type, messagePayload);
         }
 
         @Override
         public Set<String> getActiveNodeNames()
         {
             // TODO: this should only return names with an active connection
-            return connectionMap.keySet();
+            return new HashSet<>(connectionMap.keySet());
         }
 
         public MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
