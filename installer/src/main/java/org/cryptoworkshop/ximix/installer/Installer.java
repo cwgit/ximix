@@ -2,7 +2,6 @@ package org.cryptoworkshop.ximix.installer;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
@@ -105,19 +104,24 @@ public class Installer
                 else if (opp instanceof InstallerConfig.PosixPerms)
                 {
 
-
-                    File f = new File((File)properties().get(INSTALL_DIR), ((InstallerConfig.PosixPerms)opp).getRelPath());
-                    if (!f.exists())
+                    try
                     {
-                        System.err.println("Unable to find file " + f);
+                        File f = new File((File)properties().get(INSTALL_DIR), ((InstallerConfig.PosixPerms)opp).getRelPath());
+                        if (!f.exists())
+                        {
+                            System.err.println("Unable to find file " + f);
+                        }
+
+                        Path p = Paths.get(f.toURI());
+
+                        // TODO consider the security implications where the relative path has elements like "../" etc.
+
+                        java.nio.file.Files.setPosixFilePermissions(p, PosixFilePermissions.fromString(((InstallerConfig.PosixPerms)opp).getPermissions()));
                     }
-
-                    Path p = Paths.get(f.toURI());
-
-                    // TODO consider the security implications where the relative path has elements like "../" etc.
-
-                    java.nio.file.Files.setPosixFilePermissions(p, PosixFilePermissions.fromString(((InstallerConfig.PosixPerms)opp).getPermissions()));
-
+                    catch (UnsupportedOperationException uoe)
+                    {
+                        // Ignore..
+                    }
                 }
 
             }
@@ -148,18 +152,9 @@ public class Installer
         }
     }
 
-
-
-
-
-
-
     private void askInstallDir(Console console)
         throws Exception
     {
-
-        System.out.println(console);
-
         File dir = (File)properties().get(INSTALL_DIR);
 
         for (; ; )

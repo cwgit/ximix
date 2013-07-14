@@ -217,10 +217,13 @@ task make_node_installer(dependsOn: 'jar') << {
     } else {
 
         println("\r\n\r\nConfiguration files can be nominated to be included in the installation.");
-        println("Use gradle make_node_installer -Dnetwork=<mixnet.xml>,<node1.xml>,<node2.xml> ... <nodeX.xml>");
-        println("The network property is a comma separated list of paths to: ");
+        println("\r\nUse:\r\ngradle make_node_installer -Dnetwork=<mixnet.xml>,<node1.xml>,<node2.xml> ... <nodeX.xml>");
+        println("\r\nThe network property is a comma separated list of paths to: ");
         println("1. Mixnet Configuration <mixnet.xml>");
-        println("2. Node configuration files");
+        println("2. Node configuration files <nodeX.xml>");
+        println("\r\nExmaple:\r\ngradle make_node_installer -Dnetwork=test/src/test/resources/conf/mixnet.xml,\\\n" +
+                "test/src/test/resources/conf/node1.xml,\\\r\n" +
+                "test/src/test/resources/conf/node2.xml \r\n");
         println();
         println("When that property is set the task will generate an executable jar file that will crate")
         println("separate complete node installations for each node.xml file specified.");
@@ -229,7 +232,7 @@ task make_node_installer(dependsOn: 'jar') << {
         println("See Wiki for more details.");
         println();
 
-        String l = console.readLine("Confirm, generate a single node installer with NO inbuilt configuration: Yes, [No]");
+        String l = console.readLine("> Confirm, generate a single node installer with NO inbuilt configuration: Yes, [No]");
         if (!l.toLowerCase().contains("y")) {
             println("\r\nExiting installer generation.");
             System.exit(0);
@@ -260,8 +263,50 @@ task make_node_installer(dependsOn: 'jar') << {
     //
     // Setup control file.
     //
-    org.apache.commons.io.FileUtils.copyFile(new File(project(':installer').projectDir, "src/main/resources/install_node.xml"), new File(installerJarStageDir, "install.xml"));
 
+
+    FileWriter sw = new FileWriter(new File(installerJarStageDir, "install.xml"));
+    PrintWriter pw = new PrintWriter(sw);
+
+    pw.println('<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>');
+    pw.println('<installer>');
+    pw.println('   <installation>');
+    pw.println('        <name>Ximix</name>');
+    pw.println('        <description></description>');
+    pw.println('        <id>install_' + System.currentTimeMillis() + '</id>');
+    pw.println('        <prop name="installDir" type="file" value="./"/>');
+    pw.println('        <step name="askInstallLocation"/>');
+    pw.println('        <movements>');
+    pw.println('        <id>1</id>');
+
+
+    if (hasConfigs) {
+        for (int t = 0; t < nodeConfigs.size(); t++) {
+            pw.println('            <movement src="node' + t + '/" recursive="true"></movement>');
+        }
+    } else {
+        pw.println('            <movement src="node/" recursive="true"></movement>');
+    }
+
+
+    pw.println('        </movements>');
+    pw.println('        <!-- Make executable if in a posix environment -->');
+
+    if (hasConfigs) {
+        for (int t = 0; t < nodeConfigs.size(); t++) {
+            pw.println('        <posix-exec relpath="node' + t + '/bin/run.sh" perm="rwxr-xr-x"/>');
+        }
+    } else {
+        pw.println('        <posix-exec relpath="node/bin/run.sh" perm="rwxr-xr-x"/>');
+    }
+    pw.println('   </installation>');
+    pw.println('</installer>');
+
+
+    pw.flush();
+    pw.close();
+
+    //  org.apache.commons.io.FileUtils.copyFile(new File(project(':installer').projectDir, "src/main/resources/install_node.xml"), new File(installerJarStageDir, "install.xml"));
 
 
     if (hasConfigs) {
@@ -288,26 +333,25 @@ task make_node_installer(dependsOn: 'jar') << {
 
 
 void populateNodeStage(String name, File installerJarStageDir, File mixnetConfig, File nodeConfig) {
-    File nodeStageDir = new File(installerJarStageDir, node);
+    File nodeStageDir = new File(installerJarStageDir, name);
 
     //
     // Add in configs.
     //
 
-    File confDir = new File(installerJarStageDir, "conf/");
+    File confDir = new File(nodeStageDir, "conf/");
     confDir.mkdirs();
 
     //
     // Config files are copied into place and renamed to default names.
     //
     if (mixnetConfig != null) {
-        org.apache.commons.io.FileUtils.copyFile(mixnetConfig, new File(confDir,"mixnet.xml"));
+        org.apache.commons.io.FileUtils.copyFile(mixnetConfig, new File(confDir, "mixnet.xml"));
     }
 
     if (nodeConfig != null) {
-        org.apache.commons.io.FileUtils.copyFile(nodeConfig, new File(confDir,"node.xml"));
+        org.apache.commons.io.FileUtils.copyFile(nodeConfig, new File(confDir, "node.xml"));
     }
-
 
     //
     // Libs.

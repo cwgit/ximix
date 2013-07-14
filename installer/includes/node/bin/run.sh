@@ -17,4 +17,13 @@ if [[ -z "$JAVA_HOME" ]]; then
 fi
 
 
-$JAVA_HOME/bin/java -cp "$XIMIX_HOME/libs/*" org.cryptoworkshop.ximix.node.Main "$@"
+if [[ -z "$1" ]]; then
+        MIX="$XIMIX_HOME/conf/mixnet.xml";
+fi
+
+if [[ -z "$2" ]]; then
+        NODE="$XIMIX_HOME/conf/node.xml";
+fi
+
+
+$JAVA_HOME/bin/java -cp "$XIMIX_HOME/libs/*" org.cryptoworkshop.ximix.node.Main $MIX $NODE "$@"
