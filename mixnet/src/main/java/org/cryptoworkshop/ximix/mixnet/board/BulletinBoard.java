@@ -15,9 +15,8 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
+import java.io.File;
 import java.util.List;
-
-import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
 public interface BulletinBoard
     extends Iterable<byte[]>
@@ -26,11 +25,9 @@ public interface BulletinBoard
 
     void postMessage(final byte[] message);
 
-    Transform[] getTransforms();
-
-    Transform getTransform(String transformName);
-
     List<byte[]> getMessages(int maxNumberOfMessages);
 
     void clear();
+
+    File getFile();
 }

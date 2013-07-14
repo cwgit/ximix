@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.crypto.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.math.BigInteger;
 import java.security.KeyStore;
 import java.security.Security;
@@ -282,6 +283,12 @@ public class ECKeyManagerTest
 
         @Override
         public String getBoardHost(String boardName)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public File getHomeDirectory()
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }

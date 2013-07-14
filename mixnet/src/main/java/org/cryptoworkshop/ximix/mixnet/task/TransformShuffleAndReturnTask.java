@@ -49,7 +49,7 @@ public class TransformShuffleAndReturnTask
     public void run()
     {
         BulletinBoard board = boardRegistry.getTransitBoard(message.getBoardName());
-        Transform transform = board.getTransform(message.getTransformName());
+        Transform transform = boardRegistry.getTransform(message.getTransformName());
 
         try
         {
@@ -92,6 +92,8 @@ public class TransformShuffleAndReturnTask
             {
                 throw new ServiceConnectionException("message failed");
             }
+
+            board.clear();
         }
         catch (ServiceConnectionException e)
         {

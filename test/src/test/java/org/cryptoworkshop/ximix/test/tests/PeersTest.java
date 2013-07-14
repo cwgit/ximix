@@ -1,4 +1,25 @@
+/**
+ * Copyright 2013 Crypto Workshop Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.cryptoworkshop.ximix.test.tests;
+
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
@@ -26,11 +47,6 @@ import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;
 import org.cryptoworkshop.ximix.test.node.ValueObject;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
 
 /**
@@ -38,15 +54,38 @@ import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
  */
 public class PeersTest
 {
+    @Test
+    public void testInsufficientPeers_5_Thresh_3_Fail_1_Dec()
+        throws Exception
+    {
+         doTestInsufficientPeers(5, 3, 1);
+    }
 
+    @Test
+    public void testInsufficientPeers_5_Thresh_3_Fail_2_Dec()
+        throws Exception
+    {
+        // doTestInsufficientPeers(5, 3, 2);     TODO: clean up doesn't appear to be happening yet.
+    }
+
+    private String[] getPeerList(int peerCount)
+    {
+        String[] peers = new String[peerCount];
+
+        for (int i = 0; i != peerCount; i++)
+        {
+            peers[i] = new String(new char[] { (char)('A' + i) });
+        }
+
+        return peers;
+    }
     /**
      * Test a network failure where 5 nodes are used for encryption but one fails before decryption.
      * Decryption should be successful.
      *
      * @throws Exception
      */
-    @Test
-    public void testInsufficientPeers_5_Enc_4_Dec()
+    private void doTestInsufficientPeers(int peerCount, int threshold, int fail)
         throws Exception
     {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
@@ -82,8 +121,8 @@ public class PeersTest
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
         KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
-            .withThreshold(4)
-            .withNodes("A", "B", "C", "D", "E")
+            .withThreshold(threshold)
+            .withNodes(getPeerList(peerCount))
             .build();
 
         byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
@@ -125,27 +164,35 @@ public class PeersTest
 
 
         //
-        // Here we shut down on node ('E'), the remainder of the test should still pass.
+        // Here we shut down on nodes, the remainder should still pass.
         //
-
-
-        TestCase.assertTrue("Node 5, failed to shutdown.",nodeFive.shutdown(10,TimeUnit.SECONDS));
-
-
+        if (fail == 1)
+        {
+            TestCase.assertTrue("Node 5, failed to shutdown.",nodeFive.shutdown(10,TimeUnit.SECONDS));
+        }
+        else if (fail == 2)
+        {
+            TestCase.assertTrue("Node 5, failed to shutdown.",nodeFive.shutdown(10,TimeUnit.SECONDS));
+            TestCase.assertTrue("Node 4, failed to shutdown.",nodeFour.shutdown(10, TimeUnit.SECONDS));
+        }
+        else
+        {
+            TestCase.fail("unknown fail count");
+        }
 
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];
         final ValueObject<Boolean> downloadBoardCompleted = new ValueObject<Boolean>(false);
         final ValueObject<Boolean> downloadBoardFailed = new ValueObject<Boolean>(false);
         final CountDownLatch encryptLatch = new CountDownLatch(1);
-        final ValueObject<Thread> decryptThread = new ValueObject<>();
+        final AtomicReference<Thread> decryptThread = new AtomicReference<>();
 
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents(
             "FRED",
             new DownloadOptions.Builder()
                 .withKeyID("ECKEY")
-                .withThreshold(3)
-                .withNodes("A", "B", "C","D", "E").build(),
+                .withThreshold(threshold)
+                .withNodes(getPeerList(peerCount)).build(),
             new DownloadOperationListener()
             {
                 int counter = 0;
@@ -156,14 +203,23 @@ public class PeersTest
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];
                     resultText2[counter++] = decrypted.getECPoints()[1];
+
+                    TestUtil.checkThread(decryptThread);
                 }
 
                 @Override
                 public void completed()
                 {
                     downloadBoardCompleted.set(true);
-                    decryptThread.set(Thread.currentThread());
                     encryptLatch.countDown();
+
+                    TestUtil.checkThread(decryptThread);
+                }
+
+                @Override
+                public void status(String statusObject)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
                 }
 
                 @Override
@@ -171,18 +227,17 @@ public class PeersTest
                 {
                     downloadBoardFailed.set(true);
                     encryptLatch.countDown();
+                    TestUtil.checkThread(decryptThread);
                 }
+
             });
 
 
         TestCase.assertTrue(encryptLatch.await(20, TimeUnit.SECONDS));
 
-
         TestCase.assertNotSame("Failed and complete must be different.", downloadBoardFailed.get(), downloadBoardCompleted.get());
         TestCase.assertTrue("Complete method called in DownloadOperationListener", downloadBoardCompleted.get());
         TestCase.assertFalse("Not failed.", downloadBoardFailed.get());
-
-//        TestCase.assertEquals("Shuffle and decrypt threads different.",decryptThread.get(), shuffleThread.get());
 
 
         //
@@ -199,8 +254,6 @@ public class PeersTest
         NodeTestUtil.shutdownNodes();
         client.shutdown();
         commandService.shutdown();
-
-
     }
 
 

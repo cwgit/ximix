@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.common.service;
 
+import java.io.File;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
@@ -60,4 +61,6 @@ public interface NodeContext
     ThresholdKeyPairGenerator getKeyPairGenerator(KeyType algorithm);
 
     String getBoardHost(String boardName);
+
+    File getHomeDirectory();
 }

@@ -75,6 +75,7 @@ public class XimixNodeContext
     private Map<String, ServicesConnection> peerMap;
     private final ECKeyManager keyManager;
     private final RemoteServicesCache remoteServicesCache;
+    private final File homeDirectory;
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
@@ -87,26 +88,45 @@ public class XimixNodeContext
         this.decouplers.put(Decoupler.SHARING, Executors.newSingleThreadExecutor());
 
         this.name = nodeConfig.getStringProperty("name");  // TODO:
+        this.homeDirectory = nodeConfig.getHomeDirectory();
 
         this.peerMap.remove(this.name);
 
-        List<ServiceConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
-        for (ServiceConfig config : configs)
-        {
-            if (config.getThrowable() != null)
-            {
-                config.getThrowable().printStackTrace();   // TODO: log!
-            }
-        }
-
         keyManager = new ECKeyManager(this);
 
-        if (nodeConfig.getHomeDirectory() != null)
+        if (homeDirectory != null)
         {
-            setupKeyManager(nodeConfig.getHomeDirectory(), keyManager);
+            setupKeyManager(homeDirectory, keyManager);
         }
 
         remoteServicesCache = new RemoteServicesCache(this);
+
+        //
+        // we schedule this bit to a new thread as the services require node context as an argument
+        // and we want to make sure they are well formed.
+        //
+        this.getDecoupler(Decoupler.SERVICES).execute(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    List<ServiceConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
+                    for (ServiceConfig config : configs)
+                    {
+                        if (config.getThrowable() != null)
+                        {
+                            config.getThrowable().printStackTrace();   // TODO: log!
+                        }
+                    }
+                }
+                catch (ConfigException e)
+                {
+                    // TODO:
+                }
+            }
+        });
     }
 
     public String getName()
@@ -259,6 +279,12 @@ public class XimixNodeContext
     }
 
     @Override
+    public File getHomeDirectory()
+    {
+        return homeDirectory;
+    }
+
+    @Override
     public boolean shutdown(final int time, final TimeUnit timeUnit)
         throws InterruptedException
     {
@@ -293,6 +319,7 @@ public class XimixNodeContext
         {
             try
             {
+                // TODO: password!!!!
                 keyManager.load("Hello".toCharArray(), Streams.readAll(new FileInputStream(store)));
             }
             catch (IOException e)

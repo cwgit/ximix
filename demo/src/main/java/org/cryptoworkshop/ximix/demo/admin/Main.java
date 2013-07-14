@@ -104,13 +104,23 @@ public class Main
 
         encryptor.init(pubKey);
 
-        // set up 100 random messages
+        // set up 100 "random" messages we use a seeded random here to make reload testing easier.
+        SecureRandom pointRandom = new SecureRandom()
+        {
+            int counter = 1;
+
+            public void nextBytes(byte[] data)
+            {
+                data[0] = (byte)counter++;
+            }
+        };
+
         final ECPoint[] plainText1 = new ECPoint[100];
         final ECPoint[] plainText2 = new ECPoint[100];
         for (int i = 0; i != plainText1.length; i++)
         {
-            plainText1[i] = generatePoint(pubKey.getParameters(), random);
-            plainText2[i] = generatePoint(pubKey.getParameters(), random);
+            plainText1[i] = generatePoint(pubKey.getParameters(), pointRandom);
+            plainText2[i] = generatePoint(pubKey.getParameters(), pointRandom);
 
             PairSequence encrypted = new PairSequence(new ECPair[] { encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i]) });
 

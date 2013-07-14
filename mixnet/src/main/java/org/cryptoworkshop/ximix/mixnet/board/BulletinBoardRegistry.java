@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -34,13 +35,30 @@ public class BulletinBoardRegistry
     private Set<String>                inTransitBoards = new HashSet<>();
     private Set<String>                completedBoards = new HashSet<>();
 
+    private final File workingDirectory;
     private final Map<String, Transform> transforms;
     private final Executor boardUpdateExecutor;
 
-    public BulletinBoardRegistry(Map<String, Transform> transforms, Executor boardUpdateExecutor)
+    public BulletinBoardRegistry(Map<String, Transform> transforms, File homeDirectory, Executor boardUpdateExecutor)
     {
         this.transforms = transforms;
         this.boardUpdateExecutor = boardUpdateExecutor;
+
+        if (homeDirectory != null)
+        {
+            this.workingDirectory = new File(homeDirectory, "boards");
+            if (!this.workingDirectory.exists())
+            {
+                if (!workingDirectory.mkdir())
+                {
+                    // TODO:
+                }
+            }
+        }
+        else
+        {
+            workingDirectory = null;
+        }
     }
 
     public BulletinBoard createBoard(final String boardName)
@@ -52,7 +70,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, transforms, boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, workingDirectory, boardUpdateExecutor);
 
                 boards.put(boardName, board);
             }
@@ -87,7 +105,20 @@ public class BulletinBoardRegistry
 
     public String[] getBoardNames()
     {
-        return boards.keySet().toArray(new String[boards.size()]);
+        synchronized (boards)
+        {
+            return boards.keySet().toArray(new String[boards.size()]);
+        }
+    }
+
+    public Transform[] getTransforms()
+    {
+        return transforms.values().toArray(new Transform[transforms.size()]);
+    }
+
+    public Transform getTransform(String transformName)
+    {
+        return transforms.get(transformName);
     }
 
     public boolean isSuspended(String boardName)
@@ -184,7 +215,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, transforms, boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, workingDirectory, boardUpdateExecutor);
 
                 transitBoards.put(boardName, board);
             }
@@ -197,9 +228,21 @@ public class BulletinBoardRegistry
     {
        synchronized (boards)
        {
-           transitBoards.put(boardName, boards.remove(boardName));
+           BulletinBoard originalBoard = boards.remove(boardName);
 
-           BulletinBoard board = new BulletinBoardImpl(boardName, transforms, boardUpdateExecutor);
+           transitBoards.put(boardName, originalBoard);
+
+           if (workingDirectory != null)
+           {
+               File file = originalBoard.getFile();
+               if (!file.renameTo(new File(file.getParentFile(), originalBoard.getName() + ".transit")))
+               {
+                   System.err.println("rename failed");
+                   // TODO:
+               }
+           }
+
+           BulletinBoard board = new BulletinBoardImpl(boardName, workingDirectory, boardUpdateExecutor);
 
            boards.put(boardName, board);
        }

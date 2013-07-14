@@ -15,31 +15,81 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
-
-import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
 public class BulletinBoardImpl
     implements BulletinBoard
 {
     private final String boardName;
     private final Executor boardUpdateExecutor;
-    private final Map<String, Transform> transforms;
+    private final File workingFile;
 
     private List<byte[]> messages = new ArrayList<>();
 
-    public BulletinBoardImpl(String boardName, Map<String, Transform> transforms, Executor executor)
+    public BulletinBoardImpl(String boardName, File workingDirectory, Executor executor)
     {
         this.boardName = boardName;
-        this.transforms = transforms;
         this.boardUpdateExecutor = executor;
+
+        if (workingDirectory != null)
+        {
+            this.workingFile = new File(workingDirectory, boardName);
+            if (this.workingFile.exists())
+            {
+                // TODO: this might be better scheduled... on the other hand maybe not.
+
+                int len = 0;
+
+                try
+                {
+                    DataInputStream dIn = new DataInputStream(new BufferedInputStream(new FileInputStream(this.workingFile)));
+
+                    for (;;)
+                    {
+                        len = dIn.readInt();
+                        byte[] data = new byte[len];
+
+                        dIn.readFully(data);
+
+                        messages.add(data);
+
+                        len = 0;
+                    }
+                }
+                catch (EOFException e)
+                {
+                    if (len != 0)
+                    {
+                        // TODO: we've truncated
+                    }
+                    // we're done!
+                }
+                catch (IOException e)
+                {
+                    // TODO: log error!
+                }
+
+            }
+        }
+        else
+        {
+            workingFile = null;
+        }
     }
 
     public String getName()
@@ -54,18 +104,32 @@ public class BulletinBoardImpl
             public void run()
             {
                 messages.add(message);
+
+                if (workingFile != null)
+                {
+                    try
+                    {
+                        ByteArrayOutputStream bOut = new ByteArrayOutputStream(4 + message.length);
+                        DataOutputStream dOut = new DataOutputStream(bOut);
+
+                        dOut.writeInt(message.length);
+                        dOut.write(message);
+                        dOut.close();
+
+                        FileOutputStream fOut = new FileOutputStream(workingFile, true);
+
+                        fOut.write(bOut.toByteArray());
+
+                        fOut.close();
+                    }
+                    catch (IOException e)
+                    {
+                        // TODO:
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                }
             }
         });
-    }
-
-    public Transform[] getTransforms()
-    {
-        return transforms.values().toArray(new Transform[transforms.size()]);
-    }
-
-    public Transform getTransform(String transformName)
-    {
-        return transforms.get(transformName);
     }
 
     @Override
@@ -124,12 +188,59 @@ public class BulletinBoardImpl
             public void run()
             {
                 messages.clear();
+                if (workingFile != null)
+                {
+                    try
+                    {
+                        FileOutputStream fOut = new FileOutputStream(workingFile);
+
+                        fOut.write(new byte[0]);
+
+                        fOut.close();
+                    }
+                    catch (IOException e)
+                    {
+                        // TODO
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                }
             }
         });
     }
 
+    @Override
+    public File getFile()
+    {
+        return workingFile;
+    }
+
     public Iterator<byte[]> iterator()
     {
-        return new ArrayList<byte[]>(messages).iterator();
+        FutureTask<Iterator<byte[]>> task = new FutureTask<>(new Callable<Iterator<byte[]>>()
+        {
+            @Override
+            public Iterator<byte[]> call()
+                throws Exception
+            {
+                return new ArrayList<byte[]>(messages).iterator();
+            }
+        });
+
+        boardUpdateExecutor.execute(task);
+
+        try
+        {
+            return task.get();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        catch (ExecutionException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+        return null; // TODO:
     }
 }

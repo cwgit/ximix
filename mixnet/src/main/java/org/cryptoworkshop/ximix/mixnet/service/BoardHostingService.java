@@ -85,7 +85,7 @@ public class BoardHostingService
             transforms = new HashMap<>();
         }
 
-        this.boardRegistry = new BulletinBoardRegistry(transforms, nodeContext.getDecoupler(Decoupler.BOARD_REGISTRY));
+        this.boardRegistry = new BulletinBoardRegistry(transforms, nodeContext.getHomeDirectory(), nodeContext.getDecoupler(Decoupler.BOARD_REGISTRY));
 
         if (config.hasConfig("boards"))
         {
@@ -106,7 +106,7 @@ public class BoardHostingService
         int count = 0;
         for (String name : names)
         {
-            Transform[] transforms = boardRegistry.getBoard(name).getTransforms();
+            Transform[] transforms = boardRegistry.getTransforms();
             Set<String> transformNames = new HashSet<String>();
             for (Transform transform : transforms)
             {

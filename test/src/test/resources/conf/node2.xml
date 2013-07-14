@@ -1,8 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <node>
-    <portNo>11001</portNo>
+    <portNo>12001</portNo>
     <name>B</name>
     <services>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.mixnet.service.BoardHostingService</implementation>
+            <boards>
+                <board>
+                    <name>FRED</name>
+                </board>
+            </boards>
+            <transforms>
+                <transform>
+                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform</implementation>
+                </transform>
+                <transform>
+                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.NullTransform</implementation>
+                </transform>
+            </transforms>
+        </service>
         <service>
             <implementation>org.cryptoworkshop.ximix.crypto.service.NodeKeyRetrievalService</implementation>
         </service>

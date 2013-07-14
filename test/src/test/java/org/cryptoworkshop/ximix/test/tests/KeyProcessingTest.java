@@ -1,3 +1,18 @@
+/**
+ * Copyright 2013 Crypto Workshop Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.cryptoworkshop.ximix.test.tests;
 
 import java.math.BigInteger;
@@ -5,6 +20,8 @@ import java.net.SocketException;
 import java.security.SecureRandom;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
@@ -16,8 +33,8 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
 import org.cryptoworkshop.ximix.common.operation.Operation;
-import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
@@ -79,7 +96,6 @@ public class KeyProcessingTest extends TestCase
 
     }
 
-
     @Test
     public void testKeyGenerationEncryptionTestWithShuffle()
         throws Exception
@@ -135,7 +151,7 @@ public class KeyProcessingTest extends TestCase
         // Set up plain text and upload encrypted pair.
         //
 
-        int numberOfPoints = 1; // Adjust number of points to test here.
+        int numberOfPoints = 20; // Adjust number of points to test here.
 
 
         final ECPoint[] plainText1 = new ECPoint[numberOfPoints];
@@ -162,13 +178,14 @@ public class KeyProcessingTest extends TestCase
         // Perform shuffle.
         //
 
-        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED", new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECKEY").build(), "A", "B", "C", "D", "E");
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",
+            new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECKEY").build(), "A", "C", "D", "E");
 
         final CountDownLatch shufflerLatch = new CountDownLatch(1);
 
-        final ValueObject<Boolean> shuffleCompleted = new ValueObject<Boolean>(false);
-        final ValueObject<Boolean> shuffleFailed = new ValueObject<Boolean>(false);
-        final ValueObject<Thread> shuffleThread = new ValueObject<>();
+        final AtomicBoolean shuffleCompleted = new AtomicBoolean(false);
+        final AtomicBoolean shuffleFailed = new AtomicBoolean(false);
+        final AtomicReference<Thread> shuffleThread = new AtomicReference<>();
 
 
         shuffleOp.addListener(new ShuffleOperationListener()
@@ -177,8 +194,14 @@ public class KeyProcessingTest extends TestCase
             public void completed()
             {
                 shuffleCompleted.set(true);
-                shuffleThread.set(Thread.currentThread());
+                TestUtil.checkThread(shuffleThread);
                 shufflerLatch.countDown();
+            }
+
+            @Override
+            public void status(String statusObject)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
             }
 
             @Override
@@ -186,13 +209,16 @@ public class KeyProcessingTest extends TestCase
             {
                 shuffleFailed.set(true);
                 shufflerLatch.countDown();
+                TestUtil.checkThread(shuffleThread);
             }
         });
 
         //
         // Fail if operation did not complete in the nominated time frame.
         //
-        TestCase.assertTrue("Shuffle timed out.", shufflerLatch.await(20, TimeUnit.SECONDS));
+        //TestCase.assertTrue("Shuffle timed out.", shufflerLatch.await(20, TimeUnit.SECONDS));
+
+        shufflerLatch.await();
 
         //
         // Check that failed and completed methods are exclusive.
@@ -213,10 +239,10 @@ public class KeyProcessingTest extends TestCase
 
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];
-        final ValueObject<Boolean> downloadBoardCompleted = new ValueObject<Boolean>(false);
-        final ValueObject<Boolean> downloadBoardFailed = new ValueObject<Boolean>(false);
+        final AtomicBoolean downloadBoardCompleted = new AtomicBoolean(false);
+        final AtomicBoolean downloadBoardFailed = new AtomicBoolean(false);
         final CountDownLatch encryptLatch = new CountDownLatch(1);
-        final ValueObject<Thread> decryptThread = new ValueObject<>();
+        final AtomicReference<Thread> decryptThread = new AtomicReference<>();
 
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents(
             "FRED",
@@ -234,19 +260,27 @@ public class KeyProcessingTest extends TestCase
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];
                     resultText2[counter++] = decrypted.getECPoints()[1];
+                    TestUtil.checkThread(decryptThread);
                 }
 
                 @Override
                 public void completed()
                 {
                     downloadBoardCompleted.set(true);
-                    decryptThread.set(Thread.currentThread());
+                    TestUtil.checkThread(decryptThread);
                     encryptLatch.countDown();
+                }
+
+                @Override
+                public void status(String statusObject)
+                {
+                    TestUtil.checkThread(decryptThread);
                 }
 
                 @Override
                 public void failed(String errorObject)
                 {
+                    TestUtil.checkThread(decryptThread);
                     downloadBoardFailed.set(true);
                     encryptLatch.countDown();
                 }
@@ -260,7 +294,7 @@ public class KeyProcessingTest extends TestCase
         TestCase.assertTrue("Complete method called in DownloadOperationListener", downloadBoardCompleted.get());
         TestCase.assertFalse("Not failed.", downloadBoardFailed.get());
 
-//        TestCase.assertEquals("Shuffle and decrypt threads different.",decryptThread.get(), shuffleThread.get());
+        TestCase.assertEquals("Shuffle and decrypt threads different.",decryptThread.get(), shuffleThread.get());
 
 
         //
@@ -269,14 +303,6 @@ public class KeyProcessingTest extends TestCase
 
         for (int t = 0; t < plainText1.length; t++)
         {
-
-            NodeTestUtil.printHexln("PT 1", plainText1[0].getEncoded());
-            NodeTestUtil.printHexln("RT 1", resultText1[0].getEncoded());
-
-            NodeTestUtil.printHexln("PT 2", plainText2[0].getEncoded());
-            NodeTestUtil.printHexln("RT 2", resultText2[0].getEncoded());
-
-
             TestCase.assertTrue(plainText1[t].equals(resultText1[t]));
             TestCase.assertTrue(plainText2[t].equals(resultText2[t]));
         }
@@ -456,6 +482,12 @@ public class KeyProcessingTest extends TestCase
                 }
 
                 @Override
+                public void status(String statusObject)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                @Override
                 public void failed(String errorObject)
                 {
                     downloadBoardFailed.set(true);
@@ -499,5 +531,4 @@ public class KeyProcessingTest extends TestCase
 
 
     }
-
 }
