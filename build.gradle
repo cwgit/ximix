@@ -225,16 +225,16 @@ task make_node_installer(dependsOn: 'jar') << {
         println();
         println("When that property is set the task will generate an executable jar file that will create")
         println("separate complete node installations for each node.xml file specified.");
-        println("The first file must be the mixnet.xml configuration that defines the mixnet and connection\r\ndetails concerning");
-        println("each node.\r\n");
+        println("The first file must be the mixnet.xml configuration that defines the mixnet and connection")
+        println("details concerning each node.\r\n");
         println("See Wiki for more details.");
         println();
 
-        String l = console.readLine("\r\nConfirm, generate a single node installer with NO inbuilt configuration: Yes, [No] >");
-        if (!l.toLowerCase().contains("y")) {
-            println("\r\nExiting installer generation.");
-            System.exit(0);
-        }
+//        String l = console.readLine("\r\nConfirm, generate a single node installer with NO inbuilt configuration: Yes, [No] >");
+//        if (!l.toLowerCase().contains("y")) {
+//            println("\r\nExiting installer generation.");
+//            System.exit(0);
+//        }
 
         hasConfigs = false;
     }
@@ -278,25 +278,25 @@ task make_node_installer(dependsOn: 'jar') << {
     pw.println('        <id>1</id>');
 
 
-    if (hasConfigs) {
-        for (int t = 0; t < nodeConfigs.size(); t++) {
-            pw.println('            <movement src="node' + t + '/" recursive="true"></movement>');
-        }
-    } else {
-        pw.println('            <movement src="node/" recursive="true"></movement>');
-    }
+//    if (hasConfigs) {
+//        for (int t = 0; t < nodeConfigs.size(); t++) {
+//            pw.println('            <movement src="node' + t + '/" recursive="true"></movement>');
+//        }
+//    } else {
+        pw.println('            <movement src="ximix/" recursive="true"></movement>');
+  //  }
 
 
     pw.println('        </movements>');
     pw.println('        <!-- Make executable if in a posix environment -->');
 
-    if (hasConfigs) {
-        for (int t = 0; t < nodeConfigs.size(); t++) {
-            pw.println('        <posix-exec relpath="node' + t + '/bin/run.sh" perm="rwxr-xr-x"/>');
-        }
-    } else {
-        pw.println('        <posix-exec relpath="node/bin/run.sh" perm="rwxr-xr-x"/>');
-    }
+//    if (hasConfigs) {
+//        for (int t = 0; t < nodeConfigs.size(); t++) {
+//            pw.println('        <posix-exec relpath="node' + t + '/bin/run.sh" perm="rwxr-xr-x"/>');
+//        }
+//    } else {
+        pw.println('        <posix-exec relpath="ximix/bin/run.sh" perm="rwxr-xr-x"/>');
+  //  }
     pw.println('   </installation>');
     pw.println('</installer>');
 
@@ -307,12 +307,39 @@ task make_node_installer(dependsOn: 'jar') << {
     //  org.apache.commons.io.FileUtils.copyFile(new File(project(':installer').projectDir, "src/main/resources/install_node.xml"), new File(installerJarStageDir, "install.xml"));
 
 
+    //
+    //
+    //
+
+
+    File ximixStage = new File(installerJarStageDir,"ximix");
+
+
+    File stagedLibs = new File(ximixStage, "/libs");
+    stagedLibs.mkdirs();
+
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':common').jar.archivePath, stagedLibs);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':crypto').jar.archivePath, stagedLibs);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':mixnet').jar.archivePath, stagedLibs);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':node').jar.archivePath, stagedLibs);
+
+    // The two betas.
+
+    org.apache.commons.io.FileUtils.copyDirectory(new File("${rootDir}/libs/"), stagedLibs);
+
+
+    //
+    // The other includes like shell scripts
+    //
+
+    org.apache.commons.io.FileUtils.copyDirectory(new File(project(':installer').projectDir, "includes/ximix/"), ximixStage);
+
     if (hasConfigs) {
         for (int t = 0; t < nodeConfigs.size(); t++) {
-            populateNodeStage("node" + t, installerJarStageDir, mixnetConfigFile, nodeConfigs.get(t));
+            populateNodeStage("node"+(t+1) , ximixStage, mixnetConfigFile, nodeConfigs.get(t));
         }
     } else {
-        populateNodeStage("node", installerJarStageDir, null, null);
+        populateNodeStage("node", ximixStage, null, null);
     }
 
     //
@@ -326,6 +353,11 @@ task make_node_installer(dependsOn: 'jar') << {
         fileset(dir: installerJarStageDir);
     }
 
+
+    println("\r\nInstaller Jar: "+jarFile.getCanonicalFile());
+
+    println("The installer jar can run run using:" +
+            "\r\njava -jar "+jarFile.getName());
 
 }
 
@@ -350,27 +382,6 @@ void populateNodeStage(String name, File installerJarStageDir, File mixnetConfig
     if (nodeConfig != null) {
         org.apache.commons.io.FileUtils.copyFile(nodeConfig, new File(confDir, "node.xml"));
     }
-
-    //
-    // Libs.
-    //
-
-    File stagedLibs = new File(nodeStageDir, "/libs");
-    stagedLibs.mkdirs();
-
-    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':common').jar.archivePath, stagedLibs);
-    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':crypto').jar.archivePath, stagedLibs);
-    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':mixnet').jar.archivePath, stagedLibs);
-    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':node').jar.archivePath, stagedLibs);
-
-    //
-    // The two betas.
-    //
-
-    org.apache.commons.io.FileUtils.copyDirectory(new File("${rootDir}/libs/"), stagedLibs);
-
-
-    org.apache.commons.io.FileUtils.copyDirectory(new File(project(':installer').projectDir, "includes/node/"), nodeStageDir);
 }
 
 /**
