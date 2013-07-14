@@ -20,6 +20,7 @@ fi
 if [[ ! -z "$1" ]]; then
         MIX="$XIMIX_HOME/$1/conf/mixnet.xml"
 	NODE="$XIMIX_HOME/$1/conf/node.xml"
+	PIDFILE="$XIMIX_HOME/$1/$1.pid"
 fi
 
 if [[ ! -f "$MIX" ]]; then
@@ -32,4 +33,7 @@ if [[ ! -f "$NODE" ]]; then
 	exit -1;
 fi
 
-$JAVA_HOME/bin/java -cp "$XIMIX_HOME/libs/*" org.cryptoworkshop.ximix.node.Main $MIX $NODE "$@"
+$JAVA_HOME/bin/java -cp "$XIMIX_HOME/libs/*" org.cryptoworkshop.ximix.node.Main $MIX $NODE "$@" &
+PID=$!
+
+echo $PID > $PIDFILE

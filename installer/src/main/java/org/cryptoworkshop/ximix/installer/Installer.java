@@ -165,7 +165,7 @@ public class Installer
                 dir = new File(i);
             }
 
-            i = console.readLine("Condfirm Install to '%s' Yes or [No] >", dir.getCanonicalPath());
+            i = console.readLine("Confirm Install to '%s' Yes or [No] >", dir.getCanonicalPath());
             if (i.toLowerCase().startsWith("y"))
             {
                 properties().put(INSTALL_DIR, dir);

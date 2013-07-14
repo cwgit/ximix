@@ -356,8 +356,8 @@ task make_node_installer(dependsOn: 'jar') << {
 
     println("\r\nInstaller Jar: "+jarFile.getCanonicalFile());
 
-    println("The installer jar can run run using:" +
-            "\r\njava -jar "+jarFile.getName());
+    println("The installer jar can run using:" +
+            "\r\njava -jar "+jarFile.getCanonicalPath());
 
 }
 
