@@ -25,7 +25,7 @@ public class SignatureMessage
 
     public static final SignatureMessage getInstance(Enum[] types, Object o)
     {
-        if (o instanceof CreateSignatureMessage)
+        if (o instanceof SignatureMessage)
         {
             return (SignatureMessage)o;
         }

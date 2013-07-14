@@ -69,7 +69,6 @@ public class ECDSASignerEngine
     private final ShareMap<SigID, BigInteger> sharedAMap;
     private final ShareMap<SigID, BigInteger> sharedBMap;
     private final ShareMap<SigID, BigInteger> sharedCMap;
-    private final ShareMap<SigID, BigInteger> sharedMuMap;
     private final ShareMap<SigID, ECPoint> sharedPMap;
 
     private final Map<String, ECDomainParameters> paramsMap = Collections.synchronizedMap(new HashMap<String, ECDomainParameters>());
@@ -95,7 +94,6 @@ public class ECDSASignerEngine
         STORE_A,
         STORE_B,
         STORE_C,
-        STORE_MU,
         STORE_P,
         FETCH_P
     }
@@ -109,7 +107,6 @@ public class ECDSASignerEngine
         this.sharedAMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
         this.sharedBMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
         this.sharedCMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
-        this.sharedMuMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
     }
 
     public int getAlgorithm()
@@ -196,10 +193,6 @@ public class ECDSASignerEngine
                 return new MessageReply(MessageReply.Type.OKAY);
             case STORE_C:
                 addValue(sharedCMap, message);
-
-                return new MessageReply(MessageReply.Type.OKAY);
-            case STORE_MU:
-                addValue(sharedMuMap, message);
 
                 return new MessageReply(MessageReply.Type.OKAY);
             case STORE_P:
