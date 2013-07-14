@@ -21,14 +21,14 @@ cd $base
 
 if [ -n "$mixnet" ]
 then
-    gradle make_node_installer "-Dnetwork=$mixnet$node"
+    gradle clean jar make_node_installer "-Dnetwork=$mixnet$node"
 else
     echo "Confirm generation of a basic installer with NO inbuilt configuration: [No]"
     read conf
 
     case $conf in
     y*|Y*)
-        gradle make_node_installer
+        gradle clean jar make_node_installer
         ;;
     esac
 fi
