@@ -223,10 +223,11 @@ task make_node_installer(dependsOn: 'jar') << {
         println("2. Node configuration files <nodeX.xml>");
         println("\r\nExample:\r\ngradle make_node_installer -Dnetwork=mixnet.xml,node1.xml,node2.xml\r\n");
         println();
-        println("When that property is set the task will generate an executable jar file that will create")
-        println("separate complete node installations for each node.xml file specified.");
-        println("The first file must be the mixnet.xml configuration that defines the mixnet and connection")
-        println("details concerning each node.\r\n");
+        println("When that property is set the task will generate an executable jar file that")
+        println("will create separate complete node installations for each node.xml file");
+        println("specified.");
+        println("The first file must be the mixnet.xml configuration that defines the mixnet")
+        println("and connection details concerning each node.\r\n");
         println("See Wiki for more details.");
         println();
 
