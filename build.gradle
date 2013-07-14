@@ -225,12 +225,12 @@ task make_node_installer(dependsOn: 'jar') << {
         println();
         println("When that property is set the task will generate an executable jar file that will create")
         println("separate complete node installations for each node.xml file specified.");
-        println("The first file must be the mixnet.xml configuration that defines mixnet and connection details concerning");
+        println("The first file must be the mixnet.xml configuration that defines the mixnet and connection\r\ndetails concerning");
         println("each node.\r\n");
         println("See Wiki for more details.");
         println();
 
-        String l = console.readLine("> Confirm, generate a single node installer with NO inbuilt configuration: Yes, [No]");
+        String l = console.readLine("\r\nConfirm, generate a single node installer with NO inbuilt configuration: Yes, [No] >");
         if (!l.toLowerCase().contains("y")) {
             println("\r\nExiting installer generation.");
             System.exit(0);
