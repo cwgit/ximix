@@ -1,13 +1,13 @@
 #!/bin/bash
 
-if [[ -z "$XIMXI_NODE_ROOT" ]]; then
+if [[ -z "$XIMXI_HOME" ]]; then
 	L=`dirname $0`
-	XIMIX_NODE_ROOT="$L/../"
+	XIMIX_HOME="$L/../"
 	 
 fi
 
-if [[ ! -f "$XIMIX_NODE_ROOT/libs/node.jar" ]]; then
-	echo "Could not find libs/node.jar off XIMIX_NODE_ROOT ($XIMIX_NODE_ROOT)"
+if [[ ! -f "$XIMIX_HOME/libs/node.jar" ]]; then
+	echo "Could not find libs/node.jar off XIMIX_HOME ( $XIMIX_HOME )"
 	exit -1
 fi
 
@@ -17,4 +17,4 @@ if [[ -z "$JAVA_HOME" ]]; then
 fi
 
 
-$JAVA_HOME/bin/java -cp "$XIMIX_NODE_ROOT/libs/*" org.cryptoworkshop.ximix.node.Main "$@"
+$JAVA_HOME/bin/java -cp "$XIMIX_HOME/libs/*" org.cryptoworkshop.ximix.node.Main "$@"

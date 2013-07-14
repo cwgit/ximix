@@ -2,6 +2,7 @@ package org.cryptoworkshop.ximix.installer;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
@@ -147,6 +148,12 @@ public class Installer
         }
     }
 
+
+
+
+
+
+
     private void askInstallDir(Console console)
         throws Exception
     {
@@ -243,7 +250,7 @@ public class Installer
     public void copy(InputStream is, File f, boolean close)
     {
 
-        System.out.println("Unpacking: "+f);
+        System.out.println("Unpacking: " + f);
 
         try
         {
