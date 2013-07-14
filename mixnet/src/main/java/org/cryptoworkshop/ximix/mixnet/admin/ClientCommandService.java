@@ -128,18 +128,6 @@ public class ClientCommandService
         return nodeStatistics;
     }
 
-    @Override
-    public void shutdown(String... nodes)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void restart(String... nodes)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
     private class ShuffleOp
         extends Operation<ShuffleOperationListener>
         implements Runnable

@@ -17,7 +17,6 @@ package org.cryptoworkshop.ximix.mixnet.admin;
 
 import java.util.List;
 
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 public interface CommandService
@@ -50,20 +49,6 @@ public interface CommandService
      * @return
      */
     List<NodeStatistics> getNodeStatistics(String... nodes);
-
-    /**
-     * Cause nodes to shutdown.
-     *
-     * @param nodes
-     */
-    void shutdown(String... nodes);
-
-    /**
-     * Cause nodes to restart.
-     *
-     * @param nodes
-     */
-    void restart(String... nodes);
 
     /**
      * Close any io used by this service.
