@@ -116,6 +116,8 @@ public class Installer
 
                         // TODO consider the security implications where the relative path has elements like "../" etc.
 
+                        System.out.println("Setting posix file permissions on '"+((InstallerConfig.PosixPerms)opp).getRelPath()+"' to '"+((InstallerConfig.PosixPerms)opp).getPermissions()+"'");
+
                         java.nio.file.Files.setPosixFilePermissions(p, PosixFilePermissions.fromString(((InstallerConfig.PosixPerms)opp).getPermissions()));
                     }
                     catch (UnsupportedOperationException uoe)
@@ -125,6 +127,8 @@ public class Installer
                 }
 
             }
+
+            System.out.println("\r\nFinished..");
 
 
         }
