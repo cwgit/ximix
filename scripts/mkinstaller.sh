@@ -17,7 +17,8 @@ do
     fi
 done
 
-cd $base
+cd $base/../
+
 
 if [ -n "$mixnet" ]
 then

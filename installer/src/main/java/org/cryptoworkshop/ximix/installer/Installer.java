@@ -206,7 +206,10 @@ public class Installer
             @Override
             public void entry(ZipEntry ze)
             {
-                if (ze.getName().equals(entry.getName()))
+                //
+                // Skip if same or not beginning with the same path.
+                //
+                if (!ze.getName().startsWith(entry.getName()) || ze.getName().equals(entry.getName()))
                 {
                     return;
                 }
@@ -215,14 +218,6 @@ public class Installer
                 {
                     File out = new File((File)properties().get(INSTALL_DIR), ze.getName());
                     out.mkdirs();
-                    try
-                    {
-                        copyDir(ze, file, prefix);
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
-                    }
                 }
                 else
                 {
