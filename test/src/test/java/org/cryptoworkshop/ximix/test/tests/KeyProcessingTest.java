@@ -15,6 +15,14 @@
  */
 package org.cryptoworkshop.ximix.test.tests;
 
+import java.math.BigInteger;
+import java.net.SocketException;
+import java.security.SecureRandom;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
@@ -43,14 +51,6 @@ import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;
 import org.cryptoworkshop.ximix.test.node.ValueObject;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.net.SocketException;
-import java.security.SecureRandom;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
 
@@ -123,34 +123,47 @@ public class KeyProcessingTest extends TestCase
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
         NodeTestUtil.launch(nodeFive, true);
 
-
-        SecureRandom random = new SecureRandom();
-
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"));
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
         KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
             .withThreshold(3)
-            .withNodes("A", "B", "C", "D", "E")
+            .withNodes("A", "B", "C", "D", "E" )
             .build();
 
         byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
 
         UploadService client = adminRegistrar.connect(UploadService.class);
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
 
-        final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
+        ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
 
-        final ECElGamalEncryptor encryptor = new ECElGamalEncryptor();
+        doMissingTest(client, commandService, pubKey, new String[] { "A", "B", "C" });
+        doMissingTest(client, commandService, pubKey, new String[] { "C", "D", "E" });
+        doMissingTest(client, commandService, pubKey, new String[] { "A", "D", "E" });
+        doMissingTest(client, commandService, pubKey, new String[] { "A", "D", "B" });
+
+
+        NodeTestUtil.shutdownNodes();
+        client.shutdown();
+        commandService.shutdown();
+    }
+
+    private void doMissingTest(UploadService client, CommandService commandService, final ECPublicKeyParameters pubKey, String[] decNodes)
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+
+        ECElGamalEncryptor encryptor = new ECElGamalEncryptor();
 
         encryptor.init(pubKey);
-
 
         //
         // Set up plain text and upload encrypted pair.
         //
 
-        int numberOfPoints = 20; // Adjust number of points to test here.
+        int numberOfPoints = 15; // Adjust number of points to test here.
 
 
         final ECPoint[] plainText1 = new ECPoint[numberOfPoints];
@@ -170,71 +183,6 @@ public class KeyProcessingTest extends TestCase
             client.uploadMessage("FRED", encrypted.getEncoded());
         }
 
-        CommandService commandService = adminRegistrar.connect(CommandService.class);
-
-
-//        //
-//        // Perform shuffle.
-//        //
-//
-//        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",
-//            new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECKEY").build(), "A", "C", "D", "E");
-//
-//        final CountDownLatch shufflerLatch = new CountDownLatch(1);
-//
-//        final AtomicBoolean shuffleCompleted = new AtomicBoolean(false);
-//        final AtomicBoolean shuffleFailed = new AtomicBoolean(false);
-//        final AtomicReference<Thread> shuffleThread = new AtomicReference<>();
-//
-//
-//        shuffleOp.addListener(new ShuffleOperationListener()
-//        {
-//            @Override
-//            public void completed()
-//            {
-//                shuffleCompleted.set(true);
-//                TestUtil.checkThread(shuffleThread);
-//                shufflerLatch.countDown();
-//            }
-//
-//            @Override
-//            public void status(String statusObject)
-//            {
-//                //To change body of implemented methods use File | Settings | File Templates.
-//            }
-//
-//            @Override
-//            public void failed(String errorObject)
-//            {
-//                shuffleFailed.set(true);
-//                shufflerLatch.countDown();
-//                TestUtil.checkThread(shuffleThread);
-//            }
-//        });
-//
-//        //
-//        // Fail if operation did not complete in the nominated time frame.
-//        //
-//        //TestCase.assertTrue("Shuffle timed out.", shufflerLatch.await(20, TimeUnit.SECONDS));
-//
-//        shufflerLatch.await();
-//
-//        //
-//        // Check that failed and completed methods are exclusive.
-//        //
-//
-//        TestCase.assertNotSame("Failed flag and completed flag must be different.", shuffleCompleted.get(), shuffleFailed.get());
-//
-//        //
-//        // Check for success of shuffle.
-//        //
-//        TestCase.assertTrue(shuffleCompleted.get());
-//
-//        //
-//        // Check that shuffle did not fail.
-//        //
-//        TestCase.assertFalse(shuffleFailed.get());
-
 
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];
@@ -248,7 +196,7 @@ public class KeyProcessingTest extends TestCase
             new DownloadOptions.Builder()
                 .withKeyID("ECKEY")
                 .withThreshold(3)
-                .withNodes("A", "B", "C").build(),
+                .withNodes(decNodes).build(),
             new DownloadOperationListener()
             {
                 int counter = 0;
@@ -305,11 +253,6 @@ public class KeyProcessingTest extends TestCase
             TestCase.assertTrue(plainText1[t].equals(resultText1[t]));
             TestCase.assertTrue(plainText2[t].equals(resultText2[t]));
         }
-
-
-        NodeTestUtil.shutdownNodes();
-        client.shutdown();
-        commandService.shutdown();
     }
 
     @Test

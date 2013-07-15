@@ -45,6 +45,7 @@ import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
+import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -254,11 +255,11 @@ public class ClientCommandService
                         MessageReply[] partialDecryptResponses = new MessageReply[options.getThreshold()];
 
                         // TODO: deal with drop outs
-                        for (int i = 0; i != options.getThreshold(); i++)
+                        int count = 0;
+                        while (count != options.getThreshold())
                         {
-                            String curNode = nodes[i];
-
-                            partialDecryptResponses[i] = connection.sendMessage(curNode, CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), data.getMessages()));
+                            partialDecryptResponses[count] = connection.sendMessage(nodes[count], CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), data.getMessages()));
+                            count++;
                         }
 
                         MessageReply keyReply = connection.sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, new FetchPublicKeyMessage(options.getKeyID()));
@@ -267,35 +268,69 @@ public class ClientCommandService
 
                         ECDomainParameters domainParams = ((ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo)).getParameters();
 
-                        LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(options.getThreshold(), domainParams.getN());
+                        ShareMessage[] shareMessages = new ShareMessage[options.getThreshold()];
+                        int            maxSequenceNo = 0;
 
-                        BigInteger[] weights = calculator.computeWeights(partialDecryptResponses);
-
-                        // weighting
-                        List<byte[]>[] partialDecrypts = new List[options.getThreshold()];
-
-                        for (int i = 0; i != partialDecrypts.length; i++)
+                        for (int i = 0; i != shareMessages.length; i++)
                         {
-                            partialDecrypts[i] = MessageBlock.getInstance(partialDecryptResponses[i].getPayload()).getMessages();
+                            shareMessages[i] = ShareMessage.getInstance(partialDecryptResponses[i].getPayload());
+                            if (maxSequenceNo < shareMessages[i].getSequenceNo())
+                            {
+                                maxSequenceNo = shareMessages[i].getSequenceNo();
+                            }
                         }
 
-                        for (int messageIndex = 0; messageIndex != partialDecrypts[0].size(); messageIndex++)
+                        // weighting
+                        List<byte[]>[] partialDecrypts = new List[maxSequenceNo + 1];
+
+                        for (int i = 0; i != shareMessages.length; i++)
                         {
-                            PairSequence ps = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[0].get(messageIndex));
+                            ShareMessage shareMsg = shareMessages[i];
+
+                            partialDecrypts[shareMsg.getSequenceNo()] = MessageBlock.getInstance(shareMsg.getShareData()).getMessages();
+                        }
+
+                        //
+                        // we don't need to know how many peers, just the maximum index (maxSequenceNo + 1) of the one available
+                        //
+                        LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(maxSequenceNo + 1, domainParams.getN());
+
+                        BigInteger[] weights = calculator.computeWeights(partialDecrypts);
+
+                        int            baseIndex = 0;
+                        for (int i = 0; i != partialDecrypts.length; i++)
+                        {
+                            if (partialDecrypts[i] != null)
+                            {
+                                baseIndex = i;
+                                break;
+                            }
+                        }
+
+                        List<byte[]>   baseMessageBlock = partialDecrypts[baseIndex];
+                        BigInteger     baseWeight = weights[baseIndex];
+
+                        for (int messageIndex = 0; messageIndex != baseMessageBlock.size(); messageIndex++)
+                        {
+                            PairSequence ps = PairSequence.getInstance(domainParams.getCurve(), baseMessageBlock.get(messageIndex));
                             ECPoint[] weightedDecryptions = new ECPoint[ps.size()];
                             ECPoint[] fulls = new ECPoint[ps.size()];
 
                             ECPair[]  partials = ps.getECPairs();
                             for (int i = 0; i != weightedDecryptions.length; i++)
                             {
-                                weightedDecryptions[i] = partials[i].getX().multiply(weights[0]);
+                                weightedDecryptions[i] = partials[i].getX().multiply(baseWeight);
                             }
-                            for (int wIndex = 1; wIndex < weights.length; wIndex++)
+
+                            for (int wIndex = baseIndex + 1; wIndex < weights.length; wIndex++)
                             {
-                                ECPair[]  nPartials = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex)).getECPairs();
-                                for (int i = 0; i != weightedDecryptions.length; i++)
+                                if (weights[wIndex] != null)
                                 {
-                                    weightedDecryptions[i] = weightedDecryptions[i].add(nPartials[i].getX().multiply(weights[wIndex]));
+                                    ECPair[]  nPartials = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex)).getECPairs();
+                                    for (int i = 0; i != weightedDecryptions.length; i++)
+                                    {
+                                        weightedDecryptions[i] = weightedDecryptions[i].add(nPartials[i].getX().multiply(weights[wIndex]));
+                                    }
                                 }
                             }
 

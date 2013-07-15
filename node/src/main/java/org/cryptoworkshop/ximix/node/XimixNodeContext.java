@@ -58,7 +58,6 @@ import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.KeyManager;
 import org.cryptoworkshop.ximix.crypto.key.KeyManagerListener;
-import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -213,20 +212,7 @@ public class XimixNodeContext
     @Override
     public PrivateKeyOperator getPrivateKeyOperator(String keyID)
     {
-        try
-        {
-            SubjectPublicKeyInfo pubInfo = keyManager.fetchPublicKey(keyID);
-            ECPublicKeyParameters keyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubInfo);
-
-            return new BcECPrivateKeyOperator(keyParameters.getParameters(), keyManager.getPartialPrivateKey(keyID));
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-
-        return null;
-
+        return keyManager.getPrivateKeyOperator(keyID);
     }
 
     public Service getService(Message message)

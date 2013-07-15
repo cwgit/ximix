@@ -24,11 +24,13 @@ import org.cryptoworkshop.ximix.crypto.operator.ECPrivateKeyOperator;
 public class BcECPrivateKeyOperator
     implements ECPrivateKeyOperator
 {
+    private final int sequenceNo;
     private final ECDomainParameters domainParameters;
     private final BigInteger privateKeyValue;
 
-    public BcECPrivateKeyOperator(ECDomainParameters domainParameters, BigInteger privateKeyValue)
+    public BcECPrivateKeyOperator(int sequenceNo, ECDomainParameters domainParameters, BigInteger privateKeyValue)
     {
+        this.sequenceNo = sequenceNo;
         this.domainParameters = domainParameters;
         this.privateKeyValue = privateKeyValue;
     }
@@ -37,6 +39,12 @@ public class BcECPrivateKeyOperator
     public ECDomainParameters getDomainParameters()
     {
         return domainParameters;
+    }
+
+    @Override
+    public int getSequenceNo()
+    {
+        return sequenceNo;
     }
 
     @Override

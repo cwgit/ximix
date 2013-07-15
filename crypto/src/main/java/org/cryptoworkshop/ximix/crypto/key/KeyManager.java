@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 
 public interface KeyManager
 {
@@ -39,4 +40,5 @@ public interface KeyManager
 
     void addListener(KeyManagerListener listener);
 
+    PrivateKeyOperator getPrivateKeyOperator(String keyID);
 }

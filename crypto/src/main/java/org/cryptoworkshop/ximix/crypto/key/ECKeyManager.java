@@ -77,13 +77,16 @@ import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
 import org.cryptoworkshop.ximix.crypto.util.ECPointShare;
+import org.cryptoworkshop.ximix.crypto.util.Share;
 import org.cryptoworkshop.ximix.crypto.util.ShareMap;
 import org.cryptoworkshop.ximix.crypto.util.ShareMapListener;
 
@@ -308,8 +311,8 @@ public class ECKeyManager
                     PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
                     PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
 
-                    sharedPrivateKeyMap.init(keyID, 0);
-                    sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(0, ECPrivateKey.getInstance(info.parsePrivateKey()).getKey()));
+                    sharedPrivateKeyMap.init(keyID, sharedPublicKeyMap.getShare(keyID).getSequenceNo());
+                    sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(sharedPublicKeyMap.getShare(keyID).getSequenceNo(), ECPrivateKey.getInstance(info.parsePrivateKey()).getKey()));
                 }
             }
         }
@@ -328,6 +331,18 @@ public class ECKeyManager
     public void addListener(KeyManagerListener listener)
     {
         listenerHandler.addListener(listener);
+    }
+
+    @Override
+    public PrivateKeyOperator getPrivateKeyOperator(String keyID)
+    {
+        Share<BigInteger> privateKeyShare = sharedPrivateKeyMap.getShare(keyID);
+        if (privateKeyShare == null)
+        {
+            return null;
+        }
+
+        return new BcECPrivateKeyOperator(privateKeyShare.getSequenceNo(), paramsMap.get(keyID), privateKeyShare.getValue());
     }
 
     // TODO: in this case we should get the private key from somewhere else - probably node config

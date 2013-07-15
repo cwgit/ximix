@@ -31,6 +31,7 @@ import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.Service;
@@ -89,7 +90,7 @@ public class NodeDecryptionService
                 }
             }
 
-            return new MessageReply(MessageReply.Type.OKAY, new MessageBlock(partialDecrypts));
+            return new MessageReply(MessageReply.Type.OKAY, new ShareMessage(operator.getSequenceNo(), new MessageBlock(partialDecrypts)));
         default:
             System.err.println("unknown command");
         }

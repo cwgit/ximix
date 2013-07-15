@@ -240,7 +240,7 @@ public class ECDSASignerEngine
                 BigInteger eComponent = partialMessage.getE();
                 BigInteger dComponent = ecOperator.transform(rMap.get(sigID));
 
-                MessageReply reply = replyOkay(new BigIntegerShareMessage(aShare.getSequenceNo(), kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getShare(sigID).getValue())));
+                MessageReply reply = replyOkay(new BigIntegerShareMessage(ecOperator.getSequenceNo(), kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getShare(sigID).getValue())));
                 // TODO: need to clean up state tables here.
                 return reply;
             default:

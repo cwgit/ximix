@@ -17,4 +17,5 @@ package org.cryptoworkshop.ximix.common.service;
 
 public interface PrivateKeyOperator
 {
+    int getSequenceNo();
 }
