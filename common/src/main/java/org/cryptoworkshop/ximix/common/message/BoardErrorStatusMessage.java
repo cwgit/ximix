@@ -70,4 +70,14 @@ public class BoardErrorStatusMessage
 
         return new DERSequence(v);
     }
+
+    public String getBoardName()
+    {
+        return boardName;
+    }
+
+    public Status getStatus()
+    {
+        return status;
+    }
 }
