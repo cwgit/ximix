@@ -246,9 +246,9 @@ public class ECKeyManager
                 keyBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
                 keyBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
 
-                builder.addData(keyBagBuilder.build());
-
                 builder.addEncryptedData(new JcePKCSPBEOutputEncryptorBuilder(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC2_CBC).setProvider("BC").build(password), new PKCS12SafeBag[] { eeCertBagBuilder.build() });
+
+                builder.addData(keyBagBuilder.build());
             }
 
             PKCS12PfxPdu pfx = builder.build(new JcePKCS12MacCalculatorBuilder(NISTObjectIdentifiers.id_sha256), password);
@@ -311,7 +311,7 @@ public class ECKeyManager
                     PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
                     PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
 
-                    sharedPrivateKeyMap.init(keyID, sharedPublicKeyMap.getShare(keyID).getSequenceNo());
+                    sharedPrivateKeyMap.init(keyID, 0);
                     sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(sharedPublicKeyMap.getShare(keyID).getSequenceNo(), ECPrivateKey.getInstance(info.parsePrivateKey()).getKey()));
                 }
             }
