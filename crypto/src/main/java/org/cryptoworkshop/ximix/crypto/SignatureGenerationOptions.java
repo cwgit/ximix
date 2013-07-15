@@ -33,6 +33,12 @@ public class SignatureGenerationOptions
             this.parameters = parameters;
         }
 
+        /**
+         * Specify the threshold the key was generated at.
+         *
+         * @param threshold private key threshold.
+         * @return the current builder.
+         */
         public Builder withThreshold(int threshold)
         {
             this.threshold = threshold;
@@ -40,8 +46,24 @@ public class SignatureGenerationOptions
             return this;
         }
 
+        /**
+         * Specify the list of possible nodes to take part in the signing.
+         * <p>
+         * Note: if the algorithm requires secret multiplication this will be twice as many nodes as
+         * normally required to meet the private key's threshold.
+         * </p>
+         * @param nodesToUse the names of the nodes to use.
+         * @return the current builder.
+         */
         public Builder withNodes(String... nodesToUse)
         {
+            if (algorithm == KeyType.ECDSA)
+            {
+                if (nodesToUse.length < 2 * threshold)
+                {
+                    throw new IllegalArgumentException("ECDSA requires twice the number of nodes for a given threshold.");
+                }
+            }
             this.nodesToUse = nodesToUse;
 
             return this;

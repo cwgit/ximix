@@ -50,7 +50,6 @@ import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAFetchMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAInitialiseMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAPartialCreateMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAPointMessage;
-import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.crypto.threshold.ShamirSecretSplitter;
 import org.cryptoworkshop.ximix.crypto.threshold.SplitSecret;
 import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
@@ -145,7 +144,7 @@ public class ECDSASignerEngine
 
                     r = rMap.get(sigID);
 
-                    s = accumulateBigInt(nodes, ECDSASignerEngine.Type.PRIVATE_KEY_SIGN, new ECDSAPartialCreateMessage(sigID.getID(), ecdsaCreate.getKeyID(), e, n, ecdsaCreate.getNodesToUse()), n);
+                    s = accumulateBigInteger(nodes, ECDSASignerEngine.Type.PRIVATE_KEY_SIGN, new ECDSAPartialCreateMessage(sigID.getID(), ecdsaCreate.getKeyID(), e, n, ecdsaCreate.getNodesToUse()), n);
                 }
                 while (s.equals(BigInteger.ZERO));
 
@@ -353,43 +352,11 @@ public class ECDSASignerEngine
         ECDSAInitialiseMessage ecdsaCreate = ECDSAInitialiseMessage.getInstance(message.getPayload());
         SigID sigID = new SigID(ecdsaCreate.getSigID());
         ECDomainParameters domainParams = paramsMap.get(ecdsaCreate.getKeyID());
-        int counter = 0;
         Set<String> nodes = ecdsaCreate.getNodesToUse();
-        MessageReply[] replys = new MessageReply[nodes.size()];
 
         sharedPMap.waitFor(sigID);        // wait till local P value set
 
-        for (String nodeName : nodes)
-        {
-            replys[counter++] = sendMessage(nodeName, Type.FETCH_P, new ECDSAFetchMessage(ecdsaCreate.getSigID(), ecdsaCreate.getKeyID(), ecdsaCreate.getNodesToUse()));
-        }
-
-        ECPoint[] pVals = new ECPoint[replys.length];
-
-        for (int i = 0; i != replys.length; i++)
-        {
-            if (replys[i] == null || replys[i].getType() != MessageReply.Type.OKAY)
-            {
-                pVals[i] = null;
-            }
-            else
-            {
-                pVals[i] = ECPointShareMessage.getInstance(domainParams.getCurve(), replys[i].getPayload()).getPoint();
-            }
-        }
-
-        LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(ecdsaCreate.getThreshold(), domainParams.getN());
-        BigInteger[] weights = calculator.computeWeights(pVals);
-
-        ECPoint p = pVals[0].multiply(weights[0]);
-        for (int i = 1; i < weights.length; i++)
-        {
-            if (pVals[i] != null)
-            {
-                p = p.add(pVals[i].multiply(weights[i]));
-            }
-        }
-
+        ECPoint p = accumulateECPoint(nodes, Type.FETCH_P, new ECDSAFetchMessage(ecdsaCreate.getSigID(), ecdsaCreate.getKeyID(), ecdsaCreate.getNodesToUse()), domainParams.getCurve(), domainParams.getN());
         // 5.3.3
         BigInteger x = p.getX().toBigInteger();
         BigInteger r = x.mod(domainParams.getN());
@@ -404,7 +371,7 @@ public class ECDSASignerEngine
         SigID sigID = new SigID(ecdsaCreate.getSigID());
         BigInteger n = ecdsaCreate.getN();
 
-        muMap.put(sigID, accumulateBigInt(ecdsaCreate.getNodesToUse(), Type.FETCH_MU, new ECDSAFetchMessage(ecdsaCreate.getSigID(), ecdsaCreate.getKeyID(), ecdsaCreate.getNodesToUse()), n));
+        muMap.put(sigID, accumulateBigInteger(ecdsaCreate.getNodesToUse(), Type.FETCH_MU, new ECDSAFetchMessage(ecdsaCreate.getSigID(), ecdsaCreate.getKeyID(), ecdsaCreate.getNodesToUse()), n));
     }
 
     private void generateAndSendZeroShare(SignatureMessage message, Type type, ShareMap shareMap)

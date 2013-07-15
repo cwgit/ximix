@@ -259,7 +259,15 @@ public class ClientCommandService
                         while (count != options.getThreshold())
                         {
                             partialDecryptResponses[count] = connection.sendMessage(nodes[count], CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), data.getMessages()));
-                            count++;
+                            if (partialDecryptResponses[count].getType() == MessageReply.Type.OKAY)
+                            {
+                                count++;
+                            }
+                            else
+                            {
+                                // TODO: maybe log
+                                partialDecryptResponses[count] = null;
+                            }
                         }
 
                         MessageReply keyReply = connection.sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, new FetchPublicKeyMessage(options.getKeyID()));
