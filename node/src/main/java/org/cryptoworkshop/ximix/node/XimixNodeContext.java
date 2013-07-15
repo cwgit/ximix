@@ -15,6 +15,25 @@
  */
 package org.cryptoworkshop.ximix.node;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -23,8 +42,19 @@ import org.bouncycastle.util.io.Streams;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.*;
-import org.cryptoworkshop.ximix.common.service.*;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.NodeInfo;
+import org.cryptoworkshop.ximix.common.service.Decoupler;
+import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
+import org.cryptoworkshop.ximix.common.service.Service;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.KeyManager;
@@ -32,16 +62,6 @@ import org.cryptoworkshop.ximix.crypto.key.KeyManagerListener;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.security.GeneralSecurityException;
-import java.util.*;
-import java.util.concurrent.*;
 
 public class XimixNodeContext
     implements NodeContext
@@ -54,8 +74,8 @@ public class XimixNodeContext
     private final ECKeyManager keyManager;
     private final RemoteServicesCache remoteServicesCache;
     private final File homeDirectory;
-    private Map<String, ServicesConnection> peerMap;
-    private CountDownLatch setupCompleteLatch = new CountDownLatch(1);
+    private final Map<String, ServicesConnection> peerMap;
+    private final CountDownLatch setupCompleteLatch = new CountDownLatch(1);
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
@@ -68,55 +88,50 @@ public class XimixNodeContext
         this.decouplers.put(Decoupler.SERVICES, Executors.newSingleThreadExecutor());
         this.decouplers.put(Decoupler.SHARING, Executors.newSingleThreadExecutor());
 
-        try
+        this.name = nodeConfig.getStringProperty("name");  // TODO:
+        this.homeDirectory = nodeConfig.getHomeDirectory();
+
+        this.peerMap.remove(this.name);
+
+        keyManager = new ECKeyManager(this);
+
+        if (homeDirectory != null)
         {
-            this.name = nodeConfig.getStringProperty("name");  // TODO:
-            this.homeDirectory = nodeConfig.getHomeDirectory();
+            setupKeyManager(homeDirectory, keyManager);
+        }
 
-            this.peerMap.remove(this.name);
+        remoteServicesCache = new RemoteServicesCache(this);
 
-            keyManager = new ECKeyManager(this);
-
-            if (homeDirectory != null)
+        //
+        // we schedule this bit to a new thread as the services require node context as an argument
+        // and we want to make sure they are well formed.
+        //
+        this.getDecoupler(Decoupler.SERVICES).execute(new Runnable()
+        {
+            @Override
+            public void run()
             {
-                setupKeyManager(homeDirectory, keyManager);
-            }
-
-            remoteServicesCache = new RemoteServicesCache(this);
-
-            //
-            // we schedule this bit to a new thread as the services require node context as an argument
-            // and we want to make sure they are well formed.
-            //
-            this.getDecoupler(Decoupler.SERVICES).execute(new Runnable()
-            {
-                @Override
-                public void run()
+                try
                 {
-                    try
+                    List<ServiceConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
+                    for (ServiceConfig config : configs)
                     {
-                        List<ServiceConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
-                        for (ServiceConfig config : configs)
+                        if (config.getThrowable() != null)
                         {
-                            if (config.getThrowable() != null)
-                            {
-                                config.getThrowable().printStackTrace();   // TODO: log!
-                            }
+                            config.getThrowable().printStackTrace();   // TODO: log!
                         }
                     }
-                    catch (ConfigException e)
-                    {
-                        // TODO:
-                    }
                 }
-            });
-
-        }
-        finally
-        {
-            setupCompleteLatch.countDown();
-        }
-
+                catch (ConfigException e)
+                {
+                    // TODO:
+                }
+                finally
+                {
+                    setupCompleteLatch.countDown();
+                }
+            }
+        });
     }
 
     public String getName()
@@ -139,14 +154,16 @@ public class XimixNodeContext
 
     private List<Service> getServices()
     {
+        // we need to wait for the config task to finish
         try
         {
             setupCompleteLatch.await();
         }
         catch (InterruptedException e)
         {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
+
         return services;
     }
 
