@@ -15,6 +15,7 @@ import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;
 import org.junit.Test;
 
+import java.net.SocketException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -65,16 +66,16 @@ public class BulletinBoardTest
         NodeTestUtil.launch(nodeOne, true);
 
         XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
-        NodeTestUtil.launch(nodeTwo, false);
+        NodeTestUtil.launch(nodeTwo, true);
 
         XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
-        NodeTestUtil.launch(nodeThree, false);
+        NodeTestUtil.launch(nodeThree, true);
 
         XimixNode nodeFour = getXimixNode("/conf/mixnet.xml", "/conf/node4.xml", handler);
-        NodeTestUtil.launch(nodeFour, false);
+        NodeTestUtil.launch(nodeFour, true);
 
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
-        NodeTestUtil.launch(nodeFive, false);
+        NodeTestUtil.launch(nodeFive, true);
 
 
         SecureRandom random = new SecureRandom();
@@ -150,6 +151,11 @@ public class BulletinBoardTest
                 }
             });
 
+        NodeTestUtil.shutdownNodes();
+        client.shutdown();
+        commandService.shutdown();
+
+
         TestCase.assertTrue("Download did not complete in time.", latch.await(5, TimeUnit.SECONDS));
 
         TestCase.assertEquals("Source message count != downloaded message count.", sourceMessages.size(), msgDownloaded.size());
@@ -160,9 +166,7 @@ public class BulletinBoardTest
         }
 
 
-        NodeTestUtil.shutdownNodes();
-        client.shutdown();
-        commandService.shutdown();
+
 
     }
 
@@ -171,6 +175,7 @@ public class BulletinBoardTest
         throws Exception
     {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
+        handler.squelchType(SocketException.class);
 
         final int testSize = 1000;
         int msgMaxSize = 4096;
@@ -202,16 +207,16 @@ public class BulletinBoardTest
         NodeTestUtil.launch(nodeOne, true);
 
         XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
-        NodeTestUtil.launch(nodeTwo, false);
+        NodeTestUtil.launch(nodeTwo, true);
 
         XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
-        NodeTestUtil.launch(nodeThree, false);
+        NodeTestUtil.launch(nodeThree, true);
 
         XimixNode nodeFour = getXimixNode("/conf/mixnet.xml", "/conf/node4.xml", handler);
-        NodeTestUtil.launch(nodeFour, false);
+        NodeTestUtil.launch(nodeFour, true);
 
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
-        NodeTestUtil.launch(nodeFive, false);
+        NodeTestUtil.launch(nodeFive, true);
 
 
         SecureRandom random = new SecureRandom();
@@ -270,7 +275,7 @@ public class BulletinBoardTest
                 }
             });
 
-        TestCase.assertTrue("Download did not complete in time.", latch.await(10, TimeUnit.SECONDS));
+        TestCase.assertTrue("Download did not complete in time.", latch.await(30, TimeUnit.SECONDS));
 
         TestCase.assertEquals("Source message count != downloaded message count.", sourceMessages.size(), msgDownloaded.size());
 

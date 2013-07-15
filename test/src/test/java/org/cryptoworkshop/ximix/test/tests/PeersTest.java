@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.test.tests;
 
 import java.math.BigInteger;
+import java.net.SocketException;
 import java.security.SecureRandom;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -90,8 +91,7 @@ public class PeersTest
     {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
 
-        handler.setPrintOnly(true);
-        //handler.squelchType(SocketException.class);
+        handler.squelchType(SocketException.class);
 
 
         //

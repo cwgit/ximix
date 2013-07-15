@@ -100,8 +100,6 @@ public class KeyProcessingTest extends TestCase
         throws Exception
     {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
-
-        handler.setPrintOnly(true);
         handler.squelchType(SocketException.class);
 
         //
@@ -260,8 +258,6 @@ public class KeyProcessingTest extends TestCase
         throws Exception
     {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
-
-        handler.setPrintOnly(true);
         handler.squelchType(SocketException.class);
 
         //
@@ -480,7 +476,7 @@ public class KeyProcessingTest extends TestCase
     {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
 
-        handler.setPrintOnly(true);
+        handler.squelchType(SocketException.class);
         //handler.squelchType(SocketException.class);
 
 

@@ -15,24 +15,6 @@
  */
 package org.cryptoworkshop.ximix.node;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -41,19 +23,8 @@ import org.bouncycastle.util.io.Streams;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.KeyType;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
-import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
-import org.cryptoworkshop.ximix.common.service.Service;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
+import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.service.*;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.KeyManager;
@@ -62,6 +33,16 @@ import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.security.GeneralSecurityException;
+import java.util.*;
+import java.util.concurrent.*;
+
 public class XimixNodeContext
     implements NodeContext
 {
@@ -69,16 +50,17 @@ public class XimixNodeContext
     private final ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);   // TODO configurable or linked to threshold
     private final Map<Decoupler, ExecutorService> decouplers = new HashMap<>();
     private final List<Service> services = new ArrayList<>();
-
     private final String name;
-    private Map<String, ServicesConnection> peerMap;
     private final ECKeyManager keyManager;
     private final RemoteServicesCache remoteServicesCache;
     private final File homeDirectory;
+    private Map<String, ServicesConnection> peerMap;
+    private CountDownLatch setupCompleteLatch = new CountDownLatch(1);
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
     {
+
         this.peerMap = Collections.synchronizedMap(new HashMap<>(peerMap));
 
         this.decouplers.put(Decoupler.BOARD_REGISTRY, Executors.newSingleThreadExecutor());
@@ -86,46 +68,55 @@ public class XimixNodeContext
         this.decouplers.put(Decoupler.SERVICES, Executors.newSingleThreadExecutor());
         this.decouplers.put(Decoupler.SHARING, Executors.newSingleThreadExecutor());
 
-        this.name = nodeConfig.getStringProperty("name");  // TODO:
-        this.homeDirectory = nodeConfig.getHomeDirectory();
-
-        this.peerMap.remove(this.name);
-
-        keyManager = new ECKeyManager(this);
-
-        if (homeDirectory != null)
+        try
         {
-            setupKeyManager(homeDirectory, keyManager);
-        }
+            this.name = nodeConfig.getStringProperty("name");  // TODO:
+            this.homeDirectory = nodeConfig.getHomeDirectory();
 
-        remoteServicesCache = new RemoteServicesCache(this);
+            this.peerMap.remove(this.name);
 
-        //
-        // we schedule this bit to a new thread as the services require node context as an argument
-        // and we want to make sure they are well formed.
-        //
-        this.getDecoupler(Decoupler.SERVICES).execute(new Runnable()
-        {
-            @Override
-            public void run()
+            keyManager = new ECKeyManager(this);
+
+            if (homeDirectory != null)
             {
-                try
+                setupKeyManager(homeDirectory, keyManager);
+            }
+
+            remoteServicesCache = new RemoteServicesCache(this);
+
+            //
+            // we schedule this bit to a new thread as the services require node context as an argument
+            // and we want to make sure they are well formed.
+            //
+            this.getDecoupler(Decoupler.SERVICES).execute(new Runnable()
+            {
+                @Override
+                public void run()
                 {
-                    List<ServiceConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
-                    for (ServiceConfig config : configs)
+                    try
                     {
-                        if (config.getThrowable() != null)
+                        List<ServiceConfig> configs = nodeConfig.getConfigObjects("services", new NodeConfigFactory());
+                        for (ServiceConfig config : configs)
                         {
-                            config.getThrowable().printStackTrace();   // TODO: log!
+                            if (config.getThrowable() != null)
+                            {
+                                config.getThrowable().printStackTrace();   // TODO: log!
+                            }
                         }
                     }
+                    catch (ConfigException e)
+                    {
+                        // TODO:
+                    }
                 }
-                catch (ConfigException e)
-                {
-                    // TODO:
-                }
-            }
-        });
+            });
+
+        }
+        finally
+        {
+            setupCompleteLatch.countDown();
+        }
+
     }
 
     public String getName()
@@ -137,12 +128,26 @@ public class XimixNodeContext
     {
         List<CapabilityMessage> capabilityList = new ArrayList<>();
 
-        for (Service service : services)
+
+        for (Service service : getServices())
         {
             capabilityList.add(service.getCapability());
         }
 
         return capabilityList.toArray(new CapabilityMessage[capabilityList.size()]);
+    }
+
+    private List<Service> getServices()
+    {
+        try
+        {
+            setupCompleteLatch.await();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        return services;
     }
 
     public void addConnection(XimixServices task)
@@ -217,7 +222,7 @@ public class XimixNodeContext
 
     public Service getService(Message message)
     {
-        for (Service service : services)
+        for (Service service : getServices())
         {
             if (service.isAbleToHandle(message))
             {
@@ -294,12 +299,12 @@ public class XimixNodeContext
      * Reload our previous state and register listener's if required.
      *
      * @param homeDirectory root of the node's config
-     * @param keyManager the key manager to be reloaded.
+     * @param keyManager    the key manager to be reloaded.
      */
     private void setupKeyManager(final File homeDirectory, KeyManager keyManager)
     {
         final File keyDir = new File(homeDirectory, "keys");
-        final File   store = new File(keyDir, keyManager.getID() + ".p12");
+        final File store = new File(keyDir, keyManager.getID() + ".p12");
 
         if (store.exists())
         {
