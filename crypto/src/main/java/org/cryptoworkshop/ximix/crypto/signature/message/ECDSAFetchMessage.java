@@ -15,35 +15,33 @@
  */
 package org.cryptoworkshop.ximix.crypto.signature.message;
 
-import java.math.BigInteger;
-import java.util.Set;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.cryptoworkshop.ximix.crypto.util.Participant;
 
 public class ECDSAFetchMessage
     extends ASN1Object
 {
     private final String sigID;
     private final String keyID;
-    private final Set<String> nodesToUse;
+    private final Participant[] nodesToUse;
 
-    public ECDSAFetchMessage(String sigID, String keyID, Set<String> nodesToUse)
+    public ECDSAFetchMessage(String sigID, String keyID, Participant[] nodesToUse)
     {
         this.sigID = sigID;
         this.keyID = keyID;
-        this.nodesToUse = MessageUtils.toOrderedSet(nodesToUse);
+        this.nodesToUse = nodesToUse;
     }
 
     private ECDSAFetchMessage(ASN1Sequence seq)
     {
         this.sigID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
-        this.nodesToUse = MessageUtils.toOrderedSet(ASN1Sequence.getInstance(seq.getObjectAt(2)));
+        this.nodesToUse = MessageUtils.toArray(ASN1Sequence.getInstance(seq.getObjectAt(2)));
     }
 
     public static final ECDSAFetchMessage getInstance(Object o)
@@ -77,7 +75,7 @@ public class ECDSAFetchMessage
         return sigID;
     }
 
-    public Set<String> getNodesToUse()
+    public Participant[] getNodesToUse()
     {
         return nodesToUse;
     }

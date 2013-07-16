@@ -21,7 +21,6 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -34,10 +33,12 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.common.message.BigIntegerShareMessage;
-import org.cryptoworkshop.ximix.common.message.ECPointShareMessage;
+import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
+import org.cryptoworkshop.ximix.common.message.ECPointMessage;
+import org.cryptoworkshop.ximix.common.message.KeyIDMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
+import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
@@ -54,6 +55,7 @@ import org.cryptoworkshop.ximix.crypto.threshold.ShamirSecretSplitter;
 import org.cryptoworkshop.ximix.crypto.threshold.SplitSecret;
 import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
 import org.cryptoworkshop.ximix.crypto.util.ECPointShare;
+import org.cryptoworkshop.ximix.crypto.util.Participant;
 import org.cryptoworkshop.ximix.crypto.util.Share;
 import org.cryptoworkshop.ximix.crypto.util.ShareMap;
 
@@ -87,14 +89,16 @@ public class ECDSASignerEngine
         INIT_C,
         INIT_R,
         INIT_MU,
+        FETCH_P,
         FETCH_MU,
+        FETCH_SEQUENCE_NO,
         PRIVATE_KEY_SIGN,
         STORE_K,
         STORE_A,
         STORE_B,
         STORE_C,
-        STORE_P,
-        FETCH_P
+        STORE_P
+
     }
 
     public ECDSASignerEngine(NodeContext nodeContext)
@@ -121,7 +125,30 @@ public class ECDSASignerEngine
             {
             case GENERATE:
                 final ECDSACreateMessage ecdsaCreate = ECDSACreateMessage.getInstance(message.getPayload());
-                final Set<String> nodes = ecdsaCreate.getNodesToUse();
+
+                //
+                // if we're not one of the nominated nodes, pass it on to someone who is and send back
+                // the first success response we get.
+                //
+                if (!ecdsaCreate.getNodesToUse().contains(nodeContext.getName()))
+                {
+                    for (String name : ecdsaCreate.getNodesToUse())
+                    {
+                        // TODO: check response status
+                        return sendMessage(name, Type.GENERATE, ecdsaCreate);
+                    }
+                }
+
+                Participant[] participants = new Participant[ecdsaCreate.getNodesToUse().size()];
+                int index = 0;
+
+                for (String name : ecdsaCreate.getNodesToUse())
+                {
+                    MessageReply seqRep = sendMessage(name, Type.FETCH_SEQUENCE_NO, new KeyIDMessage(ecdsaCreate.getKeyID()));
+                    // TODO: need to drop out people who don't reply.
+                    participants[index] = new Participant(BigIntegerMessage.getInstance(seqRep.getPayload()).getValue().intValue(), name);
+                    index++;
+                }
 
                 SigID sigID = new SigID(nodeContext.getName() + ".ECDSA." + idCounter.getAndIncrement());
 
@@ -133,7 +160,7 @@ public class ECDSASignerEngine
                 BigInteger r, s;
                 do // generate s
                 {
-                    ECDSAInitialiseMessage initialiseMessage = new ECDSAInitialiseMessage(sigID.getID(), ecdsaCreate.getKeyID(), ecdsaCreate.getThreshold(), domainParams.getN(), ecdsaCreate.getNodesToUse());
+                    ECDSAInitialiseMessage initialiseMessage = new ECDSAInitialiseMessage(sigID.getID(), ecdsaCreate.getKeyID(), ecdsaCreate.getThreshold(), domainParams.getN(), participants);
 
                     sendInitialiseMessage(Type.INIT_K_AND_P, initialiseMessage);
                     sendInitialiseMessage(Type.INIT_A, initialiseMessage);
@@ -144,7 +171,7 @@ public class ECDSASignerEngine
 
                     r = rMap.get(sigID);
 
-                    s = accumulateBigInteger(nodes, ECDSASignerEngine.Type.PRIVATE_KEY_SIGN, new ECDSAPartialCreateMessage(sigID.getID(), ecdsaCreate.getKeyID(), e, n, ecdsaCreate.getNodesToUse()), n);
+                    s = accumulateBigInteger(participants, ECDSASignerEngine.Type.PRIVATE_KEY_SIGN, new ECDSAPartialCreateMessage(sigID.getID(), ecdsaCreate.getKeyID(), e, n, participants), n);
                 }
                 while (s.equals(BigInteger.ZERO));
 
@@ -154,6 +181,10 @@ public class ECDSASignerEngine
                 v.add(new ASN1Integer(s));
 
                 return new MessageReply(MessageReply.Type.OKAY, new DERSequence(v));
+            case FETCH_SEQUENCE_NO:
+                KeyIDMessage keyIDMessage = KeyIDMessage.getInstance(message.getPayload());
+
+                return new MessageReply(MessageReply.Type.OKAY, new BigIntegerMessage(BigInteger.valueOf(nodeContext.getPrivateKeyOperator(keyIDMessage.getKeyID()).getSequenceNo())));
             case INIT_K_AND_P:
                 generateAndSendKAndP(message);
 
@@ -210,7 +241,7 @@ public class ECDSASignerEngine
 
                 Share<ECPoint> share = sharedPMap.getShare(sigID);
 
-                return replyOkay(new ECPointShareMessage(share.getSequenceNo(), share.getValue()));
+                return replyOkay(new ShareMessage(share.getSequenceNo(), new ECPointMessage(share.getValue())));
             case FETCH_MU:
                 fetchMessage = ECDSAFetchMessage.getInstance(message.getPayload());
                 sigID = new SigID(fetchMessage.getSigID());
@@ -218,8 +249,8 @@ public class ECDSASignerEngine
                 domainParams = paramsMap.get(fetchMessage.getKeyID());
 
                 Share<BigInteger> kShare = sharedKMap.getShare(sigID);
-                return replyOkay(new BigIntegerShareMessage(kShare.getSequenceNo(), kShare.getValue().multiply(
-                    sharedAMap.getShare(sigID).getValue()).add(sharedBMap.getShare(sigID).getValue()).mod(domainParams.getN())));
+                return replyOkay(new ShareMessage(kShare.getSequenceNo(), new BigIntegerMessage(kShare.getValue().multiply(
+                    sharedAMap.getShare(sigID).getValue()).add(sharedBMap.getShare(sigID).getValue()).mod(domainParams.getN()))));
             case PRIVATE_KEY_SIGN:
                 ECDSAPartialCreateMessage partialMessage = ECDSAPartialCreateMessage.getInstance(message.getPayload());
 
@@ -239,7 +270,7 @@ public class ECDSASignerEngine
                 BigInteger eComponent = partialMessage.getE();
                 BigInteger dComponent = ecOperator.transform(rMap.get(sigID));
 
-                MessageReply reply = replyOkay(new BigIntegerShareMessage(ecOperator.getSequenceNo(), kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getShare(sigID).getValue())));
+                MessageReply reply = replyOkay(new ShareMessage(ecOperator.getSequenceNo(), new BigIntegerMessage(kInvShare.multiply(eComponent.add(dComponent)).add(sharedCMap.getShare(sigID).getValue()))));
                 // TODO: need to clean up state tables here.
                 return reply;
             default:
@@ -255,13 +286,13 @@ public class ECDSASignerEngine
 
     private void sendInitialiseMessage(Type initType, ECDSAInitialiseMessage createMessage)
     {
-        Set<String> nodes = createMessage.getNodesToUse();
+        Participant[] nodes = createMessage.getNodesToUse();
 
-        for (String nodeName : nodes)
+        for (Participant nodeName : nodes)
         {
             try
             {
-                sendMessage(nodeName, initType, createMessage);
+                sendMessage(nodeName.getName(), initType, createMessage);
             }
             catch (ServiceConnectionException e)
             {
@@ -286,7 +317,7 @@ public class ECDSASignerEngine
         ECDomainParameters domainParams = ((ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo)).getParameters();
         SigID sigID = new SigID(ecdsaCreate.getSigID());
 
-        sharedKMap.init(sigID, ecdsaCreate.getNodesToUse().size());
+        sharedKMap.init(sigID, ecdsaCreate.getNodesToUse().length);
 
         paramsMap.put(ecdsaCreate.getKeyID(), domainParams);
 
@@ -311,15 +342,30 @@ public class ECDSASignerEngine
         }
         while (r.equals(BigInteger.ZERO));
 
-        ShamirSecretSplitter sss = new ShamirSecretSplitter(ecdsaCreate.getNodesToUse().size(), ecdsaCreate.getThreshold(), n, new SecureRandom());
+        ShamirSecretSplitter sss = new ShamirSecretSplitter(getNumberOfPeers(ecdsaCreate.getNodesToUse()), ecdsaCreate.getThreshold(), n, new SecureRandom());
 
         SplitSecret split = sss.split(k);
 
         execute(new SendShareTask(sigID, Type.STORE_K, ecdsaCreate.getNodesToUse(), sharedKMap, split.getShares()));
 
-        sharedPMap.init(sigID, ecdsaCreate.getNodesToUse().size());
+        sharedPMap.init(sigID, ecdsaCreate.getNodesToUse().length);
 
         execute(new SendPointShareTask(sigID, ecdsaCreate.getKeyID(), ecdsaCreate.getNodesToUse(), split.getShares()));
+    }
+
+    private int getNumberOfPeers(Participant[] nodesToUse)
+    {
+        int numberOfPeers = 0;
+
+        for (int i = 0; i != nodesToUse.length; i++)
+        {
+            if (numberOfPeers < nodesToUse[i].getSequenceNo())
+            {
+                numberOfPeers = nodesToUse[i].getSequenceNo();
+            }
+        }
+
+        return numberOfPeers + 1; // number of peers is one more than highest sequence number
     }
 
     private void generateAndSendA(SignatureMessage message)
@@ -331,7 +377,9 @@ public class ECDSASignerEngine
         BigInteger a;
 
         SigID sigID = new SigID(ecdsaCreate.getSigID());
-        sharedAMap.init(sigID, ecdsaCreate.getNodesToUse().size());
+        Participant[] nodesToUse = ecdsaCreate.getNodesToUse();
+
+        sharedAMap.init(sigID, nodesToUse.length);
 
         do
         {
@@ -339,11 +387,11 @@ public class ECDSASignerEngine
         }
         while (a.equals(BigInteger.ZERO) || a.compareTo(n) >= 0);
 
-        ShamirSecretSplitter sss = new ShamirSecretSplitter(ecdsaCreate.getNodesToUse().size(), ecdsaCreate.getThreshold(), n, new SecureRandom());
+        ShamirSecretSplitter sss = new ShamirSecretSplitter(getNumberOfPeers(nodesToUse), ecdsaCreate.getThreshold(), n, new SecureRandom());
 
         SplitSecret split = sss.split(a);
 
-        execute(new SendShareTask(sigID, Type.STORE_A, ecdsaCreate.getNodesToUse(), sharedAMap, split.getShares()));
+        execute(new SendShareTask(sigID, Type.STORE_A, nodesToUse, sharedAMap, split.getShares()));
     }
 
     private void initialiseR(SignatureMessage message)
@@ -352,11 +400,10 @@ public class ECDSASignerEngine
         ECDSAInitialiseMessage ecdsaCreate = ECDSAInitialiseMessage.getInstance(message.getPayload());
         SigID sigID = new SigID(ecdsaCreate.getSigID());
         ECDomainParameters domainParams = paramsMap.get(ecdsaCreate.getKeyID());
-        Set<String> nodes = ecdsaCreate.getNodesToUse();
 
         sharedPMap.waitFor(sigID);        // wait till local P value set
 
-        ECPoint p = accumulateECPoint(nodes, Type.FETCH_P, new ECDSAFetchMessage(ecdsaCreate.getSigID(), ecdsaCreate.getKeyID(), ecdsaCreate.getNodesToUse()), domainParams.getCurve(), domainParams.getN());
+        ECPoint p = accumulateECPoint(ecdsaCreate.getNodesToUse(), Type.FETCH_P, new ECDSAFetchMessage(ecdsaCreate.getSigID(), ecdsaCreate.getKeyID(), ecdsaCreate.getNodesToUse()), domainParams.getCurve(), domainParams.getN());
         // 5.3.3
         BigInteger x = p.getX().toBigInteger();
         BigInteger r = x.mod(domainParams.getN());
@@ -381,9 +428,9 @@ public class ECDSASignerEngine
         SigID sigID = new SigID(ecdsaCreate.getSigID());
         BigInteger n = ecdsaCreate.getN();
 
-        shareMap.init(sigID, ecdsaCreate.getNodesToUse().size());
+        shareMap.init(sigID, ecdsaCreate.getNodesToUse().length);
 
-        ShamirSecretSplitter sss = new ShamirSecretSplitter(ecdsaCreate.getNodesToUse().size(), ecdsaCreate.getThreshold() * 2, n, new SecureRandom());
+        ShamirSecretSplitter sss = new ShamirSecretSplitter(getNumberOfPeers(ecdsaCreate.getNodesToUse()), ecdsaCreate.getThreshold() * 2, n, new SecureRandom());
 
         SplitSecret split = sss.split(BigInteger.ZERO);
 
@@ -451,11 +498,11 @@ public class ECDSASignerEngine
     {
         private final Type type;
         private final SigID sigID;
-        private final Set<String> peers;
+        private final Participant[] peers;
         private final ShareMap sharedValueMap;
         private final BigInteger[] messages;
 
-        SendShareTask(SigID sigID, Type type, Set<String> peers, ShareMap sharedValueMap, BigInteger[] messages)
+        SendShareTask(SigID sigID, Type type, Participant[] peers, ShareMap sharedValueMap, BigInteger[] messages)
         {
             this.sigID = sigID;
             this.type = type;
@@ -466,24 +513,21 @@ public class ECDSASignerEngine
 
         public void run()
         {
-            int index = 0;
-            for (final String name : peers)
+            for (final Participant participant : peers)
             {
-                System.err.println("sending k: " + nodeContext.getName() + " to " + name);
-                if (name.equals(nodeContext.getName()))
+                if (participant.equals(nodeContext.getName()))
                 {
-                    sharedValueMap.addValue(sigID, new BigIntegerShare(index, messages[index]));
+                    sharedValueMap.addValue(sigID, new BigIntegerShare(participant.getSequenceNo(), messages[participant.getSequenceNo()]));
                 }
                 else
                 {
-                    final int counter = index;
                     execute(new Runnable()
                     {
                         public void run()
                         {
                             try
                             {
-                                MessageReply rep = sendMessage(name, type, new StoreSecretShareMessage(sigID.getID(), counter, new ASN1Integer(messages[counter])));
+                                MessageReply rep = sendMessage(participant.getName(), type, new StoreSecretShareMessage(sigID.getID(), participant.getSequenceNo(), new ASN1Integer(messages[participant.getSequenceNo()])));
                             }
                             catch (ServiceConnectionException e)
                             {
@@ -493,7 +537,6 @@ public class ECDSASignerEngine
                     });
 
                 }
-                index++;
             }
         }
     }
@@ -503,10 +546,10 @@ public class ECDSASignerEngine
     {
         private final SigID sigID;
         private final String keyID;
-        private final Set<String> peers;
+        private final Participant[] peers;
         private final BigInteger[] messages;
 
-        SendPointShareTask(SigID sigID, String keyID, Set<String> peers, BigInteger[] messages)
+        SendPointShareTask(SigID sigID, String keyID, Participant[] peers, BigInteger[] messages)
         {
             this.sigID = sigID;
             this.keyID = keyID;
@@ -518,16 +561,13 @@ public class ECDSASignerEngine
         {
             ECDomainParameters domainParams = paramsMap.get(keyID);
 
-            int index = 0;
-            for (final String name : peers)
+            for (final Participant node : peers)
             {
-                final int counter = index++;
+                final ECPoint p = domainParams.getG().multiply(messages[node.getSequenceNo()]);
 
-                final ECPoint p = domainParams.getG().multiply(messages[counter]);
-
-                if (name.equals(nodeContext.getName()))
+                if (node.equals(nodeContext.getName()))
                 {
-                    sharedPMap.addValue(sigID, new ECPointShare(counter, p));
+                    sharedPMap.addValue(sigID, new ECPointShare(node.getSequenceNo(), p));
                 }
                 else
                 {
@@ -537,7 +577,7 @@ public class ECDSASignerEngine
                         {
                             try
                             {
-                                MessageReply rep = sendMessage(name, Type.STORE_P, new StoreSecretShareMessage(sigID.getID(), counter, new ECDSAPointMessage(keyID, p)));
+                                MessageReply rep = sendMessage(node.getName(), Type.STORE_P, new StoreSecretShareMessage(sigID.getID(), node.getSequenceNo(), new ECDSAPointMessage(keyID, p)));
                             }
                             catch (ServiceConnectionException e)
                             {

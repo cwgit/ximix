@@ -7,14 +7,16 @@ import java.util.concurrent.TimeUnit;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.common.message.BigIntegerShareMessage;
+import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.ECPointShareMessage;
+import org.cryptoworkshop.ximix.common.message.ECPointMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
+import org.cryptoworkshop.ximix.crypto.util.Participant;
 
 public abstract class SignerEngine
 {
@@ -61,35 +63,30 @@ public abstract class SignerEngine
         return new MessageReply(MessageReply.Type.OKAY, payload);
     }
 
-    protected BigInteger accumulateBigInteger(Set<String> nodes, Enum fetchOperatorType, ASN1Encodable request, BigInteger fieldSize)
+    protected BigInteger accumulateBigInteger(Participant[] nodes, Enum fetchOperatorType, ASN1Encodable request, BigInteger fieldSize)
         throws ServiceConnectionException
     {
-        MessageReply[] replys = new MessageReply[nodes.size()];
-        String[]       nodeNames = nodes.toArray(new String[nodes.size()]);
+        MessageReply[] replys = new MessageReply[nodes.length];
 
         // TODO: deal with drop outs
         int count = 0;
-        while (count != nodes.size())
+        while (count != nodes.length)
         {
-            replys[count] = sendMessage(nodeNames[count], fetchOperatorType, request);
-            if (replys[count].getType() == MessageReply.Type.OKAY)
+            replys[count] = sendMessage(nodes[count].getName(), fetchOperatorType, request);
+            if (replys[count].getType() != MessageReply.Type.OKAY)
             {
-                count++;
-            }
-            else
-            {
-                // TODO: maybe log
+                                 // TODO: maybe log
                 replys[count] = null;
             }
-
+            count++;
         }
 
-        BigIntegerShareMessage[] shareMessages = new BigIntegerShareMessage[nodes.size()];
+        ShareMessage[] shareMessages = new ShareMessage[nodes.length];
         int            maxSequenceNo = 0;
 
         for (int i = 0; i != shareMessages.length; i++)
         {
-            shareMessages[i] = BigIntegerShareMessage.getInstance(replys[i].getPayload());
+            shareMessages[i] = ShareMessage.getInstance(replys[i].getPayload());
             if (maxSequenceNo < shareMessages[i].getSequenceNo())
             {
                 maxSequenceNo = shareMessages[i].getSequenceNo();
@@ -100,9 +97,9 @@ public abstract class SignerEngine
 
         for (int i = 0; i != shareMessages.length; i++)
         {
-            BigIntegerShareMessage shareMsg = shareMessages[i];
+            ShareMessage shareMsg = shareMessages[i];
 
-            valueShares[shareMsg.getSequenceNo()] = shareMsg.getValue();
+            valueShares[shareMsg.getSequenceNo()] = BigIntegerMessage.getInstance(shareMsg.getShareData()).getValue();
         }
 
         //
@@ -138,34 +135,30 @@ public abstract class SignerEngine
         return value;
     }
 
-    protected ECPoint accumulateECPoint(Set<String> nodes, Enum fetchOperatorType, ASN1Encodable request, ECCurve curve, BigInteger fieldSize)
+    protected ECPoint accumulateECPoint(Participant[] nodes, Enum fetchOperatorType, ASN1Encodable request, ECCurve curve, BigInteger fieldSize)
          throws ServiceConnectionException
      {
-         MessageReply[] replys = new MessageReply[nodes.size()];
-         String[]       nodeNames = nodes.toArray(new String[nodes.size()]);
+         MessageReply[] replys = new MessageReply[nodes.length];
 
          // TODO: deal with drop outs
          int count = 0;
-         while (count != nodes.size())
+         while (count != nodes.length)
          {
-             replys[count] = sendMessage(nodeNames[count], fetchOperatorType, request);
-             if (replys[count].getType() == MessageReply.Type.OKAY)
+             replys[count] = sendMessage(nodes[count].getName(), fetchOperatorType, request);
+             if (replys[count].getType() != MessageReply.Type.OKAY)
              {
-                 count++;
-             }
-             else
-             {
-                 // TODO: maybe log
+                                  // TODO: maybe log
                  replys[count] = null;
              }
+             count++;
          }
 
-         ECPointShareMessage[] shareMessages = new ECPointShareMessage[nodes.size()];
+         ShareMessage[] shareMessages = new ShareMessage[nodes.length];
          int            maxSequenceNo = 0;
 
          for (int i = 0; i != shareMessages.length; i++)
          {
-             shareMessages[i] = ECPointShareMessage.getInstance(curve, replys[i].getPayload());
+             shareMessages[i] = ShareMessage.getInstance(replys[i].getPayload());
              if (maxSequenceNo < shareMessages[i].getSequenceNo())
              {
                  maxSequenceNo = shareMessages[i].getSequenceNo();
@@ -176,9 +169,9 @@ public abstract class SignerEngine
 
          for (int i = 0; i != shareMessages.length; i++)
          {
-             ECPointShareMessage shareMsg = shareMessages[i];
+             ShareMessage shareMsg = shareMessages[i];
 
-             valueShares[shareMsg.getSequenceNo()] = shareMsg.getPoint();
+             valueShares[shareMsg.getSequenceNo()] = ECPointMessage.getInstance(curve, shareMsg.getShareData()).getPoint();
          }
 
          //

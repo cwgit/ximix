@@ -188,7 +188,8 @@ public class ECDSAProcessingTest extends TestCase
 
         doMixedMissingTest(signingService, sigPubKey, new String[]{ "A", "B", "C", "D" });
         doMixedMissingTest(signingService, sigPubKey, new String[]{ "A", "D", "C", "B" });
-//        doMixedMissingTest(signingService, sigPubKey, new String[]{ "D", "E", "B", "A" });     TODO: this fails, it will be because the key weights and the secondary weights are different
+        doMixedMissingTest(signingService, sigPubKey, new String[]{ "D", "E", "B", "A" });
+        doMixedMissingTest(signingService, sigPubKey, new String[]{ "D", "E", "B", "C" });
 
         NodeTestUtil.shutdownNodes();
         keyGenerationService.shutdown();
