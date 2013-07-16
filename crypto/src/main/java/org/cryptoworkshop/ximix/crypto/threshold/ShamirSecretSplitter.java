@@ -25,6 +25,8 @@ public class ShamirSecretSplitter
     private final int k;
     private final BigInteger fieldSize;
     private final SecureRandom random;
+    private final BigInteger[] alphas;
+    private final BigInteger[][] alphasPow;
 
     /**
      * creates a ShamirSecretSplitter instance over the specified field
@@ -41,6 +43,19 @@ public class ShamirSecretSplitter
         this.k = threshold;
         this.fieldSize = fieldSize;
         this.random = random;
+
+         // Pre-calculate powers for each peer.
+        alphas = new BigInteger[numberOfPeers];
+        alphasPow = new BigInteger[numberOfPeers][k];
+
+        for (int i = 0; i < numberOfPeers; i++)
+        {
+            alphas[i] = alphasPow[i][1] = BigInteger.valueOf(i + 1);
+            for (int degree = 2; degree < k; degree++)
+            {
+                alphasPow[i][degree] = alphasPow[i][degree - 1].multiply(alphas[i]);
+            }
+        }
     }
 
     /**
@@ -55,19 +70,6 @@ public class ShamirSecretSplitter
     {
         BigInteger[] shares = new BigInteger[numberOfPeers];
         BigInteger[] coefficients = new BigInteger[k];
-
-        // Pre-calculate powers for each peer.
-        BigInteger[] alphas = new BigInteger[numberOfPeers];
-        BigInteger[][] alphasPow = new BigInteger[numberOfPeers][k];
-
-        for (int i = 0; i < numberOfPeers; i++)
-        {
-            alphas[i] = alphasPow[i][1] = BigInteger.valueOf(i + 1);
-            for (int degree = 2; degree < k; degree++)
-            {
-                alphasPow[i][degree] = alphasPow[i][degree - 1].multiply(alphas[i]);
-            }
-        }
 
         // D0 for each share
         for (int privacyPeerIndex = 0; privacyPeerIndex < numberOfPeers; privacyPeerIndex++)

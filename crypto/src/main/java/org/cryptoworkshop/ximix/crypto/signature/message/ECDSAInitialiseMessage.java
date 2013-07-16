@@ -16,31 +16,29 @@
 package org.cryptoworkshop.ximix.crypto.signature.message;
 
 import java.math.BigInteger;
-import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.cryptoworkshop.ximix.crypto.util.Participant;
 
 public class ECDSAInitialiseMessage
     extends ASN1Object
 {
     private final String keyID;
-    private final Set<String> nodesToUse;
+    private final Participant[] nodesToUse;
     private final int threshold;
     private final BigInteger n;
     private final String sigID;
 
-    public ECDSAInitialiseMessage(String sigID, String keyID, int threshold, BigInteger n, Set<String> nodesToUse)
+    public ECDSAInitialiseMessage(String sigID, String keyID, int threshold, BigInteger n, Participant[] nodesToUse)
     {
         this.sigID = sigID;
-        this.nodesToUse = MessageUtils.toOrderedSet(nodesToUse);
+        this.nodesToUse = nodesToUse;
         this.threshold = threshold;
         this.n = n;
         this.keyID = keyID;
@@ -52,7 +50,7 @@ public class ECDSAInitialiseMessage
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.threshold = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue();
         this.n = ASN1Integer.getInstance(seq.getObjectAt(3)).getValue();
-        this.nodesToUse = MessageUtils.toOrderedSet(ASN1Sequence.getInstance(seq.getObjectAt(4)));
+        this.nodesToUse = MessageUtils.toArray(ASN1Sequence.getInstance(seq.getObjectAt(4)));
     }
 
     public static final ECDSAInitialiseMessage getInstance(Object o)
@@ -88,7 +86,7 @@ public class ECDSAInitialiseMessage
         return keyID;
     }
 
-    public Set<String> getNodesToUse()
+    public Participant[] getNodesToUse()
     {
         return nodesToUse;
     }

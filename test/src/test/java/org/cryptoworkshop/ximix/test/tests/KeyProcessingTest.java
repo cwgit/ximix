@@ -96,7 +96,7 @@ public class KeyProcessingTest extends TestCase
     }
 
     @Test
-    public void testWithNodesMissingFromOriginalGenerationList()
+    public void testWithNodesMixedMissingFromGeneration()
         throws Exception
     {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
@@ -137,18 +137,17 @@ public class KeyProcessingTest extends TestCase
 
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
 
-        doMissingTest(client, commandService, pubKey, new String[] { "A", "B", "C" });
-        doMissingTest(client, commandService, pubKey, new String[] { "C", "D", "E" });
-        doMissingTest(client, commandService, pubKey, new String[] { "A", "D", "E" });
-        doMissingTest(client, commandService, pubKey, new String[] { "A", "D", "B" });
-
+        doMixedMissingTest(client, commandService, pubKey, new String[] { "A", "B", "C" });
+        doMixedMissingTest(client, commandService, pubKey, new String[] { "C", "D", "E" });
+        doMixedMissingTest(client, commandService, pubKey, new String[] { "A", "D", "E" });
+        doMixedMissingTest(client, commandService, pubKey, new String[] { "A", "D", "B" });
 
         NodeTestUtil.shutdownNodes();
         client.shutdown();
         commandService.shutdown();
     }
 
-    private void doMissingTest(UploadService client, CommandService commandService, final ECPublicKeyParameters pubKey, String[] decNodes)
+    private void doMixedMissingTest(UploadService client, CommandService commandService, final ECPublicKeyParameters pubKey, String[] decNodes)
         throws Exception
     {
         SecureRandom random = new SecureRandom();

@@ -5,13 +5,18 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.cryptoworkshop.ximix.common.message.BigIntegerShareMessage;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.ECPointMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
+import org.cryptoworkshop.ximix.crypto.util.Participant;
 
 public abstract class SignerEngine
 {
@@ -58,35 +63,68 @@ public abstract class SignerEngine
         return new MessageReply(MessageReply.Type.OKAY, payload);
     }
 
-    protected BigInteger accumulateBigInt(Set<String> nodes, Enum fetchOperatorType, ASN1Encodable request, BigInteger fieldSize)
+    protected BigInteger accumulateBigInteger(Participant[] nodes, Enum fetchOperatorType, ASN1Encodable request, BigInteger fieldSize)
         throws ServiceConnectionException
     {
-        BigInteger[] valueShares = new BigInteger[nodes.size()];
-        LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(valueShares.length, fieldSize);
+        MessageReply[] replys = new MessageReply[nodes.length];
 
-        int counter = 0;
-        MessageReply[] replys = new MessageReply[nodes.size()];
-        for (String nodeName : nodes)
+        // TODO: deal with drop outs
+        int count = 0;
+        while (count != nodes.length)
         {
-            replys[counter++] = sendMessage(nodeName, fetchOperatorType, request);
+            replys[count] = sendMessage(nodes[count].getName(), fetchOperatorType, request);
+            if (replys[count].getType() != MessageReply.Type.OKAY)
+            {
+                                 // TODO: maybe log
+                replys[count] = null;
+            }
+            count++;
         }
 
-        for (int i = 0; i != replys.length; i++)
+        ShareMessage[] shareMessages = new ShareMessage[nodes.length];
+        int            maxSequenceNo = 0;
+
+        for (int i = 0; i != shareMessages.length; i++)
         {
-            if (replys[i] == null || replys[i].getType() != MessageReply.Type.OKAY)
+            shareMessages[i] = ShareMessage.getInstance(replys[i].getPayload());
+            if (maxSequenceNo < shareMessages[i].getSequenceNo())
             {
-                valueShares[i] = null;
-            }
-            else
-            {
-                valueShares[i] = BigIntegerShareMessage.getInstance(replys[i].getPayload()).getValue();
+                maxSequenceNo = shareMessages[i].getSequenceNo();
             }
         }
+
+        BigInteger[] valueShares = new BigInteger[maxSequenceNo + 1];
+
+        for (int i = 0; i != shareMessages.length; i++)
+        {
+            ShareMessage shareMsg = shareMessages[i];
+
+            valueShares[shareMsg.getSequenceNo()] = BigIntegerMessage.getInstance(shareMsg.getShareData()).getValue();
+        }
+
+        //
+        // we don't need to know how many peers, just the maximum index (maxSequenceNo + 1) of the one available
+        //
+        LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(maxSequenceNo + 1, fieldSize);
 
         BigInteger[] weights = calculator.computeWeights(valueShares);
+
+        int            baseIndex = 0;
+        for (int i = 0; i != valueShares.length; i++)
+        {
+            if (valueShares[i] != null)
+            {
+                baseIndex = i;
+                break;
+            }
+        }
+
+        BigInteger     baseValue = valueShares[baseIndex];
+        BigInteger     baseWeight = weights[baseIndex];
+
         // weighting
-        BigInteger value = valueShares[0].multiply(weights[0]);
-        for (int i = 1; i < weights.length; i++)
+        BigInteger value = baseValue.multiply(baseWeight);
+        for (int i = baseIndex + 1; i < weights.length; i++)
         {
             if (valueShares[i] != null)
             {
@@ -96,6 +134,78 @@ public abstract class SignerEngine
 
         return value;
     }
+
+    protected ECPoint accumulateECPoint(Participant[] nodes, Enum fetchOperatorType, ASN1Encodable request, ECCurve curve, BigInteger fieldSize)
+         throws ServiceConnectionException
+     {
+         MessageReply[] replys = new MessageReply[nodes.length];
+
+         // TODO: deal with drop outs
+         int count = 0;
+         while (count != nodes.length)
+         {
+             replys[count] = sendMessage(nodes[count].getName(), fetchOperatorType, request);
+             if (replys[count].getType() != MessageReply.Type.OKAY)
+             {
+                                  // TODO: maybe log
+                 replys[count] = null;
+             }
+             count++;
+         }
+
+         ShareMessage[] shareMessages = new ShareMessage[nodes.length];
+         int            maxSequenceNo = 0;
+
+         for (int i = 0; i != shareMessages.length; i++)
+         {
+             shareMessages[i] = ShareMessage.getInstance(replys[i].getPayload());
+             if (maxSequenceNo < shareMessages[i].getSequenceNo())
+             {
+                 maxSequenceNo = shareMessages[i].getSequenceNo();
+             }
+         }
+
+         ECPoint[] valueShares = new ECPoint[maxSequenceNo + 1];
+
+         for (int i = 0; i != shareMessages.length; i++)
+         {
+             ShareMessage shareMsg = shareMessages[i];
+
+             valueShares[shareMsg.getSequenceNo()] = ECPointMessage.getInstance(curve, shareMsg.getShareData()).getPoint();
+         }
+
+         //
+         // we don't need to know how many peers, just the maximum index (maxSequenceNo + 1) of the one available
+         //
+         LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(maxSequenceNo + 1, fieldSize);
+
+         BigInteger[] weights = calculator.computeWeights(valueShares);
+
+         int            baseIndex = 0;
+         for (int i = 0; i != valueShares.length; i++)
+         {
+             if (valueShares[i] != null)
+             {
+                 baseIndex = i;
+                 break;
+             }
+         }
+
+         ECPoint        baseValue = valueShares[baseIndex];
+         BigInteger     baseWeight = weights[baseIndex];
+
+         // weighting
+         ECPoint value = baseValue.multiply(baseWeight);
+         for (int i = baseIndex + 1; i < weights.length; i++)
+         {
+             if (valueShares[i] != null)
+             {
+                 value = value.add(valueShares[i].multiply(weights[i]));
+             }
+         }
+
+         return value;
+     }
 
     void execute(Runnable task)
     {

@@ -16,7 +16,6 @@
 package org.cryptoworkshop.ximix.crypto.signature.message;
 
 import java.math.BigInteger;
-import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -25,21 +24,22 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.cryptoworkshop.ximix.crypto.util.Participant;
 
 public class ECDSAPartialCreateMessage
     extends ASN1Object
 {
     private final String sigID;
     private final String keyID;
-    private final Set<String> nodesToUse;
+    private final Participant[] nodesToUse;
     private final BigInteger e;
 
-    public ECDSAPartialCreateMessage(String sigID, String keyID, BigInteger e, BigInteger n, Set<String> nodesToUse)
+    public ECDSAPartialCreateMessage(String sigID, String keyID, BigInteger e, BigInteger n, Participant[] nodesToUse)
     {
         this.sigID = sigID;
         this.keyID = keyID;
         this.e = e;
-        this.nodesToUse = MessageUtils.toOrderedSet(nodesToUse);
+        this.nodesToUse = nodesToUse;
     }
 
     private ECDSAPartialCreateMessage(ASN1Sequence seq)
@@ -47,7 +47,7 @@ public class ECDSAPartialCreateMessage
         this.sigID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.e = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue();
-        this.nodesToUse = MessageUtils.toOrderedSet(ASN1Sequence.getInstance(seq.getObjectAt(3)));
+        this.nodesToUse = MessageUtils.toArray(ASN1Sequence.getInstance(seq.getObjectAt(3)));
     }
 
     public static final ECDSAPartialCreateMessage getInstance(Object o)
@@ -92,7 +92,7 @@ public class ECDSAPartialCreateMessage
         return e;
     }
 
-    public Set<String> getNodesToUse()
+    public Participant[] getNodesToUse()
     {
         return nodesToUse;
     }

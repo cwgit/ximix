@@ -18,41 +18,38 @@ package org.cryptoworkshop.ximix.common.message;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.asn1.DERUTF8String;
 
-public class ECPointShareMessage
+public class ParticipantMessage
     extends ASN1Object
 {
+    private final String name;
     private final int sequenceNo;
-    private final ECPoint point;
 
-    public ECPointShareMessage(int sequenceNo, ECPoint point)
+    public ParticipantMessage(int sequenceNo, String name)
     {
         this.sequenceNo = sequenceNo;
-        this.point = point;
+        this.name = name;
     }
 
-    private ECPointShareMessage(ECCurve curve, ASN1Sequence seq)
+    private ParticipantMessage(ASN1Sequence seq)
     {
         this.sequenceNo = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue();
-        this.point = curve.decodePoint(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets());
+        this.name = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
     }
 
-    public static ECPointShareMessage getInstance(ECCurve curve, Object o)
+    public static final ParticipantMessage getInstance(Object o)
     {
-        if (o instanceof ECPointShareMessage)
+        if (o instanceof ParticipantMessage)
         {
-            return (ECPointShareMessage)o;
+            return (ParticipantMessage)o;
         }
-        if (o != null)
+        else if (o != null)
         {
-            return new ECPointShareMessage(curve, ASN1Sequence.getInstance(o));
+            return new ParticipantMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -64,7 +61,7 @@ public class ECPointShareMessage
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new ASN1Integer(sequenceNo));
-        v.add(new DEROctetString(point.getEncoded()));
+        v.add(new DERUTF8String(name));
 
         return new DERSequence(v);
     }
@@ -74,8 +71,8 @@ public class ECPointShareMessage
         return sequenceNo;
     }
 
-    public ECPoint getPoint()
+    public String getName()
     {
-        return point;
+        return name;
     }
 }

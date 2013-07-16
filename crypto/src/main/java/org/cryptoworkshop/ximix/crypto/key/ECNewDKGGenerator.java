@@ -53,7 +53,7 @@ public class ECNewDKGGenerator
         // TODO: should have a source of randomness.
         AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams);
 
-        ECPrivateKeyParameters privKey = (ECPrivateKeyParameters) keyPair.getPrivate();
+        ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)keyPair.getPrivate();
         ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
 
         ECCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getD());
