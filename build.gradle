@@ -88,6 +88,10 @@ task fetch_libs << {
     }
     fetchFile(providerRemoteUrl, root);
     fetchFile(pkixRemoteUrl, root);
+    fetchFile(jpbcRemoteUrl1, root);
+    fetchFile(jpbcRemoteUrl2, root);
+    fetchFile(jpbcRemoteUrl3, root);
+    fetchFile(jpbcRemoteUrl4, root);
 }
 
 task test_foo << {
