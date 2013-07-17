@@ -42,6 +42,7 @@ import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
+import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -98,23 +99,17 @@ public class ECDSASignerEngine
         STORE_B,
         STORE_C,
         STORE_P
-
     }
 
     public ECDSASignerEngine(NodeContext nodeContext)
     {
-        super(Algorithms.ECDSA, nodeContext);
+        super(KeyType.ECDSA, nodeContext);
 
         this.sharedKMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
         this.sharedPMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
         this.sharedAMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
         this.sharedBMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
         this.sharedCMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
-    }
-
-    public int getAlgorithm()
-    {
-        return Algorithms.ECDSA;
     }
 
     public MessageReply handle(final SignatureMessage message)

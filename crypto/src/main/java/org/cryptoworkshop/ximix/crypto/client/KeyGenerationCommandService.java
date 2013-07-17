@@ -28,8 +28,10 @@ import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
-import org.cryptoworkshop.ximix.crypto.key.message.GenerateKeyPairMessage;
+import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
+import org.cryptoworkshop.ximix.crypto.key.message.KeyGenerationMessage;
+import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
 
 public class KeyGenerationCommandService
     implements KeyGenerationService
@@ -52,9 +54,9 @@ public class KeyGenerationCommandService
     public byte[] generatePublicKey(String keyID, KeyGenerationOptions keyGenOptions)
         throws ServiceConnectionException
     {
-        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage(keyGenOptions.getAlgorithm().ordinal(), keyID, new KeyGenParams(keyGenOptions.getParameters()[0]), keyGenOptions.getThreshold(), keyGenOptions.getNodesToUse());
+        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(keyGenOptions.getAlgorithm(), keyID, new KeyGenParams(keyGenOptions.getParameters()[0]), keyGenOptions.getThreshold(), keyGenOptions.getNodesToUse());
 
-        MessageReply reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
+        MessageReply reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage));
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {

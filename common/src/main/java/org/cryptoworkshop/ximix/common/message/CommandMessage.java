@@ -39,7 +39,6 @@ public class CommandMessage
         BOARD_DOWNLOAD_UNLOCK,
         BOARD_SHUFFLE_LOCK,
         BOARD_SHUFFLE_UNLOCK,
-        INITIATE_GENERATE_KEY_PAIR,
         GENERATE_KEY_PAIR,
         STORE_SHARE,
         PARTIAL_DECRYPT,

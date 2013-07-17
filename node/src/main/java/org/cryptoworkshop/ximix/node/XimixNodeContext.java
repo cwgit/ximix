@@ -55,6 +55,8 @@ import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
+import org.cryptoworkshop.ximix.crypto.key.BLSKeyManager;
+import org.cryptoworkshop.ximix.crypto.key.BLSNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.KeyManager;
@@ -71,7 +73,8 @@ public class XimixNodeContext
     private final Map<Decoupler, ExecutorService> decouplers = new HashMap<>();
     private final List<Service> services = new ArrayList<>();
     private final String name;
-    private final ECKeyManager keyManager;
+    private final ECKeyManager ecKeyManager;
+    private final BLSKeyManager blsKeyManager;
     private final RemoteServicesCache remoteServicesCache;
     private final File homeDirectory;
     private final Map<String, ServicesConnection> peerMap;
@@ -93,11 +96,12 @@ public class XimixNodeContext
 
         this.peerMap.remove(this.name);
 
-        keyManager = new ECKeyManager(this);
+        this.ecKeyManager = new ECKeyManager(this);
+        this.blsKeyManager = new BLSKeyManager(this);
 
         if (homeDirectory != null)
         {
-            setupKeyManager(homeDirectory, keyManager);
+            setupKeyManager(homeDirectory, ecKeyManager);
         }
 
         remoteServicesCache = new RemoteServicesCache(this);
@@ -198,7 +202,7 @@ public class XimixNodeContext
     {
         try
         {
-            return keyManager.fetchPublicKey(keyID);
+            return ecKeyManager.fetchPublicKey(keyID);
         }
         catch (IOException e)
         {
@@ -210,7 +214,7 @@ public class XimixNodeContext
     @Override
     public boolean hasPrivateKey(String keyID)
     {
-        return keyManager.hasPrivateKey(keyID);
+        return ecKeyManager.hasPrivateKey(keyID);
     }
 
     @Override
@@ -218,7 +222,7 @@ public class XimixNodeContext
     {
         try
         {
-            SubjectPublicKeyInfo pubInfo = keyManager.fetchPublicKey(keyID);
+            SubjectPublicKeyInfo pubInfo = ecKeyManager.fetchPublicKey(keyID);
             ECPublicKeyParameters keyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubInfo);
 
             return new BcECPublicKeyOperator(keyParameters.getParameters());
@@ -234,7 +238,7 @@ public class XimixNodeContext
     @Override
     public PrivateKeyOperator getPrivateKeyOperator(String keyID)
     {
-        return keyManager.getPrivateKeyOperator(keyID);
+        return ecKeyManager.getPrivateKeyOperator(keyID);
     }
 
     public Service getService(Message message)
@@ -270,7 +274,12 @@ public class XimixNodeContext
     @Override
     public ThresholdKeyPairGenerator getKeyPairGenerator(KeyType keyType)
     {
-        return new ECNewDKGGenerator(keyType, keyManager);
+        if (keyType == KeyType.BLS)
+        {
+            return new BLSNewDKGGenerator(keyType, blsKeyManager);
+        }
+
+        return new ECNewDKGGenerator(keyType, ecKeyManager);
     }
 
     @Override

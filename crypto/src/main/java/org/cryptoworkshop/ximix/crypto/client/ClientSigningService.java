@@ -18,17 +18,16 @@ package org.cryptoworkshop.ximix.crypto.client;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.service.ClientServiceConnectionException;
+import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
-import org.cryptoworkshop.ximix.crypto.signature.Algorithms;
 import org.cryptoworkshop.ximix.crypto.signature.ECDSASignerEngine;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
 
@@ -53,7 +52,7 @@ public class ClientSigningService
     {
         try
         {
-            MessageReply reply = connection.sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new SignatureMessage(Algorithms.ECDSA, ECDSASignerEngine.Type.GENERATE, new ECDSACreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse())));
+            MessageReply reply = connection.sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new SignatureMessage(KeyType.ECDSA, ECDSASignerEngine.Type.GENERATE, new ECDSACreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse())));
 
             if (reply.getType() == MessageReply.Type.OKAY)
             {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.service;
+package org.cryptoworkshop.ximix.crypto.key;
 
 import java.util.Set;
 
@@ -25,23 +25,20 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
+import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.crypto.key.BLSNewDKGGenerator;
-import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
-import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.BLSCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
 
-public class NodeKeyGenerationService
+public class BLSKeyPairGenerator
     implements Service
 {
     private final NodeContext nodeContext;
 
-    public NodeKeyGenerationService(NodeContext nodeContext, Config config)
+    public BLSKeyPairGenerator(NodeContext nodeContext, Config config)
     {
         this.nodeContext = nodeContext;
     }
@@ -58,8 +55,71 @@ public class NodeKeyGenerationService
         {
             switch (((CommandMessage)message).getType())
             {
+//            case GENERATE_KEY_PAIR:
+//                final KeyGenerationMessage initiateMessage = KeyGenerationMessage.getInstance(message.getPayload());
+//
+//                if (initiateMessage.getNodesToUse().contains(nodeContext.getName()))
+//                {
+//                    KeyGenParams ecGenParams = KeyGenParams.getInstance(initiateMessage.getKeyGenParameters());
+//
+//                    if (initiateMessage.getAlgorithm() == KeyType.EC_ELGAMAL || initiateMessage.getAlgorithm() == KeyType.ECDSA)
+//                    {
+//                        //
+//                        // Generate H, start everyone else      TODO generate H
+//                        //
+//                        ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(initiateMessage.getAlgorithm());
+//                        ECKeyGenParams ecKeyGenParams = new ECKeyGenParams(initiateMessage.getKeyID(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
+//                        ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
+//
+//                        nodeContext.execute(new SendShareTask(generator, ecKeyGenParams.getKeyID(), ecKeyGenParams.getNodesToUse(), messages));
+//                        nodeContext.execute(new InitiateKeyGenTask(ecKeyGenParams));
+//                    }
+//                    else
+//                    {
+//                        //
+//                        // Generate H, start everyone else      TODO generate H
+//                        //
+//                        BLSNewDKGGenerator generator = (BLSNewDKGGenerator)nodeContext.getKeyPairGenerator(initiateMessage.getAlgorithm());
+//                        ECKeyGenParams ecKeyGenParams = new ECKeyGenParams(initiateMessage.getKeyID(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
+//                        BLSCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
+//
+//                        nodeContext.execute(new BLSSendShareTask(generator, ecKeyGenParams.getKeyID(), ecKeyGenParams.getNodesToUse(), messages));
+//                        nodeContext.execute(new InitiateKeyGenTask(ecKeyGenParams));
+//                    }
+//                }
+//                else
+//                {
+//                    for (String node : initiateMessage.getNodesToUse())
+//                    {         // find first available
+//                        return nodeContext.getPeerMap().get(node).sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, initiateMessage);
+//                    }
+//                }
+//
+//                return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
             case GENERATE_KEY_PAIR:
-                return new ECKeyPairGenerator(nodeContext).handle(KeyPairGenerateMessage.getInstance(ECKeyPairGenerator.Type.values(), message.getPayload()));
+                final ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)ECKeyGenParams.getInstance(message.getPayload());
+                final Set<String> involvedPeers = ecKeyGenParams.getNodesToUse();
+
+                if (involvedPeers.contains(nodeContext.getName()))
+                {
+                    ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
+
+                    ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
+
+                    nodeContext.execute(new SendShareTask(generator, ecKeyGenParams.getKeyID(), involvedPeers, messages));
+                }
+
+                return new MessageReply(MessageReply.Type.OKAY);
+            case STORE_SHARE:
+                StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
+
+                // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
+                // till we can validate them.
+                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
+
+                nodeContext.execute(new StoreShareTask(generator, sssMessage.getID(), sssMessage.getSecretShareMessage()));
+
+                return new MessageReply(MessageReply.Type.OKAY);
             default:
                 return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeKeyGenerationService."));
             }

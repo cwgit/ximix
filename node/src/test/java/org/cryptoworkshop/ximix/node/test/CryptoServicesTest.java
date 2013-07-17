@@ -43,11 +43,13 @@ import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.crypto.key.message.GenerateKeyPairMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
+import org.cryptoworkshop.ximix.crypto.key.message.KeyGenerationMessage;
+import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.node.XimixNodeContext;
@@ -108,7 +110,7 @@ public class CryptoServicesTest
     }
 
     @Test
-    public void testGenerationViaMessage()
+    public void testECGenerationViaMessage()
         throws Exception
     {
         final Map<String, XimixNodeContext>  contextMap = createContextMap(5);
@@ -117,9 +119,9 @@ public class CryptoServicesTest
 
         final ServicesConnection connection = context.getPeerMap().get("B");
         final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
-        final GenerateKeyPairMessage genKeyPairMessage = new GenerateKeyPairMessage(KeyType.EC_ELGAMAL.ordinal(), "ECKEY", new KeyGenParams("secp256r1"), 3, peers);
+        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(KeyType.EC_ELGAMAL, "ECKEY", new KeyGenParams("secp256r1"), 3, peers);
 
-        MessageReply reply = connection.sendMessage(CommandMessage.Type.INITIATE_GENERATE_KEY_PAIR, genKeyPairMessage);
+        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(KeyType.EC_ELGAMAL, ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage));
 
         Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
 
@@ -215,6 +217,115 @@ public class CryptoServicesTest
 
         Assert.assertEquals(plaintext, decrypted);
     }
+
+//    @Test
+//    public void testBLSGenerationViaMessage()
+//        throws Exception
+//    {
+//        final Map<String, XimixNodeContext> contextMap = createContextMap(5);
+//
+//        XimixNodeContext context = contextMap.get("A");
+//
+//        final ServicesConnection connection = context.getPeerMap().get("B");
+//        final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
+//        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(KeyType.BLS, "BLSKEY", new KeyGenParams("secp256r1"), 3, peers);
+//
+//        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(KeyType.BLS, ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage));
+//
+//        Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
+//
+//        SubjectPublicKeyInfo pubKeyInfo1 = context.getPublicKey("BLSKEY");
+//        final ECPublicKeyParameters pubKey1 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo1);
+//        SubjectPublicKeyInfo pubKeyInfo2 = contextMap.get("B").getPublicKey("BLSKEY");
+//        ECPublicKeyParameters pubKey2 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo2);
+//
+//        Assert.assertEquals(pubKey1.getQ(), pubKey2.getQ());
+//
+//        for (String nodeName : peers)
+//        {
+//            pubKeyInfo2 = contextMap.get(nodeName).getPublicKey("BLSKEY");
+//            pubKey2 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo2);
+//
+//            Assert.assertEquals(nodeName, pubKey1.getQ(), pubKey2.getQ());
+//        }
+//
+//        // Create a random plaintext
+//        ECPoint plaintext = generatePoint(pubKey1.getParameters(), new SecureRandom());
+//
+//        // Encrypt it using the joint public key
+//        ECEncryptor enc = new ECElGamalEncryptor();
+//
+//        enc.init(new ParametersWithRandom(pubKey1, new SecureRandom()));
+//
+//        final ECPair cipherText = enc.encrypt(plaintext);
+//
+//
+//        // Note: ordering is important here!!!
+//
+//        ECDecryptor dec = new ECDecryptor()
+//        {
+//            @Override
+//            public void init(CipherParameters cipherParameters)
+//            {
+//                //To change body of implemented methods use File | Settings | File Templates.
+//            }
+//
+//            @Override
+//            public ECPoint decrypt(ECPair ecPair)
+//            {
+//                int index = 0;
+//                ECPoint[] partialDecs = new ECPoint[peers.size()];
+//
+//                Map<String, ServicesConnection> fullMap = new HashMap<>();
+//
+//                fullMap.put("A", contextMap.get("B").getPeerMap().get("A"));
+//                fullMap.put("B", contextMap.get("A").getPeerMap().get("B"));
+//                fullMap.put("C", contextMap.get("A").getPeerMap().get("C"));
+//                fullMap.put("D", contextMap.get("A").getPeerMap().get("D"));
+//                fullMap.put("E", contextMap.get("A").getPeerMap().get("E"));
+//
+//                for (String nodeName : genKeyPairMessage.getNodesToUse())
+//                {
+//                    MessageReply decReply = null;
+//                    try
+//                    {
+//                        decReply = fullMap.get(nodeName).sendMessage(CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage("BLSKEY", Collections.singletonList(new PairSequence(cipherText).getEncoded())));
+//                    }
+//                    catch (ServiceConnectionException e)
+//                    {
+//                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//                    }
+//                    catch (IOException e)
+//                    {
+//                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//                    }
+//                    partialDecs[index++] = PairSequence.getInstance(pubKey1.getParameters().getCurve(), MessageBlock.getInstance(ShareMessage.getInstance(decReply.getPayload()).getShareData()).getMessages().get(0)).getECPairs()[0].getX();
+//                }
+//
+//                LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(peers.size(), pubKey1.getParameters().getN());
+//
+//                BigInteger[] weights = lagrangeWeightCalculator.computeWeights(partialDecs);
+//
+//                // weighting
+//                ECPoint weightedDecryption = partialDecs[0].multiply(weights[0]);
+//                for (int i = 1; i < weights.length; i++)
+//                {
+//                    if (partialDecs[i] != null)
+//                    {
+//                        weightedDecryption = weightedDecryption.add(partialDecs[i].multiply(weights[i]));
+//                    }
+//                }
+//
+//                // Do final decryption to recover plaintext ECPoint
+//                return cipherText.getY().add(weightedDecryption.negate());
+//            }
+//        };
+//
+//        // Do final decryption to recover plaintext ECPoint
+//        ECPoint decrypted = dec.decrypt(cipherText);
+//
+//        Assert.assertEquals(plaintext, decrypted);
+//    }
 
     private Map<String, XimixNodeContext> createContextMap(int size)
         throws ConfigException

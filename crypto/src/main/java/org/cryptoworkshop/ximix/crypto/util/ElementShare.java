@@ -13,9 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.signature;
+package org.cryptoworkshop.ximix.crypto.util;
 
-public interface Algorithms
+import it.unisa.dia.gas.jpbc.Element;
+
+public class ElementShare
+    extends Share<Element>
 {
-    static final int ECDSA = 1;
+    public ElementShare(int sequenceNo, Element value)
+    {
+        super(sequenceNo, value);
+    }
+
+    @Override
+    public Share<Element> add(Share<Element> other)
+    {                                            // just in case, Elements can be mutable
+        return new ElementShare(getSequenceNo(), getValue().duplicate().add(other.getValue()));
+    }
 }

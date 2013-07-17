@@ -32,22 +32,23 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSet;
+import org.cryptoworkshop.ximix.common.service.KeyType;
 
-public class GenerateKeyPairMessage
+public class KeyGenerationMessage
     extends ASN1Object
 {
-    private final int algorithm;
+    private final KeyType algorithm;
     private final Set<String> nodesToUse;
     private final String keyID;
     private final int threshold;
     private final KeyGenParams keyGenParameters;
 
-    public GenerateKeyPairMessage(int algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, String... nodesToUse)
+    public KeyGenerationMessage(KeyType algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, String... nodesToUse)
     {
         this(algorithm, keyID, keyGenParameters, threshold, new HashSet<>(Arrays.asList((String[])nodesToUse)));
     }
 
-    public GenerateKeyPairMessage(int algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, Set<String> nodesToUse)
+    public KeyGenerationMessage(KeyType algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, Set<String> nodesToUse)
     {
         // TODO: just in case order is important,,, trying to avoid this if possible.
         Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());
@@ -60,24 +61,24 @@ public class GenerateKeyPairMessage
         this.keyGenParameters = keyGenParameters;
     }
 
-    private GenerateKeyPairMessage(ASN1Sequence seq)
+    private KeyGenerationMessage(ASN1Sequence seq)
     {
-        this.algorithm = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue();
+        this.algorithm = KeyType.values()[ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue()];
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.keyGenParameters = KeyGenParams.getInstance(seq.getObjectAt(2));
         this.threshold = ASN1Integer.getInstance(seq.getObjectAt(3)).getValue().intValue();
         this.nodesToUse = toOrderedSet(ASN1Set.getInstance(seq.getObjectAt(4)));
     }
 
-    public static final GenerateKeyPairMessage getInstance(Object o)
+    public static final KeyGenerationMessage getInstance(Object o)
     {
-        if (o instanceof GenerateKeyPairMessage)
+        if (o instanceof KeyGenerationMessage)
         {
-            return (GenerateKeyPairMessage)o;
+            return (KeyGenerationMessage)o;
         }
         else if (o != null)
         {
-            return new GenerateKeyPairMessage(ASN1Sequence.getInstance(o));
+            return new KeyGenerationMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -88,7 +89,7 @@ public class GenerateKeyPairMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(algorithm));
+        v.add(new ASN1Integer(algorithm.ordinal()));
         v.add(new DERUTF8String(keyID));
         v.add(keyGenParameters);
         v.add(new ASN1Integer(threshold));
@@ -141,7 +142,7 @@ public class GenerateKeyPairMessage
         return new DLSet(v);
     }
 
-    public int getAlgorithm()
+    public KeyType getAlgorithm()
     {
         return algorithm;
     }
