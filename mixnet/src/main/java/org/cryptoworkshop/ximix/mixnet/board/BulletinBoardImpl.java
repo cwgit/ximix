@@ -15,9 +15,6 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
-import org.cryptoworkshop.ximix.common.util.ListenerHandler;
-import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
-
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -34,6 +31,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
+
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
 
 public class BulletinBoardImpl
     implements BulletinBoard
@@ -104,7 +104,7 @@ public class BulletinBoardImpl
     }
 
     @Override
-    public void addMessageUploadListener(BulletinBoardUploadListener bulletinBoardUploadListener)
+    public void addListener(BulletinBoardUploadListener bulletinBoardUploadListener)
     {
         listenerHandler.addListener(bulletinBoardUploadListener);
     }

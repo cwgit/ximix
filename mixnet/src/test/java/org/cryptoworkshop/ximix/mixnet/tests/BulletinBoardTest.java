@@ -1,16 +1,16 @@
 package org.cryptoworkshop.ximix.mixnet.tests;
 
-import junit.framework.TestCase;
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardImpl;
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardUploadListener;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import junit.framework.TestCase;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardImpl;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardUploadListener;
+import org.junit.Test;
 
 /**
  *
@@ -31,7 +31,7 @@ public class BulletinBoardTest
             messages.add(("Message "+t+" "+ System.currentTimeMillis()).getBytes());
         }
 
-        board.addMessageUploadListener(new BulletinBoardUploadListener()
+        board.addListener(new BulletinBoardUploadListener()
         {
             int t = 0;
 
@@ -49,13 +49,7 @@ public class BulletinBoardTest
             board.postMessage(msg);
         }
 
-
-       Thread.sleep(1000);
-        System.out.println(latch.getCount());
-
-
-
-        //TestCase.assertTrue("Latch failed.",latch.await(2, TimeUnit.SECONDS));
+        TestCase.assertTrue("Latch failed.",latch.await(2, TimeUnit.SECONDS));
 
     }
 }

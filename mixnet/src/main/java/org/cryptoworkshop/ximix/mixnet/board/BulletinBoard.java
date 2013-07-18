@@ -31,5 +31,5 @@ public interface BulletinBoard
 
     File getFile();
 
-    void addMessageUploadListener(BulletinBoardUploadListener bulletinBoardUploadListener);
+    void addListener(BulletinBoardUploadListener bulletinBoardUploadListener);
 }

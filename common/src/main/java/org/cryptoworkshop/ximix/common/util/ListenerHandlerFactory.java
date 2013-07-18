@@ -69,7 +69,7 @@ public class ListenerHandlerFactory
                 {
                     try
                     {
-                        method.invoke(o, objects);
+                        method.invoke(listener, objects);
                     }
                     catch (Exception e)
                     {
