@@ -36,9 +36,8 @@ public class BulletinBoardTest
             int t = 0;
 
             @Override
-            public void messagePosted(BulletinBoard runnable, int index, byte[] message)
+            public void messagePosted(BulletinBoard bulletinBoard, int index, byte[] message)
             {
-
                 TestCase.assertTrue(Arrays.equals(message, messages.get(t++)));
                 latch.countDown();
             }

@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.mixnet.service;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
@@ -26,6 +29,27 @@ import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 
 class MessageEvaluator
 {
+    private static final Set<CommandMessage.Type> needToBeHostingType = new HashSet<>();
+    private static final Set<CommandMessage.Type> alwaysHandleType = new HashSet<>();
+
+    static
+    {
+        needToBeHostingType.add(CommandMessage.Type.SUSPEND_BOARD);
+        needToBeHostingType.add(CommandMessage.Type.ACTIVATE_BOARD);
+        needToBeHostingType.add(CommandMessage.Type.BOARD_DOWNLOAD_LOCK);
+        needToBeHostingType.add(CommandMessage.Type.BOARD_DOWNLOAD_UNLOCK);
+        needToBeHostingType.add(CommandMessage.Type.BOARD_SHUFFLE_LOCK);
+        needToBeHostingType.add(CommandMessage.Type.BOARD_SHUFFLE_UNLOCK);
+
+        alwaysHandleType.add(CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE);
+        alwaysHandleType.add(CommandMessage.Type.INITIATE_INTRANSIT_BOARD);
+        alwaysHandleType.add(CommandMessage.Type.TRANSFER_TO_BOARD);
+        alwaysHandleType.add(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED);
+        alwaysHandleType.add(CommandMessage.Type.TRANSFER_TO_BACKUP_BOARD);
+        alwaysHandleType.add(CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD);
+        alwaysHandleType.add(CommandMessage.Type.FETCH_BOARD_STATUS);
+    }
+
     private final BoardIndex boardIndex;
 
     MessageEvaluator(CapabilityMessage capabilityMessage)
@@ -51,12 +75,7 @@ class MessageEvaluator
         }
         else
         {
-            if  (type == CommandMessage.Type.SUSPEND_BOARD
-                || type == CommandMessage.Type.ACTIVATE_BOARD
-                || type == CommandMessage.Type.BOARD_DOWNLOAD_LOCK
-                || type == CommandMessage.Type.BOARD_DOWNLOAD_UNLOCK
-                || type == CommandMessage.Type.BOARD_SHUFFLE_LOCK
-                || type == CommandMessage.Type.BOARD_SHUFFLE_UNLOCK)
+            if  (needToBeHostingType.contains(type))
             {
                 BoardMessage boardMessage = BoardMessage.getInstance(message.getPayload());
 
@@ -77,35 +96,7 @@ class MessageEvaluator
                 return boardIndex.hasBoard(boardMessage.getBoardName());
             }
 
-            if (type == CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE)
-            {
-                return true;
-            }
-
-            if (type == CommandMessage.Type.INITIATE_INTRANSIT_BOARD)
-            {
-                return true;
-            }
-
-            if (type == CommandMessage.Type.TRANSFER_TO_BOARD)
-            {
-                return true;
-            }
-
-            if (type == CommandMessage.Type.TRANSFER_TO_BOARD_ENDED)
-            {
-                return true;
-            }
-
-            if  (type == CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD)
-            {
-                return true;
-            }
-
-            if  (type == CommandMessage.Type.FETCH_BOARD_STATUS)
-            {
-                return true;
-            }
+            return alwaysHandleType.contains(type);
         }
 
         return false;

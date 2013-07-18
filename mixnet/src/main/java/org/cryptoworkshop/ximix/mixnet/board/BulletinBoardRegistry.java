@@ -28,6 +28,7 @@ public class BulletinBoardRegistry
 {
     private Map<String, BulletinBoard> boards = new HashMap<>();
     private Map<String, BulletinBoard> transitBoards = new HashMap<String, BulletinBoard>();
+    private Map<String, BulletinBoard> backupBoards = new HashMap<String, BulletinBoard>();
     private Set<String>                suspendedBoards = new HashSet<>();
     private Set<String>                dowloadLockedBoards = new HashSet<>();
     private Set<String>                shuffleLockedBoards = new HashSet<>();
@@ -84,22 +85,6 @@ public class BulletinBoardRegistry
         synchronized (boards)
         {
             return boards.get(boardName);
-        }
-    }
-
-    public BulletinBoard transitBoard(final String boardName)
-    {
-        synchronized (boards)
-        {
-            BulletinBoard board = null; //boards.put(boardName, new BulletinBoardImpl(boardName, boardUpdateExecutor));
-
-            // TODO: barf!!  Maybe not here
-            if (board == null)
-            {
-
-            }
-
-            return board;
         }
     }
 
@@ -206,6 +191,25 @@ public class BulletinBoardRegistry
         }
     }
 
+
+    public BulletinBoard getBackupBoard(String boardName)
+    {
+        synchronized (boards)
+        {
+            BulletinBoard board = backupBoards.get(boardName);
+
+            // TODO: need to detect twice!
+            if (board == null)
+            {
+                board = new BulletinBoardImpl(boardName + ".backup", workingDirectory, boardUpdateExecutor);
+
+                backupBoards.put(boardName, board);
+            }
+
+            return board;
+        }
+    }
+
     public BulletinBoard getTransitBoard(String boardName)
     {
         synchronized (boards)
@@ -215,7 +219,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, workingDirectory, boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName + ".transit", workingDirectory, boardUpdateExecutor);
 
                 transitBoards.put(boardName, board);
             }

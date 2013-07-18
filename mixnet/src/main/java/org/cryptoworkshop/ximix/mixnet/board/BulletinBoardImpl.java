@@ -122,7 +122,7 @@ public class BulletinBoardImpl
             {
                 messages.add(message);
 
-                notifier.messagePosted(BulletinBoardImpl.this, 0, message);
+                notifier.messagePosted(BulletinBoardImpl.this, messages.size() - 1, message);
 
                 if (workingFile != null)
                 {

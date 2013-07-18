@@ -17,7 +17,12 @@ package org.cryptoworkshop.ximix.mixnet.service;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -32,6 +37,7 @@ import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.message.BoardErrorStatusMessage;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.BoardStatusMessage;
+import org.cryptoworkshop.ximix.common.message.BoardUploadIndexedMessage;
 import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
@@ -44,12 +50,12 @@ import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardUploadListener;
 import org.cryptoworkshop.ximix.mixnet.task.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.mixnet.task.TransformShuffleAndReturnTask;
-import org.cryptoworkshop.ximix.mixnet.task.TransitTask;
-import org.cryptoworkshop.ximix.mixnet.task.UploadTask;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -89,17 +95,14 @@ public class BoardHostingService
 
             for (BoardConfig boardConfig : boards)
             {
-                boardRegistry.createBoard(boardConfig.getName());
+                BulletinBoard board = boardRegistry.createBoard(boardConfig.getName());
 
-//                for (BackupBoardConfig cfg : boardConfig.getBackupBoardConfigs())
-//                {
-//                    System.out.println(cfg.getNodeName());
-//                }
-
+                for (BackupBoardConfig backupConfig : boardConfig.getBackupBoardConfigs())
+                {
+                     board.addListener(new BoardRemoteBackupListener(nodeContext, backupConfig));
+                }
             }
         }
-
-
     }
 
     public CapabilityMessage getCapability()
@@ -235,6 +238,10 @@ public class BoardHostingService
                     BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
                     boardRegistry.markInTransit(uploadMessage.getBoardName());
                     nodeContext.execute(new TransitTask(nodeContext, boardRegistry, uploadMessage));
+                    break;
+                case TRANSFER_TO_BACKUP_BOARD:
+                    BoardUploadIndexedMessage uploadIndexedMessage = BoardUploadIndexedMessage.getInstance(message.getPayload());
+                    nodeContext.execute(new UploadIndexedTask(nodeContext, boardRegistry, uploadIndexedMessage));
                     break;
                 case TRANSFER_TO_BOARD_ENDED:
                     boardMessage = BoardMessage.getInstance(message.getPayload());
@@ -373,7 +380,6 @@ public class BoardHostingService
                 {
                     Node innerNode = innerNodes.item(j);
 
-
                     if ("backup-boards".equals(innerNode.getNodeName()))
                     {
                         backupBoardConfigs.add(fact.createObject(innerNode));
@@ -436,6 +442,101 @@ public class BoardHostingService
         public String getNodeName()
         {
             return nodeName;
+        }
+    }
+
+    private class BoardRemoteBackupListener
+        implements BulletinBoardUploadListener
+    {
+        private final NodeContext nodeContext;
+        private final BackupBoardConfig backupConfig;
+
+        public BoardRemoteBackupListener(NodeContext nodeContext, BackupBoardConfig backupConfig)
+        {
+            this.nodeContext = nodeContext;
+            this.backupConfig = backupConfig;
+        }
+
+        @Override
+        public void messagePosted(BulletinBoard bulletinBoard, int index, byte[] message)
+        {
+            // TODO: there needs to be an initialisation phase to make sure the backup board is in sync
+            try
+            {
+                nodeContext.getPeerMap().get(backupConfig.getNodeName()).sendMessage(CommandMessage.Type.TRANSFER_TO_BACKUP_BOARD, new BoardUploadIndexedMessage(bulletinBoard.getName(), index, message));
+            }
+            catch (ServiceConnectionException e)
+            {
+                // TODO:
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        }
+    }
+
+    private class TransitTask
+        implements Runnable
+    {
+        private final NodeContext nodeContext;
+        private final BoardUploadMessage message;
+        private final BulletinBoardRegistry boardRegistry;
+
+        public TransitTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, BoardUploadMessage message)
+        {
+            this.nodeContext = nodeContext;
+            this.boardRegistry = boardRegistry;
+            this.message = message;
+        }
+
+        public void run()
+        {
+            if (boardRegistry.hasBoard(message.getBoardName()))
+            {
+                boardRegistry.getBoard(message.getBoardName()).postMessage(message.getData());
+            }
+            else
+            {
+                boardRegistry.getTransitBoard(message.getBoardName()).postMessage(message.getData());
+            }
+        }
+    }
+
+    public class UploadTask
+        implements Runnable
+    {
+        private final NodeContext nodeContext;
+        private final BoardUploadMessage message;
+        private final BulletinBoardRegistry boardRegistry;
+
+        public UploadTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, BoardUploadMessage message)
+        {
+            this.nodeContext = nodeContext;
+            this.boardRegistry = boardRegistry;
+            this.message = message;
+        }
+
+        public void run()
+        {
+            boardRegistry.getBoard(message.getBoardName()).postMessage(message.getData());
+        }
+    }
+
+    public class UploadIndexedTask
+        implements Runnable
+    {
+        private final NodeContext nodeContext;
+        private final BoardUploadIndexedMessage message;
+        private final BulletinBoardRegistry boardRegistry;
+
+        public UploadIndexedTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, BoardUploadIndexedMessage message)
+        {
+            this.nodeContext = nodeContext;
+            this.boardRegistry = boardRegistry;
+            this.message = message;
+        }
+
+        public void run()
+        {
+            boardRegistry.getBackupBoard(message.getBoardName()).postMessage(message.getData());
         }
     }
 }
