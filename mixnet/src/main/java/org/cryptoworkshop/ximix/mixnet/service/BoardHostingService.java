@@ -17,11 +17,7 @@ package org.cryptoworkshop.ximix.mixnet.service;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -94,8 +90,16 @@ public class BoardHostingService
             for (BoardConfig boardConfig : boards)
             {
                 boardRegistry.createBoard(boardConfig.getName());
+
+//                for (BackupBoardConfig cfg : boardConfig.getBackupBoardConfigs())
+//                {
+//                    System.out.println(cfg.getNodeName());
+//                }
+
             }
         }
+
+
     }
 
     public CapabilityMessage getCapability()
@@ -158,113 +162,113 @@ public class BoardHostingService
         {
             switch (((CommandMessage)message).getType())
             {
-            case ACTIVATE_BOARD:
-                BoardMessage boardMessage = BoardMessage.getInstance(message.getPayload());
-                boardRegistry.activateBoard(boardMessage.getBoardName());
-                break;
-            case SUSPEND_BOARD:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                if (boardRegistry.isSuspended(boardMessage.getBoardName()))
-                {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(boardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
-                }
-                boardRegistry.suspendBoard(boardMessage.getBoardName());
-                break;
-            case BOARD_DOWNLOAD_LOCK:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                if (boardRegistry.isLocked(boardMessage.getBoardName()))
-                {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(boardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
-                }
-                boardRegistry.downloadLock(boardMessage.getBoardName());
-                break;
-            case BOARD_DOWNLOAD_UNLOCK:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                boardRegistry.downloadUnlock(boardMessage.getBoardName());
-                break;
-            case FETCH_BOARD_STATUS:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                if (boardRegistry.isInTransit(boardMessage.getBoardName()))
-                {
-                     return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(boardMessage.getBoardName(), BoardStatusMessage.Status.IN_TRANSIT));
-                }
-                if (boardRegistry.isComplete(boardMessage.getBoardName()))
-                {
-                    return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(boardMessage.getBoardName(), BoardStatusMessage.Status.COMPLETE));
-                }
-                return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(boardMessage.getBoardName(), BoardStatusMessage.Status.UNKNOWN));
-            case BOARD_SHUFFLE_LOCK:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                if (boardRegistry.isLocked(boardMessage.getBoardName()))
-                {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(boardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
-                }
-                boardRegistry.shuffleLock(boardMessage.getBoardName());
-                break;
-            case BOARD_SHUFFLE_UNLOCK:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                boardRegistry.shuffleUnlock(boardMessage.getBoardName());
-                break;
-            case START_SHUFFLE_AND_MOVE_BOARD_TO_NODE:
-                PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                if (!boardRegistry.isShuffleLocked(pAndmMessage.getBoardName()))
-                {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(pAndmMessage.getBoardName(), BoardErrorStatusMessage.Status.NOT_SHUFFLE_LOCKED));
-                }
-                boardRegistry.moveToTransit(pAndmMessage.getBoardName());
-                nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
-                break;
-            case SHUFFLE_AND_MOVE_BOARD_TO_NODE:
-                pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
-                break;
-            case SHUFFLE_AND_RETURN_BOARD:
-                PermuteAndReturnMessage pAndrMessage = PermuteAndReturnMessage.getInstance(message.getPayload());
-                nodeContext.execute(new TransformShuffleAndReturnTask(nodeContext, boardRegistry, pAndrMessage));
-                break;
-            case INITIATE_INTRANSIT_BOARD:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                boardRegistry.markInTransit(boardMessage.getBoardName());
-                boardRegistry.getTransitBoard(boardMessage.getBoardName()).clear();
-                break;
-            case TRANSFER_TO_BOARD:
-                BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
-                boardRegistry.markInTransit(uploadMessage.getBoardName());
-                nodeContext.execute(new TransitTask(nodeContext, boardRegistry, uploadMessage));
-                break;
-            case TRANSFER_TO_BOARD_ENDED:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                boardRegistry.markCompleted(boardMessage.getBoardName());
-                break;
-            case DOWNLOAD_BOARD_CONTENTS:
-                BoardDownloadMessage downloadRequest = BoardDownloadMessage.getInstance(message.getPayload());
-                if (!boardRegistry.isDownloadLocked(downloadRequest.getBoardName()))
-                {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(downloadRequest.getBoardName(), BoardErrorStatusMessage.Status.NOT_DOWNLOAD_LOCKED));
-                }
-                BulletinBoard board = boardRegistry.getBoard(downloadRequest.getBoardName());
+                case ACTIVATE_BOARD:
+                    BoardMessage boardMessage = BoardMessage.getInstance(message.getPayload());
+                    boardRegistry.activateBoard(boardMessage.getBoardName());
+                    break;
+                case SUSPEND_BOARD:
+                    boardMessage = BoardMessage.getInstance(message.getPayload());
+                    if (boardRegistry.isSuspended(boardMessage.getBoardName()))
+                    {
+                        return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(boardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                    }
+                    boardRegistry.suspendBoard(boardMessage.getBoardName());
+                    break;
+                case BOARD_DOWNLOAD_LOCK:
+                    boardMessage = BoardMessage.getInstance(message.getPayload());
+                    if (boardRegistry.isLocked(boardMessage.getBoardName()))
+                    {
+                        return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(boardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                    }
+                    boardRegistry.downloadLock(boardMessage.getBoardName());
+                    break;
+                case BOARD_DOWNLOAD_UNLOCK:
+                    boardMessage = BoardMessage.getInstance(message.getPayload());
+                    boardRegistry.downloadUnlock(boardMessage.getBoardName());
+                    break;
+                case FETCH_BOARD_STATUS:
+                    boardMessage = BoardMessage.getInstance(message.getPayload());
+                    if (boardRegistry.isInTransit(boardMessage.getBoardName()))
+                    {
+                        return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(boardMessage.getBoardName(), BoardStatusMessage.Status.IN_TRANSIT));
+                    }
+                    if (boardRegistry.isComplete(boardMessage.getBoardName()))
+                    {
+                        return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(boardMessage.getBoardName(), BoardStatusMessage.Status.COMPLETE));
+                    }
+                    return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(boardMessage.getBoardName(), BoardStatusMessage.Status.UNKNOWN));
+                case BOARD_SHUFFLE_LOCK:
+                    boardMessage = BoardMessage.getInstance(message.getPayload());
+                    if (boardRegistry.isLocked(boardMessage.getBoardName()))
+                    {
+                        return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(boardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                    }
+                    boardRegistry.shuffleLock(boardMessage.getBoardName());
+                    break;
+                case BOARD_SHUFFLE_UNLOCK:
+                    boardMessage = BoardMessage.getInstance(message.getPayload());
+                    boardRegistry.shuffleUnlock(boardMessage.getBoardName());
+                    break;
+                case START_SHUFFLE_AND_MOVE_BOARD_TO_NODE:
+                    PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
+                    if (!boardRegistry.isShuffleLocked(pAndmMessage.getBoardName()))
+                    {
+                        return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(pAndmMessage.getBoardName(), BoardErrorStatusMessage.Status.NOT_SHUFFLE_LOCKED));
+                    }
+                    boardRegistry.moveToTransit(pAndmMessage.getBoardName());
+                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
+                    break;
+                case SHUFFLE_AND_MOVE_BOARD_TO_NODE:
+                    pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
+                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
+                    break;
+                case SHUFFLE_AND_RETURN_BOARD:
+                    PermuteAndReturnMessage pAndrMessage = PermuteAndReturnMessage.getInstance(message.getPayload());
+                    nodeContext.execute(new TransformShuffleAndReturnTask(nodeContext, boardRegistry, pAndrMessage));
+                    break;
+                case INITIATE_INTRANSIT_BOARD:
+                    boardMessage = BoardMessage.getInstance(message.getPayload());
+                    boardRegistry.markInTransit(boardMessage.getBoardName());
+                    boardRegistry.getTransitBoard(boardMessage.getBoardName()).clear();
+                    break;
+                case TRANSFER_TO_BOARD:
+                    BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
+                    boardRegistry.markInTransit(uploadMessage.getBoardName());
+                    nodeContext.execute(new TransitTask(nodeContext, boardRegistry, uploadMessage));
+                    break;
+                case TRANSFER_TO_BOARD_ENDED:
+                    boardMessage = BoardMessage.getInstance(message.getPayload());
+                    boardRegistry.markCompleted(boardMessage.getBoardName());
+                    break;
+                case DOWNLOAD_BOARD_CONTENTS:
+                    BoardDownloadMessage downloadRequest = BoardDownloadMessage.getInstance(message.getPayload());
+                    if (!boardRegistry.isDownloadLocked(downloadRequest.getBoardName()))
+                    {
+                        return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(downloadRequest.getBoardName(), BoardErrorStatusMessage.Status.NOT_DOWNLOAD_LOCKED));
+                    }
+                    BulletinBoard board = boardRegistry.getBoard(downloadRequest.getBoardName());
 
-                List<byte[]> messages = board.getMessages(downloadRequest.getMaxNumberOfMessages());
+                    List<byte[]> messages = board.getMessages(downloadRequest.getMaxNumberOfMessages());
 
-                return new MessageReply(MessageReply.Type.OKAY, new MessageBlock(messages));
-            default:
-                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
+                    return new MessageReply(MessageReply.Type.OKAY, new MessageBlock(messages));
+                default:
+                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
             }
         }
         else
         {
             switch (((ClientMessage)message).getType())
             {
-            case UPLOAD_TO_BOARD:
-                BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
-                if (boardRegistry.isLocked(uploadMessage.getBoardName()))
-                {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(uploadMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
-                }
-                nodeContext.execute(new UploadTask(nodeContext, boardRegistry, uploadMessage));
-                break;
-            default:
-                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
+                case UPLOAD_TO_BOARD:
+                    BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
+                    if (boardRegistry.isLocked(uploadMessage.getBoardName()))
+                    {
+                        return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(uploadMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                    }
+                    nodeContext.execute(new UploadTask(nodeContext, boardRegistry, uploadMessage));
+                    break;
+                default:
+                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
             }
         }
         return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
@@ -339,6 +343,7 @@ public class BoardHostingService
         }
     }
 
+
     private static class BoardConfigFactory
         implements ConfigObjectFactory<BoardConfig>
     {
@@ -351,8 +356,62 @@ public class BoardHostingService
     private static class BoardConfig
     {
         private String name;
+        private List<BackupBoardConfig> backupBoardConfigs = new ArrayList<>();
 
         public BoardConfig(Node configNode)
+        {
+            NodeList xmlNodes = configNode.getChildNodes();
+            BackupBoardConfigFactory fact = new BackupBoardConfigFactory();
+
+            for (int i = 0; i != xmlNodes.getLength(); i++)
+            {
+                Node xmlNode = xmlNodes.item(i);
+
+                NodeList innerNodes = xmlNode.getChildNodes();
+
+                for (int j = 0; j != innerNodes.getLength(); j++)
+                {
+                    Node innerNode = innerNodes.item(j);
+
+
+                    if ("backup-boards".equals(innerNode.getNodeName()))
+                    {
+                        backupBoardConfigs.add(fact.createObject(innerNode));
+                    }
+                    else if (innerNode.getNodeName().equals("name"))
+                    {
+                        this.name = innerNode.getTextContent();
+                    }
+                }
+            }
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        private List<BackupBoardConfig> getBackupBoardConfigs()
+        {
+            return backupBoardConfigs;
+        }
+    }
+
+
+    private static class BackupBoardConfigFactory
+        implements ConfigObjectFactory<BackupBoardConfig>
+    {
+        public BackupBoardConfig createObject(Node configNode)
+        {
+            return new BackupBoardConfig(configNode);
+        }
+    }
+
+    private static class BackupBoardConfig
+    {
+        private String nodeName;
+
+        public BackupBoardConfig(Node configNode)
         {
             NodeList xmlNodes = configNode.getChildNodes();
 
@@ -366,17 +425,17 @@ public class BoardHostingService
                 {
                     Node innerNode = innerNodes.item(j);
 
-                    if (innerNode.getNodeName().equals("name"))
+                    if (innerNode.getNodeName().equals("node"))
                     {
-                        this.name = innerNode.getTextContent();
+                        this.nodeName = innerNode.getTextContent();
                     }
                 }
             }
         }
 
-        public String getName()
+        public String getNodeName()
         {
-            return name;
+            return nodeName;
         }
     }
 }
