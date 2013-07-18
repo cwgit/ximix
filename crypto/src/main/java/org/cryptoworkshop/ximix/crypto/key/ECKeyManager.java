@@ -78,8 +78,8 @@ import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
-import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPrivateKeyOperator;
@@ -107,7 +107,7 @@ public class ECKeyManager
     public ECKeyManager(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
-        this.listenerHandler = new ListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.LISTENER)).createHandler(KeyManagerListener.class);
+        this.listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.LISTENER)).createHandler(KeyManagerListener.class);
         this.notifier = listenerHandler.getNotifier();
 
         sharedPublicKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));

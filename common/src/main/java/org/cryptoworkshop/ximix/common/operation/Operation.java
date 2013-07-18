@@ -17,8 +17,8 @@ package org.cryptoworkshop.ximix.common.operation;
 
 import java.util.concurrent.Executor;
 
+import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
-import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
 
 public class Operation<T extends OperationListener>
 {
@@ -27,7 +27,7 @@ public class Operation<T extends OperationListener>
 
     protected Operation(Executor decoupler, Class listenerClass)
     {
-        handler = new ListenerHandlerFactory(decoupler).createHandler(listenerClass);
+        handler = new DecoupledListenerHandlerFactory(decoupler).createHandler(listenerClass);
 
         this.notifier = handler.getNotifier();
     }

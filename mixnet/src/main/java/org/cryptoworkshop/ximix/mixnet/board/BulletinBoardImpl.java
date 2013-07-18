@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.common.util.ListenerHandlerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -39,6 +42,10 @@ public class BulletinBoardImpl
     private final Executor boardUpdateExecutor;
     private final File workingFile;
 
+    private final ListenerHandler<BulletinBoardUploadListener> listenerHandler;
+
+    private final BulletinBoardUploadListener notifier;
+
     private List<byte[]> messages = new ArrayList<>();
 
     public BulletinBoardImpl(String boardName, File workingDirectory, Executor executor)
@@ -59,7 +66,7 @@ public class BulletinBoardImpl
                 {
                     DataInputStream dIn = new DataInputStream(new BufferedInputStream(new FileInputStream(this.workingFile)));
 
-                    for (;;)
+                    for (; ; )
                     {
                         len = dIn.readInt();
                         byte[] data = new byte[len];
@@ -90,6 +97,16 @@ public class BulletinBoardImpl
         {
             workingFile = null;
         }
+        ListenerHandlerFactory listenerHandlerFactory = new ListenerHandlerFactory();
+        listenerHandler = listenerHandlerFactory.createHandler(BulletinBoardUploadListener.class);
+        notifier = listenerHandler.getNotifier();
+
+    }
+
+    @Override
+    public void addMessageUploadListener(BulletinBoardUploadListener bulletinBoardUploadListener)
+    {
+        listenerHandler.addListener(bulletinBoardUploadListener);
     }
 
     public String getName()
@@ -104,6 +121,8 @@ public class BulletinBoardImpl
             public void run()
             {
                 messages.add(message);
+
+                notifier.messagePosted(BulletinBoardImpl.this, 0, message);
 
                 if (workingFile != null)
                 {

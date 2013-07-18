@@ -30,4 +30,6 @@ public interface BulletinBoard
     void clear();
 
     File getFile();
+
+    void addMessageUploadListener(BulletinBoardUploadListener bulletinBoardUploadListener);
 }
