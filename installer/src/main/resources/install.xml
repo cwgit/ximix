@@ -16,7 +16,7 @@
         </movements>
 
         <!-- Make executable if in a posix environment -->
-        <posix-exec relpath="node/bin/run.sh" perm="rwxr-xr-x"/>
+        <posix-exec relpath="node/bin/start.sh" perm="rwxr-xr-x"/>
 
 
         <!--

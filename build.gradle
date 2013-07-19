@@ -299,10 +299,10 @@ task make_node_installer(dependsOn: 'jar') << {
 
 //    if (hasConfigs) {
 //        for (int t = 0; t < nodeConfigs.size(); t++) {
-//            pw.println('        <posix-exec relpath="node' + t + '/bin/run.sh" perm="rwxr-xr-x"/>');
+//            pw.println('        <posix-exec relpath="node' + t + '/bin/start.sh" perm="rwxr-xr-x"/>');
 //        }
 //    } else {
-        pw.println('        <posix-exec relpath="ximix/bin/run.sh" perm="rwxr-xr-x"/>');
+        pw.println('        <posix-exec relpath="ximix/bin/start.sh" perm="rwxr-xr-x"/>');
   //  }
     pw.println('   </installation>');
     pw.println('</installer>');
