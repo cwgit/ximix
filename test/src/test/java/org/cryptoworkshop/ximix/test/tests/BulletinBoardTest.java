@@ -1,5 +1,11 @@
 package org.cryptoworkshop.ximix.test.tests;
 
+import java.net.SocketException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import junit.framework.TestCase;
 import org.bouncycastle.util.Arrays;
 import org.cryptoworkshop.ximix.common.operation.Operation;
@@ -14,12 +20,6 @@ import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
 import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;
 import org.junit.Test;
-
-import java.net.SocketException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
 
@@ -36,7 +36,7 @@ public class BulletinBoardTest
     {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
 
-        final int testSize = 1000;
+        final int testSize = 500;
         int msgMaxSize = 4096;
         int msgMinSize = 1024;
 
@@ -156,7 +156,7 @@ public class BulletinBoardTest
         commandService.shutdown();
 
 
-        TestCase.assertTrue("Download did not complete in time.", latch.await(5, TimeUnit.SECONDS));
+        TestCase.assertTrue("Download did not complete in time.", latch.await(500, TimeUnit.SECONDS));
 
         TestCase.assertEquals("Source message count != downloaded message count.", sourceMessages.size(), msgDownloaded.size());
 
@@ -177,7 +177,7 @@ public class BulletinBoardTest
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
         handler.squelchType(SocketException.class);
 
-        final int testSize = 1000;
+        final int testSize = 500;
         int msgMaxSize = 4096;
         int msgMinSize = 1024;
 
@@ -275,7 +275,7 @@ public class BulletinBoardTest
                 }
             });
 
-        TestCase.assertTrue("Download did not complete in time.", latch.await(30, TimeUnit.SECONDS));
+        TestCase.assertTrue("Download did not complete in time.", latch.await(500, TimeUnit.SECONDS));
 
         TestCase.assertEquals("Source message count != downloaded message count.", sourceMessages.size(), msgDownloaded.size());
 

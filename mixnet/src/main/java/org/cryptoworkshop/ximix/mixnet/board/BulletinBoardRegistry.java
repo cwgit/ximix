@@ -22,10 +22,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+import org.cryptoworkshop.ximix.common.service.Decoupler;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
 public class BulletinBoardRegistry
 {
+    private final NodeContext          nodeContext;
     private Map<String, BulletinBoard> boards = new HashMap<>();
     private Map<String, BulletinBoard> transitBoards = new HashMap<String, BulletinBoard>();
     private Map<String, BulletinBoard> backupBoards = new HashMap<String, BulletinBoard>();
@@ -40,10 +44,13 @@ public class BulletinBoardRegistry
     private final Map<String, Transform> transforms;
     private final Executor boardUpdateExecutor;
 
-    public BulletinBoardRegistry(Map<String, Transform> transforms, File homeDirectory, Executor boardUpdateExecutor)
+    public BulletinBoardRegistry(NodeContext nodeContext, Map<String, Transform> transforms)
     {
+        this.nodeContext = nodeContext;
         this.transforms = transforms;
-        this.boardUpdateExecutor = boardUpdateExecutor;
+        this.boardUpdateExecutor = nodeContext.getDecoupler(Decoupler.BOARD_REGISTRY);
+
+        File homeDirectory =  nodeContext.getHomeDirectory();
 
         if (homeDirectory != null)
         {
@@ -71,7 +78,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, workingDirectory, boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, new File(workingDirectory, boardName), nodeContext.getScheduledExecutor());
 
                 boards.put(boardName, board);
             }
@@ -201,7 +208,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName + ".backup", workingDirectory, boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, new File(workingDirectory, boardName + ".backup"), boardUpdateExecutor);
 
                 backupBoards.put(boardName, board);
             }
@@ -219,7 +226,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName + ".transit", workingDirectory, boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, new File(workingDirectory, boardName + ".transit"), boardUpdateExecutor);
 
                 transitBoards.put(boardName, board);
             }
@@ -234,19 +241,35 @@ public class BulletinBoardRegistry
        {
            BulletinBoard originalBoard = boards.remove(boardName);
 
-           transitBoards.put(boardName, originalBoard);
+           ListenerHandler<BulletinBoardBackupListener> listenerHandler = originalBoard.getListenerHandler(BulletinBoardBackupListener.class);
 
            if (workingDirectory != null)
            {
-               File file = originalBoard.getFile();
-               if (!file.renameTo(new File(file.getParentFile(), originalBoard.getName() + ".transit")))
+               originalBoard.shutdown();
+
+               File workingFile = new File(workingDirectory, originalBoard.getName());
+               File dotPFile = new File(workingDirectory, originalBoard.getName() + ".p");
+               File transitWorkingFile = new File(workingDirectory, originalBoard.getName() + ".transit");
+               File transitDotPFile = new File(workingDirectory, originalBoard.getName() + ".transit.p");
+
+               if (!workingFile.renameTo(transitWorkingFile))
                {
-                   System.err.println("rename failed");
+                   System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
                    // TODO:
                }
+
+               if (!dotPFile.renameTo(transitDotPFile))
+               {
+                   System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
+                   // TODO:
+               }
+
+               originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor());
            }
 
-           BulletinBoard board = new BulletinBoardImpl(boardName, workingDirectory, boardUpdateExecutor);
+           transitBoards.put(boardName, originalBoard);
+
+           BulletinBoard board = new BulletinBoardImpl(boardName, new File(workingDirectory, boardName), listenerHandler);
 
            boards.put(boardName, board);
        }

@@ -15,8 +15,9 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
-import java.io.File;
 import java.util.List;
+
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
 public interface BulletinBoard
     extends Iterable<byte[]>
@@ -29,7 +30,9 @@ public interface BulletinBoard
 
     void clear();
 
-    File getFile();
+    void addListener(BulletinBoardBackupListener bulletinBoardBackupListener);
 
-    void addListener(BulletinBoardUploadListener bulletinBoardUploadListener);
+    void shutdown();
+
+    <T> ListenerHandler<T> getListenerHandler(Class<T> listenerClass);
 }

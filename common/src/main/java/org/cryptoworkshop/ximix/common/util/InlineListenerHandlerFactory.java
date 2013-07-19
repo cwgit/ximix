@@ -15,22 +15,19 @@
  */
 package org.cryptoworkshop.ximix.common.util;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 
-public class DecoupledListenerHandlerFactory
+public class InlineListenerHandlerFactory
     implements ListenerHandlerFactory
 {
-    private final Executor decoupler;
     private final List listeners = new ArrayList();
 
-    public DecoupledListenerHandlerFactory(Executor decoupler)
+    public InlineListenerHandlerFactory()
     {
-        this.decoupler = decoupler;
+
     }
 
     public <T> ListenerHandler<T> createHandler(Class<T> listenerClass)
@@ -60,7 +57,7 @@ public class DecoupledListenerHandlerFactory
         @Override
         public T getNotifier()
         {
-            return  (T)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{ listenerClass }, this);
+            return (T)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{listenerClass}, this);
         }
 
         @Override
@@ -71,43 +68,20 @@ public class DecoupledListenerHandlerFactory
             {
                 for (Object listener : listeners)
                 {
-                    decoupler.execute(new ObjectTask(listener, method, objects));
+                    try
+                    {
+                        method.invoke(listener, objects);
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();  //TODO: but needs to be logged somewhere!
+                    }
+
                 }
             }
 
             return null;
         }
 
-        private class ObjectTask
-            implements Runnable
-        {
-            private final Object o;
-            private final Method method;
-            private final Object[] objects;
-
-            public ObjectTask(Object o, Method method, Object[] objects)
-            {
-                this.o = o;
-                this.method = method;
-                this.objects = objects;
-            }
-
-            @Override
-            public void run()
-            {
-                try
-                {
-                    method.invoke(o, objects);
-                }
-                catch (IllegalAccessException e)
-                {
-                    e.printStackTrace();  //TODO: this should never happen, but needs to be logged somewhere!
-                }
-                catch (InvocationTargetException e)
-                {
-                    e.printStackTrace();  //TODO: this should never happen, but needs to be logged somewhere!
-                }
-            }
-        }
     }
 }

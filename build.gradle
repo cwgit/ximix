@@ -92,6 +92,7 @@ task fetch_libs << {
     fetchFile(jpbcRemoteUrl2, root);
     fetchFile(jpbcRemoteUrl3, root);
     fetchFile(jpbcRemoteUrl4, root);
+    fetchFile(mapdbRemoteUrl, root);
 }
 
 task test_foo << {

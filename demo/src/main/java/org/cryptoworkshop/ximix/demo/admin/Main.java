@@ -115,8 +115,10 @@ public class Main
             }
         };
 
-        final ECPoint[] plainText1 = new ECPoint[100];
-        final ECPoint[] plainText2 = new ECPoint[100];
+        final int numMessages = 100;
+
+        final ECPoint[] plainText1 = new ECPoint[numMessages];
+        final ECPoint[] plainText2 = new ECPoint[numMessages];
         for (int i = 0; i != plainText1.length; i++)
         {
             plainText1[i] = generatePoint(pubKey.getParameters(), pointRandom);
@@ -129,7 +131,7 @@ public class Main
 
         CommandService commandService = adminRegistrar.connect(CommandService.class);
 
-//        board is hosted on "B" move to "A" then to "C" then back to "B"
+        // board is hosted on "B" move to "A" then to "C" then back to "B"
         Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECENCKEY").build(), "A", "C");
 
         final CountDownLatch shuffleLatch = new CountDownLatch(1);
@@ -184,7 +186,7 @@ public class Main
             public void completed()
             {
                 downloadLatch.countDown();
-                System.err.println("completed");
+                System.err.println("completed " + (numMessages == counter));
             }
 
             @Override

@@ -52,8 +52,8 @@ import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardBackupListener;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardUploadListener;
 import org.cryptoworkshop.ximix.mixnet.task.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.mixnet.task.TransformShuffleAndReturnTask;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
@@ -87,7 +87,7 @@ public class BoardHostingService
             transforms = new HashMap<>();
         }
 
-        this.boardRegistry = new BulletinBoardRegistry(transforms, nodeContext.getHomeDirectory(), nodeContext.getDecoupler(Decoupler.BOARD_REGISTRY));
+        this.boardRegistry = new BulletinBoardRegistry(nodeContext, transforms);
 
         if (config.hasConfig("boards"))
         {
@@ -213,16 +213,15 @@ public class BoardHostingService
                     boardRegistry.shuffleUnlock(boardMessage.getBoardName());
                     break;
                 case START_SHUFFLE_AND_MOVE_BOARD_TO_NODE:
-                    PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                    if (!boardRegistry.isShuffleLocked(pAndmMessage.getBoardName()))
+                    final PermuteAndMoveMessage startPandMmessage = PermuteAndMoveMessage.getInstance(message.getPayload());
+                    if (!boardRegistry.isShuffleLocked(startPandMmessage.getBoardName()))
                     {
-                        return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(pAndmMessage.getBoardName(), BoardErrorStatusMessage.Status.NOT_SHUFFLE_LOCKED));
+                        return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(startPandMmessage.getBoardName(), BoardErrorStatusMessage.Status.NOT_SHUFFLE_LOCKED));
                     }
-                    boardRegistry.moveToTransit(pAndmMessage.getBoardName());
-                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
+                    nodeContext.execute(new StartShuffleTask(nodeContext, boardRegistry, startPandMmessage));
                     break;
                 case SHUFFLE_AND_MOVE_BOARD_TO_NODE:
-                    pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
+                    PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
                     nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
                     break;
                 case SHUFFLE_AND_RETURN_BOARD:
@@ -237,11 +236,23 @@ public class BoardHostingService
                 case TRANSFER_TO_BOARD:
                     BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
                     boardRegistry.markInTransit(uploadMessage.getBoardName());
-                    nodeContext.execute(new TransitTask(nodeContext, boardRegistry, uploadMessage));
+                    if (boardRegistry.hasBoard(uploadMessage.getBoardName()))
+                    {
+                        boardRegistry.getBoard(uploadMessage.getBoardName()).postMessage(uploadMessage.getData());
+                    }
+                    else
+                    {
+                        boardRegistry.getTransitBoard(uploadMessage.getBoardName()).postMessage(uploadMessage.getData());
+                    }
+                    break;
+                case CLEAR_BACKUP_BOARD:
+                    BoardMessage backupBoardMessage = BoardMessage.getInstance(message.getPayload());
+                    // TODO: maaybe backup the current backup locally?
+                    boardRegistry.getBackupBoard(backupBoardMessage.getBoardName()).clear();
                     break;
                 case TRANSFER_TO_BACKUP_BOARD:
                     BoardUploadIndexedMessage uploadIndexedMessage = BoardUploadIndexedMessage.getInstance(message.getPayload());
-                    nodeContext.execute(new UploadIndexedTask(nodeContext, boardRegistry, uploadIndexedMessage));
+                    boardRegistry.getBackupBoard(uploadIndexedMessage.getBoardName()).postMessage(uploadIndexedMessage.getData());
                     break;
                 case TRANSFER_TO_BOARD_ENDED:
                     boardMessage = BoardMessage.getInstance(message.getPayload());
@@ -272,7 +283,7 @@ public class BoardHostingService
                     {
                         return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(uploadMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
                     }
-                    nodeContext.execute(new UploadTask(nodeContext, boardRegistry, uploadMessage));
+                    boardRegistry.getBoard(uploadMessage.getBoardName()).postMessage(uploadMessage.getData());
                     break;
                 default:
                     return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
@@ -446,7 +457,7 @@ public class BoardHostingService
     }
 
     private class BoardRemoteBackupListener
-        implements BulletinBoardUploadListener
+        implements BulletinBoardBackupListener
     {
         private final NodeContext nodeContext;
         private final BackupBoardConfig backupConfig;
@@ -455,6 +466,20 @@ public class BoardHostingService
         {
             this.nodeContext = nodeContext;
             this.backupConfig = backupConfig;
+        }
+
+        @Override
+        public void cleared(BulletinBoard bulletinBoard)
+        {
+            try
+            {
+                nodeContext.getPeerMap().get(backupConfig.getNodeName()).sendMessage(CommandMessage.Type.CLEAR_BACKUP_BOARD, new BoardMessage(bulletinBoard.getName()));
+            }
+            catch (ServiceConnectionException e)
+            {
+                // TODO:
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
         }
 
         @Override
@@ -473,70 +498,25 @@ public class BoardHostingService
         }
     }
 
-    private class TransitTask
+    private class StartShuffleTask
         implements Runnable
     {
         private final NodeContext nodeContext;
-        private final BoardUploadMessage message;
+        private final PermuteAndMoveMessage startPandMmessage;
         private final BulletinBoardRegistry boardRegistry;
 
-        public TransitTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, BoardUploadMessage message)
+        public StartShuffleTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, PermuteAndMoveMessage startPandMmessage)
         {
             this.nodeContext = nodeContext;
             this.boardRegistry = boardRegistry;
-            this.message = message;
+            this.startPandMmessage = startPandMmessage;
         }
 
+        @Override
         public void run()
         {
-            if (boardRegistry.hasBoard(message.getBoardName()))
-            {
-                boardRegistry.getBoard(message.getBoardName()).postMessage(message.getData());
-            }
-            else
-            {
-                boardRegistry.getTransitBoard(message.getBoardName()).postMessage(message.getData());
-            }
-        }
-    }
-
-    public class UploadTask
-        implements Runnable
-    {
-        private final NodeContext nodeContext;
-        private final BoardUploadMessage message;
-        private final BulletinBoardRegistry boardRegistry;
-
-        public UploadTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, BoardUploadMessage message)
-        {
-            this.nodeContext = nodeContext;
-            this.boardRegistry = boardRegistry;
-            this.message = message;
-        }
-
-        public void run()
-        {
-            boardRegistry.getBoard(message.getBoardName()).postMessage(message.getData());
-        }
-    }
-
-    public class UploadIndexedTask
-        implements Runnable
-    {
-        private final NodeContext nodeContext;
-        private final BoardUploadIndexedMessage message;
-        private final BulletinBoardRegistry boardRegistry;
-
-        public UploadIndexedTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, BoardUploadIndexedMessage message)
-        {
-            this.nodeContext = nodeContext;
-            this.boardRegistry = boardRegistry;
-            this.message = message;
-        }
-
-        public void run()
-        {
-            boardRegistry.getBackupBoard(message.getBoardName()).postMessage(message.getData());
+            boardRegistry.moveToTransit(startPandMmessage.getBoardName());
+            new TransformShuffleAndMoveTask(nodeContext, boardRegistry, startPandMmessage).run();
         }
     }
 }

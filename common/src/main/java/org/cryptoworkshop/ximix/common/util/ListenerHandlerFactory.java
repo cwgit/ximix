@@ -15,72 +15,7 @@
  */
 package org.cryptoworkshop.ximix.common.util;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.List;
-
-public class ListenerHandlerFactory
+public interface ListenerHandlerFactory
 {
-    private final List listeners = new ArrayList();
-
-    public ListenerHandlerFactory()
-    {
-
-    }
-
-    public <T> ListenerHandler<T> createHandler(Class<T> listenerClass)
-    {
-        return new Handler<T>(listenerClass);
-    }
-
-    private class Handler<T>
-        implements ListenerHandler<T>
-    {
-        private final Class<T> listenerClass;
-
-        public Handler(Class<T> listenerClass)
-        {
-            this.listenerClass = listenerClass;
-        }
-
-        @Override
-        public void addListener(T listener)
-        {
-            synchronized (listeners)
-            {
-                listeners.add(listener);
-            }
-        }
-
-        @Override
-        public T getNotifier()
-        {
-            return (T)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{listenerClass}, this);
-        }
-
-        @Override
-        public Object invoke(final Object o, final Method method, final Object[] objects)
-            throws Throwable
-        {
-            synchronized (listeners)
-            {
-                for (Object listener : listeners)
-                {
-                    try
-                    {
-                        method.invoke(listener, objects);
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();  //TODO: but needs to be logged somewhere!
-                    }
-
-                }
-            }
-
-            return null;
-        }
-
-    }
+    <T> ListenerHandler<T> createHandler(Class<T> listenerClass);
 }

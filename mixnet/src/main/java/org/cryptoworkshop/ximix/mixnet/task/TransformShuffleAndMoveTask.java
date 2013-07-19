@@ -55,6 +55,8 @@ public class TransformShuffleAndMoveTask
         {
             List<byte[]> transformedMessages = new ArrayList<byte[]>();
 
+            ServicesConnection peerConnection = nodeContext.getPeerMap().get(message.getDestinationNode());
+
             if (message.getKeyID() != null)
             {
                 transform.init(PublicKeyFactory.createKey(nodeContext.getPublicKey(message.getKeyID())));
@@ -63,26 +65,24 @@ public class TransformShuffleAndMoveTask
                 {
                     byte[] transformed = transform.transform(message);
 
-                    transformedMessages.add(transformed);
+                    MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadMessage(board.getName(), message));
+
+                    if (reply.getType() != MessageReply.Type.OKAY)
+                    {
+                        throw new ServiceConnectionException("message failed");
+                    }
                 }
             }
             else
             {
                 for (byte[] message : board)
                 {
-                    transformedMessages.add(message);
-                }
-            }
+                    MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadMessage(board.getName(), message));
 
-            ServicesConnection peerConnection = nodeContext.getPeerMap().get(message.getDestinationNode());
-
-            for (byte[] message : transformedMessages)
-            {
-                MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadMessage(board.getName(), message));
-
-                if (reply.getType() != MessageReply.Type.OKAY)
-                {
-                    throw new ServiceConnectionException("message failed");
+                    if (reply.getType() != MessageReply.Type.OKAY)
+                    {
+                        throw new ServiceConnectionException("message failed");
+                    }
                 }
             }
 
@@ -97,11 +97,16 @@ public class TransformShuffleAndMoveTask
         }
         catch (ServiceConnectionException e)
         {
+            e.printStackTrace();
             // TODO: log?
         }
         catch (IOException e)
         {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        catch (RuntimeException e)
+        {
+            e.printStackTrace();
         }
     }
 }

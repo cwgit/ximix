@@ -82,5 +82,8 @@ public class BoardUploadIndexedMessage
         return data;
     }
 
-
+    public int getIndex()
+    {
+        return index;
+    }
 }

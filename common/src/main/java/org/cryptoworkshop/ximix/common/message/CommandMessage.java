@@ -33,6 +33,7 @@ public class CommandMessage
         MOVE_BOARD_TO_NODE,
         TRANSFER_TO_BOARD,
         TRANSFER_TO_BOARD_ENDED,
+        CLEAR_BACKUP_BOARD,
         TRANSFER_TO_BACKUP_BOARD,
         FETCH_BOARD_STATUS,
         SUSPEND_BOARD,
