@@ -39,7 +39,7 @@ import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.message.ShareMessage;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
@@ -69,8 +69,8 @@ public class CryptoServicesTest
         try
         {
             Set<String> peers = new HashSet(Arrays.asList("A", "B", "C"));
-            ECKeyGenParams kGenParams = new ECKeyGenParams("EC_KEY", BigInteger.valueOf(1000001), "secp256r1", 4, peers);
-            ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(KeyType.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
+            ECKeyGenParams kGenParams = new ECKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
+            ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
 
             Assert.fail("no exception!");
         }
@@ -92,8 +92,8 @@ public class CryptoServicesTest
         XimixNodeContext context = contextMap.get("A");
 
         Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
-        ECKeyGenParams kGenParams = new ECKeyGenParams("EC_KEY", BigInteger.valueOf(1000001), "secp256r1", 4, peers);
-        ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(KeyType.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
+        ECKeyGenParams kGenParams = new ECKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
+        ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
 
         Assert.assertEquals(5, messages.length);
 
@@ -119,9 +119,9 @@ public class CryptoServicesTest
 
         final ServicesConnection connection = context.getPeerMap().get("B");
         final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
-        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(KeyType.EC_ELGAMAL, "ECKEY", new KeyGenParams("secp256r1"), 3, peers);
+        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(Algorithm.EC_ELGAMAL, "ECKEY", new KeyGenParams("secp256r1"), 3, peers);
 
-        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(KeyType.EC_ELGAMAL, ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage));
+        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(Algorithm.EC_ELGAMAL, ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage));
 
         Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
 

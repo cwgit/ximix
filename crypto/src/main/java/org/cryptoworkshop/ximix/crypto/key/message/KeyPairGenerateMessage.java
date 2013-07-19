@@ -22,16 +22,16 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 
 public class KeyPairGenerateMessage
     extends ASN1Object
 {
-    private final KeyType algorithm;
+    private final Algorithm algorithm;
     private final Enum type;
     private final ASN1Encodable payload;
 
-    public KeyPairGenerateMessage(KeyType algorithm, Enum type, ASN1Encodable payload)
+    public KeyPairGenerateMessage(Algorithm algorithm, Enum type, ASN1Encodable payload)
     {
         this.algorithm = algorithm;
         this.type = type;
@@ -40,7 +40,7 @@ public class KeyPairGenerateMessage
 
     private KeyPairGenerateMessage(Enum[] types, ASN1Sequence seq)
     {
-        this.algorithm = KeyType.values()[ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue()];
+        this.algorithm = Algorithm.values()[ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue()];
         this.type = types[ASN1Integer.getInstance(seq.getObjectAt(1)).getValue().intValue()];
         this.payload = seq.getObjectAt(2);
     }
@@ -76,7 +76,7 @@ public class KeyPairGenerateMessage
         return payload;
     }
 
-    public KeyType getAlgorithm()
+    public Algorithm getAlgorithm()
     {
         return algorithm;
     }

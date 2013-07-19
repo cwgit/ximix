@@ -24,8 +24,9 @@ import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.message.ShareMessage;
+import org.cryptoworkshop.ximix.common.message.StoreMessage;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -102,7 +103,7 @@ public class BLSKeyPairGenerator
 
                 if (involvedPeers.contains(nodeContext.getName()))
                 {
-                    ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
+                    ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(Algorithm.EC_ELGAMAL);
 
                     ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
 
@@ -111,11 +112,11 @@ public class BLSKeyPairGenerator
 
                 return new MessageReply(MessageReply.Type.OKAY);
             case STORE_SHARE:
-                StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
+                StoreMessage sssMessage = StoreMessage.getInstance(message.getPayload());
 
                 // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
                 // till we can validate them.
-                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
+                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(Algorithm.EC_ELGAMAL);
 
                 nodeContext.execute(new StoreShareTask(generator, sssMessage.getID(), sssMessage.getSecretShareMessage()));
 
@@ -207,7 +208,7 @@ public class BLSKeyPairGenerator
                         {
                             try
                             {
-                                MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.STORE_SHARE, new StoreSecretShareMessage(keyID, counter, messages[counter]));
+                                MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.STORE_SHARE, new StoreMessage(keyID, new ShareMessage(counter, messages[counter])));
                             }
                             catch (ServiceConnectionException e)
                             {
@@ -285,7 +286,7 @@ public class BLSKeyPairGenerator
                             {
                                 try
                                 {
-                                    MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.STORE_SHARE, new StoreSecretShareMessage(keyID, counter, messages[counter]));
+                                    MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.STORE_SHARE, new StoreMessage(keyID, new ShareMessage(counter, messages[counter])));
                                 }
                                 catch (ServiceConnectionException e)
                                 {

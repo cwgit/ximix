@@ -74,8 +74,8 @@ import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
@@ -141,7 +141,7 @@ public class ECKeyManager
         return signingKeys.contains(keyID);
     }
 
-    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, KeyType algorithm, int numberOfPeers, ECKeyGenParams keyGenParams)
+    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, ECKeyGenParams keyGenParams)
     {
         ECDomainParameters domainParameters = paramsMap.get(keyID);
 
@@ -158,7 +158,7 @@ public class ECKeyManager
             sharedPrivateKeyMap.init(keyID, numberOfPeers);
             sharedPublicKeyMap.init(keyID, numberOfPeers);
 
-            if (algorithm.equals(KeyType.ECDSA))
+            if (algorithm.equals(Algorithm.ECDSA))
             {
                 signingKeys.add(keyID);
             }

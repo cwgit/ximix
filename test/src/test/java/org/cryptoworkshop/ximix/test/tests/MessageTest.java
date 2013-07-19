@@ -1,15 +1,19 @@
 package org.cryptoworkshop.ximix.test.tests;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
+
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DEROutputStream;
-import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
+import org.cryptoworkshop.ximix.common.message.BoardErrorStatusMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
+import org.cryptoworkshop.ximix.common.message.PermuteMessage;
 import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
 
 /**
  * Basic testing concerning messaging.
@@ -127,29 +131,6 @@ public class MessageTest extends TestCase
         TestCase.assertEquals(msg.getBoardName(), res.getBoardName());
         TestCase.assertEquals(msg.getStatus(), res.getStatus());
    }
-
-
-    @Test
-    public void testStorePointShareMessage_1()
-        throws Exception
-    {
-        StorePointShareMessage msg = new StorePointShareMessage("foo", new ASN1Integer(1));
-
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        DEROutputStream derOut = new DEROutputStream(bos);
-
-        derOut.writeObject(msg.toASN1Primitive());
-
-        ByteArrayInputStream bin = new ByteArrayInputStream(bos.toByteArray());
-        ASN1InputStream din = new ASN1InputStream(bin);
-
-        StorePointShareMessage res = StorePointShareMessage.getInstance(din.readObject());
-
-
-        TestCase.assertEquals(msg.getKeyID(), res.getKeyID());
-        TestCase.assertEquals(msg.getSecretShareMessage(), res.getSecretShareMessage());
-    }
-
 
     @Test
     public void testBigIntegerMessage_1()

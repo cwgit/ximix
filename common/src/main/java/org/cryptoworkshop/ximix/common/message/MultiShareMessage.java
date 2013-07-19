@@ -17,52 +17,42 @@ package org.cryptoworkshop.ximix.common.message;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERUTF8String;
 
-public class StorePointShareMessage
+public class MultiShareMessage
     extends ASN1Object
 {
-    private final String keyID;
-    private final ASN1Encodable secretShareMessage;
+    private final ASN1Sequence shareData;
+    private final int sequenceNo;
 
-    public StorePointShareMessage(String keyID, ASN1Encodable secretShareMessage)
+    public MultiShareMessage(int sequenceNo, ASN1Encodable... shareData)
     {
-        this.keyID = keyID;
-        this.secretShareMessage = secretShareMessage;
+        this.sequenceNo = sequenceNo;
+        this.shareData = new DERSequence(shareData);
     }
 
-    public StorePointShareMessage(ASN1Sequence sequence)
+    private MultiShareMessage(ASN1Sequence seq)
     {
-        this.keyID = DERUTF8String.getInstance(sequence.getObjectAt(0)).getString();
-        this.secretShareMessage = sequence.getObjectAt(1);
+        this.sequenceNo = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue();
+        this.shareData = ASN1Sequence.getInstance(seq.getObjectAt(1));
     }
 
-    public static final StorePointShareMessage getInstance(Object o)
+    public static final MultiShareMessage getInstance(Object o)
     {
-        if (o instanceof StorePointShareMessage)
+        if (o instanceof MultiShareMessage)
         {
-            return (StorePointShareMessage)o;
+            return (MultiShareMessage)o;
         }
         else if (o != null)
         {
-            return new StorePointShareMessage(ASN1Sequence.getInstance(o));
+            return new MultiShareMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
-    }
-
-    public String getKeyID()
-    {
-        return keyID;
-    }
-
-    public ASN1Encodable getSecretShareMessage()
-    {
-        return secretShareMessage;
     }
 
     @Override
@@ -70,10 +60,19 @@ public class StorePointShareMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new DERUTF8String(keyID));
-        v.add(secretShareMessage);
+        v.add(new ASN1Integer(sequenceNo));
+        v.add(shareData);
 
         return new DERSequence(v);
+    }
 
+    public int getSequenceNo()
+    {
+        return sequenceNo;
+    }
+
+    public ASN1Encodable getShareData(int index)
+    {
+        return shareData.getObjectAt(index);
     }
 }

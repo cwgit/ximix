@@ -15,19 +15,19 @@
  */
 package org.cryptoworkshop.ximix.crypto;
 
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 
 public class KeyGenerationOptions
 {
     public static class Builder
     {
-        private final KeyType algorithm;
+        private final Algorithm algorithm;
         private final String[] parameters;
 
         private int threshold;
         private String[] nodesToUse;
 
-        public Builder(KeyType algorithm, String... parameters)
+        public Builder(Algorithm algorithm, String... parameters)
         {
             this.algorithm = algorithm;
             this.parameters = parameters;
@@ -53,7 +53,7 @@ public class KeyGenerationOptions
         }
     }
 
-    private final KeyType algorithm;
+    private final Algorithm algorithm;
     private final String[] parameters;
     private final int threshold;
     private final String[] nodesToUse;
@@ -66,7 +66,7 @@ public class KeyGenerationOptions
         this.nodesToUse = builder.nodesToUse;
     }
 
-    public KeyType getAlgorithm()
+    public Algorithm getAlgorithm()
     {
         return algorithm;
     }

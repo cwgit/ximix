@@ -1,6 +1,6 @@
 package org.cryptoworkshop.ximix.common.service;
 
-public enum KeyType
+public enum Algorithm
 {
     EC_ELGAMAL,
     ECDSA,

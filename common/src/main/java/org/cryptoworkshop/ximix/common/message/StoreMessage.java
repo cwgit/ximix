@@ -17,43 +17,39 @@ package org.cryptoworkshop.ximix.common.message;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class StoreSecretShareMessage
+public class StoreMessage
     extends ASN1Object
 {
     private final String id;
     private final ASN1Encodable secretShareMessage;
-    private final int sequenceNo;
 
-    public StoreSecretShareMessage(String id, int sequenceNo, ASN1Encodable secretShareMessage)
+    public StoreMessage(String id, ASN1Encodable secretShareMessage)
     {
         this.id = id;
-        this.sequenceNo = sequenceNo;
         this.secretShareMessage = secretShareMessage;
     }
 
-    public StoreSecretShareMessage(ASN1Sequence sequence)
+    public StoreMessage(ASN1Sequence sequence)
     {
         this.id = DERUTF8String.getInstance(sequence.getObjectAt(0)).getString();
-        this.sequenceNo = ASN1Integer.getInstance(sequence.getObjectAt(1)).getValue().intValue();
-        this.secretShareMessage = sequence.getObjectAt(2);
+        this.secretShareMessage = sequence.getObjectAt(1);
     }
 
-    public static final StoreSecretShareMessage getInstance(Object o)
+    public static final StoreMessage getInstance(Object o)
     {
-        if (o instanceof StoreSecretShareMessage)
+        if (o instanceof StoreMessage)
         {
-            return (StoreSecretShareMessage)o;
+            return (StoreMessage)o;
         }
         else if (o != null)
         {
-            return new StoreSecretShareMessage(ASN1Sequence.getInstance(o));
+            return new StoreMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -62,11 +58,6 @@ public class StoreSecretShareMessage
     public String getID()
     {
         return id;
-    }
-
-    public int getSequenceNo()
-    {
-        return sequenceNo;
     }
 
     public ASN1Encodable getSecretShareMessage()
@@ -80,7 +71,6 @@ public class StoreSecretShareMessage
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new DERUTF8String(id));
-        v.add(new ASN1Integer(sequenceNo));
         v.add(secretShareMessage);
 
         return new DERSequence(v);

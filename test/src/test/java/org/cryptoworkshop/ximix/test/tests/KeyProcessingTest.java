@@ -33,7 +33,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
 import org.cryptoworkshop.ximix.common.operation.Operation;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
@@ -125,7 +125,7 @@ public class KeyProcessingTest extends TestCase
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
-        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
+        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.EC_ELGAMAL, "secp256r1")
             .withThreshold(3)
             .withNodes("A", "B", "C", "D", "E" )
             .build();
@@ -233,7 +233,6 @@ public class KeyProcessingTest extends TestCase
 
         TestCase.assertTrue(encryptLatch.await(20, TimeUnit.SECONDS));
 
-
         TestCase.assertNotSame("Failed and complete must be different.", downloadBoardFailed.get(), downloadBoardCompleted.get());
         TestCase.assertTrue("Complete method called in DownloadOperationListener", downloadBoardCompleted.get());
         TestCase.assertFalse("Not failed.", downloadBoardFailed.get());
@@ -285,7 +284,7 @@ public class KeyProcessingTest extends TestCase
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
-        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
+        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.EC_ELGAMAL, "secp256r1")
             .withThreshold(4)
             .withNodes("A", "B", "C", "D", "E")
             .build();
@@ -505,7 +504,7 @@ public class KeyProcessingTest extends TestCase
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
-        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
+        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.EC_ELGAMAL, "secp256r1")
             .withThreshold(4)
             .withNodes("A", "B", "C", "D", "E")
             .build();

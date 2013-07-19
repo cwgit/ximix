@@ -15,19 +15,19 @@
  */
 package org.cryptoworkshop.ximix.crypto;
 
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 
 public class SignatureGenerationOptions
 {
     public static class Builder
     {
-        private final KeyType algorithm;
+        private final Algorithm algorithm;
         private final String[] parameters;
 
         private int threshold;
         private String[] nodesToUse;
 
-        public Builder(KeyType algorithm, String... parameters)
+        public Builder(Algorithm algorithm, String... parameters)
         {
             this.algorithm = algorithm;
             this.parameters = parameters;
@@ -49,21 +49,13 @@ public class SignatureGenerationOptions
         /**
          * Specify the list of possible nodes to take part in the signing.
          * <p>
-         * Note: if the algorithm requires secret multiplication this will be twice as many nodes as
-         * normally required to meet the private key's threshold.
+         * Note: the number of nodes needs to be at least at the threshold for the key.
          * </p>
          * @param nodesToUse the names of the nodes to use.
          * @return the current builder.
          */
         public Builder withNodes(String... nodesToUse)
         {
-            if (algorithm == KeyType.ECDSA)
-            {
-                if (nodesToUse.length < 2 * threshold)
-                {
-                    throw new IllegalArgumentException("ECDSA requires twice the number of nodes for a given threshold.");
-                }
-            }
             this.nodesToUse = nodesToUse;
 
             return this;
@@ -75,7 +67,7 @@ public class SignatureGenerationOptions
         }
     }
 
-    private final KeyType algorithm;
+    private final Algorithm algorithm;
     private final String[] parameters;
     private final int threshold;
     private final String[] nodesToUse;
@@ -88,7 +80,7 @@ public class SignatureGenerationOptions
         this.nodesToUse = builder.nodesToUse;
     }
 
-    public KeyType getAlgorithm()
+    public Algorithm getAlgorithm()
     {
         return algorithm;
     }

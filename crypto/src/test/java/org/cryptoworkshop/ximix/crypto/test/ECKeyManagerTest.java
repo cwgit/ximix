@@ -35,8 +35,8 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
@@ -67,11 +67,11 @@ public class ECKeyManagerTest
     {
         ECKeyManager keyManager = new ECKeyManager(new MyNodeContext());
 
-        keyManager.generateKeyPair("Test1", KeyType.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
+        keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
 
         try
         {
-            keyManager.generateKeyPair("Test1", KeyType.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
+            keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
 
             Assert.fail("duplicate key not detected");
         }
@@ -87,7 +87,7 @@ public class ECKeyManagerTest
     {
         ECKeyManager keyManager = new ECKeyManager(new MyNodeContext());
 
-        AsymmetricCipherKeyPair kp = keyManager.generateKeyPair("Test1", KeyType.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
+        AsymmetricCipherKeyPair kp = keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)kp.getPrivate();
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)kp.getPublic();
         ECPoint h = pubKey.getParameters().getG().multiply(BigInteger.ONE);
@@ -110,7 +110,7 @@ public class ECKeyManagerTest
         throws Exception
     {
         ECKeyManager keyManager = new ECKeyManager(new MyNodeContext());
-        AsymmetricCipherKeyPair kp = keyManager.generateKeyPair("Test1", KeyType.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
+        AsymmetricCipherKeyPair kp = keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)kp.getPrivate();
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)kp.getPublic();
         ECPoint h = pubKey.getParameters().getG().multiply(BigInteger.ONE);
@@ -147,7 +147,7 @@ public class ECKeyManagerTest
         throws Exception
     {
         ECKeyManager keyManager = new ECKeyManager(new MyNodeContext());
-        AsymmetricCipherKeyPair kp1 = keyManager.generateKeyPair("Test1", KeyType.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
+        AsymmetricCipherKeyPair kp1 = keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new ECKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)kp1.getPrivate();
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)kp1.getPublic();
         ECPoint h = pubKey.getParameters().getG().multiply(BigInteger.ONE);
@@ -155,7 +155,7 @@ public class ECKeyManagerTest
 
         keyManager.buildSharedKey("Test1", new ECCommittedSecretShareMessage(0, privKey.getD(), BigInteger.ONE, new ECPoint[] { commitment }, pubKey.getQ(), new ECPoint[] { pubKey.getQ() }));
 
-        AsymmetricCipherKeyPair kp2 = keyManager.generateKeyPair("Test2", KeyType.ECDSA, 1, new ECKeyGenParams("Test1", BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
+        AsymmetricCipherKeyPair kp2 = keyManager.generateKeyPair("Test2", Algorithm.ECDSA, 1, new ECKeyGenParams("Test1", Algorithm.ECDSA, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_SET));
         privKey = (ECPrivateKeyParameters)kp2.getPrivate();
         pubKey = (ECPublicKeyParameters)kp2.getPublic();
         commitment = pubKey.getParameters().getG().multiply(privKey.getD()).add(h);
@@ -276,7 +276,7 @@ public class ECKeyManagerTest
         }
 
         @Override
-        public ThresholdKeyPairGenerator getKeyPairGenerator(KeyType algorithm)
+        public ThresholdKeyPairGenerator getKeyPairGenerator(Algorithm algorithm)
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }

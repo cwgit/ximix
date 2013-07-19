@@ -1,9 +1,9 @@
 package org.cryptoworkshop.ximix.test.tests;
 
 import junit.framework.TestCase;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
-import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
@@ -31,7 +31,7 @@ public class RegistrarTest
         try
         {
 
-            KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
+            KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.EC_ELGAMAL, "secp256r1")
                 .withThreshold(2)
                 .withNodes("A", "B")
                 .build();

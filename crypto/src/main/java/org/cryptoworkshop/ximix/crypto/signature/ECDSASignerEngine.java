@@ -40,9 +40,9 @@ import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
-import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
+import org.cryptoworkshop.ximix.common.message.StoreMessage;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -103,7 +103,7 @@ public class ECDSASignerEngine
 
     public ECDSASignerEngine(NodeContext nodeContext)
     {
-        super(KeyType.ECDSA, nodeContext);
+        super(Algorithm.ECDSA, nodeContext);
 
         this.sharedKMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
         this.sharedPMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
@@ -116,6 +116,7 @@ public class ECDSASignerEngine
     {
         try
         {
+            System.err.println("node: " + nodeContext.getName() + " " + message.getType().name());
             switch ((Type)message.getType())
             {
             case GENERATE:
@@ -178,7 +179,7 @@ public class ECDSASignerEngine
                 return new MessageReply(MessageReply.Type.OKAY, new DERSequence(v));
             case FETCH_SEQUENCE_NO:
                 KeyIDMessage keyIDMessage = KeyIDMessage.getInstance(message.getPayload());
-
+                 System.err.println("returning sequence number for " + nodeContext.getName() + " " + nodeContext.getPrivateKeyOperator(keyIDMessage.getKeyID()).getSequenceNo());
                 return new MessageReply(MessageReply.Type.OKAY, new BigIntegerMessage(BigInteger.valueOf(nodeContext.getPrivateKeyOperator(keyIDMessage.getKeyID()).getSequenceNo())));
             case INIT_K_AND_P:
                 generateAndSendKAndP(message);
@@ -221,13 +222,14 @@ public class ECDSASignerEngine
 
                 return new MessageReply(MessageReply.Type.OKAY);
             case STORE_P:
-                StoreSecretShareMessage storeMessage = StoreSecretShareMessage.getInstance(message.getPayload());
-                ECDSAPointMessage  pointMessage = ECDSAPointMessage.getInstance(storeMessage.getSecretShareMessage());
+                StoreMessage storeMessage = StoreMessage.getInstance(message.getPayload());
+                ShareMessage            shareMessage = ShareMessage.getInstance(storeMessage.getSecretShareMessage());
+                ECDSAPointMessage       pointMessage = ECDSAPointMessage.getInstance(shareMessage.getShareData());
 
                 sigID = new SigID(storeMessage.getID());
                 domainParams = paramsMap.get(pointMessage.getKeyID());
 
-                sharedPMap.addValue(sigID, new ECPointShare(storeMessage.getSequenceNo(), domainParams.getCurve().decodePoint(pointMessage.getPoint())));
+                sharedPMap.addValue(sigID, new ECPointShare(shareMessage.getSequenceNo(), domainParams.getCurve().decodePoint(pointMessage.getPoint())));
 
                 return new MessageReply(MessageReply.Type.OKAY);
             case FETCH_P:
@@ -298,10 +300,11 @@ public class ECDSASignerEngine
 
     private void addValue(ShareMap sharedValueTable, SignatureMessage message)
     {
-        StoreSecretShareMessage storeMessage = StoreSecretShareMessage.getInstance(message.getPayload());
+        StoreMessage storeMessage = StoreMessage.getInstance(message.getPayload());
         SigID sigID = new SigID(storeMessage.getID());
+        ShareMessage shareMessage = ShareMessage.getInstance(storeMessage.getSecretShareMessage());
 
-        sharedValueTable.addValue(sigID, new BigIntegerShare(storeMessage.getSequenceNo(), ASN1Integer.getInstance(storeMessage.getSecretShareMessage()).getValue()));
+        sharedValueTable.addValue(sigID, new BigIntegerShare(shareMessage.getSequenceNo(), BigIntegerMessage.getInstance(shareMessage.getShareData()).getValue()));
     }
 
     private void generateAndSendKAndP(SignatureMessage message)
@@ -360,7 +363,7 @@ public class ECDSASignerEngine
             }
         }
 
-        return numberOfPeers + 1; // number of peers is one more than highest sequence number
+        return (numberOfPeers + 1) * 2; // number of peers is one more than highest sequence number
     }
 
     private void generateAndSendA(SignatureMessage message)
@@ -508,6 +511,8 @@ public class ECDSASignerEngine
 
         public void run()
         {
+            try
+            {
             for (final Participant participant : peers)
             {
                 if (participant.equals(nodeContext.getName()))
@@ -522,7 +527,7 @@ public class ECDSASignerEngine
                         {
                             try
                             {
-                                MessageReply rep = sendMessage(participant.getName(), type, new StoreSecretShareMessage(sigID.getID(), participant.getSequenceNo(), new ASN1Integer(messages[participant.getSequenceNo()])));
+                                MessageReply rep = sendMessage(participant.getName(), type, new StoreMessage(sigID.getID(), new ShareMessage(participant.getSequenceNo(), new BigIntegerMessage(messages[participant.getSequenceNo()]))));
                             }
                             catch (ServiceConnectionException e)
                             {
@@ -532,6 +537,11 @@ public class ECDSASignerEngine
                     });
 
                 }
+            }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
             }
         }
     }
@@ -572,7 +582,7 @@ public class ECDSASignerEngine
                         {
                             try
                             {
-                                MessageReply rep = sendMessage(node.getName(), Type.STORE_P, new StoreSecretShareMessage(sigID.getID(), node.getSequenceNo(), new ECDSAPointMessage(keyID, p)));
+                                MessageReply rep = sendMessage(node.getName(), Type.STORE_P, new StoreMessage(sigID.getID(), new ShareMessage(node.getSequenceNo(), new ECDSAPointMessage(keyID, p))));
                             }
                             catch (ServiceConnectionException e)
                             {

@@ -31,7 +31,7 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.client.KeyService;
 import org.cryptoworkshop.ximix.crypto.client.SigningService;
@@ -110,7 +110,7 @@ public class Main
 
         sha256.doFinal(hash, 0);
 
-        SignatureGenerationOptions sigGenOptions = new SignatureGenerationOptions.Builder(KeyType.ECDSA)
+        SignatureGenerationOptions sigGenOptions = new SignatureGenerationOptions.Builder(Algorithm.ECDSA)
             .withThreshold(2)
             .withNodes("A", "B", "C", "D")
             .build();

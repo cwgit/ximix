@@ -12,7 +12,7 @@ import org.cryptoworkshop.ximix.common.message.ECPointMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
@@ -20,16 +20,16 @@ import org.cryptoworkshop.ximix.crypto.util.Participant;
 
 public abstract class SignerEngine
 {
-    protected final KeyType algorithm;
+    protected final Algorithm algorithm;
     protected final NodeContext nodeContext;
 
-    protected SignerEngine(KeyType algorithm, NodeContext nodeContext)
+    protected SignerEngine(Algorithm algorithm, NodeContext nodeContext)
     {
         this.algorithm = algorithm;
         this.nodeContext = nodeContext;
     }
 
-    public KeyType getAlgorithm()
+    public Algorithm getAlgorithm()
     {
         return algorithm;
     }

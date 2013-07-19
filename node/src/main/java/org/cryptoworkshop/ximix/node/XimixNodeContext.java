@@ -47,8 +47,8 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.NodeInfo;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.KeyType;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
@@ -272,14 +272,14 @@ public class XimixNodeContext
     }
 
     @Override
-    public ThresholdKeyPairGenerator getKeyPairGenerator(KeyType keyType)
+    public ThresholdKeyPairGenerator getKeyPairGenerator(Algorithm algorithm)
     {
-        if (keyType == KeyType.BLS)
+        if (algorithm == Algorithm.BLS)
         {
-            return new BLSNewDKGGenerator(keyType, blsKeyManager);
+            return new BLSNewDKGGenerator(algorithm, blsKeyManager);
         }
 
-        return new ECNewDKGGenerator(keyType, ecKeyManager);
+        return new ECNewDKGGenerator(algorithm, ecKeyManager);
     }
 
     @Override

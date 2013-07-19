@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 
 public class ECKeyGenParams
     extends KeyGenerationParameters
@@ -37,12 +38,14 @@ public class ECKeyGenParams
     private final String keyID;
     private final int threshold;
     private final Set<String> nodesToUse;
+    private final Algorithm algorithm;
 
 
-    public ECKeyGenParams(String keyID, BigInteger h, String domainParameters, int threshold, Set<String> nodesToUse)
+    public ECKeyGenParams(String keyID, Algorithm algorithm, BigInteger h, String domainParameters, int threshold, Set<String> nodesToUse)
     {
         super(EC_REG_CURVE);
         this.keyID = keyID;
+        this.algorithm = algorithm;
         this.domainParameters = domainParameters;
         this.h = h;
         this.threshold = threshold;
@@ -53,10 +56,11 @@ public class ECKeyGenParams
     {
         super(EC_REG_CURVE);
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
-        this.domainParameters = DERUTF8String.getInstance(seq.getObjectAt(2)).getString();
-        this.h = ASN1Integer.getInstance(seq.getObjectAt(3)).getValue();
-        this.threshold = ASN1Integer.getInstance(seq.getObjectAt(4)).getValue().intValue();
-        this.nodesToUse = toOrderedSet(ASN1Sequence.getInstance(seq.getObjectAt(5)));
+        this.algorithm = Algorithm.values()[ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue()];
+        this.domainParameters = DERUTF8String.getInstance(seq.getObjectAt(3)).getString();
+        this.h = ASN1Integer.getInstance(seq.getObjectAt(4)).getValue();
+        this.threshold = ASN1Integer.getInstance(seq.getObjectAt(5)).getValue().intValue();
+        this.nodesToUse = toOrderedSet(ASN1Sequence.getInstance(seq.getObjectAt(6)));
     }
 
     @Override
@@ -66,6 +70,7 @@ public class ECKeyGenParams
 
         v.add(new ASN1Integer(EC_REG_CURVE));
         v.add(new DERUTF8String(keyID));
+        v.add(new ASN1Integer(algorithm.ordinal()));
         v.add(new DERUTF8String(domainParameters));
         v.add(new ASN1Integer(h));
         v.add(new ASN1Integer(threshold));
@@ -121,6 +126,11 @@ public class ECKeyGenParams
     public int getThreshold()
     {
         return threshold;
+    }
+
+    public Algorithm getAlgorithm()
+    {
+        return algorithm;
     }
 
     private static class CaseInsensitiveComparator

@@ -24,8 +24,8 @@ import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
-import org.cryptoworkshop.ximix.common.message.StoreSecretShareMessage;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.message.StoreMessage;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
@@ -75,7 +75,7 @@ public class ECKeyPairGenerator
                     // Generate H, start everyone else      TODO generate H
                     //
                     ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(initiateMessage.getAlgorithm());
-                    ECKeyGenParams ecKeyGenParams = new ECKeyGenParams(initiateMessage.getKeyID(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
+                    ECKeyGenParams ecKeyGenParams = new ECKeyGenParams(initiateMessage.getKeyID(), initiateMessage.getAlgorithm(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
                     ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
 
                     nodeContext.execute(new SendShareTask(generator, message.getAlgorithm(), ecKeyGenParams.getKeyID(), ecKeyGenParams.getNodesToUse(), messages));
@@ -96,7 +96,7 @@ public class ECKeyPairGenerator
 
                 if (involvedPeers.contains(nodeContext.getName()))
                 {
-                    ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
+                    ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(ecKeyGenParams.getAlgorithm());
 
                     ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
 
@@ -105,11 +105,11 @@ public class ECKeyPairGenerator
 
                 return new MessageReply(MessageReply.Type.OKAY);
             case STORE:
-                StoreSecretShareMessage sssMessage = StoreSecretShareMessage.getInstance(message.getPayload());
+                StoreMessage sssMessage = StoreMessage.getInstance(message.getPayload());
 
                 // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
                 // till we can validate them.
-                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(KeyType.EC_ELGAMAL);
+                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(Algorithm.EC_ELGAMAL);
 
                 nodeContext.execute(new StoreShareTask(generator, sssMessage.getID(), sssMessage.getSecretShareMessage()));
 
@@ -131,9 +131,9 @@ public class ECKeyPairGenerator
     {
         private final ECKeyGenParams initiateMessage;
         private final Set<String> peersToInitiate;
-        private final KeyType algorithm;
+        private final Algorithm algorithm;
 
-        InitiateKeyGenTask( KeyType algorithm, ECKeyGenParams initiateMessage)
+        InitiateKeyGenTask( Algorithm algorithm, ECKeyGenParams initiateMessage)
         {
             this.algorithm = algorithm;
             this.initiateMessage = initiateMessage;
@@ -167,9 +167,9 @@ public class ECKeyPairGenerator
         private final String keyID;
         private final Set<String> peers;
         private final ECCommittedSecretShareMessage[] messages;
-        private final KeyType algorithm;
+        private final Algorithm algorithm;
 
-        SendShareTask(ECNewDKGGenerator generator, KeyType algorithm, String keyID, Set<String> peers, ECCommittedSecretShareMessage[] messages)
+        SendShareTask(ECNewDKGGenerator generator, Algorithm algorithm, String keyID, Set<String> peers, ECCommittedSecretShareMessage[] messages)
         {
             this.generator = generator;
             this.algorithm = algorithm;
@@ -181,31 +181,64 @@ public class ECKeyPairGenerator
         public void run()
         {
             int index = 0;
-            for (final String name : peers)
-            {
-                System.err.println("sending: " + nodeContext.getName() + " to " + name);
-                if (name.equals(nodeContext.getName()))
-                {
-                    generator.storeThresholdKeyShare(keyID, messages[index++]);
-                }
-                else
-                {
-                    final int counter = index++;
-                    nodeContext.execute(new Runnable()
-                    {
-                        public void run()
-                        {
-                            try
-                            {
-                                MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(algorithm, Type.STORE, new StoreSecretShareMessage(keyID, counter, messages[counter])));
-                            }
-                            catch (ServiceConnectionException e)
-                            {
-                                e.printStackTrace(); // TODO handle.
-                            }
-                        }
-                    });
 
+            if (algorithm == Algorithm.ECDSA)
+            {
+                for (final String name : peers)
+                {
+                    if (name.equals(nodeContext.getName()))
+                    {
+                        generator.storeThresholdKeyShare(keyID, messages[index++], messages[index++]);
+                    }
+                    else
+                    {
+                        final int counter = index++;
+                        index++;
+                        nodeContext.execute(new Runnable()
+                        {
+                            public void run()
+                            {
+                                try
+                                {
+                                    MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(algorithm, Type.STORE, new StoreMessage(keyID, messages[counter])));
+                                }
+                                catch (ServiceConnectionException e)
+                                {
+                                    e.printStackTrace(); // TODO handle.
+                                }
+                            }
+                        });
+
+                    }
+                }
+            }
+            else
+            {
+                for (final String name : peers)
+                {
+                    if (name.equals(nodeContext.getName()))
+                    {
+                        generator.storeThresholdKeyShare(keyID, messages[index++]);
+                    }
+                    else
+                    {
+                        final int counter = index++;
+                        nodeContext.execute(new Runnable()
+                        {
+                            public void run()
+                            {
+                                try
+                                {
+                                    MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(algorithm, Type.STORE, new StoreMessage(keyID, messages[counter])));
+                                }
+                                catch (ServiceConnectionException e)
+                                {
+                                    e.printStackTrace(); // TODO handle.
+                                }
+                            }
+                        });
+
+                    }
                 }
             }
         }

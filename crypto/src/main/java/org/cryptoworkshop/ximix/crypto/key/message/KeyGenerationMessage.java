@@ -32,23 +32,23 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSet;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 
 public class KeyGenerationMessage
     extends ASN1Object
 {
-    private final KeyType algorithm;
+    private final Algorithm algorithm;
     private final Set<String> nodesToUse;
     private final String keyID;
     private final int threshold;
     private final KeyGenParams keyGenParameters;
 
-    public KeyGenerationMessage(KeyType algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, String... nodesToUse)
+    public KeyGenerationMessage(Algorithm algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, String... nodesToUse)
     {
         this(algorithm, keyID, keyGenParameters, threshold, new HashSet<>(Arrays.asList((String[])nodesToUse)));
     }
 
-    public KeyGenerationMessage(KeyType algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, Set<String> nodesToUse)
+    public KeyGenerationMessage(Algorithm algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, Set<String> nodesToUse)
     {
         // TODO: just in case order is important,,, trying to avoid this if possible.
         Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());
@@ -63,7 +63,7 @@ public class KeyGenerationMessage
 
     private KeyGenerationMessage(ASN1Sequence seq)
     {
-        this.algorithm = KeyType.values()[ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue()];
+        this.algorithm = Algorithm.values()[ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue()];
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.keyGenParameters = KeyGenParams.getInstance(seq.getObjectAt(2));
         this.threshold = ASN1Integer.getInstance(seq.getObjectAt(3)).getValue().intValue();
@@ -142,7 +142,7 @@ public class KeyGenerationMessage
         return new DLSet(v);
     }
 
-    public KeyType getAlgorithm()
+    public Algorithm getAlgorithm()
     {
         return algorithm;
     }

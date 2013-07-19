@@ -32,7 +32,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
 import org.cryptoworkshop.ximix.common.operation.Operation;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
@@ -120,7 +120,7 @@ public class PeersTest
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
-        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(KeyType.EC_ELGAMAL, "secp256r1")
+        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.EC_ELGAMAL, "secp256r1")
             .withThreshold(threshold)
             .withNodes(getPeerList(peerCount))
             .build();

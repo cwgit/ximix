@@ -23,7 +23,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.common.service.KeyType;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
@@ -34,10 +34,10 @@ import org.cryptoworkshop.ximix.crypto.threshold.ECNewDKGSecretSplitter;
 public class ECNewDKGGenerator
     implements ThresholdKeyPairGenerator
 {
-    private final KeyType algorithm;
+    private final Algorithm algorithm;
     private final ECKeyManager keyManager;
 
-    public ECNewDKGGenerator(KeyType algorithm, ECKeyManager keyManaged)
+    public ECNewDKGGenerator(Algorithm algorithm, ECKeyManager keyManaged)
     {
         this.algorithm = algorithm;
         keyManager = keyManaged;
@@ -54,7 +54,16 @@ public class ECNewDKGGenerator
         AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams);
 
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)keyPair.getPrivate();
-        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
+        ECNewDKGSecretSplitter secretSplitter;
+
+        if (algorithm == Algorithm.ECDSA)
+        {
+            secretSplitter = new ECNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size() * 2, ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
+        }
+        else
+        {
+            secretSplitter = new ECNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
+        }
 
         ECCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getD());
         ECCommittedSecretShare[] shares = splitSecret.getCommittedShares();
@@ -82,6 +91,18 @@ public class ECNewDKGGenerator
         try
         {
             keyManager.buildSharedKey(keyID, message);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void storeThresholdKeyShare(String keyID, ECCommittedSecretShareMessage message1, ECCommittedSecretShareMessage message2)
+    {
+        try
+        {
+            keyManager.buildSharedKey(keyID, message1);
         }
         catch (Exception e)
         {

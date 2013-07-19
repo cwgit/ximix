@@ -58,7 +58,7 @@ public interface NodeContext
 
     ScheduledExecutorService getScheduledExecutor();
 
-    ThresholdKeyPairGenerator getKeyPairGenerator(KeyType algorithm);
+    ThresholdKeyPairGenerator getKeyPairGenerator(Algorithm algorithm);
 
     String getBoardHost(String boardName);
 
