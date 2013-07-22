@@ -15,17 +15,17 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
-import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.util.ListenerHandler;
-import org.cryptoworkshop.ximix.mixnet.transform.Transform;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+
+import org.cryptoworkshop.ximix.common.service.Decoupler;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
 public class BulletinBoardRegistry
 {
@@ -96,14 +96,12 @@ public class BulletinBoardRegistry
      */
     private File deriveBoardFile(String boardName)
     {
-        File boardDBFile = null;
-
         if (workingDirectory != null)
         {
-            boardDBFile = new File(workingDirectory, boardName);
+            return new File(workingDirectory, boardName);
         }
 
-        return boardDBFile;
+        return null;
     }
 
     public BulletinBoard getBoard(final String boardName)
@@ -270,32 +268,18 @@ public class BulletinBoardRegistry
                 File transitWorkingFile = deriveBoardFile(originalBoard.getName() + ".transit");
                 File transitDotPFile = deriveBoardFile(originalBoard.getName() + ".transit.p");
 
-
-                if (workingFile == null)
+                if (!workingFile.renameTo(transitWorkingFile))
                 {
-                    System.err.println("Rename cannot proceed, working is null, because workingDirectory in BulletinBoardRegistry is null");
-                }
-                else
-                {
-                    if (!workingFile.renameTo(transitWorkingFile))
-                    {
-                        System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
-                        // TODO:
-                    }
+                    System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
+                    // TODO:
                 }
 
-                if (dotPFile == null)
+                if (!dotPFile.renameTo(transitDotPFile))
                 {
-                    System.err.println("Rename cannot proceed, dotDFFile is null, because workingDirecory in BulitenBoardRegistry is null");
+                    System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
+                    // TODO:
                 }
-                else
-                {
-                    if (!dotPFile.renameTo(transitDotPFile))
-                    {
-                        System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
-                        // TODO:
-                    }
-                }
+
                 originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor());
             }
 
