@@ -15,16 +15,6 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.ec.ECPair;
@@ -34,18 +24,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
-import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
-import org.cryptoworkshop.ximix.common.message.BoardMessage;
-import org.cryptoworkshop.ximix.common.message.BoardStatusMessage;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
-import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
-import org.cryptoworkshop.ximix.common.message.MessageBlock;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
-import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
-import org.cryptoworkshop.ximix.common.message.ShareMessage;
+import org.cryptoworkshop.ximix.common.message.*;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -53,12 +32,16 @@ import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 
+import java.math.BigInteger;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class ClientCommandService
     implements CommandService
 {
     private ExecutorService decouple = Executors.newSingleThreadExecutor();
     private ExecutorService executor = Executors.newScheduledThreadPool(4);
-
     private AdminServicesConnection connection;
 
     public ClientCommandService(AdminServicesConnection connection)
@@ -66,8 +49,21 @@ public class ClientCommandService
         this.connection = connection;
     }
 
+    static Set<String> toOrderedSet(String[] nodes)
+    {
+        Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());
+
+        for (String node : nodes)
+        {
+            orderedSet.add(node);
+        }
+
+        return Collections.unmodifiableSet(orderedSet);
+    }
+
     @Override
-    public void shutdown() throws ServiceConnectionException
+    public void shutdown()
+        throws ServiceConnectionException
     {
         decouple.shutdown();
         executor.shutdown();
@@ -101,9 +97,18 @@ public class ClientCommandService
     public List<NodeDetail> getNodeDetails()
         throws ServiceConnectionException
     {
+
+        Iterator<String> it = connection.getActiveNodeNames().iterator();
         ArrayList<NodeDetail> nodes = new ArrayList<NodeDetail>();
-        NodeDetail nd = new NodeDetail();
-        nodes.add(nd);
+
+        while (it.hasNext())
+        {
+            NodeDetail nd = new NodeDetail();
+
+            nd.setName(it.next());
+            nodes.add(nd);
+        }
+
         return nodes;
     }
 
@@ -127,6 +132,16 @@ public class ClientCommandService
         nodeStatistics.add(new NodeStatistics());
 
         return nodeStatistics;
+    }
+
+    private static class CaseInsensitiveComparator
+        implements Comparator<String>
+    {
+        @Override
+        public int compare(String s1, String s2)
+        {
+            return s1.compareToIgnoreCase(s2);
+        }
     }
 
     private class ShuffleOp
@@ -241,7 +256,7 @@ public class ClientCommandService
                 {
                     String[] nodes = toOrderedSet(options.getNodesToUse()).toArray(new String[0]);
 
-                    for (;;)
+                    for (; ; )
                     {
                         reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
@@ -277,7 +292,7 @@ public class ClientCommandService
                         ECDomainParameters domainParams = ((ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo)).getParameters();
 
                         ShareMessage[] shareMessages = new ShareMessage[options.getThreshold()];
-                        int            maxSequenceNo = 0;
+                        int maxSequenceNo = 0;
 
                         for (int i = 0; i != shareMessages.length; i++)
                         {
@@ -305,7 +320,7 @@ public class ClientCommandService
 
                         BigInteger[] weights = calculator.computeWeights(partialDecrypts);
 
-                        int            baseIndex = 0;
+                        int baseIndex = 0;
                         for (int i = 0; i != partialDecrypts.length; i++)
                         {
                             if (partialDecrypts[i] != null)
@@ -315,8 +330,8 @@ public class ClientCommandService
                             }
                         }
 
-                        List<byte[]>   baseMessageBlock = partialDecrypts[baseIndex];
-                        BigInteger     baseWeight = weights[baseIndex];
+                        List<byte[]> baseMessageBlock = partialDecrypts[baseIndex];
+                        BigInteger baseWeight = weights[baseIndex];
 
                         for (int messageIndex = 0; messageIndex != baseMessageBlock.size(); messageIndex++)
                         {
@@ -324,7 +339,7 @@ public class ClientCommandService
                             ECPoint[] weightedDecryptions = new ECPoint[ps.size()];
                             ECPoint[] fulls = new ECPoint[ps.size()];
 
-                            ECPair[]  partials = ps.getECPairs();
+                            ECPair[] partials = ps.getECPairs();
                             for (int i = 0; i != weightedDecryptions.length; i++)
                             {
                                 weightedDecryptions[i] = partials[i].getX().multiply(baseWeight);
@@ -334,7 +349,7 @@ public class ClientCommandService
                             {
                                 if (weights[wIndex] != null)
                                 {
-                                    ECPair[]  nPartials = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex)).getECPairs();
+                                    ECPair[] nPartials = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex)).getECPairs();
                                     for (int i = 0; i != weightedDecryptions.length; i++)
                                     {
                                         weightedDecryptions[i] = weightedDecryptions[i].add(nPartials[i].getX().multiply(weights[wIndex]));
@@ -354,7 +369,7 @@ public class ClientCommandService
                 else
                 {
                     // assume plain text
-                    for (;;)
+                    for (; ; )
                     {
                         reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
@@ -367,7 +382,7 @@ public class ClientCommandService
 
                         List<byte[]> messages = data.getMessages();
 
-                        for (int i = 0 ; i != messages.size(); i++)
+                        for (int i = 0; i != messages.size(); i++)
                         {
                             notifier.messageDownloaded(messages.get(i));
                         }
@@ -383,28 +398,6 @@ public class ClientCommandService
                 e.printStackTrace();
                 notifier.failed(e.toString());
             }
-        }
-    }
-
-    static Set<String> toOrderedSet(String[] nodes)
-    {
-        Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());
-
-        for (String node : nodes)
-        {
-            orderedSet.add(node);
-        }
-
-        return Collections.unmodifiableSet(orderedSet);
-    }
-
-    private static class CaseInsensitiveComparator
-        implements Comparator<String>
-    {
-        @Override
-        public int compare(String s1, String s2)
-        {
-            return s1.compareToIgnoreCase(s2);
         }
     }
 }

@@ -7,7 +7,7 @@ body {
 }
 
 #content {
-    width: 800px;
+    width: 1024px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -26,13 +26,15 @@ body {
     padding: 2px;
 }
 
-.nodes {
-    width: 100%;
+#nodes {
+    float:left;
+    width:250px;
+    margin-right: 2px;
 }
 
-.commands {
+#commands {
     width: 100%;
-
+    margin-left: 2px;
 }
 
 .node {
@@ -42,6 +44,11 @@ body {
     border: solid 1px grey;
     padding: 4px;
 }
+
+.node:hover {
+    background: #DDEEFF;
+}
+
 
 .nodetitle {
     font-size: 16pt;

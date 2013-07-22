@@ -11,7 +11,7 @@
             <id>mixnetadmin</id>
             <name>Mixnet Admin</name>
             <description>Admin panel for the Mixnet</description>
-            <property name="config-file">./conf/mixnet.xml</property>
+            <property name="config-file">demo/conf/mixnet.xml</property>
         </adapter>
 
     </console>

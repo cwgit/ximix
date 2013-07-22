@@ -15,10 +15,6 @@
  */
 package org.cryptoworkshop.ximix.console.adapters;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
 import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
@@ -30,14 +26,19 @@ import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
 import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
+import org.cryptoworkshop.ximix.registrar.RegistrarServiceException;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An adapter for the Mixnet commands service.
  */
 public class MixnetCommandServiceAdapter
-        extends BaseNodeAdapter
+    extends BaseNodeAdapter
 {
 
     protected File configFile = null;
@@ -75,7 +76,8 @@ public class MixnetCommandServiceAdapter
     }
 
     @Override
-    public void init(ConsoleConfig consoleConfig, AdapterConfig config) throws Exception
+    public void init(ConsoleConfig consoleConfig, AdapterConfig config)
+        throws Exception
     {
         commandList = new ArrayList<>();
         super.init(consoleConfig, config);
@@ -85,13 +87,15 @@ public class MixnetCommandServiceAdapter
 
     @Override
     public void open()
-            throws Exception
+        throws Exception
     {
         try
         {
             registrar = XimixRegistrarFactory.createAdminServiceRegistrar(configFile);
-            commandService = registrar.connect(CommandService.class);
-        } catch (Exception ex)
+
+
+        }
+        catch (Exception ex)
         {
             throw new RuntimeException(ex); // TODO handle this better.
         }
@@ -101,22 +105,22 @@ public class MixnetCommandServiceAdapter
 
     @Override
     public void close()
-            throws Exception
+        throws Exception
     {
         // TODO close it.
     }
 
     @ConsoleCommand(name = "Do Shuffle & Move")
     public StandardMessage doShuffleAndMove(
-            @CommandParam(name = "Board Name")
-            String boardName,
-            @CommandParam(name = "Transform Name")
-            String transformName,
-            @CommandParam(name = "Key id")
-            String keyID,
-            @CommandParam(name = "Nodes")
-            String... nodes)
-            throws ServiceConnectionException
+        @CommandParam(name = "Board Name")
+        String boardName,
+        @CommandParam(name = "Transform Name")
+        String transformName,
+        @CommandParam(name = "Key id")
+        String keyID,
+        @CommandParam(name = "Nodes")
+        String... nodes)
+        throws ServiceConnectionException
     {
 
         //TODO add sensitisation.
@@ -133,21 +137,35 @@ public class MixnetCommandServiceAdapter
     public List<NodeDetail> getNodeInfo()
     {
 
-        //
-        // The following may seem like overkill but it allows us to
-        //
+//        commandService.getNodeDetails();
+//
+//
+//        //
+//        // The following may seem like overkill but it allows us to
+//        //
+//
+//        //  try {
+//
+//        ArrayList<NodeDetail> details = new ArrayList<>();
+//
+//        details.add(new NodeDetail(1234, "Node 1"));
+//        details.add(new NodeDetail(1234, "Node 2"));
+//        details.add(new NodeDetail(1234, "Node 3"));
+//        details.add(new NodeDetail(1234, "Node 4"));
 
-        //  try {
 
-        ArrayList<NodeDetail> details = new ArrayList<>();
+        List<NodeDetail> details = null;
+        try
+        {
 
-        details.add(new NodeDetail(1234, "Node 1"));
-        details.add(new NodeDetail(1234, "Node 2"));
-        details.add(new NodeDetail(1234, "Node 3"));
-        details.add(new NodeDetail(1234, "Node 4"));
-
-
-        //  List<NodeDetail> details = commandService.getNodeDetails();
+            commandService = registrar.connect(CommandService.class);
+            details = commandService.getNodeDetails();
+            commandService.shutdown();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
 
         return details;
 

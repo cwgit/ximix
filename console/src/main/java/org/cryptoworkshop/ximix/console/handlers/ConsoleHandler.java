@@ -53,13 +53,14 @@ public class ConsoleHandler extends AbstractHandler
         objectMapper.enable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
-    public ConsoleHandler(ConsoleConfig config) throws Exception
+    public ConsoleHandler(ConsoleConfig config)
+        throws Exception
     {
         consoleConfig = config;
 
         for (AdapterConfig acfg : consoleConfig.getAdapters())
         {
-            BaseNodeAdapter bna = (BaseNodeAdapter) Class.forName(acfg.getClassName()).newInstance();
+            BaseNodeAdapter bna = (BaseNodeAdapter)Class.forName(acfg.getClassName()).newInstance();
             bna.init(consoleConfig, acfg);
             adapterMap.put(bna.getId(), bna);
         }
@@ -67,8 +68,32 @@ public class ConsoleHandler extends AbstractHandler
 
     }
 
+    private NodeAdapter getAdapter(String lastPart)
+    {
+        NodeAdapter adapter = adapterMap.get(lastPart);
+
+        synchronized (adapter)
+        {
+            if (!adapter.isOpened())
+            {
+                try
+                {
+                    adapter.open();
+                }
+                catch (Exception e)
+                {
+                    L.log(Level.SEVERE, "Unable to open adapter " + lastPart + " ", e);
+                }
+            }
+        }
+
+        return adapter;
+
+    }
+
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
+    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
+        throws IOException, ServletException
     {
 
         String reqUri = request.getRequestURI();
@@ -97,7 +122,7 @@ public class ConsoleHandler extends AbstractHandler
         if (reqUri.startsWith("/api/nodes"))
         {
             response.setContentType("application/json");
-            NodeAdapter adapter = adapterMap.get(lastPart);
+            NodeAdapter adapter = getAdapter(lastPart);
             if (adapter == null)
             {
                 writeObject(new StandardMessage(false, "Unknown adapter."), response);
@@ -116,7 +141,7 @@ public class ConsoleHandler extends AbstractHandler
         {
             response.setContentType("application/json");
 
-            NodeAdapter adapter = adapterMap.get(lastPart);
+            NodeAdapter adapter = getAdapter(lastPart);
             if (adapter == null)
             {
                 writeObject(new StandardMessage(false, "Unknown adapter."), response);
@@ -133,7 +158,7 @@ public class ConsoleHandler extends AbstractHandler
         if (reqUri.startsWith("/api/invoke"))
         {
 
-            NodeAdapter adapter = adapterMap.get(lastPart);
+            NodeAdapter adapter = getAdapter(lastPart);
             if (adapter == null)
             {
                 writeObject(new StandardMessage(false, "Unknown adapter."), response);
@@ -147,34 +172,13 @@ public class ConsoleHandler extends AbstractHandler
             String cmd = request.getParameter("cmd");
             if (cmd != null)
             {
-
-
-                try
+             try
                 {
-
-                    //
-                    // Check the adapter is opened.
-                    //
-
-                    synchronized (adapter)
-                    {
-                        if (!adapter.isOpened())
-                        {
-                            try
-                            {
-                                adapter.open();
-                            } catch (Exception ex)
-                            {
-                                ret.setMessage("Unable to open '" + adapter.getName() + "'");
-                            }
-                        }
-                    }
-
-
                     int id = Integer.valueOf(cmd);
                     ret = adapter.invoke(id, request.getParameterMap());
                     L.info(request.getRemoteAddr() + " Invoked Command method '" + adapter.getCommandNameForId(id) + " in " + adapter.getId() + " (" + adapter.getClass().getName() + ")" + "' with " + request.getParameterMap());
-                } catch (Exception nfe)
+                }
+                catch (Exception nfe)
                 {
                     L.log(Level.WARNING, "Invalid command " + cmd, nfe);
                 }
@@ -194,7 +198,8 @@ public class ConsoleHandler extends AbstractHandler
         baseRequest.setHandled(true);
     }
 
-    private void writeObject(Object o, HttpServletResponse resp) throws IOException
+    private void writeObject(Object o, HttpServletResponse resp)
+        throws IOException
     {
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("application/json");

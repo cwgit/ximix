@@ -1,3 +1,7 @@
+var pollTimer = null;
+node_desc = {};
+old_node_size = 0;
+
 jQuery.ajaxSetup({
     'beforeSend': function (xhr) {
         xhr.setRequestHeader("Accept", "text/javascript")
@@ -20,25 +24,66 @@ var multipleInput = {}
 
 function fetchNodes() {
     $.post("/api/nodes/mixnetadmin", null, function (data) {
-        if (data != null) {
 
-            for (t = 0; t < data.length; t++) {
 
-                node = data[t];
+        var toBoRemoved = {}
 
-                outer = $("#" + node.hash + "_info");
-                if (!outer.length) {
-                    outer = $("<div class='node' id='node_" + t + "'_info'>");
-                    outer.appendTo('#nodes');
-                    outer.append("<div class='nodetitle'>" + node.name + "</div>");
-                    outer.append("<table class='nodetable' border='0'>" +
-                        " <tr><td>Port:</td><td>" + (node.port) + "</td></tr>" +
-                        " <tr><td>Started:</td><td>" + (new Date(node.startTimestamp)) + "</td></tr>" +
-                        "</table>");
+            for (var name in node_desc) {
+                toBoRemoved[name] = node_desc[name];
+            }
+
+            if (data != null) {
+
+                for (t = 0; t < data.length; t++) {
+                    node = data[t];
+                    node_desc[node.name] = node;
+
+                   delete toBoRemoved[node.name];
+
                 }
             }
+
+
+            for (var name in toBoRemoved)
+            {
+               $("#node_" + toBoRemoved[name].hash + "_info").fadeOut(500,function() {
+                   delete node_desc[name];
+                   $(this).remove();
+               });
+
+            }
+
+            toBoRemoved=null;
+
+            renderNodeDetail();
+
+
         }
-    });
+    )
+    ;
+}
+
+
+function renderNodeDetail() {
+    for (var name in node_desc) {
+        node = node_desc[name];
+
+        outer = $("#node_" + node.hash + "_info");
+        if (!outer.length) {
+            outer = $("<div class='node' id='node_" + node.hash + "_info'>");
+            outer.appendTo('#nodes');
+            outer.append("<div class='nodetitle'>" + node.name + "</div>");
+            outer.append("<table class='nodetable' border='0'>" +
+                " <tr><td>Port:</td><td>" + (node.port) + "</td></tr>" +
+                " <tr><td>Started:</td><td>" + (new Date(node.startTimestamp)) + "</td></tr>" +
+                "</table>");
+
+            outer.click(function(){
+
+            });
+
+        }
+    }
 }
 
 
@@ -143,8 +188,14 @@ function fetchCommands() {
     });
 }
 
+function pollNodes() {
+
+    fetchNodes();
+
+}
+
 
 $(document).ready(function () {
-    fetchNodes();
+    pollTimer = setInterval(pollNodes, 5000);
     fetchCommands();
 });
