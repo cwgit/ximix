@@ -15,6 +15,11 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
+import org.cryptoworkshop.ximix.common.service.Decoupler;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.mixnet.transform.Transform;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,27 +27,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
-import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.util.ListenerHandler;
-import org.cryptoworkshop.ximix.mixnet.transform.Transform;
-
 public class BulletinBoardRegistry
 {
-    private final NodeContext          nodeContext;
-    private Map<String, BulletinBoard> boards = new HashMap<>();
-    private Map<String, BulletinBoard> transitBoards = new HashMap<String, BulletinBoard>();
-    private Map<String, BulletinBoard> backupBoards = new HashMap<String, BulletinBoard>();
-    private Set<String>                suspendedBoards = new HashSet<>();
-    private Set<String>                dowloadLockedBoards = new HashSet<>();
-    private Set<String>                shuffleLockedBoards = new HashSet<>();
-
-    private Set<String>                inTransitBoards = new HashSet<>();
-    private Set<String>                completedBoards = new HashSet<>();
-
+    private final NodeContext nodeContext;
     private final File workingDirectory;
     private final Map<String, Transform> transforms;
     private final Executor boardUpdateExecutor;
+    private Map<String, BulletinBoard> boards = new HashMap<>();
+    private Map<String, BulletinBoard> transitBoards = new HashMap<String, BulletinBoard>();
+    private Map<String, BulletinBoard> backupBoards = new HashMap<String, BulletinBoard>();
+    private Set<String> suspendedBoards = new HashSet<>();
+    private Set<String> dowloadLockedBoards = new HashSet<>();
+    private Set<String> shuffleLockedBoards = new HashSet<>();
+    private Set<String> inTransitBoards = new HashSet<>();
+    private Set<String> completedBoards = new HashSet<>();
 
     public BulletinBoardRegistry(NodeContext nodeContext, Map<String, Transform> transforms)
     {
@@ -50,7 +48,7 @@ public class BulletinBoardRegistry
         this.transforms = transforms;
         this.boardUpdateExecutor = nodeContext.getDecoupler(Decoupler.BOARD_REGISTRY);
 
-        File homeDirectory =  nodeContext.getHomeDirectory();
+        File homeDirectory = nodeContext.getHomeDirectory();
 
         if (homeDirectory != null)
         {
@@ -78,13 +76,34 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, new File(workingDirectory, boardName), nodeContext.getScheduledExecutor());
+                File boardDBFile = deriveBoardFile(boardName);
+
+                board = new BulletinBoardImpl(boardName, boardDBFile, nodeContext.getScheduledExecutor());
 
                 boards.put(boardName, board);
             }
 
             return board;
         }
+    }
+
+    /**
+     * Returns a null board file if the workingDirectory is not specified.
+     * It assumes that if no workingDirectory is specified there was no intention
+     * to persist data.
+     * @param boardName
+     * @return
+     */
+    private File deriveBoardFile(String boardName)
+    {
+        File boardDBFile = null;
+
+        if (workingDirectory != null)
+        {
+            boardDBFile = new File(workingDirectory, boardName);
+        }
+
+        return boardDBFile;
     }
 
     public BulletinBoard getBoard(final String boardName)
@@ -198,7 +217,6 @@ public class BulletinBoardRegistry
         }
     }
 
-
     public BulletinBoard getBackupBoard(String boardName)
     {
         synchronized (boards)
@@ -208,7 +226,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, new File(workingDirectory, boardName + ".backup"), boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName + ".backup"), boardUpdateExecutor);
 
                 backupBoards.put(boardName, board);
             }
@@ -226,7 +244,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, new File(workingDirectory, boardName + ".transit"), boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName + ".transit"), boardUpdateExecutor);
 
                 transitBoards.put(boardName, board);
             }
@@ -237,42 +255,56 @@ public class BulletinBoardRegistry
 
     public void moveToTransit(String boardName)
     {
-       synchronized (boards)
-       {
-           BulletinBoard originalBoard = boards.remove(boardName);
+        synchronized (boards)
+        {
+            BulletinBoard originalBoard = boards.remove(boardName);
 
-           ListenerHandler<BulletinBoardBackupListener> listenerHandler = originalBoard.getListenerHandler(BulletinBoardBackupListener.class);
+            ListenerHandler<BulletinBoardBackupListener> listenerHandler = originalBoard.getListenerHandler(BulletinBoardBackupListener.class);
 
-           if (workingDirectory != null)
-           {
-               originalBoard.shutdown();
+            if (workingDirectory != null)
+            {
+                originalBoard.shutdown();
 
-               File workingFile = new File(workingDirectory, originalBoard.getName());
-               File dotPFile = new File(workingDirectory, originalBoard.getName() + ".p");
-               File transitWorkingFile = new File(workingDirectory, originalBoard.getName() + ".transit");
-               File transitDotPFile = new File(workingDirectory, originalBoard.getName() + ".transit.p");
+                File workingFile = deriveBoardFile(originalBoard.getName());
+                File dotPFile = deriveBoardFile(originalBoard.getName() + ".p");
+                File transitWorkingFile = deriveBoardFile(originalBoard.getName() + ".transit");
+                File transitDotPFile = deriveBoardFile(originalBoard.getName() + ".transit.p");
 
-               if (!workingFile.renameTo(transitWorkingFile))
-               {
-                   System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
-                   // TODO:
-               }
 
-               if (!dotPFile.renameTo(transitDotPFile))
-               {
-                   System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
-                   // TODO:
-               }
+                if (workingFile == null)
+                {
+                    System.err.println("Rename cannot proceed, working is null, because workingDirectory in BulletinBoardRegistry is null");
+                }
+                else
+                {
+                    if (!workingFile.renameTo(transitWorkingFile))
+                    {
+                        System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
+                        // TODO:
+                    }
+                }
 
-               originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor());
-           }
+                if (dotPFile == null)
+                {
+                    System.err.println("Rename cannot proceed, dotDFFile is null, because workingDirecory in BulitenBoardRegistry is null");
+                }
+                else
+                {
+                    if (!dotPFile.renameTo(transitDotPFile))
+                    {
+                        System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
+                        // TODO:
+                    }
+                }
+                originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor());
+            }
 
-           transitBoards.put(boardName, originalBoard);
+            transitBoards.put(boardName, originalBoard);
 
-           BulletinBoard board = new BulletinBoardImpl(boardName, new File(workingDirectory, boardName), listenerHandler);
+            BulletinBoard board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName), listenerHandler);
 
-           boards.put(boardName, board);
-       }
+            boards.put(boardName, board);
+        }
     }
 
     public void markInTransit(String boardName)
