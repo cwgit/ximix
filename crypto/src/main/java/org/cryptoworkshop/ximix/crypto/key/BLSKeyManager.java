@@ -150,7 +150,7 @@ public class BLSKeyManager
         if (domainParameters == null)
         {
             BLS01KeyPairGenerator kpGen = new BLS01KeyPairGenerator();
-            CurveParameters       curveParameters = new DefaultCurveParameters().load("/tmp/d62003-159-158.param");
+            CurveParameters       curveParameters = new DefaultCurveParameters().load(this.getClass().getResourceAsStream("d62003-159-158.param"));
             Pairing               pairing = PairingFactory.getInstance().getPairing(curveParameters);
             BLS01Parameters       blsParameters = new BLS01Parameters(curveParameters, pairing.getG2().newRandomElement());
 
