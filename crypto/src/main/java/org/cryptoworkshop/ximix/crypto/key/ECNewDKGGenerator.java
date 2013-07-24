@@ -97,16 +97,4 @@ public class ECNewDKGGenerator
             e.printStackTrace();
         }
     }
-
-    public void storeThresholdKeyShare(String keyID, ECCommittedSecretShareMessage message1, ECCommittedSecretShareMessage message2)
-    {
-        try
-        {
-            keyManager.buildSharedKey(keyID, message1);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-    }
 }

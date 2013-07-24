@@ -21,6 +21,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.math.ec.ECConstants;
+import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
@@ -56,7 +57,7 @@ public class KeyGenerationCommandService
     {
         final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(keyGenOptions.getAlgorithm(), keyID, new KeyGenParams(keyGenOptions.getParameters()[0]), keyGenOptions.getThreshold(), keyGenOptions.getNodesToUse());
 
-        MessageReply reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage));
+        MessageReply reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {

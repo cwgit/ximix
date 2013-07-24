@@ -33,12 +33,14 @@ public class BLSCommittedSecretShareMessage
     private final BigInteger value;
     private final BigInteger witness;
     private final Element pK;
+    private final Element[] commitmentFactors;
 
-    public BLSCommittedSecretShareMessage(int index, BigInteger value, BigInteger witness, Element pK)
+    public BLSCommittedSecretShareMessage(int index, BigInteger value, BigInteger witness, Element[] commitmentFactors, Element pK)
     {
         this.index = index;
         this.value = value;
         this.witness = witness;
+        this.commitmentFactors = commitmentFactors;
         this.pK = pK;
     }
 
@@ -47,7 +49,17 @@ public class BLSCommittedSecretShareMessage
         this.index = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue();
         this.value = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue();
         this.witness = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue();
-        this.pK = blsParameters.getG().duplicate().set(ASN1Integer.getInstance(seq.getObjectAt(2)).getValue());
+
+        ASN1Sequence s = ASN1Sequence.getInstance(seq.getObjectAt(3));
+
+        this.commitmentFactors = new Element[s.size()];
+
+        for (int i = 0; i != commitmentFactors.length; i++)
+        {
+            commitmentFactors[i] = blsParameters.getG().duplicate().set(ASN1Integer.getInstance(s.getObjectAt(i)).getValue());
+        }
+
+        this.pK = blsParameters.getG().duplicate().set(ASN1Integer.getInstance(seq.getObjectAt(4)).getValue());
     }
 
     public static final BLSCommittedSecretShareMessage getInstance(BLS01Parameters blsParameters, Object o)
@@ -74,6 +86,14 @@ public class BLSCommittedSecretShareMessage
         v.add(new ASN1Integer(witness));
         v.add(new ASN1Integer(pK.toBigInteger()));
 
+        ASN1EncodableVector factV = new ASN1EncodableVector();
+        for (int i = 0; i != commitmentFactors.length; i++)
+        {
+            factV.add(new ASN1Integer(commitmentFactors[i].toBigInteger()));
+        }
+
+        v.add(new DERSequence(factV));
+
         return new DERSequence(v);
     }
 
@@ -95,5 +115,10 @@ public class BLSCommittedSecretShareMessage
     public Element getPk()
     {
         return pK;
+    }
+
+    public Element[] getCommitmentFactors()
+    {
+        return commitmentFactors;
     }
 }

@@ -202,19 +202,27 @@ public class XimixNodeContext
     {
         try
         {
-            return ecKeyManager.fetchPublicKey(keyID);
+            if (ecKeyManager.hasPrivateKey(keyID))
+            {
+                return ecKeyManager.fetchPublicKey(keyID);
+            }
+            if (blsKeyManager.hasPrivateKey(keyID))
+            {
+                return blsKeyManager.fetchPublicKey(keyID);
+            }
         }
         catch (IOException e)
         {
             e.printStackTrace();  // TODO:
-            return null;
+
         }
+        return null;
     }
 
     @Override
     public boolean hasPrivateKey(String keyID)
     {
-        return ecKeyManager.hasPrivateKey(keyID);
+        return ecKeyManager.hasPrivateKey(keyID) || blsKeyManager.hasPrivateKey(keyID);
     }
 
     @Override

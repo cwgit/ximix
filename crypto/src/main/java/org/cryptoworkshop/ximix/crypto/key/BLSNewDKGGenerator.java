@@ -18,18 +18,18 @@ package org.cryptoworkshop.ximix.crypto.key;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PrivateKeyParameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
+import it.unisa.dia.gas.jpbc.Element;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.BLSCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
-import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSplitSecret;
-import org.cryptoworkshop.ximix.crypto.threshold.ECNewDKGSecretSplitter;
+import org.cryptoworkshop.ximix.crypto.threshold.BLSCommittedSecretShare;
+import org.cryptoworkshop.ximix.crypto.threshold.BLSCommittedSplitSecret;
+import org.cryptoworkshop.ximix.crypto.threshold.BLSNewDKGSecretSplitter;
 
 public class BLSNewDKGGenerator
     implements ThresholdKeyPairGenerator
@@ -43,9 +43,9 @@ public class BLSNewDKGGenerator
         keyManager = keyManaged;
     }
 
-    public ECDomainParameters getParameters(String keyID)
+    public BLS01Parameters getParameters(String keyID)
     {
-        return null; //keyManager.geParams(keyID);
+        return keyManager.getParams(keyID);
     }
 
     public BLSCommittedSecretShareMessage[] generateThresholdKey(String keyID, ECKeyGenParams ecKeyGenParams)
@@ -53,24 +53,24 @@ public class BLSNewDKGGenerator
         // TODO: should have a source of randomness.
         AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams);
 
-        ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)keyPair.getPrivate();
-        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
+        BLS01PrivateKeyParameters privKey = (BLS01PrivateKeyParameters)keyPair.getPrivate();
+        BLSNewDKGSecretSplitter secretSplitter = new BLSNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
 
-        ECCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getD());
-        ECCommittedSecretShare[] shares = splitSecret.getCommittedShares();
+        BLSCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getSk().toBigInteger());
+        BLSCommittedSecretShare[] shares = splitSecret.getCommittedShares();
         BLSCommittedSecretShareMessage[] messages = new BLSCommittedSecretShareMessage[shares.length];
 
         BigInteger[] aCoefficients = splitSecret.getCoefficients();
-        ECPoint[] qCommitments = new ECPoint[aCoefficients.length];
+        Element[] qCommitments = new Element[aCoefficients.length];
 
         for (int i = 0; i != qCommitments.length; i++)
         {
-            qCommitments[i] = privKey.getParameters().getG().multiply(aCoefficients[i]);
+            qCommitments[i] = privKey.getParameters().getG().duplicate().mul(aCoefficients[i]);
         }
 
         for (int i = 0; i != shares.length; i++)
         {
-            messages[i] = new BLSCommittedSecretShareMessage(i, shares[i].getValue(), shares[i].getWitness(),
+            messages[i] = new BLSCommittedSecretShareMessage(i, shares[i].getValue(), shares[i].getWitness(), shares[i].getCommitmentFactors(),
                     ((BLS01PublicKeyParameters)keyPair.getPublic()).getPk());
         }
 

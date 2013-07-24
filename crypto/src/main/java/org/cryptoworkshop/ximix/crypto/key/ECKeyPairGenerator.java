@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
@@ -75,7 +76,7 @@ public class ECKeyPairGenerator
                     // Generate H, start everyone else      TODO generate H
                     //
                     ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(initiateMessage.getAlgorithm());
-                    ECKeyGenParams ecKeyGenParams = new ECKeyGenParams(initiateMessage.getKeyID(), initiateMessage.getAlgorithm(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
+                    ECKeyGenParams ecKeyGenParams = new ECKeyGenParams(initiateMessage.getKeyID(), message.getAlgorithm(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
                     ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
 
                     nodeContext.execute(new SendShareTask(generator, message.getAlgorithm(), ecKeyGenParams.getKeyID(), ecKeyGenParams.getNodesToUse(), messages));
@@ -85,7 +86,7 @@ public class ECKeyPairGenerator
                 {
                     for (String node : initiateMessage.getNodesToUse())
                     {         // find first available
-                        return nodeContext.getPeerMap().get(node).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(message.getAlgorithm(), Type.GENERATE, initiateMessage));
+                        return nodeContext.getPeerMap().get(node).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(message.getAlgorithm(), new KeyPairGenerateMessage(message.getAlgorithm(), Type.GENERATE, initiateMessage)));
                     }
                 }
 
@@ -109,7 +110,7 @@ public class ECKeyPairGenerator
 
                 // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
                 // till we can validate them.
-                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(Algorithm.EC_ELGAMAL);
+                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(message.getAlgorithm());
 
                 nodeContext.execute(new StoreShareTask(generator, sssMessage.getID(), sssMessage.getSecretShareMessage()));
 
@@ -149,7 +150,7 @@ public class ECKeyPairGenerator
                 {
                     try
                     {
-                        MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(algorithm, Type.GENERATE, initiateMessage));
+                        MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(algorithm, new KeyPairGenerateMessage(algorithm, Type.GENERATE, initiateMessage)));
                     }
                     catch (ServiceConnectionException e)
                     {
@@ -182,63 +183,31 @@ public class ECKeyPairGenerator
         {
             int index = 0;
 
-            if (algorithm == Algorithm.ECDSA)
+            for (final String name : peers)
             {
-                for (final String name : peers)
+                if (name.equals(nodeContext.getName()))
                 {
-                    if (name.equals(nodeContext.getName()))
-                    {
-                        generator.storeThresholdKeyShare(keyID, messages[index++], messages[index++]);
-                    }
-                    else
-                    {
-                        final int counter = index++;
-                        index++;
-                        nodeContext.execute(new Runnable()
-                        {
-                            public void run()
-                            {
-                                try
-                                {
-                                    MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(algorithm, Type.STORE, new StoreMessage(keyID, messages[counter])));
-                                }
-                                catch (ServiceConnectionException e)
-                                {
-                                    e.printStackTrace(); // TODO handle.
-                                }
-                            }
-                        });
-
-                    }
+                    generator.storeThresholdKeyShare(keyID, messages[index++]);
                 }
-            }
-            else
-            {
-                for (final String name : peers)
+                else
                 {
-                    if (name.equals(nodeContext.getName()))
-                    {
-                        generator.storeThresholdKeyShare(keyID, messages[index++]);
-                    }
-                    else
-                    {
-                        final int counter = index++;
-                        nodeContext.execute(new Runnable()
-                        {
-                            public void run()
-                            {
-                                try
-                                {
-                                    MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(algorithm, Type.STORE, new StoreMessage(keyID, messages[counter])));
-                                }
-                                catch (ServiceConnectionException e)
-                                {
-                                    e.printStackTrace(); // TODO handle.
-                                }
-                            }
-                        });
+                    final int counter = index++;
 
-                    }
+                    nodeContext.execute(new Runnable()
+                    {
+                        public void run()
+                        {
+                            try
+                            {
+                                MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(algorithm, new KeyPairGenerateMessage(algorithm, Type.STORE, new StoreMessage(keyID, messages[counter]))));
+                            }
+                            catch (ServiceConnectionException e)
+                            {
+                                e.printStackTrace(); // TODO handle.
+                            }
+                        }
+                    });
+
                 }
             }
         }

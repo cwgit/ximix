@@ -24,6 +24,9 @@ public interface XimixObjectIdentifiers
     //
     static final ASN1ObjectIdentifier ximix = new ASN1ObjectIdentifier("1.2.36.50159983187.1");
 
-    static final ASN1ObjectIdentifier ximixCertExtension = ximix.branch("1");
+    static final ASN1ObjectIdentifier ximixAlgorithms = ximix.branch("1");
+    static final ASN1ObjectIdentifier ximixAlgorithmsExperimental = ximixAlgorithms.branch("0");
+
+    static final ASN1ObjectIdentifier ximixCertExtension = ximix.branch("2");
     static final ASN1ObjectIdentifier ximixShareIdExtension = ximixCertExtension.branch("1");
 }

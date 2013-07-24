@@ -15,42 +15,44 @@
  */
 package org.cryptoworkshop.ximix.common.message;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
 
-public class BigIntegerShareMessage
+public class ECPointPairMessage
     extends ASN1Object
 {
-    private final int sequenceNo;
-    private final BigInteger value;
+    private final ECPoint a;
+    private final ECPoint b;
 
-    public BigIntegerShareMessage(int sequenceNo, BigInteger value)
+    public ECPointPairMessage(ECPoint a, ECPoint b)
     {
-        this.sequenceNo = sequenceNo;
-        this.value = value;
+        this.a = a;
+        this.b = b;
     }
 
-    private BigIntegerShareMessage(ASN1Sequence seq)
+    private ECPointPairMessage(ECCurve curve, ASN1Sequence seq)
     {
-        this.sequenceNo = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue();
-        this.value = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue();
+        this.a = curve.decodePoint(ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets());
+        this.b = curve.decodePoint(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets());
     }
 
-    public static final BigIntegerShareMessage getInstance(Object o)
+    public static ECPointPairMessage getInstance(ECCurve curve, Object o)
     {
-        if (o instanceof BigIntegerShareMessage)
+        if (o instanceof ECPointPairMessage)
         {
-            return (BigIntegerShareMessage)o;
+            return (ECPointPairMessage)o;
         }
-        else if (o != null)
+
+        if (o != null)
         {
-            return new BigIntegerShareMessage(ASN1Sequence.getInstance(o));
+            return new ECPointPairMessage(curve, ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -61,19 +63,19 @@ public class BigIntegerShareMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(sequenceNo));
-        v.add(new ASN1Integer(value));
+        v.add(new DEROctetString(a.getEncoded()));
+        v.add(new DEROctetString(b.getEncoded()));
 
         return new DERSequence(v);
     }
 
-    public int getSequenceNo()
+    public ECPoint getA()
     {
-        return sequenceNo;
+        return a;
     }
 
-    public BigInteger getValue()
+    public ECPoint getB()
     {
-        return value;
+        return b;
     }
 }

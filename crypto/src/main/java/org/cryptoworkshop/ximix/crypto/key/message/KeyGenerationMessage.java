@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -32,6 +33,7 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSet;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 
 public class KeyGenerationMessage
@@ -63,7 +65,8 @@ public class KeyGenerationMessage
 
     private KeyGenerationMessage(ASN1Sequence seq)
     {
-        this.algorithm = Algorithm.values()[ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue()];
+        System.err.println(ASN1Dump.dumpAsString(seq));
+        this.algorithm = Algorithm.values()[ASN1Enumerated.getInstance(seq.getObjectAt(0)).getValue().intValue()];
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.keyGenParameters = KeyGenParams.getInstance(seq.getObjectAt(2));
         this.threshold = ASN1Integer.getInstance(seq.getObjectAt(3)).getValue().intValue();
@@ -89,7 +92,7 @@ public class KeyGenerationMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(algorithm.ordinal()));
+        v.add(new ASN1Enumerated(algorithm.ordinal()));
         v.add(new DERUTF8String(keyID));
         v.add(keyGenParameters);
         v.add(new ASN1Integer(threshold));

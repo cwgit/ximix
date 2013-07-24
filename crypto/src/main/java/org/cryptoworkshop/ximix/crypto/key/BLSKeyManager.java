@@ -31,7 +31,12 @@ import java.util.concurrent.TimeUnit;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.generators.BLS01KeyPairGenerator;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01KeyGenerationParameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
+import it.unisa.dia.gas.jpbc.CurveParameters;
 import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Pairing;
+import it.unisa.dia.gas.plaf.jpbc.pairing.DefaultCurveParameters;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERBMPString;
@@ -73,7 +78,9 @@ import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.crypto.key.message.BLSCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.crypto.key.util.SubjectPublicKeyInfoFactory;
 import org.cryptoworkshop.ximix.crypto.operator.jpbc.JpbcPrivateKeyOperator;
+import org.cryptoworkshop.ximix.crypto.threshold.BLSCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
 import org.cryptoworkshop.ximix.crypto.util.ElementShare;
 import org.cryptoworkshop.ximix.crypto.util.Share;
@@ -131,6 +138,11 @@ public class BLSKeyManager
         return true;
     }
 
+    public BLS01Parameters getParams(String keyID)
+    {
+        return paramsMap.get(keyID);
+    }
+
     public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, ECKeyGenParams keyGenParams)
     {
         BLS01Parameters domainParameters = paramsMap.get(keyID);
@@ -138,9 +150,12 @@ public class BLSKeyManager
         if (domainParameters == null)
         {
             BLS01KeyPairGenerator kpGen = new BLS01KeyPairGenerator();
-            BLS01Parameters       blsParameters = null;
+            CurveParameters       curveParameters = new DefaultCurveParameters().load("/tmp/d62003-159-158.param");
+            Pairing               pairing = PairingFactory.getInstance().getPairing(curveParameters);
+            BLS01Parameters       blsParameters = new BLS01Parameters(curveParameters, pairing.getG2().newRandomElement());
 
             // TODO: need to sort out source of randomness.
+
             kpGen.init(new BLS01KeyGenerationParameters(new SecureRandom(), blsParameters));
 
             AsymmetricCipherKeyPair kp =  kpGen.generateKeyPair();
@@ -168,7 +183,7 @@ public class BLSKeyManager
             Element pK = sharedPublicKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS).getValue();
             BLS01Parameters params = paramsMap.get(keyID);
                                                                                   // TODO;
-           // return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q, params)).getEncoded());
+            return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new BLS01PublicKeyParameters(params, pK)).getEncoded());
         }
 
         return null;
@@ -177,8 +192,9 @@ public class BLSKeyManager
     public synchronized void buildSharedKey(String keyID, BLSCommittedSecretShareMessage message)
     {
         BLS01Parameters domainParams = paramsMap.get(keyID);
-//        ECCommittedSecretShare share = new ECCommittedSecretShare(message.getValue(), message.getWitness(), message.getCommitmentFactors());
+        BLSCommittedSecretShare share = new BLSCommittedSecretShare(message.getValue(), message.getWitness(), message.getCommitmentFactors());
 
+        // TODO:
 //        if (share.isRevealed(message.getIndex(), domainParams, hMap.get(keyID)))
 //        {
             sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(message.getIndex(), message.getValue()));

@@ -13,6 +13,7 @@ import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -30,6 +31,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
+import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
@@ -43,6 +45,7 @@ import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.crypto.key.BLSKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
@@ -50,6 +53,7 @@ import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyGenerationMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
+import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.node.XimixNodeContext;
@@ -121,7 +125,8 @@ public class CryptoServicesTest
         final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
         final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(Algorithm.EC_ELGAMAL, "ECKEY", new KeyGenParams("secp256r1"), 3, peers);
 
-        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(Algorithm.EC_ELGAMAL, ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage));
+        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.EC_ELGAMAL,
+                                                          new KeyPairGenerateMessage(Algorithm.EC_ELGAMAL, ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
 
         Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
 
@@ -218,37 +223,38 @@ public class CryptoServicesTest
         Assert.assertEquals(plaintext, decrypted);
     }
 
-//    @Test
-//    public void testBLSGenerationViaMessage()
-//        throws Exception
-//    {
-//        final Map<String, XimixNodeContext> contextMap = createContextMap(5);
-//
-//        XimixNodeContext context = contextMap.get("A");
-//
-//        final ServicesConnection connection = context.getPeerMap().get("B");
-//        final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
-//        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(KeyType.BLS, "BLSKEY", new KeyGenParams("secp256r1"), 3, peers);
-//
-//        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(KeyType.BLS, ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage));
-//
-//        Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
-//
-//        SubjectPublicKeyInfo pubKeyInfo1 = context.getPublicKey("BLSKEY");
-//        final ECPublicKeyParameters pubKey1 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo1);
-//        SubjectPublicKeyInfo pubKeyInfo2 = contextMap.get("B").getPublicKey("BLSKEY");
-//        ECPublicKeyParameters pubKey2 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo2);
-//
-//        Assert.assertEquals(pubKey1.getQ(), pubKey2.getQ());
-//
-//        for (String nodeName : peers)
-//        {
-//            pubKeyInfo2 = contextMap.get(nodeName).getPublicKey("BLSKEY");
-//            pubKey2 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo2);
-//
-//            Assert.assertEquals(nodeName, pubKey1.getQ(), pubKey2.getQ());
-//        }
-//
+    @Test
+    public void testBLSGenerationViaMessage()
+        throws Exception
+    {
+        final Map<String, XimixNodeContext> contextMap = createContextMap(5);
+
+        XimixNodeContext context = contextMap.get("A");
+
+        final ServicesConnection connection = context.getPeerMap().get("B");
+        final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
+        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(Algorithm.BLS, "BLSKEY", new KeyGenParams("d62003-159-158.param"), 3, peers);
+
+        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.BLS,
+                                                            new KeyPairGenerateMessage(Algorithm.BLS, BLSKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
+
+        Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
+
+        SubjectPublicKeyInfo pubKeyInfo1 = context.getPublicKey("BLSKEY");
+        final BLS01PublicKeyParameters pubKey1 = BLSPublicKeyFactory.createKey(pubKeyInfo1);
+        SubjectPublicKeyInfo pubKeyInfo2 = contextMap.get("B").getPublicKey("BLSKEY");
+        BLS01PublicKeyParameters pubKey2 = BLSPublicKeyFactory.createKey(pubKeyInfo2);
+
+        Assert.assertEquals(pubKey1.getPk(), pubKey2.getPk());
+
+        for (String nodeName : peers)
+        {
+            pubKeyInfo2 = contextMap.get(nodeName).getPublicKey("BLSKEY");
+            pubKey2 = BLSPublicKeyFactory.createKey(pubKeyInfo2);
+
+            Assert.assertEquals(nodeName, pubKey1.getPk(), pubKey2.getPk());
+        }
+
 //        // Create a random plaintext
 //        ECPoint plaintext = generatePoint(pubKey1.getParameters(), new SecureRandom());
 //
@@ -325,7 +331,7 @@ public class CryptoServicesTest
 //        ECPoint decrypted = dec.decrypt(cipherText);
 //
 //        Assert.assertEquals(plaintext, decrypted);
-//    }
+    }
 
     private Map<String, XimixNodeContext> createContextMap(int size)
         throws ConfigException
