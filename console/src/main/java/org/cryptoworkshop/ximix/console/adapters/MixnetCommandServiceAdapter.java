@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.console.adapters;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
 import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
+import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.console.config.AdapterConfig;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
@@ -25,8 +26,7 @@ import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
-import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
-import org.cryptoworkshop.ximix.registrar.RegistrarServiceException;
+import org.cryptoworkshop.ximix.monitor.NodeHealthMonitor;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
@@ -134,33 +134,16 @@ public class MixnetCommandServiceAdapter
     }
 
     @Override
-    public List<NodeDetail> getNodeInfo()
+    public List<NodeStatusMessage> getNodeInfo()
     {
 
-//        commandService.getNodeDetails();
-//
-//
-//        //
-//        // The following may seem like overkill but it allows us to
-//        //
-//
-//        //  try {
-//
-//        ArrayList<NodeDetail> details = new ArrayList<>();
-//
-//        details.add(new NodeDetail(1234, "Node 1"));
-//        details.add(new NodeDetail(1234, "Node 2"));
-//        details.add(new NodeDetail(1234, "Node 3"));
-//        details.add(new NodeDetail(1234, "Node 4"));
-
-
-        List<NodeDetail> details = null;
+        List<NodeStatusMessage> details = null;
         try
         {
+            NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
+            details = nhm.getConnectedNodeDetails();
 
-            commandService = registrar.connect(CommandService.class);
-            details = commandService.getNodeDetails();
-            commandService.shutdown();
+
         }
         catch (Exception e)
         {
@@ -169,13 +152,6 @@ public class MixnetCommandServiceAdapter
 
         return details;
 
-
-        //  } catch (ServiceConnectionException e) {
-        //      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        //  }
-
-
-        // return null;
     }
 
 }

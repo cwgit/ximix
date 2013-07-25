@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.console;
 import java.util.List;
 import java.util.Map;
 
+import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.console.config.AdapterConfig;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
@@ -49,7 +50,7 @@ public interface NodeAdapter
 
     List<Command> getCommandList();
 
-    List<NodeDetail> getNodeInfo();
+    List<NodeStatusMessage> getNodeInfo();
 
     StandardMessage invoke(int id, Map<String, String[]> params);
 

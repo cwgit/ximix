@@ -49,7 +49,8 @@ public class CommandMessage
         SHUFFLE_AND_MOVE_BOARD_TO_NODE,
         SHUFFLE_AND_RETURN_BOARD,
         INITIATE_INTRANSIT_BOARD,
-        NODE_INFO_UPDATE
+        NODE_INFO_UPDATE,
+        NODE_STATISTICS
     }
 
     public CommandMessage(Type type, ASN1Encodable payload)

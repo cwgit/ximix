@@ -93,47 +93,6 @@ public class ClientCommandService
         return op;
     }
 
-    @Override
-    public List<NodeDetail> getNodeDetails()
-        throws ServiceConnectionException
-    {
-
-        Iterator<String> it = connection.getActiveNodeNames().iterator();
-        ArrayList<NodeDetail> nodes = new ArrayList<NodeDetail>();
-
-        while (it.hasNext())
-        {
-            NodeDetail nd = new NodeDetail();
-
-            nd.setName(it.next());
-            nodes.add(nd);
-        }
-
-        return nodes;
-    }
-
-    @Override
-    public List<NodeHealth> getNodeHealth(String... nodes)
-        throws ServiceConnectionException
-    {
-
-        ArrayList<NodeHealth> healths = new ArrayList<>();
-
-        healths.add(new NodeHealth());
-
-
-        return healths;
-    }
-
-    @Override
-    public List<NodeStatistics> getNodeStatistics(String... nodes)
-    {
-        ArrayList<NodeStatistics> nodeStatistics = new ArrayList<>();
-        nodeStatistics.add(new NodeStatistics());
-
-        return nodeStatistics;
-    }
-
     private static class CaseInsensitiveComparator
         implements Comparator<String>
     {

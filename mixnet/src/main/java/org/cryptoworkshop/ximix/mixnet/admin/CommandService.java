@@ -17,38 +17,40 @@ package org.cryptoworkshop.ximix.mixnet.admin;
 
 import java.util.List;
 
+import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 public interface CommandService
     extends ShuffleOperation,
     DownloadOperation
 {
-    /**
-     * Return a list of static details about the node.
-     *
-     * @return The node.
-     * @throws ServiceConnectionException
-     */
-    List<NodeDetail> getNodeDetails()
-        throws ServiceConnectionException;
 
-    /**
-     * Return a set of dynamic details about a node.
-     *
-     * @param nodes The nodes.
-     * @return
-     * @throws ServiceConnectionException
-     */
-    List<NodeHealth> getNodeHealth(String... nodes)
-        throws ServiceConnectionException;
-
-    /**
-     * Return processing statistics about a node.
-     *
-     * @param nodes
-     * @return
-     */
-    List<NodeStatistics> getNodeStatistics(String... nodes);
+//    /**
+//     * Return a list of static details about the node.
+//     *
+//     * @return The node.
+//     * @throws ServiceConnectionException
+//     */
+//    List<NodeStatusMessage> getNodeDetails()
+//        throws ServiceConnectionException;
+//
+//    /**
+//     * Return a set of dynamic details about a node.
+//     *
+//     * @param nodes The nodes.
+//     * @return
+//     * @throws ServiceConnectionException
+//     */
+//    List<NodeStatusMessage> getNodeHealth(String... nodes)
+//        throws ServiceConnectionException;
+//
+//    /**
+//     * Return processing statistics about a node.
+//     *
+//     * @param nodes
+//     * @return
+//     */
+//    List<NodeStatusMessage> getNodeStatistics(String... nodes);
 
     /**
      * Close any io used by this service.
