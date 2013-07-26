@@ -94,6 +94,31 @@ task fetch_libs << {
     fetchFile(jpbcRemoteUrl3, root);
     fetchFile(jpbcRemoteUrl4, root);
     fetchFile(mapdbRemoteUrl, root);
+
+
+    root = new File(projectDir, "console/libs/");
+    if (!root.exists()) {
+        root.mkdirs();
+    }
+
+    ['jackson-annotations-2.2.0.jar',
+            'jackson-core-2.2.0.jar',
+            'jackson-databind-2.2.0.jar',
+          //  'jetty-http-9.0.3.v20130506.jar',
+            'jetty-http-9.0.4.v20130625.jar',
+          //  'jetty-io-9.0.3.v20130506.jar',
+            'jetty-io-9.0.4.v20130625.jar',
+         //   'jetty-server-9.0.3.v20130506.jar',
+            'jetty-server-9.0.4.v20130625.jar',
+           // 'jetty-util-9.0.3.v20130506.jar',
+            'jetty-util-9.0.4.v20130625.jar',
+            'javax.servlet-3.0.0.v201112011016.jar'
+    ].each { i ->
+        fetchFile(cryptoWorkshopLibsPrefix + "/" + i, root);
+    }
+
+    fetchFile(providerRemoteUrl, root);
+
 }
 
 task test_foo << {
@@ -234,13 +259,13 @@ task make_console_installer(dependsOn: 'jar') << {
     pw.println('        <movements>');
     pw.println('        <id>1</id>');
 
-    pw.println('            <movement src="ximix_console/" recursive="true"></movement>');
+    pw.println('            <movement src="ximix-console/" recursive="true"></movement>');
 
 
     pw.println('        </movements>');
     pw.println('        <!-- Make executable if in a posix environment -->');
 
-    pw.println('        <posix-exec relpath="ximix_console/bin/start.sh" perm="rwxr-xr-x"/>');
+    pw.println('        <posix-exec relpath="ximix-console/bin/start.sh" perm="rwxr-xr-x"/>');
     pw.println('   </installation>');
     pw.println('</installer>');
 
@@ -251,7 +276,7 @@ task make_console_installer(dependsOn: 'jar') << {
     File ximixStage = new File(installerJarStageDir, "ximix-console");
 
 
-    File confStageDir = new File(ximixStage,"conf");
+    File confStageDir = new File(ximixStage, "conf");
     org.apache.commons.io.FileUtils.copyFileToDirectory(consoleConfigFile, confStageDir);
     org.apache.commons.io.FileUtils.copyFileToDirectory(mixnetConfigFile, confStageDir);
 
@@ -262,7 +287,8 @@ task make_console_installer(dependsOn: 'jar') << {
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':common').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':node').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':console').jar.archivePath, stagedLibs);
-
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':crypto').jar.archivePath, stagedLibs);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':mixnet').jar.archivePath, stagedLibs);
 
     //
     // Console dependencies..
@@ -274,8 +300,6 @@ task make_console_installer(dependsOn: 'jar') << {
     //
 
     org.apache.commons.io.FileUtils.copyDirectory(new File(project(':console').projectDir, "includes/ximix-console/"), ximixStage);
-
-
 
     //
     // This makes a node stand alone uses the ant jar task..
