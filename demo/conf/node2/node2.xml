@@ -36,5 +36,8 @@
         <service>
             <implementation>org.cryptoworkshop.ximix.crypto.service.NodeSigningService</implementation>
         </service>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.monitor.NodeHealthMonitorService</implementation>
+        </service>
     </services>
 </node>

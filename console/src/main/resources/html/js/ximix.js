@@ -1,6 +1,8 @@
 var pollTimer = null;
 node_desc = {};
 old_node_size = 0;
+var lang_id = navigator.language || navigator.userLanguage;
+var lang = {};
 
 jQuery.ajaxSetup({
     'beforeSend': function (xhr) {
@@ -26,7 +28,7 @@ function fetchNodes() {
     $.post("/api/nodes/mixnetadmin", null, function (data) {
 
 
-        var toBoRemoved = {}
+            var toBoRemoved = {}
 
             for (var name in node_desc) {
                 toBoRemoved[name] = node_desc[name];
@@ -36,26 +38,25 @@ function fetchNodes() {
 
                 for (t = 0; t < data.length; t++) {
                     node = data[t];
-                    node_desc[node.name] = node;
+                    node_desc[node.values.name] = node;
 
-                   delete toBoRemoved[node.name];
+                    delete toBoRemoved[node.values.name];
 
                 }
             }
 
 
-            for (var name in toBoRemoved)
-            {
-               $("#node_" + toBoRemoved[name].hash + "_info").fadeOut(500,function() {
-                   delete node_desc[name];
-                   $(this).remove();
-               });
+            for (var name in toBoRemoved) {
+                $("#node_" + toBoRemoved[name].values.name + "_info").fadeOut(500, function () {
+                    delete node_desc[name];
+                    $(this).remove();
+                });
 
             }
 
-            toBoRemoved=null;
+            toBoRemoved = null;
 
-            renderNodeDetail();
+            renderStaticDetails();
 
 
         }
@@ -64,21 +65,34 @@ function fetchNodes() {
 }
 
 
-function renderNodeDetail() {
+function renderStaticDetails() {
     for (var name in node_desc) {
-        node = node_desc[name];
+        node = node_desc[name].values;
 
-        outer = $("#node_" + node.hash + "_info");
+
+        outer = $("#node_" + node.name + "_info");
         if (!outer.length) {
-            outer = $("<div class='node' id='node_" + node.hash + "_info'>");
+            outer = $("<div class='node' id='node_" + node.name + "_info'>");
             outer.appendTo('#nodes');
             outer.append("<div class='nodetitle'>" + node.name + "</div>");
-            outer.append("<table class='nodetable' border='0'>" +
-                " <tr><td>Port:</td><td>" + (node.port) + "</td></tr>" +
-                " <tr><td>Started:</td><td>" + (new Date(node.startTimestamp)) + "</td></tr>" +
-                "</table>");
 
-            outer.click(function(){
+            var tab = "<table class='nodetable' border='0'>"
+
+            for (var k in node) {
+                if ("name" === k) {
+                    continue;
+                }
+
+                tab = tab + "<tr><td>"+(lang[k])+"</td><td>" + (node[k]) + "</td></tr>";
+
+            }
+
+            tab = tab+"</table>";
+
+            outer.append(tab);
+
+
+            outer.click(function () {
 
             });
 
@@ -196,6 +210,20 @@ function pollNodes() {
 
 
 $(document).ready(function () {
+
+    var l = languages[lang_id.toLocaleLowerCase()];
+    if (l == null) {
+        l = languages[default_language];
+    }
+
+    $.getScript(l, function(data, textStatus, jqxhr) {
+        if (jqxhr.status != 200)
+        {
+           alert("Unable to find: "+l+" for language "+lang_id.toLowerCase());
+        }
+    });
+
+
     pollTimer = setInterval(pollNodes, 5000);
     fetchCommands();
 });

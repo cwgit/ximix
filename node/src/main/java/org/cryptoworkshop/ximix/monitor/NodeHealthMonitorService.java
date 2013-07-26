@@ -17,17 +17,15 @@ public class NodeHealthMonitorService
     implements Service
 {
     public static final int MIN_STATISTICS_PERIOD = 1000;
-    NodeContext context = null;
-    DefaultStatisticsCollector statisticsCollector = null;
+    private final NodeContext context;
+    private final DefaultStatisticsCollector statisticsCollector;
+    private final Config config;
 
-    public NodeHealthMonitorService()
-    {
-
-    }
 
     public NodeHealthMonitorService(NodeContext context, Config config)
     {
         this.context = context;
+        this.config = config;
         statisticsCollector = new DefaultStatisticsCollector();
         statisticsCollector.start();
     }
@@ -71,6 +69,7 @@ public class NodeHealthMonitorService
                 nsm = new NodeStatusMessage();
                 Runtime rt = Runtime.getRuntime();
                 RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
+                nsm.putValue("name", context.getName());
                 nsm.putValue("vm.available-processors", rt.availableProcessors());
                 nsm.putValue("vm.free-memory", rt.freeMemory());
                 nsm.putValue("vm.total-memory", rt.totalMemory());
@@ -85,6 +84,7 @@ public class NodeHealthMonitorService
                 Runtime rt = Runtime.getRuntime();
                 RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
                 mxbean.getUptime();
+                nsm.putValue("name", context.getName());
                 nsm.putValue("vm.vendor", mxbean.getVmVendor());
                 nsm.putValue("vm.vendor-name", mxbean.getVmName());
                 nsm.putValue("vm.vendor-version", mxbean.getVmVersion());
@@ -101,6 +101,7 @@ public class NodeHealthMonitorService
                 else
                 {
                     nsm = NodeStatusMessage.getInstance(cs, cs.getStartTime());
+                    nsm.putValue("name",context.getName());
                 }
             }
             break;
