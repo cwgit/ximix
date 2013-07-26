@@ -28,13 +28,13 @@ public class ClientNodeHealthMonitor implements NodeHealthMonitor
     {
         for (String node : nodes)
         {
-            connection.sendMessage(node, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forReset(1));
+            connection.sendMessage(node, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forTrim(1));
         }
 
     }
 
     @Override
-    public NodeStatusMessage getLast(String node)
+    public NodeStatusMessage getLastStatistics(String node)
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -60,5 +60,12 @@ public class ClientNodeHealthMonitor implements NodeHealthMonitor
 
 
         return out;
+    }
+
+    @Override
+    public List<NodeStatusMessage> getVMDetails()
+        throws ServiceConnectionException
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }

@@ -5,7 +5,8 @@ import org.bouncycastle.asn1.*;
 /**
  *
  */
-public class NodeStatusRequestMessage extends ASN1Object
+public class NodeStatusRequestMessage
+    extends ASN1Object
 {
     private Type type = null;
     private Integer period = null;
@@ -17,6 +18,12 @@ public class NodeStatusRequestMessage extends ASN1Object
         this.type = type;
     }
 
+    public static NodeStatusRequestMessage forVMInfo()
+    {
+        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.GET_VM_INFO);
+        return msg;
+    }
+
     public static NodeStatusRequestMessage forPeriodChange(int period)
     {
         NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.SET_PERIOD);
@@ -24,9 +31,9 @@ public class NodeStatusRequestMessage extends ASN1Object
         return msg;
     }
 
-    public static NodeStatusRequestMessage forReset(int count)
+    public static NodeStatusRequestMessage forTrim(int count)
     {
-        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.RESET);
+        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.TRIM);
         msg.toCount = count;
         return msg;
     }
@@ -63,7 +70,7 @@ public class NodeStatusRequestMessage extends ASN1Object
             NodeStatusRequestMessage out = new NodeStatusRequestMessage(type);
             switch (type)
             {
-                case RESET:
+                case TRIM:
                     out.toCount = ((ASN1Integer)seq.getObjectAt(1)).getValue().intValue();
                     break;
 
@@ -83,6 +90,16 @@ public class NodeStatusRequestMessage extends ASN1Object
         return type;
     }
 
+    public Integer getPeriod()
+    {
+        return period;
+    }
+
+    public Integer getToCount()
+    {
+        return toCount;
+    }
+
     @Override
     public ASN1Primitive toASN1Primitive()
     {
@@ -93,7 +110,7 @@ public class NodeStatusRequestMessage extends ASN1Object
         {
             seq.add(new ASN1Integer(period));
         }
-        else if (type == Type.RESET)
+        else if (type == Type.TRIM)
         {
             seq.add(new ASN1Integer(toCount));
         }
@@ -105,16 +122,14 @@ public class NodeStatusRequestMessage extends ASN1Object
 
     public static enum Type
     {
-
-        RESET,
-
+        TRIM,
 
         SET_PERIOD,
 
-
         GET_STATIC_INFO,
 
+        GET_STATISTICS,
 
-        GET_STATISTICS
+        GET_VM_INFO
     }
 }

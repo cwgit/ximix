@@ -13,11 +13,13 @@ public interface NodeHealthMonitor
     void resetToLast(int count, String... nodes)
         throws ServiceConnectionException;
 
-    NodeStatusMessage getLast(String node);
+    NodeStatusMessage getLastStatistics(String node);
 
 
     List<NodeStatusMessage> getConnectedNodeDetails()
         throws ServiceConnectionException;
 
+    List<NodeStatusMessage> getVMDetails()
+        throws ServiceConnectionException;
 
 }

@@ -11,7 +11,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  *
  */
-public class DefaultStatisticsCollector implements StatisticCollector
+public class DefaultStatisticsCollector
+    implements StatisticCollector
 {
 
     private List<CrossSection> crossSections = new ArrayList<>();
@@ -237,17 +238,21 @@ public class DefaultStatisticsCollector implements StatisticCollector
     @Override
     public void log(String name, Object value)
     {
-        CrossSection s = crossSections.get(crossSections.size() - 1);
-        if (s.containsKey(name))
-        {
-            List i = (List)s.get(name);
-            if (i == null)
-            {
-                i = new ArrayList();
 
-                s.put(name, i);
+        synchronized (crossSections)
+        {
+            CrossSection s = crossSections.get(crossSections.size() - 1);
+            if (s.containsKey(name))
+            {
+                List i = (List)s.get(name);
+                if (i == null)
+                {
+                    i = new ArrayList();
+
+                    s.put(name, i);
+                }
+                i.add(value);
             }
-            i.add(value);
         }
     }
 
@@ -258,7 +263,39 @@ public class DefaultStatisticsCollector implements StatisticCollector
 
     public void setDurationMillis(int durationMillis)
     {
+        boolean interrupt = durationMillis < this.durationMillis;
+
         this.durationMillis = durationMillis;
+
+        if (interrupt)
+        {
+            try
+            {
+                rollOverThread.interrupt();
+            }
+            catch (Exception ex)
+            {
+                // Deliberately ignored.
+            }
+        }
+
+    }
+
+    public void trim(int count)
+    {
+        if (count < 1)
+        {
+            count = 1;
+        }
+
+        synchronized (crossSections)
+        {
+            while (crossSections.size() > count)
+            {
+                crossSections.remove(crossSections.size() - 1);
+            }
+        }
+
     }
 
     public Map<String, Object> getInitValues()

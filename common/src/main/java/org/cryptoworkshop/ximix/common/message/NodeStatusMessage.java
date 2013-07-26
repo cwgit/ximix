@@ -8,11 +8,19 @@ import java.util.*;
 /**
  *
  */
-public class NodeStatusMessage extends ASN1Object
+public class NodeStatusMessage
+    extends ASN1Object
 {
 
     private static final Charset UTF8 = Charset.forName("UTF8");
     public static final NodeStatusMessage NULL_MESSAGE;
+
+
+    private enum ValueType
+    {
+        STRING, INT, LONG, LIST
+    }
+
 
     static
     {
@@ -39,12 +47,15 @@ public class NodeStatusMessage extends ASN1Object
     {
 
         int t = 0;
-        timestamp = ((ASN1Integer)set.getObjectAt(t++)).getValue().intValue();
+        timestamp = ((ASN1Integer)set.getObjectAt(t++)).getValue().longValue();
 
         for (; t < set.size(); t++)
         {
             ASN1Sequence pair = (ASN1Sequence)set.getObjectAt(t);
-            values.put((String)duckType(pair.getObjectAt(0)), duckType(pair.getObjectAt(1)));
+            values.put(
+                ((DERUTF8String)pair.getObjectAt(0)).getString(),
+                asn1TypeToObject((ASN1Sequence)pair.getObjectAt(1))
+            );
         }
 
     }
@@ -63,8 +74,6 @@ public class NodeStatusMessage extends ASN1Object
 
     public static NodeStatusMessage getInstance(Object o, Long timestamp)
     {
-
-
         if (o instanceof HashMap)
         {
             return new NodeStatusMessage((Map)o).withTimeStamp(timestamp);
@@ -76,6 +85,7 @@ public class NodeStatusMessage extends ASN1Object
 
         throw new IllegalArgumentException("Unsupported object type, " + o.getClass().getName());
     }
+
 
     public long getTimestamp()
     {
@@ -97,28 +107,42 @@ public class NodeStatusMessage extends ASN1Object
         this.values = values;
     }
 
-    private Object duckType(Object asnType)
+    private Object asn1TypeToObject(ASN1Sequence sequence)
     {
         Object out = null;
 
-        if (asnType instanceof DERUTF8String)
-        {
-            out = ((DERUTF8String)asnType).getString();
-        }
-        else if (asnType instanceof ASN1Integer)
-        {
-            out = ((ASN1Integer)asnType).getValue().intValue();
-        }
-        else if (asnType instanceof ASN1Sequence)
-        {
-            out = new ArrayList<Object>();
-            Enumeration e = ((ASN1Sequence)asnType).getObjects();
-            while (e.hasMoreElements())
-            {
-                ((List)out).add(duckType(e.nextElement()));
-            }
-        }
+        ValueType type = ValueType.values()[((ASN1Enumerated)sequence.getObjectAt(0)).getValue().intValue()];
 
+        switch (type)
+        {
+
+            case STRING:
+            {
+                out = ((DERUTF8String)sequence.getObjectAt(1)).getString();
+            }
+            break;
+            case INT:
+            {
+                out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().intValue();
+            }
+            break;
+            case LONG:
+            {
+                out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().longValue();
+            }
+            break;
+
+            case LIST:
+            {
+                out = new ArrayList<Object>();
+                Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
+                while (e.hasMoreElements())
+                {
+                    ((List)out).add(asn1TypeToObject((ASN1Sequence)e.nextElement()));
+                }
+            }
+            break;
+        }
 
         return out;
     }
@@ -135,7 +159,6 @@ public class NodeStatusMessage extends ASN1Object
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-
         ASN1EncodableVector out = new ASN1EncodableVector();
         out.add(new ASN1Integer(timestamp));
         Iterator<Map.Entry<String, Object>> it = values.entrySet().iterator();
@@ -144,44 +167,59 @@ public class NodeStatusMessage extends ASN1Object
         {
             ASN1EncodableVector pair = new ASN1EncodableVector();
             Map.Entry<String, Object> entry = it.next();
-
             pair.add(new DERUTF8String(entry.getKey()));
 
             pair.add(objToASNType(entry.getValue()));
             out.add(new DERSequence(pair));
         }
-
-
         return new DERSequence(out);
     }
 
-    private ASN1Object objToASNType(Object type)
+    private ASN1Sequence objToASNType(Object type)
     {
+        ASN1EncodableVector out = new ASN1EncodableVector();
         if (type instanceof String)
         {
-            return new DERUTF8String(((String)type));
+            out.add(new ASN1Enumerated(ValueType.STRING.ordinal()));
+            out.add(new DERUTF8String(((String)type)));
         }
         else if (type instanceof Integer)
         {
-            return new ASN1Integer((Integer)type);
+            out.add(new ASN1Enumerated(ValueType.INT.ordinal()));
+            out.add(new ASN1Integer((Integer)type));
+        }
+        else if (type instanceof Long)
+        {
+            out.add(new ASN1Enumerated(ValueType.LONG.ordinal()));
+            out.add(new ASN1Integer((Long)type));
         }
         else if (type instanceof List)
         {
+            out.add(new ASN1Enumerated(ValueType.LIST.ordinal()));
             ASN1EncodableVector vec = new ASN1EncodableVector();
 
             for (Object o : (List)type)
             {
                 vec.add(objToASNType(o));
             }
-            return new DERSequence(vec);
+            out.add(new DERSequence(vec));
         }
-
-        throw new IllegalArgumentException("Unable to encode type: " + type.getClass().getName());
-
+        else
+        {
+            throw new IllegalArgumentException("Unable to encode type: " + type.getClass().getName());
+        }
+        return new DERSequence(out);
     }
 
     public boolean isNullStatistics()
     {
         return timestamp == -1;
     }
+
+    public void putValue(String name, Object value)
+    {
+        values.put(name, value);
+    }
+
+
 }

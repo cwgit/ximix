@@ -7,11 +7,16 @@ import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.statistics.CrossSection;
 import org.cryptoworkshop.ximix.common.statistics.DefaultStatisticsCollector;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+
 /**
  *
  */
-public class NodeHealthMonitorService implements Service
+public class NodeHealthMonitorService
+    implements Service
 {
+    public static final int MIN_STATISTICS_PERIOD = 1000;
     NodeContext context = null;
     DefaultStatisticsCollector statisticsCollector = null;
 
@@ -25,7 +30,6 @@ public class NodeHealthMonitorService implements Service
         this.context = context;
         statisticsCollector = new DefaultStatisticsCollector();
         statisticsCollector.start();
-
     }
 
     @Override
@@ -37,14 +41,6 @@ public class NodeHealthMonitorService implements Service
     @Override
     public MessageReply handle(Message message)
     {
-
-        //      availableProcessors = Runtime.getRuntime().availableProcessors();
-        //      freeMemory = Runtime.getRuntime().freeMemory();
-        //      totalMemory = Runtime.getRuntime().totalMemory();
-        //      RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
-        //      mxbean.getUptime();
-
-
         NodeStatusRequestMessage req = NodeStatusRequestMessage.getInstance(message.getPayload());
 
         NodeStatusMessage nsm = null;
@@ -52,14 +48,51 @@ public class NodeHealthMonitorService implements Service
         switch (req.getType())
         {
 
-            case RESET:
-                break;
-            case SET_PERIOD:
-                break;
-            case GET_STATIC_INFO:
+            case TRIM:
+                int totalCount = req.getToCount();
+                if (totalCount < 1)
+                {
+                    totalCount = 1;
+                }
+                statisticsCollector.trim(totalCount);
 
                 break;
+            case SET_PERIOD:
+                int period = req.getPeriod();
+                if (period < 1000)
+                {
+                    period = MIN_STATISTICS_PERIOD;
+                }
+                statisticsCollector.setDurationMillis(period);
+                break;
+
+            case GET_VM_INFO:
+            {
+                nsm = new NodeStatusMessage();
+                Runtime rt = Runtime.getRuntime();
+                RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
+                nsm.putValue("vm.available-processors", rt.availableProcessors());
+                nsm.putValue("vm.free-memory", rt.freeMemory());
+                nsm.putValue("vm.total-memory", rt.totalMemory());
+                nsm.putValue("vm.up-time", mxBean.getUptime());
+                nsm.putValue("vm.start-time", mxBean.getStartTime());
+            }
+            break;
+
+            case GET_STATIC_INFO:
+            {
+                nsm = new NodeStatusMessage();
+                Runtime rt = Runtime.getRuntime();
+                RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
+                mxbean.getUptime();
+                nsm.putValue("vm.vendor", mxbean.getVmVendor());
+                nsm.putValue("vm.vendor-name", mxbean.getVmName());
+                nsm.putValue("vm.vendor-version", mxbean.getVmVersion());
+            }
+            break;
+
             case GET_STATISTICS:
+            {
                 CrossSection cs = statisticsCollector.pollOldestCrossSection();
                 if (cs == null)
                 {
@@ -69,7 +102,8 @@ public class NodeHealthMonitorService implements Service
                 {
                     nsm = NodeStatusMessage.getInstance(cs, cs.getStartTime());
                 }
-                break;
+            }
+            break;
         }
 
 
@@ -79,12 +113,11 @@ public class NodeHealthMonitorService implements Service
     }
 
     /**
-     *
      * @return
      */
     private NodeStatusMessage getStaticInfo()
     {
-       NodeStatusMessage nsm = new NodeStatusMessage();
+        NodeStatusMessage nsm = new NodeStatusMessage();
 
         return nsm;
     }
