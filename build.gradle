@@ -18,6 +18,7 @@ configurations {
     jacocoant
     jacoco
     antjunit
+    console_install
 }
 
 dependencies {
@@ -164,9 +165,138 @@ task coverage_report(dependsOn: 'compileTestJava') << {
     //
     new File("{$rootDir}/coverage/jacoco.exe").delete();
 
-    println("\r\nCoverage Report can be found in: \r\n"+coverageReport);
+    println("\r\nCoverage Report can be found in: \r\n" + coverageReport);
 
 }
+
+
+task make_console_installer(dependsOn: 'jar') << {
+
+    if (!System.properties.containsKey("config")) {
+        System.err.println("No config specified run with '-Dconfig=/path/to/console.xml'");
+        System.exit(-1);
+    }
+
+    if (!System.properties.containsKey("mixnet")) {
+        System.err.println("No mixnet config specified run with '-Dmixnet=/path/to/mixnet.xml'");
+        System.exit(-1);
+    }
+
+
+    File consoleConfigFile = new File(System.properties.getProperty("config"));
+    if (!consoleConfigFile.exists()) {
+        System.err.println("Could not find console config file:" + consoleConfigFile.getCanonicalPath());
+        System.exit(-1);
+    }
+
+    File mixnetConfigFile = new File(System.properties.getProperty("mixnet"));
+    if (!mixnetConfigFile.exists()) {
+        System.err.println("Could not find mixnet config file:" + mixnetConfigFile.getCanonicalPath());
+        System.exit(-1);
+    }
+
+
+
+    println("\r\nMaking Node Installer Jar\r\n");
+
+    File root = new File(projectDir, "build/installers");
+
+    //
+    // Final jar will go in here.
+    //
+    if (root.exists()) {
+        org.apache.commons.io.FileUtils.deleteDirectory(root);
+    }
+    root.mkdirs();
+
+    //
+    // Stage for jar layout.
+    //
+    File installerJarStageDir = new File(root, "/stage");
+    installerJarStageDir.mkdirs();
+
+    //
+    // Setup control file.
+    //
+
+
+    FileWriter sw = new FileWriter(new File(installerJarStageDir, "install.xml"));
+    PrintWriter pw = new PrintWriter(sw);
+
+    pw.println('<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>');
+    pw.println('<installer>');
+    pw.println('   <installation>');
+    pw.println('        <name>Ximix</name>');
+    pw.println('        <description></description>');
+    pw.println('        <id>install_' + System.currentTimeMillis() + '</id>');
+    pw.println('        <prop name="installDir" type="file" value="./"/>');
+    pw.println('        <step name="askInstallLocation"/>');
+    pw.println('        <movements>');
+    pw.println('        <id>1</id>');
+
+    pw.println('            <movement src="ximix_console/" recursive="true"></movement>');
+
+
+    pw.println('        </movements>');
+    pw.println('        <!-- Make executable if in a posix environment -->');
+
+    pw.println('        <posix-exec relpath="ximix_console/bin/start.sh" perm="rwxr-xr-x"/>');
+    pw.println('   </installation>');
+    pw.println('</installer>');
+
+    pw.flush();
+    pw.close();
+
+
+    File ximixStage = new File(installerJarStageDir, "ximix-console");
+
+
+    File confStageDir = new File(ximixStage,"conf");
+    org.apache.commons.io.FileUtils.copyFileToDirectory(consoleConfigFile, confStageDir);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(mixnetConfigFile, confStageDir);
+
+
+    File stagedLibs = new File(ximixStage, "/libs");
+    stagedLibs.mkdirs();
+
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':common').jar.archivePath, stagedLibs);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':node').jar.archivePath, stagedLibs);
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':console').jar.archivePath, stagedLibs);
+
+
+    //
+    // Console dependencies..
+    //
+    org.apache.commons.io.FileUtils.copyDirectory(new File("${rootDir}/console/libs/"), stagedLibs);
+
+    //
+    // The other includes like shell scripts
+    //
+
+    org.apache.commons.io.FileUtils.copyDirectory(new File(project(':console').projectDir, "includes/ximix-console/"), ximixStage);
+
+
+
+    //
+    // This makes a node stand alone uses the ant jar task..
+    //
+
+    File jarFile = new File(root, "XimixConsoleInstaller.jar");
+
+    ant.jar(destfile: jarFile, manifest: new File(projectDir, "installer/manifest/MANIFEST.MF")) {
+        fileset(dir: new File(projectDir, 'installer/build/classes/main/'));
+        fileset(dir: installerJarStageDir);
+    }
+
+
+    println("\r\nInstaller Jar: " + jarFile.getCanonicalFile());
+
+    println("The installer jar can run using:" +
+            "\r\njava -jar " + jarFile.getCanonicalPath());
+
+
+}
+
 
 
 task make_node_installer(dependsOn: 'jar') << {
@@ -284,14 +414,13 @@ task make_node_installer(dependsOn: 'jar') << {
     pw.println('        <movements>');
     pw.println('        <id>1</id>');
 
-
 //    if (hasConfigs) {
 //        for (int t = 0; t < nodeConfigs.size(); t++) {
 //            pw.println('            <movement src="node' + t + '/" recursive="true"></movement>');
 //        }
 //    } else {
-        pw.println('            <movement src="ximix/" recursive="true"></movement>');
-  //  }
+    pw.println('            <movement src="ximix/" recursive="true"></movement>');
+    //  }
 
 
     pw.println('        </movements>');
@@ -302,8 +431,8 @@ task make_node_installer(dependsOn: 'jar') << {
 //            pw.println('        <posix-exec relpath="node' + t + '/bin/start.sh" perm="rwxr-xr-x"/>');
 //        }
 //    } else {
-        pw.println('        <posix-exec relpath="ximix/bin/start.sh" perm="rwxr-xr-x"/>');
-  //  }
+    pw.println('        <posix-exec relpath="ximix/bin/start.sh" perm="rwxr-xr-x"/>');
+    //  }
     pw.println('   </installation>');
     pw.println('</installer>');
 
@@ -313,13 +442,12 @@ task make_node_installer(dependsOn: 'jar') << {
 
     //  org.apache.commons.io.FileUtils.copyFile(new File(project(':installer').projectDir, "src/main/resources/install_node.xml"), new File(installerJarStageDir, "install.xml"));
 
-
     //
     //
     //
 
 
-    File ximixStage = new File(installerJarStageDir,"ximix");
+    File ximixStage = new File(installerJarStageDir, "ximix");
 
 
     File stagedLibs = new File(ximixStage, "/libs");
@@ -334,7 +462,6 @@ task make_node_installer(dependsOn: 'jar') << {
 
     org.apache.commons.io.FileUtils.copyDirectory(new File("${rootDir}/libs/"), stagedLibs);
 
-
     //
     // The other includes like shell scripts
     //
@@ -343,7 +470,7 @@ task make_node_installer(dependsOn: 'jar') << {
 
     if (hasConfigs) {
         for (int t = 0; t < nodeConfigs.size(); t++) {
-            populateNodeStage("node"+(t+1) , ximixStage, mixnetConfigFile, nodeConfigs.get(t));
+            populateNodeStage("node" + (t + 1), ximixStage, mixnetConfigFile, nodeConfigs.get(t));
         }
     } else {
         populateNodeStage("node", ximixStage, null, null);
@@ -361,10 +488,10 @@ task make_node_installer(dependsOn: 'jar') << {
     }
 
 
-    println("\r\nInstaller Jar: "+jarFile.getCanonicalFile());
+    println("\r\nInstaller Jar: " + jarFile.getCanonicalFile());
 
     println("The installer jar can run using:" +
-            "\r\njava -jar "+jarFile.getCanonicalPath());
+            "\r\njava -jar " + jarFile.getCanonicalPath());
 
 }
 

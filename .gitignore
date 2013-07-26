@@ -53,3 +53,4 @@ build/reports/tests
 build/test-results/binary/test
 build
 coverage/
+demo/conf/node2/boards

@@ -62,6 +62,10 @@ public class Main
 
     public static void init(String[] args) throws Exception
     {
+        if (args.length>1)
+        {
+            System.setProperty("mixnet-file", args[1]);
+        }
 
         config = new Config(new File(args[0]));
 
@@ -87,7 +91,7 @@ public class Main
 
         } catch (Exception e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
 
     }

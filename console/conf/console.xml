@@ -11,7 +11,7 @@
             <id>mixnetadmin</id>
             <name>Mixnet Admin</name>
             <description>Admin panel for the Mixnet</description>
-            <property name="config-file">demo/conf/mixnet.xml</property>
+            <property name="mixnet-file"></property>    <!-- Force it to use system property, set from command line argument #2 -->
         </adapter>
 
     </console>

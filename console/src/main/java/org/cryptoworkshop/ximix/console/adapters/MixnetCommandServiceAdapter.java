@@ -81,7 +81,19 @@ public class MixnetCommandServiceAdapter
     {
         commandList = new ArrayList<>();
         super.init(consoleConfig, config);
-        configFile = new File(config.get("config-file").toString());
+
+        String f = config.get("mixnet-file").toString();
+        if (f.isEmpty())
+        {
+            f = System.getProperty("mixnet-file");
+        }
+
+        if (f == null || f.isEmpty())
+        {
+            throw new RuntimeException("Mixnet file not specified.");
+        }
+
+        configFile = new File(f);
         findCommands(this);
     }
 
