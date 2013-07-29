@@ -168,17 +168,17 @@ public class Main
             int counter = 0;
 
             @Override
-            public void messageDownloaded(byte[] message)
+            public void messageDownloaded(int index, byte[] message)
             {
                 PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
 
                 if (!decrypted.getECPoints()[0].equals(plainText1[counter]) || !decrypted.getECPoints()[1].equals(plainText2[counter++]))
                 {
-                    System.err.println("decryption failed");
+                    System.err.println(index + " decryption failed");
                 }
                 else
                 {
-                    System.err.println("message downloaded successfully");
+                    System.err.println(index + " message downloaded successfully");
                 }
             }
 

@@ -16,7 +16,6 @@
 package org.cryptoworkshop.ximix.crypto.service;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -29,8 +28,8 @@ import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
@@ -59,7 +58,7 @@ public class NodeDecryptionService
         case PARTIAL_DECRYPT:
             DecryptDataMessage decMessage = DecryptDataMessage.getInstance(message.getPayload());
             List<byte[]>       messages = decMessage.getMessages();
-            List<byte[]>       partialDecrypts = new ArrayList<>(messages.size());
+            PostedMessageDataBlock.Builder  partialDecryptsBuilder = new PostedMessageDataBlock.Builder(messages.size());
 
             PrivateKeyOperator operator = nodeContext.getPrivateKeyOperator(decMessage.getKeyID());
 
@@ -82,7 +81,7 @@ public class NodeDecryptionService
                 }
                 try
                 {
-                    partialDecrypts.add(new PairSequence(pairs).getEncoded());
+                    partialDecryptsBuilder.add(new PairSequence(pairs).getEncoded());
                 }
                 catch (IOException e)
                 {
@@ -90,7 +89,7 @@ public class NodeDecryptionService
                 }
             }
 
-            return new MessageReply(MessageReply.Type.OKAY, new ShareMessage(operator.getSequenceNo(), new MessageBlock(partialDecrypts)));
+            return new MessageReply(MessageReply.Type.OKAY, new ShareMessage(operator.getSequenceNo(), partialDecryptsBuilder.build()));
         default:
             System.err.println("unknown command");
         }

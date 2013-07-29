@@ -33,7 +33,6 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSet;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 
 public class KeyGenerationMessage
@@ -65,7 +64,6 @@ public class KeyGenerationMessage
 
     private KeyGenerationMessage(ASN1Sequence seq)
     {
-        System.err.println(ASN1Dump.dumpAsString(seq));
         this.algorithm = Algorithm.values()[ASN1Enumerated.getInstance(seq.getObjectAt(0)).getValue().intValue()];
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.keyGenParameters = KeyGenParams.getInstance(seq.getObjectAt(2));

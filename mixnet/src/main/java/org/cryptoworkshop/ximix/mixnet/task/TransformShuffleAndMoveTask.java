@@ -16,15 +16,15 @@
 package org.cryptoworkshop.ximix.mixnet.task;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
-import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
+import org.cryptoworkshop.ximix.common.message.BoardUploadBlockMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
+import org.cryptoworkshop.ximix.common.message.PostedMessage;
+import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
@@ -53,36 +53,55 @@ public class TransformShuffleAndMoveTask
 
         try
         {
-            List<byte[]> transformedMessages = new ArrayList<byte[]>();
-
             ServicesConnection peerConnection = nodeContext.getPeerMap().get(message.getDestinationNode());
+            PostedMessageBlock.Builder messageBlockBuilder = new PostedMessageBlock.Builder(20);                  // TODO: make configurable
 
             if (message.getKeyID() != null)
             {
                 transform.init(PublicKeyFactory.createKey(nodeContext.getPublicKey(message.getKeyID())));
 
-                for (byte[] message : board)
+                for (PostedMessage postedMessage : board)
                 {
-                    byte[] transformed = transform.transform(message);
+                    byte[] transformed = transform.transform(postedMessage.getMessage());
 
-                    MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadMessage(board.getName(), message));
+                    messageBlockBuilder.add(postedMessage.geIndex(), transformed);
 
-                    if (reply.getType() != MessageReply.Type.OKAY)
+                    if (messageBlockBuilder.isFull())
                     {
-                        throw new ServiceConnectionException("message failed");
+                        MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(board.getName(), messageBlockBuilder.build()));
+
+                        if (reply.getType() != MessageReply.Type.OKAY)
+                        {
+                            throw new ServiceConnectionException("message failed");
+                        }
                     }
                 }
             }
             else
             {
-                for (byte[] message : board)
+                for (PostedMessage postedMessage : board)
                 {
-                    MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadMessage(board.getName(), message));
+                    messageBlockBuilder.add(postedMessage.geIndex(), postedMessage.getMessage());
 
-                    if (reply.getType() != MessageReply.Type.OKAY)
+                    if (messageBlockBuilder.isFull())
                     {
-                        throw new ServiceConnectionException("message failed");
+                        MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(board.getName(), messageBlockBuilder.build()));
+
+                        if (reply.getType() != MessageReply.Type.OKAY)
+                        {
+                            throw new ServiceConnectionException("message failed");
+                        }
                     }
+                }
+            }
+
+            if (!messageBlockBuilder.isEmpty())
+            {
+                MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(board.getName(), messageBlockBuilder.build()));
+
+                if (reply.getType() != MessageReply.Type.OKAY)
+                {
+                    throw new ServiceConnectionException("message failed");
                 }
             }
 

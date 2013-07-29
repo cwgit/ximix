@@ -15,11 +15,8 @@
  */
 package org.cryptoworkshop.ximix.common.message;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -27,35 +24,33 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
-public class MessageBlock
+public class PostedMessage
     extends ASN1Object
 {
-    private final List<byte[]> messages;
+    private final int    index;
+    private final byte[] message;
 
-    public MessageBlock(List<byte[]> messages)
+    private PostedMessage(ASN1Sequence seq)
     {
-        this.messages = messages;
+        this.index = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue();
+        this.message = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
     }
 
-    private MessageBlock(ASN1Sequence seq)
+    public PostedMessage(int index, byte[] message)
     {
-        messages = new ArrayList<>(seq.size());
-
-        for (Enumeration en = seq.getObjects(); en.hasMoreElements();)
-        {
-            this.messages.add(ASN1OctetString.getInstance(en.nextElement()).getOctets());
-        }
+        this.index = index;
+        this.message = message;
     }
 
-    public static final MessageBlock getInstance(Object o)
+    public static final PostedMessage getInstance(Object o)
     {
-        if (o instanceof MessageBlock)
+        if (o instanceof PostedMessage)
         {
-            return (MessageBlock)o;
+            return (PostedMessage)o;
         }
         else if (o != null)
         {
-            return new MessageBlock(ASN1Sequence.getInstance(o));
+            return new PostedMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -66,21 +61,19 @@ public class MessageBlock
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        for (byte[] message : messages)
-        {
-            v.add(new DEROctetString(message));
-        }
+        v.add(new ASN1Integer(index));
+        v.add(new DEROctetString(message));
 
         return new DERSequence(v);
     }
 
-    public List<byte[]> getMessages()
+    public int geIndex()
     {
-        return messages;
+        return index;
     }
 
-    public int size()
+    public byte[] getMessage()
     {
-        return messages.size();
+        return message;
     }
 }

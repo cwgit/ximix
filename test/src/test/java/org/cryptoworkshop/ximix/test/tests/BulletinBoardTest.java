@@ -106,7 +106,7 @@ public class BulletinBoardTest
             new DownloadOperationListener()
             {
                 @Override
-                public void messageDownloaded(byte[] message)
+                public void messageDownloaded(int index, byte[] message)
                 {
                     msgDownloaded.add(message);
 
@@ -247,7 +247,7 @@ public class BulletinBoardTest
             new DownloadOperationListener()
             {
                 @Override
-                public void messageDownloaded(byte[] message)
+                public void messageDownloaded(int index, byte[] message)
                 {
                     msgDownloaded.add(message);
                     if (msgDownloaded.size() == testSize)

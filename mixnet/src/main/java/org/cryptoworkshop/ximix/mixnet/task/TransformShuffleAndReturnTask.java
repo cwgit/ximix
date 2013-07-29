@@ -16,15 +16,15 @@
 package org.cryptoworkshop.ximix.mixnet.task;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
-import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
+import org.cryptoworkshop.ximix.common.message.BoardUploadBlockMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
+import org.cryptoworkshop.ximix.common.message.PostedMessage;
+import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
@@ -53,32 +53,51 @@ public class TransformShuffleAndReturnTask
 
         try
         {
-            List<byte[]> transformedMessages = new ArrayList<byte[]>();
+            ServicesConnection peerConnection = nodeContext.getPeerMap().get(nodeContext.getBoardHost(message.getBoardName()));
+            PostedMessageBlock.Builder messageBlockBuilder = new PostedMessageBlock.Builder(20);                  // TODO: make configurable
 
             if (message.getKeyID() != null)
             {
                 transform.init(PublicKeyFactory.createKey(nodeContext.getPublicKey(message.getKeyID())));
 
-                for (byte[] message : board)
+                for (PostedMessage postedMessage : board)
                 {
-                    byte[] transformed = transform.transform(message);
+                    byte[] transformed = transform.transform(postedMessage.getMessage());
 
-                    transformedMessages.add(transformed);
+                    messageBlockBuilder.add(postedMessage.geIndex(), transformed);
+
+                    if (messageBlockBuilder.isFull())
+                    {
+                        MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(board.getName(), messageBlockBuilder.build()));
+
+                        if (reply.getType() != MessageReply.Type.OKAY)
+                        {
+                            throw new ServiceConnectionException("message failed");
+                        }
+                    }
                 }
             }
             else
             {
-                for (byte[] message : board)
+                for (PostedMessage postedMessage : board)
                 {
-                    transformedMessages.add(message);
+                    messageBlockBuilder.add(postedMessage.geIndex(), postedMessage.getMessage());
+
+                    if (messageBlockBuilder.isFull())
+                    {
+                        MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(board.getName(), messageBlockBuilder.build()));
+
+                        if (reply.getType() != MessageReply.Type.OKAY)
+                        {
+                            throw new ServiceConnectionException("message failed");
+                        }
+                    }
                 }
             }
 
-            ServicesConnection peerConnection = nodeContext.getPeerMap().get(nodeContext.getBoardHost(message.getBoardName()));
-
-            for (byte[] message : transformedMessages)
+            if (!messageBlockBuilder.isEmpty())
             {
-                MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadMessage(board.getName(), message));
+                MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(board.getName(), messageBlockBuilder.build()));
 
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {
@@ -97,11 +116,16 @@ public class TransformShuffleAndReturnTask
         }
         catch (ServiceConnectionException e)
         {
+            e.printStackTrace();
             // TODO: log?
         }
         catch (IOException e)
         {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        catch (RuntimeException e)
+        {
+            e.printStackTrace();
         }
     }
 }

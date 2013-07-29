@@ -20,5 +20,5 @@ import org.cryptoworkshop.ximix.common.operation.OperationListener;
 public interface DownloadOperationListener
     extends OperationListener<String>
 {
-    public void messageDownloaded(byte[] message);
+    public void messageDownloaded(int index, byte[] message);
 }

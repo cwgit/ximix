@@ -21,6 +21,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,8 +55,6 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
@@ -63,9 +62,11 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS12PfxPdu;
 import org.bouncycastle.pkcs.PKCS12PfxPduBuilder;
 import org.bouncycastle.pkcs.PKCS12SafeBag;
+import org.bouncycastle.pkcs.PKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.PKCS12SafeBagFactory;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCSException;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
@@ -78,6 +79,8 @@ import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.crypto.key.message.BLSCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
+import org.cryptoworkshop.ximix.crypto.key.util.PrivateKeyInfoFactory;
 import org.cryptoworkshop.ximix.crypto.key.util.SubjectPublicKeyInfoFactory;
 import org.cryptoworkshop.ximix.crypto.operator.jpbc.JpbcPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.threshold.BLSCommittedSecretShare;
@@ -221,36 +224,33 @@ public class BLSKeyManager
         {
             OutputEncryptor encOut = new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes256_CBC).setProvider("BC").build(password);
 
-
             JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
             PKCS12PfxPduBuilder builder = new PKCS12PfxPduBuilder();
 
             for (String keyID : sharedPrivateKeyMap.getIDs())
             {
-//                ECDomainParameters domainParams = paramsMap.get(keyID);
-//                PrivateKey privKey = fact.generatePrivate(
-//                           new PKCS8EncodedKeySpec(
-//                                PrivateKeyInfoFactory.createPrivateKeyInfo(
-//                                    new ECPrivateKeyParameters(sharedPrivateKeyMap.getShare(keyID).getValue(), domainParams)).getEncoded()));
+                PrivateKey privKey = fact.generatePrivate(
+                           new PKCS8EncodedKeySpec(
+                                PrivateKeyInfoFactory.createPrivateKeyInfo(sharedPrivateKeyMap.getShare(keyID).getValue(), paramsMap.get(keyID)).getEncoded()));
                 SubjectPublicKeyInfo pubKey = this.fetchPublicKey(keyID);
 
-//                PKCS12SafeBagBuilder eeCertBagBuilder = new PKCS12SafeBagBuilder(createCertificate(
-//                                                                 keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), privKey));
+                PKCS12SafeBagBuilder eeCertBagBuilder = new PKCS12SafeBagBuilder(createCertificate(
+                                                                 keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), privKey));
 
-//                eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
+                eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
 
                 SubjectKeyIdentifier pubKeyId = extUtils.createSubjectKeyIdentifier(pubKey);
 
-//                eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
+                eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
 
-//                PKCS12SafeBagBuilder keyBagBuilder = new JcaPKCS12SafeBagBuilder(privKey, encOut);
-//
-//                keyBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
-//                keyBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
-//
-//                builder.addEncryptedData(new JcePKCSPBEOutputEncryptorBuilder(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC2_CBC).setProvider("BC").build(password), new PKCS12SafeBag[] { eeCertBagBuilder.build() });
-//
-//                builder.addData(keyBagBuilder.build());
+                PKCS12SafeBagBuilder keyBagBuilder = new JcaPKCS12SafeBagBuilder(privKey, encOut);
+
+                keyBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
+                keyBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
+
+                builder.addEncryptedData(new JcePKCSPBEOutputEncryptorBuilder(PKCSObjectIdentifiers.pbeWithSHAAnd128BitRC2_CBC).setProvider("BC").build(password), new PKCS12SafeBag[] { eeCertBagBuilder.build() });
+
+                builder.addData(keyBagBuilder.build());
             }
 
             PKCS12PfxPdu pfx = builder.build(new JcePKCS12MacCalculatorBuilder(NISTObjectIdentifiers.id_sha256), password);
@@ -290,13 +290,13 @@ public class BLSKeyManager
                     X509CertificateHolder cert = (X509CertificateHolder)bags[0].getBagValue();
 
                     String keyID = getKeyID(attributes);
-                    ECPublicKeyParameters publicKeyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
+                    BLS01PublicKeyParameters publicKeyParameters = BLSPublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
 
-//                    paramsMap.put(keyID, publicKeyParameters.getParameters());
-//                    sharedPublicKeyMap.init(keyID, 0);
-//                    sharedPublicKeyMap.addValue(keyID, new ECPointShare(
-//                        ASN1Integer.getInstance(cert.getExtension(XimixObjectIdentifiers.ximixShareIdExtension).getParsedValue()).getValue().intValue(),
-//                        publicKeyParameters.getQ()));
+                    paramsMap.put(keyID, publicKeyParameters.getParameters());
+                    sharedPublicKeyMap.init(keyID, 0);
+                    sharedPublicKeyMap.addValue(keyID, new ElementShare(
+                        ASN1Integer.getInstance(cert.getExtension(XimixObjectIdentifiers.ximixShareIdExtension).getParsedValue()).getValue().intValue(),
+                        publicKeyParameters.getPk()));
 
                     if (KeyUsage.fromExtensions(cert.getExtensions()).hasUsages(KeyUsage.digitalSignature))
                     {
@@ -313,8 +313,8 @@ public class BLSKeyManager
                     PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
                     PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
 
-//                    sharedPrivateKeyMap.init(keyID, 0);
-//                    sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(sharedPublicKeyMap.getShare(keyID).getSequenceNo(), ECPrivateKey.getInstance(info.parsePrivateKey()).getKey()));
+                    sharedPrivateKeyMap.init(keyID, 0);
+                    sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(sharedPublicKeyMap.getShare(keyID).getSequenceNo(), ASN1Integer.getInstance(info.parsePrivateKey()).getValue()));
                 }
             }
         }
