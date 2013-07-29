@@ -18,7 +18,7 @@ public class NodeStatusMessage
 
     private enum ValueType
     {
-        STRING, INT, LONG, LIST
+        STRING, INT, LONG, MAP, LIST
     }
 
 
@@ -142,6 +142,20 @@ public class NodeStatusMessage
                 }
             }
             break;
+
+            case MAP:
+            {
+                out = new HashMap();
+
+                Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
+
+                while (e.hasMoreElements())
+                {
+                    ((Map)out).put(asn1TypeToObject((ASN1Sequence)e.nextElement()), asn1TypeToObject((ASN1Sequence)e.nextElement()));
+                }
+
+            }
+            break;
         }
 
         return out;
@@ -201,6 +215,20 @@ public class NodeStatusMessage
             for (Object o : (List)type)
             {
                 vec.add(objToASNType(o));
+            }
+            out.add(new DERSequence(vec));
+        }
+        else if (type instanceof Map)
+        {
+            out.add(new ASN1Enumerated(ValueType.MAP.ordinal()));
+            ASN1EncodableVector vec = new ASN1EncodableVector();
+
+            Iterator it = ((Map)type).entrySet().iterator();
+            while (it.hasNext())
+            {
+                Map.Entry ent = (Map.Entry)it.next();
+                vec.add(objToASNType(ent.getKey()));
+                vec.add(objToASNType(ent.getValue()));
             }
             out.add(new DERSequence(vec));
         }

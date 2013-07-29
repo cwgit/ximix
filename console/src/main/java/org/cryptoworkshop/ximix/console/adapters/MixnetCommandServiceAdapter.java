@@ -171,7 +171,7 @@ public class MixnetCommandServiceAdapter
         try
         {
             NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
-            details = nhm.getFullInfo();
+            details = nhm.getFullInfo(node);
         }
         catch (Exception e)
         {

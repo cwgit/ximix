@@ -7,7 +7,9 @@ import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -37,11 +39,19 @@ public class NodeStatusMessageTest
         msg.putValue("list",testList);
 
 
+        Map m = new HashMap<>();
+
+        m.put("foo","bar");
+        m.put("cat",1);
+
+
+        msg.putValue("map",m);
+
 
 
         ASN1Primitive prim = msg.toASN1Primitive();
 
-       // System.out.println(ASN1Dump.dumpAsString(prim, true));
+       System.out.println(ASN1Dump.dumpAsString(prim, true));
 
 
         NodeStatusMessage res = NodeStatusMessage.getInstance(prim);

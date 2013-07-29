@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.statistics.StatisticCollector;
 
 public interface NodeContext
 {
@@ -63,4 +64,6 @@ public interface NodeContext
     String getBoardHost(String boardName);
 
     File getHomeDirectory();
+
+    StatisticCollector getStatisticsCollector();
 }
