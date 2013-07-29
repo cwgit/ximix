@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.mixnet.shuffle;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
@@ -50,7 +51,7 @@ public class TransformShuffleAndReturnTask
     {
         BulletinBoard board = boardRegistry.getTransitBoard(message.getBoardName());
         Transform transform = boardRegistry.getTransform(message.getTransformName());
-        IndexNumberGenerator indexGen = new IndexNumberGenerator(board.size());
+        IndexNumberGenerator indexGen = new IndexNumberGenerator(board.size(), new SecureRandom());  // TODO: specify random
 
         try
         {
@@ -65,7 +66,7 @@ public class TransformShuffleAndReturnTask
                 {
                     byte[] transformed = transform.transform(postedMessage.getMessage());
 
-                    messageBlockBuilder.add(indexGen.nextIndex(postedMessage.getIndex()), transformed);
+                    messageBlockBuilder.add(indexGen.nextIndex(), transformed);
 
                     if (messageBlockBuilder.isFull())
                     {
