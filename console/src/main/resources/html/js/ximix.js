@@ -5,12 +5,12 @@ var lang_id = navigator.language || navigator.userLanguage;
 var lang = {};
 var rtype = {};
 var visibleNode = null;
-
-var MINUTES= 60;
+var MINUTES = 60;
 var HOURS = MINUTES * 60;
 var DAYS = HOURS * 24;
-
 var ONE_MB = 1024 * 1024;
+
+
 
 jQuery.ajaxSetup({
     'beforeSend': function (xhr) {
@@ -81,6 +81,7 @@ function renderStaticDetails() {
         if (!outer.length) {
             outer = $("<div class='node' id='node_" + node.name + "_info'>");
             outer.appendTo('#nodes');
+            outer.append("<span id='node_" + node.name + "_info_name' style='display:none'>" +node.name+ "</span>");
             outer.append("<div class='nodetitle'>" + node.name + "</div>");
 
             var tab = "<table class='nodetable' border='0'>"
@@ -88,8 +89,15 @@ function renderStaticDetails() {
             for (var k in node) {
                 if ("name" === k) {
                     continue;
+                } else if ("node.metadata" === k) {
+
+                    for (kk in node[k])
+                    {
+                        tab = tab + "<tr><td>" + (kk) + "</td><td>" + (node[k][kk]) + "</td></tr>";
+                    }
+                } else {
+                    tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (node[k]) + "</td></tr>";
                 }
-                tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (node[k]) + "</td></tr>";
             }
 
             tab = tab + "<tr colspan='2'><td>More Info &gt;&gt;</td></tr>";
@@ -98,9 +106,8 @@ function renderStaticDetails() {
             outer.append(tab);
 
             outer.click(function () {
-                showNodeDetail(node.name);
-
-
+              var v = "#"+$(this).attr('id')+"_name";
+                 showNodeDetail($(v).text());
             });
 
         }
@@ -170,7 +177,6 @@ function showNodeDetail(node_name) {
                 }
                 tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (  apply_rtype(k, data.values[k])) + "</td></tr>";
             }
-
 
             tab = tab + "</table>";
             $(tab).appendTo(outer);
@@ -267,7 +273,7 @@ $(document).ready(function () {
 
 
     pollTimer = setInterval(pollNodes, 5000);
-    fetchCommands();
+    //fetchCommands();
 });
 
 function apply_rtype(name, value) {
@@ -291,31 +297,45 @@ function apply_rtype(name, value) {
         case "list":
             return mklist(value);
             break;
+
+        case "map":
+            return mkMap(value);
+            break;
+
     }
 
+}
+
+
+function mkMap(val) {
+    var out = "<table>";
+    for (var k in val) {
+        out = out + "<tr><td>" + k + "</td><td>" + val[k] + "</td></tr>";
+    }
+
+    return out + "</table>";
 }
 
 function mklist(val) {
     var out = "<ol>";
 
-    for (var v in val)
-    {
-        out = out +"<li>"+(val[v])+"</li>";
+    for (var v in val) {
+        out = out + "<li>" + (val[v]) + "</li>";
     }
-    return out+"</ol>";
+    return out + "</ol>";
 }
 
 function dhms(milliseconds) {
 
-    var seconds = Math.round(milliseconds / 1000);
+    var seconds = Math.floor(milliseconds / 1000);
 
-    var days = Math.round(seconds / DAYS);
+    var days = Math.floor(seconds / DAYS);
     seconds -= (days * DAYS);
 
-    var hours = Math.round(seconds / HOURS);
+    var hours = Math.floor(seconds / HOURS);
     seconds -= (hours * HOURS);
 
-    var minutes = Math.round(seconds/MINUTES);
+    var minutes = Math.floor(seconds / MINUTES);
     seconds -= (minutes * MINUTES);
 
     var out = "";

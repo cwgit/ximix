@@ -64,13 +64,11 @@ public class ClientNodeHealthMonitor
     }
 
     @Override
-    public NodeStatusMessage getFullInfo()
+    public NodeStatusMessage getFullInfo(String name)
         throws ServiceConnectionException
     {
         NodeStatusMessage out = null;
 
-        for (String name : connection.getActiveNodeNames())
-        {
             MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
             if (reply.getType() == MessageReply.Type.ERROR)
             {
@@ -80,7 +78,7 @@ public class ClientNodeHealthMonitor
             {
                 out = NodeStatusMessage.getInstance(reply.getPayload());
             }
-        }
+
 
         return out;
     }

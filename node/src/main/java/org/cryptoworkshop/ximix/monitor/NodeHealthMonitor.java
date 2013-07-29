@@ -19,7 +19,7 @@ public interface NodeHealthMonitor
     List<NodeStatusMessage> getConnectedNodeInfo()
         throws ServiceConnectionException;
 
-    NodeStatusMessage getFullInfo()
+    NodeStatusMessage getFullInfo(String name)
         throws ServiceConnectionException;
 
 }

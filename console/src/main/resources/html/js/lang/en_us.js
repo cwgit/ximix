@@ -19,3 +19,4 @@ rtype["vm.start-time"] = "time";
 rtype["vm.total-memory"] = "mb";
 rtype["vm.up-time"] = "hms";
 rtype["node.capabilities"] = "list";
+rtype["node.metadata"] = "map";

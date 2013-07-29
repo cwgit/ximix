@@ -55,6 +55,8 @@ import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
+import org.cryptoworkshop.ximix.common.statistics.PassthroughStatisticCollector;
+import org.cryptoworkshop.ximix.common.statistics.StatisticCollector;
 import org.cryptoworkshop.ximix.crypto.key.BLSKeyManager;
 import org.cryptoworkshop.ximix.crypto.key.BLSNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
@@ -62,6 +64,7 @@ import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.KeyManager;
 import org.cryptoworkshop.ximix.crypto.key.KeyManagerListener;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
+import org.cryptoworkshop.ximix.monitor.NodeHealthMonitorService;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -79,6 +82,8 @@ public class XimixNodeContext
     private final File homeDirectory;
     private final Map<String, ServicesConnection> peerMap;
     private final CountDownLatch setupCompleteLatch = new CountDownLatch(1);
+    private final StatisticCollector statisticCollector = new PassthroughStatisticCollector();
+
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
@@ -106,6 +111,7 @@ public class XimixNodeContext
 
         remoteServicesCache = new RemoteServicesCache(this);
 
+
         //
         // we schedule this bit to a new thread as the services require node context as an argument
         // and we want to make sure they are well formed.
@@ -132,6 +138,20 @@ public class XimixNodeContext
                 }
                 finally
                 {
+
+                    StatisticCollector sc = null;
+                    for (Service s : services)
+                    {
+                        if (s instanceof NodeHealthMonitorService)
+                        {
+                            sc = ((NodeHealthMonitorService)s).getStatisticCollector();
+                            break;
+                        }
+                    }
+
+                    ((PassthroughStatisticCollector)statisticCollector).setImpl(sc);
+
+
                     setupCompleteLatch.countDown();
                 }
             }
@@ -314,6 +334,12 @@ public class XimixNodeContext
     public File getHomeDirectory()
     {
         return homeDirectory;
+    }
+
+    @Override
+    public StatisticCollector getStatisticsCollector()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override

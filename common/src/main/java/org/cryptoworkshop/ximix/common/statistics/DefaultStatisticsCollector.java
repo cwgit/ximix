@@ -24,6 +24,8 @@ public class DefaultStatisticsCollector
     private CountDownLatch stopLatch = null;
     private int maxCrossSectionAge = 3600000; // 1 hour.
     private int maxTotalCrossSections = 3600;
+    private Map<Thread, Map<String, Long>> timingMap = new HashMap<>();
+
 
     public DefaultStatisticsCollector()
     {
@@ -102,6 +104,46 @@ public class DefaultStatisticsCollector
         }
 
         return true;
+    }
+
+    @Override
+    public void timeStart(String name)
+    {
+        synchronized (timingMap)
+        {
+            if (timingMap.containsKey(Thread.currentThread()))
+            {
+                timingMap.get(Thread.currentThread()).put(name, System.currentTimeMillis());
+            }
+            else
+            {
+                HashMap<String, Long> m = new HashMap<>();
+                m.put(name, System.currentTimeMillis());
+                timingMap.put(Thread.currentThread(), m);
+            }
+        }
+    }
+
+    @Override
+    public Long timeEnd(String name)
+    {
+        synchronized (timingMap)
+        {
+            Map<String, Long> m = timingMap.get(Thread.currentThread());
+            if (m != null)
+            {
+                Long l = m.remove(name);
+                if (l != null)
+                {
+                    if (m.isEmpty())
+                    {
+                        timingMap.remove(Thread.currentThread());
+                    }
+                    return System.currentTimeMillis() - l;
+                }
+            }
+        }
+        return null;
     }
 
     public void closeCrossSection()
@@ -302,4 +344,6 @@ public class DefaultStatisticsCollector
     {
         return initValues;
     }
+
+
 }

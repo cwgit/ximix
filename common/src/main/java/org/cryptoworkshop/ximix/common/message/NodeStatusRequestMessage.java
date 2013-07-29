@@ -21,6 +21,7 @@ public class NodeStatusRequestMessage
     public static NodeStatusRequestMessage forFullDetails()
     {
         NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.GET_FULL_DETAILS);
+
         return msg;
     }
 

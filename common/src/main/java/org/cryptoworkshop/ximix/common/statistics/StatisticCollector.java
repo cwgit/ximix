@@ -13,8 +13,11 @@ public interface StatisticCollector
     int getCrossectionCount();
     CrossSection pollOldestCrossSection();
     Runnable periodicRunnable();
-
     boolean stop(TimeUnit timeUnit, int duration);
+
+    void timeStart(String name);
+    Long timeEnd(String name);
+
 
     void start();
 }
