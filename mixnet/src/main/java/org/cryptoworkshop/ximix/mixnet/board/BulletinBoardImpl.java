@@ -125,10 +125,10 @@ public class BulletinBoardImpl
 
         for (PostedMessage message : messages)
         {
-            boardMap.put(message.geIndex(), message.getMessage());
-            if (message.geIndex() >= maxIndex)
+            boardMap.put(message.getIndex(), message.getMessage());
+            if (message.getIndex() >= maxIndex)
             {
-                maxIndex = message.geIndex() + 1;    // nextIndex is the number of the next free slot
+                maxIndex = message.getIndex() + 1;    // nextIndex is the number of the next free slot
             }
         }
 
@@ -138,7 +138,7 @@ public class BulletinBoardImpl
 
         for (PostedMessage message : messages)
         {
-            notifier.messagePosted(this, message.geIndex(), message.getMessage());
+            notifier.messagePosted(this, message.getIndex(), message.getMessage());
         }
     }
 

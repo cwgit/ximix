@@ -67,7 +67,7 @@ public class PostedMessage
         return new DERSequence(v);
     }
 
-    public int geIndex()
+    public int getIndex()
     {
         return index;
     }

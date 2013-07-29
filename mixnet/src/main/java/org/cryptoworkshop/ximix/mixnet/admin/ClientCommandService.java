@@ -348,7 +348,7 @@ public class ClientCommandService
                                 fulls[i] = partials[i].getY().add(weightedDecryptions[i].negate());
                             }
 
-                            notifier.messageDownloaded(postedMessages.get(messageIndex).geIndex(), new PointSequence(fulls).getEncoded());
+                            notifier.messageDownloaded(postedMessages.get(messageIndex).getIndex(), new PointSequence(fulls).getEncoded());
                         }
                     }
                 }
@@ -368,7 +368,7 @@ public class ClientCommandService
 
                         for (PostedMessage posted : messageBlock.getMessages())
                         {
-                            notifier.messageDownloaded(posted.geIndex(), posted.getMessage());
+                            notifier.messageDownloaded(posted.getIndex(), posted.getMessage());
                         }
                     }
                 }

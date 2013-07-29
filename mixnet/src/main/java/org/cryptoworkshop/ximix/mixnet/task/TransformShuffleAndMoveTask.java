@@ -64,7 +64,7 @@ public class TransformShuffleAndMoveTask
                 {
                     byte[] transformed = transform.transform(postedMessage.getMessage());
 
-                    messageBlockBuilder.add(postedMessage.geIndex(), transformed);
+                    messageBlockBuilder.add(postedMessage.getIndex(), transformed);
 
                     if (messageBlockBuilder.isFull())
                     {
@@ -81,7 +81,7 @@ public class TransformShuffleAndMoveTask
             {
                 for (PostedMessage postedMessage : board)
                 {
-                    messageBlockBuilder.add(postedMessage.geIndex(), postedMessage.getMessage());
+                    messageBlockBuilder.add(postedMessage.getIndex(), postedMessage.getMessage());
 
                     if (messageBlockBuilder.isFull())
                     {
