@@ -118,6 +118,26 @@ public class ConsoleHandler extends AbstractHandler
             return;
         }
 
+        //
+        //
+        //
+        if (reqUri.startsWith("/api/details"))
+        {
+            response.setContentType("application/json");
+            NodeAdapter adapter = getAdapter(lastPart);
+            if (adapter == null)
+            {
+                writeObject(new StandardMessage(false, "Unknown adapter."), response);
+                baseRequest.setHandled(true);
+                return;
+            }
+
+            writeObject(adapter.getNodeDetail(request.getParameter("node")), response);
+            baseRequest.setHandled(true);
+            return;
+
+        }
+
 
         if (reqUri.startsWith("/api/nodes"))
         {

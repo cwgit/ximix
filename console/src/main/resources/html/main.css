@@ -28,7 +28,7 @@ body {
 
 #nodes {
     float:left;
-    width:250px;
+    width:350px;
     margin-right: 2px;
 }
 
@@ -36,6 +36,19 @@ body {
     width: 100%;
     margin-left: 2px;
 }
+
+#node_details {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    border-radius: 4px;
+    border: solid 1px grey;
+    padding: 4px;
+    overflow: auto;
+    display: none;
+}
+
+
+
 
 .node {
     margin-top: 2px;
@@ -63,6 +76,8 @@ body {
 
 table.nodetable {
     width: 100%;
+    font-size: 8pt;
+    font-weight: lighter;
 }
 
 .command {

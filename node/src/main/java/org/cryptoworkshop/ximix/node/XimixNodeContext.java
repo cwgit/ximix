@@ -155,7 +155,6 @@ public class XimixNodeContext
             {                 // TODO: log error.
                 System.err.println("Service " + service.getClass().getName() + " does not supply a capability.");
                 continue;
-
             }
 
             capabilityList.add(msg);

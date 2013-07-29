@@ -3,6 +3,10 @@ node_desc = {};
 old_node_size = 0;
 var lang_id = navigator.language || navigator.userLanguage;
 var lang = {};
+var rtype = {};
+var visibleNode = null;
+
+var ONE_MB = 1024 * 1024;
 
 jQuery.ajaxSetup({
     'beforeSend': function (xhr) {
@@ -69,7 +73,6 @@ function renderStaticDetails() {
     for (var name in node_desc) {
         node = node_desc[name].values;
 
-
         outer = $("#node_" + node.name + "_info");
         if (!outer.length) {
             outer = $("<div class='node' id='node_" + node.name + "_info'>");
@@ -82,17 +85,17 @@ function renderStaticDetails() {
                 if ("name" === k) {
                     continue;
                 }
-
-                tab = tab + "<tr><td>"+(lang[k])+"</td><td>" + (node[k]) + "</td></tr>";
-
+                tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (node[k]) + "</td></tr>";
             }
 
-            tab = tab+"</table>";
+            tab = tab + "<tr colspan='2'><td>More Info &gt;&gt;</td></tr>";
+            tab = tab + "</table>";
 
             outer.append(tab);
 
-
             outer.click(function () {
+                showNodeDetail(node.name);
+
 
             });
 
@@ -137,6 +140,41 @@ function formType(index, command, parameter, ui_parent) {
     ui_parent.append("<div><input name='" + index + "' id='" + (command.id) + "_" + index + "' class='commandinput' type='text'/></div>");
 
 }
+
+
+function showNodeDetail(node_name) {
+    var outer = $('#node_details');
+    if (node_name === visibleNode) {
+        return;
+    }
+
+    visibleNode = node_name;
+
+    outer.html("");
+    outer.show();
+
+    $('<div class="nodetitle">Node Details: ' + node_name + '</div>').appendTo(outer);
+
+    $.post("/api/details/mixnetadmin", {node: node_name}, function (data) {
+
+
+        var tab = "<table class='nodetable' border='0'>"
+
+        for (var k in data.values) {
+            if ("name" === k) {
+                continue;
+            }
+            tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (  apply_rtype(k, data.values[k])) + "</td></tr>";
+        }
+
+        tab = tab + "</table>";
+        $(tab).appendTo(outer);
+
+        console.log(data);
+    });
+
+}
+
 
 //
 //
@@ -203,9 +241,7 @@ function fetchCommands() {
 }
 
 function pollNodes() {
-
     fetchNodes();
-
 }
 
 
@@ -216,10 +252,9 @@ $(document).ready(function () {
         l = languages[default_language];
     }
 
-    $.getScript(l, function(data, textStatus, jqxhr) {
-        if (jqxhr.status != 200)
-        {
-           alert("Unable to find: "+l+" for language "+lang_id.toLowerCase());
+    $.getScript(l, function (data, textStatus, jqxhr) {
+        if (jqxhr.status != 200) {
+            alert("Unable to find: " + l + " for language " + lang_id.toLowerCase());
         }
     });
 
@@ -227,3 +262,49 @@ $(document).ready(function () {
     pollTimer = setInterval(pollNodes, 5000);
     fetchCommands();
 });
+
+function apply_rtype(name, value) {
+    if (rtype[name] == null) {
+        return value;
+    }
+
+    switch (rtype[name]) {
+        case "mb":
+            return  (Math.round((value / ONE_MB)*1000) / 1000.0)+"mb" ;
+            break;
+
+        case "time":
+            return new Date(value);
+            break;
+
+        case "hms":
+            return dhms(value);
+            break;
+    }
+
+}
+
+function dhms(milliseconds) {
+    seconds = ~~(milliseconds / 1000);
+    minutes = ~~(seconds / 60);
+    hours = ~~(minutes / 60);
+    days = ~~(hours / 24);
+
+    var out = "";
+    if (days >0)
+    {
+        out = days + "d ";
+    }
+
+    if (hours >0)
+    {
+        out = out  + hours+"h ";
+    }
+
+    if (minutes >0)
+    {
+        out = out + minutes+"m ";
+    }
+
+    return out + seconds + "s";
+}
