@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.task;
+package org.cryptoworkshop.ximix.mixnet.shuffle;
 
 import java.io.IOException;
 
@@ -22,7 +22,7 @@ import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.BoardUploadBlockMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
+import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
@@ -32,14 +32,14 @@ import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 
-public class TransformShuffleAndReturnTask
+public class TransformShuffleAndMoveTask
     implements Runnable
 {
     private final NodeContext nodeContext;
-    private final PermuteAndReturnMessage message;
+    private final PermuteAndMoveMessage message;
     private final BulletinBoardRegistry boardRegistry;
 
-    public TransformShuffleAndReturnTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, PermuteAndReturnMessage message)
+    public TransformShuffleAndMoveTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, PermuteAndMoveMessage message)
     {
         this.nodeContext = nodeContext;
         this.boardRegistry = boardRegistry;
@@ -53,8 +53,9 @@ public class TransformShuffleAndReturnTask
 
         try
         {
-            ServicesConnection peerConnection = nodeContext.getPeerMap().get(nodeContext.getBoardHost(message.getBoardName()));
+            ServicesConnection peerConnection = nodeContext.getPeerMap().get(message.getDestinationNode());
             PostedMessageBlock.Builder messageBlockBuilder = new PostedMessageBlock.Builder(20);                  // TODO: make configurable
+            IndexNumberGenerator indexGen = new IndexNumberGenerator(board.size());
 
             if (message.getKeyID() != null)
             {
@@ -64,7 +65,7 @@ public class TransformShuffleAndReturnTask
                 {
                     byte[] transformed = transform.transform(postedMessage.getMessage());
 
-                    messageBlockBuilder.add(postedMessage.getIndex(), transformed);
+                    messageBlockBuilder.add(indexGen.nextIndex(postedMessage.getIndex()), transformed);
 
                     if (messageBlockBuilder.isFull())
                     {

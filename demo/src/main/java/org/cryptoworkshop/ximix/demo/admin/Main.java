@@ -18,6 +18,8 @@ package org.cryptoworkshop.ximix.demo.admin;
 import java.io.File;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
@@ -117,12 +119,18 @@ public class Main
 
         final int numMessages = 100;
 
+        final Set<ECPoint> part1 = new HashSet<>();
+        final Set<ECPoint> part2 = new HashSet<>();
+
         final ECPoint[] plainText1 = new ECPoint[numMessages];
         final ECPoint[] plainText2 = new ECPoint[numMessages];
         for (int i = 0; i != plainText1.length; i++)
         {
             plainText1[i] = generatePoint(pubKey.getParameters(), pointRandom);
             plainText2[i] = generatePoint(pubKey.getParameters(), pointRandom);
+
+            part1.add(plainText1[i]);
+            part2.add(plainText2[i]);
 
             PairSequence encrypted = new PairSequence(new ECPair[] { encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i]) });
 
@@ -172,14 +180,15 @@ public class Main
             {
                 PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
 
-                if (!decrypted.getECPoints()[0].equals(plainText1[counter]) || !decrypted.getECPoints()[1].equals(plainText2[counter++]))
-                {
-                    System.err.println(index + " decryption failed");
-                }
-                else
+                if (part1.remove(decrypted.getECPoints()[0]) && part2.remove(decrypted.getECPoints()[1]))
                 {
                     System.err.println(index + " message downloaded successfully");
                 }
+                else
+                {
+                    System.err.println(index + " decryption failed");
+                }
+                counter++;
             }
 
             @Override
