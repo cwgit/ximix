@@ -15,16 +15,17 @@ public class DefaultStatisticsCollector
     implements StatisticCollector
 {
 
-    private List<CrossSection> crossSections = new ArrayList<>();
-    private int durationMillis = 60000;
-    private Runnable periodicRunnable = null;
+    protected List<CrossSection> crossSections = new ArrayList<>();
+    protected CrossSection currentSection = new CrossSection();
+    protected int durationMillis = 60000;
+    protected Runnable periodicRunnable = null;
+    protected AtomicBoolean exitFlag = new AtomicBoolean(false);
+    protected CountDownLatch stopLatch = null;
+    protected int maxCrossSectionAge = 3600000; // 1 hour.
+    protected int maxTotalCrossSections = 3600;
+    protected Map<Thread, Map<String, Long>> timingMap = new HashMap<>();
     private Map<String, Object> initValues = new HashMap<>();
     private Thread rollOverThread = null;
-    private AtomicBoolean exitFlag = new AtomicBoolean(false);
-    private CountDownLatch stopLatch = null;
-    private int maxCrossSectionAge = 3600000; // 1 hour.
-    private int maxTotalCrossSections = 3600;
-    private Map<Thread, Map<String, Long>> timingMap = new HashMap<>();
 
 
     public DefaultStatisticsCollector()
@@ -52,15 +53,17 @@ public class DefaultStatisticsCollector
                     while (!exitFlag.get())
                     {
 
-                        closeCrossSection();
+
                         try
                         {
                             Thread.sleep(durationMillis);
                         }
                         catch (InterruptedException e)
                         {
+                            //                           System.out.println();
                             // Deliberately ignored.
                         }
+                        closeCrossSection();
                     }
 
 
@@ -133,12 +136,14 @@ public class DefaultStatisticsCollector
             if (m != null)
             {
                 Long l = m.remove(name);
+
+                if (m.isEmpty())
+                {
+                    timingMap.remove(Thread.currentThread());
+                }
+
                 if (l != null)
                 {
-                    if (m.isEmpty())
-                    {
-                        timingMap.remove(Thread.currentThread());
-                    }
                     return System.currentTimeMillis() - l;
                 }
             }
@@ -158,33 +163,48 @@ public class DefaultStatisticsCollector
     {
         CrossSection newOne = new CrossSection(System.currentTimeMillis(), durationMillis);
         newOne.putAll(initValues);
-        crossSections.add(newOne);
 
+        CrossSection old = currentSection;
 
-        //
-        // Remove old cross sections.
-        //
-        int t = crossSections.size();
-        long max = System.currentTimeMillis() - maxCrossSectionAge;
-        while (--t >= 1)
+        synchronized (currentSection)
         {
-            if (t > maxTotalCrossSections)
-            {
-                crossSections.remove(t);
-                continue;
-            }
-
-            if (crossSections.get(t).getStartTime() < max)
-            {
-                crossSections.remove(t);
-            }
+            currentSection = new CrossSection();
         }
 
+        synchronized (crossSections)
+        {
+            crossSections.add(old);
 
+            //
+            // Remove old cross sections that exceed lifespan or total count.
+            //
+            int t = crossSections.size();
+            long min = System.currentTimeMillis() - maxCrossSectionAge;
+
+            //
+            // by size.
+            //
+            while (crossSections.size() > maxTotalCrossSections)
+            {
+                crossSections.remove(0);
+            }
+
+            //
+            // By age..
+            //
+
+            for (t = 0; t < crossSections.size() - 1 && crossSections.get(t).getStartTime() < min; t++)
+            {
+                t = 0;
+                crossSections.remove(0);
+            }
+
+
+        }
     }
 
     @Override
-    public int getCrossectionCount()
+    public int getCrossSectionCount()
     {
         synchronized (crossSections)
         {
@@ -193,24 +213,25 @@ public class DefaultStatisticsCollector
     }
 
     @Override
-    public CrossSection pollOldestCrossSection()
+    public CrossSection pollOldestCrossSection(boolean firstNotEmpty)
     {
         synchronized (crossSections)
         {
-            if (crossSections.size() > 1)
+
+            while (!crossSections.isEmpty())
             {
-                return crossSections.remove(0);
-            }
-            else if (!crossSections.isEmpty())
-            {
-                //
-                // Copy current
-                //
-                return new CrossSection(crossSections.get(0));
+                CrossSection sec = crossSections.remove(0);
+                if (firstNotEmpty && sec.isEmpty())
+                {
+                    continue;
+                }
+                else
+                {
+                    return sec;
+                }
             }
 
             return null;
-
         }
 
 
@@ -225,76 +246,53 @@ public class DefaultStatisticsCollector
     @Override
     public void increment(String name)
     {
-        synchronized (crossSections)
+        synchronized (currentSection)
         {
-            if (crossSections.isEmpty())
+            Integer i = (Integer)currentSection.get(name);
+            if (i == null)
             {
-                closeCrossSectionNoSync();
+                i = new Integer(1);
+                currentSection.put(name, i);
+            }
+            else
+            {
+                currentSection.put(name, i + 1);
             }
 
-            CrossSection s = crossSections.get(crossSections.size() - 1);
-            if (s.containsKey(name))
-            {
-                Integer i = (Integer)s.get(name);
-                if (i == null)
-                {
-                    i = new Integer(0);
-                    s.put(name, i);
-                }
-                else
-                {
-                    s.put(name, i + 1);
-                }
-            }
         }
     }
 
     @Override
     public void decrement(String name)
     {
-        synchronized (crossSections)
+        synchronized (currentSection)
         {
-            if (crossSections.isEmpty())
+            Integer i = (Integer)currentSection.get(name);
+            if (i == null)
             {
-                closeCrossSectionNoSync();
+                i = new Integer(-1);
+                currentSection.put(name, i);
             }
-
-            CrossSection s = crossSections.get(crossSections.size() - 1);
-            if (s.containsKey(name))
+            else
             {
-                Integer i = (Integer)s.get(name);
-                if (i == null)
-                {
-                    i = new Integer(0);
-                    s.put(name, i);
-                }
-                else
-                {
-
-                    s.put(name, i - 1);
-                }
+                currentSection.put(name, i - 1);
             }
         }
+
     }
 
     @Override
-    public void log(String name, Object value)
+    public void record(String name, Object value)
     {
-
-        synchronized (crossSections)
+        synchronized (currentSection)
         {
-            CrossSection s = crossSections.get(crossSections.size() - 1);
-            if (s.containsKey(name))
+            List i = (List)currentSection.get(name);
+            if (i == null)
             {
-                List i = (List)s.get(name);
-                if (i == null)
-                {
-                    i = new ArrayList();
-
-                    s.put(name, i);
-                }
-                i.add(value);
+                i = new ArrayList();
+                currentSection.put(name, i);
             }
+            i.add(value);
         }
     }
 
@@ -344,6 +342,5 @@ public class DefaultStatisticsCollector
     {
         return initValues;
     }
-
 
 }

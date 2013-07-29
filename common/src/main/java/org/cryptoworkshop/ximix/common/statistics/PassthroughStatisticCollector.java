@@ -30,28 +30,33 @@ public class PassthroughStatisticCollector
     }
 
     @Override
-    public void log(String name, Object message)
+    public void record(String name, Object message)
     {
         if (impl != null)
         {
-            impl.log(name, message);
+            impl.record(name, message);
         }
     }
 
     @Override
-    public int getCrossectionCount()
+    public int getCrossSectionCount()
     {
 
         if (impl != null)
         {
-            return impl.getCrossectionCount();
+            return impl.getCrossSectionCount();
         }
         return 0;
     }
 
     @Override
-    public CrossSection pollOldestCrossSection()
+    public CrossSection pollOldestCrossSection(boolean firstNotEmpty)
     {
+        if (impl != null)
+        {
+           return impl.pollOldestCrossSection(firstNotEmpty);
+        }
+
         return null;
     }
 

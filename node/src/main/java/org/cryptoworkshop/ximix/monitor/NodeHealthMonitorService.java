@@ -23,7 +23,6 @@ import org.cryptoworkshop.ximix.common.statistics.CrossSection;
 import org.cryptoworkshop.ximix.common.statistics.DefaultStatisticsCollector;
 import org.cryptoworkshop.ximix.common.statistics.StatisticCollector;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /**
  *
