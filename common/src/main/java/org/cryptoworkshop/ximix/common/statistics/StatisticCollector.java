@@ -17,6 +17,7 @@ public interface StatisticCollector
 
     void timeStart(String name);
     Long timeEnd(String name);
+    Long recordEnd(String name);
 
 
     void start();

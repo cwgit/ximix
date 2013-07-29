@@ -52,8 +52,6 @@ public class DefaultStatisticsCollector
                 {
                     while (!exitFlag.get())
                     {
-
-
                         try
                         {
                             Thread.sleep(durationMillis);
@@ -144,11 +142,42 @@ public class DefaultStatisticsCollector
 
                 if (l != null)
                 {
+                    l = System.currentTimeMillis() - l;
+                    currentSection.put(name, l);
                     return System.currentTimeMillis() - l;
                 }
             }
         }
-        return null;
+        throw new IllegalStateException("No corresponding startTime(\"" + name + "\") for this thread.");
+    }
+
+    @Override
+    public Long recordEnd(String name)
+    {
+        synchronized (timingMap)
+        {
+            Map<String, Long> m = timingMap.get(Thread.currentThread());
+            if (m != null)
+            {
+                Long l = m.remove(name);
+
+                if (m.isEmpty())
+                {
+                    timingMap.remove(Thread.currentThread());
+                }
+
+                if (l != null)
+                {
+                    l = System.currentTimeMillis() - l;
+                    record(name, l);
+                    return l;
+                }
+
+            }
+
+            throw new IllegalStateException("No corresponding startTime(\"" + name + "\") for this thread.");
+        }
+
     }
 
     public void closeCrossSection()

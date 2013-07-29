@@ -54,7 +54,7 @@ public class PassthroughStatisticCollector
     {
         if (impl != null)
         {
-           return impl.pollOldestCrossSection(firstNotEmpty);
+            return impl.pollOldestCrossSection(firstNotEmpty);
         }
 
         return null;
@@ -96,6 +96,16 @@ public class PassthroughStatisticCollector
         if (impl != null)
         {
             return impl.timeEnd(name);
+        }
+        return null;
+    }
+
+    @Override
+    public Long recordEnd(String name)
+    {
+        if (impl != null)
+        {
+            return impl.recordEnd(name);
         }
         return null;
     }
