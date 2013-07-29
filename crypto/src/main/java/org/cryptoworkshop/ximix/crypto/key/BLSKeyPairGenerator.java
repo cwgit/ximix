@@ -16,7 +16,7 @@
 package org.cryptoworkshop.ximix.crypto.key;
 
 import java.math.BigInteger;
-import java.util.Set;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -93,7 +93,7 @@ public class BLSKeyPairGenerator
                 return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
             case GENERATE:
                 final ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)ECKeyGenParams.getInstance(message.getPayload());
-                final Set<String> involvedPeers = ecKeyGenParams.getNodesToUse();
+                final List<String> involvedPeers = ecKeyGenParams.getNodesToUse();
 
                 if (involvedPeers.contains(nodeContext.getName()))
                 {
@@ -139,7 +139,7 @@ public class BLSKeyPairGenerator
         implements Runnable
     {
         private final ECKeyGenParams initiateMessage;
-        private final Set<String> peersToInitiate;
+        private final List<String> peersToInitiate;
         private final Algorithm algorithm;
 
         InitiateKeyGenTask( Algorithm algorithm, ECKeyGenParams initiateMessage)
@@ -174,11 +174,11 @@ public class BLSKeyPairGenerator
     {
         private final BLSNewDKGGenerator generator;
         private final String keyID;
-        private final Set<String> peers;
+        private final List<String> peers;
         private final BLSCommittedSecretShareMessage[] messages;
         private final Algorithm algorithm;
 
-        SendShareTask(BLSNewDKGGenerator generator, Algorithm algorithm, String keyID, Set<String> peers, BLSCommittedSecretShareMessage[] messages)
+        SendShareTask(BLSNewDKGGenerator generator, Algorithm algorithm, String keyID, List<String> peers, BLSCommittedSecretShareMessage[] messages)
         {
             this.generator = generator;
             this.algorithm = algorithm;

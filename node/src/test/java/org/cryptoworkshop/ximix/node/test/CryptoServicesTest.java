@@ -6,9 +6,8 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -72,7 +71,7 @@ public class CryptoServicesTest
 
         try
         {
-            Set<String> peers = new HashSet(Arrays.asList("A", "B", "C"));
+            List<String> peers = Arrays.asList("A", "B", "C");
             ECKeyGenParams kGenParams = new ECKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
             ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
 
@@ -95,7 +94,7 @@ public class CryptoServicesTest
 
         XimixNodeContext context = contextMap.get("A");
 
-        Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
+        List<String> peers = Arrays.asList("A", "B", "C", "D", "E");
         ECKeyGenParams kGenParams = new ECKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
         ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
 
@@ -122,7 +121,7 @@ public class CryptoServicesTest
         XimixNodeContext context = contextMap.get("A");
 
         final ServicesConnection connection = context.getPeerMap().get("B");
-        final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
+        final String[] peers = new String[] { "A", "B", "C", "D", "E" };
         final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(Algorithm.EC_ELGAMAL, "ECKEY", new KeyGenParams("secp256r1"), 3, peers);
 
         MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.EC_ELGAMAL,
@@ -170,7 +169,7 @@ public class CryptoServicesTest
             public ECPoint decrypt(ECPair ecPair)
             {
                 int index = 0;
-                ECPoint[] partialDecs = new ECPoint[peers.size()];
+                ECPoint[] partialDecs = new ECPoint[peers.length];
 
                 Map<String, ServicesConnection> fullMap = new HashMap<>();
 
@@ -198,7 +197,7 @@ public class CryptoServicesTest
                     partialDecs[index++] = PairSequence.getInstance(pubKey1.getParameters().getCurve(), PostedMessageDataBlock.getInstance(ShareMessage.getInstance(decReply.getPayload()).getShareData()).getMessages().get(0)).getECPairs()[0].getX();
                 }
 
-                LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(peers.size(), pubKey1.getParameters().getN());
+                LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(peers.length, pubKey1.getParameters().getN());
 
                 BigInteger[] weights = lagrangeWeightCalculator.computeWeights(partialDecs);
 
@@ -232,7 +231,7 @@ public class CryptoServicesTest
         XimixNodeContext context = contextMap.get("A");
 
         final ServicesConnection connection = context.getPeerMap().get("B");
-        final Set<String> peers = new HashSet(Arrays.asList("A", "B", "C", "D", "E"));
+        final List<String> peers = Arrays.asList("A", "B", "C", "D", "E");
         final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(Algorithm.BLS, "BLSKEY", new KeyGenParams("d62003-159-158.param"), 3, peers);
 
         MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.BLS,

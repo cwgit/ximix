@@ -15,13 +15,11 @@
  */
 package org.cryptoworkshop.ximix.crypto.key.message;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
@@ -29,34 +27,29 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.DLSet;
+import org.bouncycastle.asn1.DLSequence;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 
 public class KeyGenerationMessage
     extends ASN1Object
 {
     private final Algorithm algorithm;
-    private final Set<String> nodesToUse;
+    private final List<String> nodesToUse;
     private final String keyID;
     private final int threshold;
     private final KeyGenParams keyGenParameters;
 
     public KeyGenerationMessage(Algorithm algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, String... nodesToUse)
     {
-        this(algorithm, keyID, keyGenParameters, threshold, new HashSet<>(Arrays.asList((String[])nodesToUse)));
+        this(algorithm, keyID, keyGenParameters, threshold, Arrays.asList((String[])nodesToUse));
     }
 
-    public KeyGenerationMessage(Algorithm algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, Set<String> nodesToUse)
+    public KeyGenerationMessage(Algorithm algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, List<String> nodesToUse)
     {
-        // TODO: just in case order is important,,, trying to avoid this if possible.
-        Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());
-        orderedSet.addAll(nodesToUse);
-
         this.algorithm = algorithm;
-        this.nodesToUse = Collections.unmodifiableSet(orderedSet);
+        this.nodesToUse = Collections.unmodifiableList(nodesToUse);
         this.keyID = keyID;
         this.threshold = threshold;
         this.keyGenParameters = keyGenParameters;
@@ -68,7 +61,7 @@ public class KeyGenerationMessage
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.keyGenParameters = KeyGenParams.getInstance(seq.getObjectAt(2));
         this.threshold = ASN1Integer.getInstance(seq.getObjectAt(3)).getValue().intValue();
-        this.nodesToUse = toOrderedSet(ASN1Set.getInstance(seq.getObjectAt(4)));
+        this.nodesToUse = toList(ASN1Sequence.getInstance(seq.getObjectAt(4)));
     }
 
     public static final KeyGenerationMessage getInstance(Object o)
@@ -94,7 +87,7 @@ public class KeyGenerationMessage
         v.add(new DERUTF8String(keyID));
         v.add(keyGenParameters);
         v.add(new ASN1Integer(threshold));
-        v.add(toASN1Set(nodesToUse));      // TODO: should be sequence?
+        v.add(toASN1Sequence(nodesToUse));      // TODO: should be sequence?
 
         return new DERSequence(v);
     }
@@ -104,7 +97,7 @@ public class KeyGenerationMessage
         return keyID;
     }
 
-    public Set<String> getNodesToUse()
+    public List<String> getNodesToUse()
     {
         return nodesToUse;
     }
@@ -119,19 +112,19 @@ public class KeyGenerationMessage
         return keyGenParameters;
     }
 
-    private static Set<String> toOrderedSet(ASN1Set set)
+    private static List<String> toList(ASN1Sequence set)
     {
-        Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());
+        List<String> orderedSet = new ArrayList<>(set.size());
 
         for (Enumeration en = set.getObjects(); en.hasMoreElements();)
         {
             orderedSet.add(DERUTF8String.getInstance(en.nextElement()).getString());
         }
 
-        return Collections.unmodifiableSet(orderedSet);
+        return Collections.unmodifiableList(orderedSet);
     }
 
-    private static ASN1Set toASN1Set(Set<String> set)
+    private static ASN1Sequence toASN1Sequence(List<String> set)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -140,21 +133,11 @@ public class KeyGenerationMessage
             v.add(new DERUTF8String(name));
         }
 
-        return new DLSet(v);
+        return new DLSequence(v);
     }
 
     public Algorithm getAlgorithm()
     {
         return algorithm;
-    }
-
-    private static class CaseInsensitiveComparator
-        implements Comparator<String>
-    {
-        @Override
-        public int compare(String s1, String s2)
-        {
-            return s1.compareToIgnoreCase(s2);
-        }
     }
 }

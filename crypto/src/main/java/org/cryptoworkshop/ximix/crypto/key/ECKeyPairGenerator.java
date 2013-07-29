@@ -16,7 +16,7 @@
 package org.cryptoworkshop.ximix.crypto.key;
 
 import java.math.BigInteger;
-import java.util.Set;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -93,7 +93,7 @@ public class ECKeyPairGenerator
                 return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
             case GENERATE:
                 final ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)ECKeyGenParams.getInstance(message.getPayload());
-                final Set<String> involvedPeers = ecKeyGenParams.getNodesToUse();
+                final List<String> involvedPeers = ecKeyGenParams.getNodesToUse();
 
                 if (involvedPeers.contains(nodeContext.getName()))
                 {
@@ -131,7 +131,7 @@ public class ECKeyPairGenerator
         implements Runnable
     {
         private final ECKeyGenParams initiateMessage;
-        private final Set<String> peersToInitiate;
+        private final List<String> peersToInitiate;
         private final Algorithm algorithm;
 
         InitiateKeyGenTask( Algorithm algorithm, ECKeyGenParams initiateMessage)
@@ -166,11 +166,11 @@ public class ECKeyPairGenerator
     {
         private final ECNewDKGGenerator generator;
         private final String keyID;
-        private final Set<String> peers;
+        private final List<String> peers;
         private final ECCommittedSecretShareMessage[] messages;
         private final Algorithm algorithm;
 
-        SendShareTask(ECNewDKGGenerator generator, Algorithm algorithm, String keyID, Set<String> peers, ECCommittedSecretShareMessage[] messages)
+        SendShareTask(ECNewDKGGenerator generator, Algorithm algorithm, String keyID, List<String> peers, ECCommittedSecretShareMessage[] messages)
         {
             this.generator = generator;
             this.algorithm = algorithm;

@@ -16,11 +16,10 @@
 package org.cryptoworkshop.ximix.crypto.key.message;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -37,11 +36,11 @@ public class ECKeyGenParams
     private final BigInteger h;
     private final String keyID;
     private final int threshold;
-    private final Set<String> nodesToUse;
+    private final List<String> nodesToUse;
     private final Algorithm algorithm;
 
 
-    public ECKeyGenParams(String keyID, Algorithm algorithm, BigInteger h, String domainParameters, int threshold, Set<String> nodesToUse)
+    public ECKeyGenParams(String keyID, Algorithm algorithm, BigInteger h, String domainParameters, int threshold, List<String> nodesToUse)
     {
         super(EC_REG_CURVE);
         this.keyID = keyID;
@@ -60,7 +59,7 @@ public class ECKeyGenParams
         this.domainParameters = DERUTF8String.getInstance(seq.getObjectAt(3)).getString();
         this.h = ASN1Integer.getInstance(seq.getObjectAt(4)).getValue();
         this.threshold = ASN1Integer.getInstance(seq.getObjectAt(5)).getValue().intValue();
-        this.nodesToUse = toOrderedSet(ASN1Sequence.getInstance(seq.getObjectAt(6)));
+        this.nodesToUse = toList(ASN1Sequence.getInstance(seq.getObjectAt(6)));
     }
 
     @Override
@@ -94,19 +93,19 @@ public class ECKeyGenParams
         return h;
     }
 
-    private static Set<String> toOrderedSet(ASN1Sequence set)
+    private static List<String> toList(ASN1Sequence set)
     {
-        Set<String> orderedSet = new TreeSet(new CaseInsensitiveComparator());
+        List<String> orderedSet = new ArrayList();
 
         for (Enumeration en = set.getObjects(); en.hasMoreElements();)
         {
             orderedSet.add(DERUTF8String.getInstance(en.nextElement()).getString());
         }
 
-        return Collections.unmodifiableSet(orderedSet);
+        return Collections.unmodifiableList(orderedSet);
     }
 
-    private static ASN1Sequence toASN1Sequence(Set<String> set)
+    private static ASN1Sequence toASN1Sequence(List<String> set)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -118,7 +117,7 @@ public class ECKeyGenParams
         return new DERSequence(v);
     }
 
-    public Set<String> getNodesToUse()
+    public List<String> getNodesToUse()
     {
         return nodesToUse;
     }
@@ -131,15 +130,5 @@ public class ECKeyGenParams
     public Algorithm getAlgorithm()
     {
         return algorithm;
-    }
-
-    private static class CaseInsensitiveComparator
-        implements Comparator<String>
-    {
-        @Override
-        public int compare(String s1, String s2)
-        {
-            return s1.compareToIgnoreCase(s2);
-        }
     }
 }
