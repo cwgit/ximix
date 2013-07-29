@@ -105,6 +105,11 @@ public class BulletinBoardImpl
         return boardName;
     }
 
+    public int size()
+    {
+        return nextIndex.get();
+    }
+
     public void postMessage(final byte[] message)
     {
         int index = nextIndex.getAndIncrement();

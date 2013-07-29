@@ -24,6 +24,8 @@ public interface BulletinBoard
 {
     String getName();
 
+    int size();
+
     void postMessage(final byte[] message);
 
     void postMessageBlock(final PostedMessageBlock messageBlock);
