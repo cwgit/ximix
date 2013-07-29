@@ -128,7 +128,12 @@ public class XimixNodeContext
             CapabilityMessage msg = service.getCapability();          //TODO David to review.
             if (msg == null)
             {
-                System.out.println("Service " + service.getClass().getName() + " does not supply a capability.");
+                //
+                // TODO Added so that services like statistics that do not provide a capability in the normal sence can
+                // be added to the services list.
+                //
+                // System.out.println("Service " + service.getClass().getName() + " does not supply a capability.");
+                //
                 continue;
 
             }

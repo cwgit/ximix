@@ -153,13 +153,29 @@ public class MixnetCommandServiceAdapter
         try
         {
             NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
-            details = nhm.getConnectedNodeDetails();
-
-
+            details = nhm.getConnectedNodeInfo();
         }
         catch (Exception e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
+        }
+
+        return details;
+
+    }
+
+    @Override
+    public NodeStatusMessage getNodeDetail(String node)
+    {
+        NodeStatusMessage details = null;
+        try
+        {
+            NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
+            details = nhm.getFullInfo();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
 
         return details;

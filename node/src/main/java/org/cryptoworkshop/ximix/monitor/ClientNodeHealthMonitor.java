@@ -13,7 +13,8 @@ import java.util.List;
 /**
  *
  */
-public class ClientNodeHealthMonitor implements NodeHealthMonitor
+public class ClientNodeHealthMonitor
+    implements NodeHealthMonitor
 {
     private AdminServicesConnection connection = null;
 
@@ -40,7 +41,7 @@ public class ClientNodeHealthMonitor implements NodeHealthMonitor
     }
 
     @Override
-    public List<NodeStatusMessage> getConnectedNodeDetails()
+    public List<NodeStatusMessage> getConnectedNodeInfo()
         throws ServiceConnectionException
     {
         List<NodeStatusMessage> out = new ArrayList<>();
@@ -63,9 +64,25 @@ public class ClientNodeHealthMonitor implements NodeHealthMonitor
     }
 
     @Override
-    public List<NodeStatusMessage> getVMDetails()
+    public NodeStatusMessage getFullInfo()
         throws ServiceConnectionException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        NodeStatusMessage out = null;
+
+        for (String name : connection.getActiveNodeNames())
+        {
+            MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forVMInfo());
+            if (reply.getType() == MessageReply.Type.ERROR)
+            {
+                System.out.println("Got error requesting vm info.");
+            }
+            else
+            {
+                out = NodeStatusMessage.getInstance(reply.getPayload());
+            }
+        }
+
+        return out;
     }
+
 }

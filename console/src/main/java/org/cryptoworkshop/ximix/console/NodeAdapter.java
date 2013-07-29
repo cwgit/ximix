@@ -63,4 +63,7 @@ public interface NodeAdapter
     String getCommandNameForId(int id);
 
     boolean isOpened();
+
+    NodeStatusMessage getNodeDetail(String node);
+
 }

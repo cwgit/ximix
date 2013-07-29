@@ -16,10 +16,10 @@ public interface NodeHealthMonitor
     NodeStatusMessage getLastStatistics(String node);
 
 
-    List<NodeStatusMessage> getConnectedNodeDetails()
+    List<NodeStatusMessage> getConnectedNodeInfo()
         throws ServiceConnectionException;
 
-    List<NodeStatusMessage> getVMDetails()
+    NodeStatusMessage getFullInfo()
         throws ServiceConnectionException;
 
 }
