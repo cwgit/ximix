@@ -15,18 +15,20 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
-import java.util.List;
-
+import org.cryptoworkshop.ximix.common.message.PostedMessage;
+import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
 public interface BulletinBoard
-    extends Iterable<byte[]>
+    extends Iterable<PostedMessage>
 {
     String getName();
 
     void postMessage(final byte[] message);
 
-    List<byte[]> getMessages(int maxNumberOfMessages);
+    void postMessageBlock(final PostedMessageBlock messageBlock);
+
+    PostedMessageBlock getMessages(PostedMessageBlock.Builder blockBuilder);
 
     void clear();
 

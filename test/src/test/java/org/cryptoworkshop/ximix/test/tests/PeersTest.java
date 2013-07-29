@@ -198,7 +198,7 @@ public class PeersTest
                 int counter = 0;
 
                 @Override
-                public void messageDownloaded(byte[] message)
+                public void messageDownloaded(int index, byte[] message)
                 {
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];

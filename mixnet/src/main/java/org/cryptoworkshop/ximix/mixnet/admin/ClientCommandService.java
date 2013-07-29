@@ -15,6 +15,15 @@
  */
 package org.cryptoworkshop.ximix.mixnet.admin;
 
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.ec.ECPair;
@@ -24,18 +33,26 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
-import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
+import org.cryptoworkshop.ximix.common.message.BoardMessage;
+import org.cryptoworkshop.ximix.common.message.BoardStatusMessage;
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
+import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
+import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
+import org.cryptoworkshop.ximix.common.message.PostedMessage;
+import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.message.PostedMessageDataBlock;
+import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
-
-import java.math.BigInteger;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ClientCommandService
     implements CommandService
@@ -219,12 +236,21 @@ public class ClientCommandService
                     {
                         reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
-                        MessageBlock data = MessageBlock.getInstance(reply.getPayload());
+                        PostedMessageBlock messageBlock = PostedMessageBlock.getInstance(reply.getPayload());
 
-                        if (data.size() == 0)
+                        if (messageBlock.size() == 0)
                         {
                             break;
                         }
+
+                        PostedMessageDataBlock.Builder messageDataBuilder = new PostedMessageDataBlock.Builder(messageBlock.size());
+
+                        for (PostedMessage postedMessage : messageBlock.getMessages())
+                        {
+                            messageDataBuilder.add(postedMessage.getMessage());
+                        }
+
+                        PostedMessageDataBlock data = messageDataBuilder.build();
 
                         MessageReply[] partialDecryptResponses = new MessageReply[options.getThreshold()];
 
@@ -269,7 +295,7 @@ public class ClientCommandService
                         {
                             ShareMessage shareMsg = shareMessages[i];
 
-                            partialDecrypts[shareMsg.getSequenceNo()] = MessageBlock.getInstance(shareMsg.getShareData()).getMessages();
+                            partialDecrypts[shareMsg.getSequenceNo()] = PostedMessageDataBlock.getInstance(shareMsg.getShareData()).getMessages();
                         }
 
                         //
@@ -291,6 +317,7 @@ public class ClientCommandService
 
                         List<byte[]> baseMessageBlock = partialDecrypts[baseIndex];
                         BigInteger baseWeight = weights[baseIndex];
+                        List<PostedMessage>  postedMessages = messageBlock.getMessages();
 
                         for (int messageIndex = 0; messageIndex != baseMessageBlock.size(); messageIndex++)
                         {
@@ -321,7 +348,7 @@ public class ClientCommandService
                                 fulls[i] = partials[i].getY().add(weightedDecryptions[i].negate());
                             }
 
-                            notifier.messageDownloaded(new PointSequence(fulls).getEncoded());
+                            notifier.messageDownloaded(postedMessages.get(messageIndex).geIndex(), new PointSequence(fulls).getEncoded());
                         }
                     }
                 }
@@ -332,18 +359,16 @@ public class ClientCommandService
                     {
                         reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
-                        MessageBlock data = MessageBlock.getInstance(reply.getPayload());
+                        PostedMessageBlock messageBlock = PostedMessageBlock.getInstance(reply.getPayload());
 
-                        if (data.size() == 0)
+                        if (messageBlock.size() == 0)
                         {
                             break;
                         }
 
-                        List<byte[]> messages = data.getMessages();
-
-                        for (int i = 0; i != messages.size(); i++)
+                        for (PostedMessage posted : messageBlock.getMessages())
                         {
-                            notifier.messageDownloaded(messages.get(i));
+                            notifier.messageDownloaded(posted.geIndex(), posted.getMessage());
                         }
                     }
                 }

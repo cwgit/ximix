@@ -1,14 +1,20 @@
 package org.cryptoworkshop.ximix.monitor;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
+import org.cryptoworkshop.ximix.common.message.NodeStatusRequestMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.statistics.CrossSection;
 import org.cryptoworkshop.ximix.common.statistics.DefaultStatisticsCollector;
-
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 
 /**
  *
@@ -33,7 +39,7 @@ public class NodeHealthMonitorService
     @Override
     public CapabilityMessage getCapability()
     {
-        return null;
+        return new CapabilityMessage(CapabilityMessage.Type.NODE_HEALTH, new ASN1Encodable[0]);
     }
 
     @Override

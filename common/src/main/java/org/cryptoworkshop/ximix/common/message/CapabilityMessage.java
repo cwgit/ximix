@@ -37,7 +37,8 @@ public class CapabilityMessage
         KEY_RETRIEVAL,
         KEY_GENERATION,
         SIGNING,
-        NODE_INFO
+        NODE_INFO,
+        NODE_HEALTH
     }
 
     private final Type type;

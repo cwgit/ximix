@@ -16,13 +16,14 @@
 package org.cryptoworkshop.ximix.mixnet.board;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.cryptoworkshop.ximix.common.message.PostedMessage;
+import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.mapdb.DB;
@@ -116,25 +117,51 @@ public class BulletinBoardImpl
     }
 
     @Override
-    public List<byte[]> getMessages(final int maxNumberOfMessages)
+    public void postMessageBlock(PostedMessageBlock messageBlock)
+    {
+        List<PostedMessage> messages = messageBlock.getMessages();
+
+        int maxIndex = nextIndex.get();
+
+        for (PostedMessage message : messages)
+        {
+            boardMap.put(message.geIndex(), message.getMessage());
+            if (message.geIndex() >= maxIndex)
+            {
+                maxIndex = message.geIndex() + 1;    // nextIndex is the number of the next free slot
+            }
+        }
+
+        nextIndex.set(maxIndex);
+
+        boardDB.commit();
+
+        for (PostedMessage message : messages)
+        {
+            notifier.messagePosted(this, message.geIndex(), message.getMessage());
+        }
+    }
+
+    @Override
+    public PostedMessageBlock getMessages(PostedMessageBlock.Builder blockBuilder)
     {
         int count;
         int boardSize = nextIndex.get() - minimumIndex.get();
 
-        if (boardSize > maxNumberOfMessages)
+        if (boardSize > blockBuilder.capacity())
         {
-            count = maxNumberOfMessages;
+            count = blockBuilder.capacity();
         }
         else
         {
             count = boardSize;
         }
 
-        List<byte[]> rv = new ArrayList<>(count);
-
         for (int i = 0; i != count; i++)
         {
-            rv.add(boardMap.remove(minimumIndex.getAndIncrement()));
+            int index = minimumIndex.getAndIncrement();
+
+            blockBuilder.add(index, boardMap.remove(index));
         }
 
         boardDB.commit();
@@ -144,7 +171,7 @@ public class BulletinBoardImpl
             clear();
         }
 
-        return rv;
+        return blockBuilder.build();
     }
 
     @Override
@@ -163,8 +190,30 @@ public class BulletinBoardImpl
         notifier.cleared(this);
     }
 
-    public Iterator<byte[]> iterator()
+    public Iterator<PostedMessage> iterator()
     {
-        return boardMap.values().iterator();
+        return new Iterator<PostedMessage>()
+        {
+            Iterator<Integer> keys = boardMap.keySet().iterator();
+
+            @Override
+            public boolean hasNext()
+            {
+                return keys.hasNext();
+            }
+
+            @Override
+            public PostedMessage next()
+            {
+                Integer next = keys.next();
+                return new PostedMessage(next, boardMap.get(next));
+            }
+
+            @Override
+            public void remove()
+            {
+                throw new UnsupportedOperationException("cannot remove message from board this way!");
+            }
+        };
     }
 }

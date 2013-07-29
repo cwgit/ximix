@@ -37,16 +37,17 @@ import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.message.BoardErrorStatusMessage;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.BoardStatusMessage;
+import org.cryptoworkshop.ximix.common.message.BoardUploadBlockMessage;
 import org.cryptoworkshop.ximix.common.message.BoardUploadIndexedMessage;
 import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageBlock;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
+import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
@@ -234,15 +235,15 @@ public class BoardHostingService
                     boardRegistry.getTransitBoard(boardMessage.getBoardName()).clear();
                     break;
                 case TRANSFER_TO_BOARD:
-                    BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
+                    BoardUploadBlockMessage uploadMessage = BoardUploadBlockMessage.getInstance(message.getPayload());
                     boardRegistry.markInTransit(uploadMessage.getBoardName());
                     if (boardRegistry.hasBoard(uploadMessage.getBoardName()))
                     {
-                        boardRegistry.getBoard(uploadMessage.getBoardName()).postMessage(uploadMessage.getData());
+                        boardRegistry.getBoard(uploadMessage.getBoardName()).postMessageBlock(uploadMessage.getMessageBlock());
                     }
                     else
                     {
-                        boardRegistry.getTransitBoard(uploadMessage.getBoardName()).postMessage(uploadMessage.getData());
+                        boardRegistry.getTransitBoard(uploadMessage.getBoardName()).postMessageBlock(uploadMessage.getMessageBlock());
                     }
                     break;
                 case CLEAR_BACKUP_BOARD:
@@ -266,9 +267,9 @@ public class BoardHostingService
                     }
                     BulletinBoard board = boardRegistry.getBoard(downloadRequest.getBoardName());
 
-                    List<byte[]> messages = board.getMessages(downloadRequest.getMaxNumberOfMessages());
+                    PostedMessageBlock messages = board.getMessages(new PostedMessageBlock.Builder(downloadRequest.getMaxNumberOfMessages()));
 
-                    return new MessageReply(MessageReply.Type.OKAY, new MessageBlock(messages));
+                    return new MessageReply(MessageReply.Type.OKAY, messages);
                 default:
                     return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
             }
