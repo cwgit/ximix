@@ -6,6 +6,10 @@ var lang = {};
 var rtype = {};
 var visibleNode = null;
 
+var MINUTES= 60;
+var HOURS = MINUTES * 60;
+var DAYS = HOURS * 24;
+
 var ONE_MB = 1024 * 1024;
 
 jQuery.ajaxSetup({
@@ -158,20 +162,23 @@ function showNodeDetail(node_name) {
     $.post("/api/details/mixnetadmin", {node: node_name}, function (data) {
 
 
-        var tab = "<table class='nodetable' border='0'>"
+            var tab = "<table class='nodetable' border='0'>"
 
-        for (var k in data.values) {
-            if ("name" === k) {
-                continue;
+            for (var k in data.values) {
+                if ("name" === k) {
+                    continue;
+                }
+                tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (  apply_rtype(k, data.values[k])) + "</td></tr>";
             }
-            tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (  apply_rtype(k, data.values[k])) + "</td></tr>";
+
+
+            tab = tab + "</table>";
+            $(tab).appendTo(outer);
+
+            console.log(data);
         }
-
-        tab = tab + "</table>";
-        $(tab).appendTo(outer);
-
-        console.log(data);
-    });
+    )
+    ;
 
 }
 
@@ -270,7 +277,7 @@ function apply_rtype(name, value) {
 
     switch (rtype[name]) {
         case "mb":
-            return  (Math.round((value / ONE_MB)*1000) / 1000.0)+"mb" ;
+            return  (Math.round((value / ONE_MB) * 1000) / 1000.0) + "mb";
             break;
 
         case "time":
@@ -280,30 +287,48 @@ function apply_rtype(name, value) {
         case "hms":
             return dhms(value);
             break;
+
+        case "list":
+            return mklist(value);
+            break;
     }
 
 }
 
+function mklist(val) {
+    var out = "<ol>";
+
+    for (var v in val)
+    {
+        out = out +"<li>"+(val[v])+"</li>";
+    }
+    return out+"</ol>";
+}
+
 function dhms(milliseconds) {
-    seconds = ~~(milliseconds / 1000);
-    minutes = ~~(seconds / 60);
-    hours = ~~(minutes / 60);
-    days = ~~(hours / 24);
+
+    var seconds = Math.round(milliseconds / 1000);
+
+    var days = Math.round(seconds / DAYS);
+    seconds -= (days * DAYS);
+
+    var hours = Math.round(seconds / HOURS);
+    seconds -= (hours * HOURS);
+
+    var minutes = Math.round(seconds/MINUTES);
+    seconds -= (minutes * MINUTES);
 
     var out = "";
-    if (days >0)
-    {
+    if (days > 0) {
         out = days + "d ";
     }
 
-    if (hours >0)
-    {
-        out = out  + hours+"h ";
+    if (hours > 0) {
+        out = out + hours + "h ";
     }
 
-    if (minutes >0)
-    {
-        out = out + minutes+"m ";
+    if (minutes > 0) {
+        out = out + minutes + "m ";
     }
 
     return out + seconds + "s";

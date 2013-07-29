@@ -2,6 +2,7 @@ package org.cryptoworkshop.ximix.monitor;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.ArrayList;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.config.Config;
@@ -70,7 +71,7 @@ public class NodeHealthMonitorService
                 statisticsCollector.setDurationMillis(period);
                 break;
 
-            case GET_VM_INFO:
+            case GET_FULL_DETAILS:
             {
                 nsm = new NodeStatusMessage();
                 Runtime rt = Runtime.getRuntime();
@@ -81,10 +82,18 @@ public class NodeHealthMonitorService
                 nsm.putValue("vm.total-memory", rt.totalMemory());
                 nsm.putValue("vm.up-time", mxBean.getUptime());
                 nsm.putValue("vm.start-time", mxBean.getStartTime());
+
+                ArrayList<String> cap = new ArrayList<>();
+                for (CapabilityMessage msg : context.getCapabilities())
+                {
+                    cap.add(msg.getType().name());
+                }
+
+                nsm.putValue("node.capabilities", cap);
             }
             break;
 
-            case GET_STATIC_INFO:
+            case GET_INFO:
             {
                 nsm = new NodeStatusMessage();
                 Runtime rt = Runtime.getRuntime();
@@ -107,7 +116,7 @@ public class NodeHealthMonitorService
                 else
                 {
                     nsm = NodeStatusMessage.getInstance(cs, cs.getStartTime());
-                    nsm.putValue("name",context.getName());
+                    nsm.putValue("name", context.getName());
                 }
             }
             break;

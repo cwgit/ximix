@@ -18,9 +18,9 @@ public class NodeStatusRequestMessage
         this.type = type;
     }
 
-    public static NodeStatusRequestMessage forVMInfo()
+    public static NodeStatusRequestMessage forFullDetails()
     {
-        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.GET_VM_INFO);
+        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.GET_FULL_DETAILS);
         return msg;
     }
 
@@ -47,7 +47,7 @@ public class NodeStatusRequestMessage
 
     public static ASN1Encodable forStaticInfo()
     {
-        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.GET_STATIC_INFO);
+        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.GET_INFO);
         return msg;
     }
 
@@ -126,10 +126,10 @@ public class NodeStatusRequestMessage
 
         SET_PERIOD,
 
-        GET_STATIC_INFO,
+        GET_INFO,
 
         GET_STATISTICS,
 
-        GET_VM_INFO
+        GET_FULL_DETAILS
     }
 }

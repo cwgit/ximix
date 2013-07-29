@@ -71,7 +71,7 @@ public class ClientNodeHealthMonitor
 
         for (String name : connection.getActiveNodeNames())
         {
-            MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forVMInfo());
+            MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
             if (reply.getType() == MessageReply.Type.ERROR)
             {
                 System.out.println("Got error requesting vm info.");
