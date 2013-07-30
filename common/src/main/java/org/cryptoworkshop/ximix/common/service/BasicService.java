@@ -51,7 +51,7 @@ public abstract class BasicService
     }
 
     // TODO: when all is said and done, this should be abstract, non-abstract at the moment so can be added progressively.
-    public Map<String,Object> getCurrentStatistics()
+    protected Map<String,Object> getCurrentStatistics()
     {
         return new HashMap<>();
     }
