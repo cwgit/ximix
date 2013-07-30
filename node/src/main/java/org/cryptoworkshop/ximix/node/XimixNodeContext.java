@@ -141,7 +141,7 @@ public class XimixNodeContext
                     StatisticCollector sc = null;
                     for (Service s : services)
                     {
-                        s.addStatisticsListener(XimixNodeContext.this);
+                        s.addListener(XimixNodeContext.this);
                     }
 
                     ((PassthroughStatisticCollector)statisticCollector).setImpl(sc);

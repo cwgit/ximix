@@ -29,5 +29,5 @@ public interface Service
 
     void trigger(ServiceEvent event);
 
-    void addStatisticsListener(ServiceStatisticsListener statusListener);
+    void addListener(ServiceStatisticsListener statusListener);
 }

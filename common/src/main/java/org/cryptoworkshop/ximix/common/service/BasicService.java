@@ -45,7 +45,7 @@ public abstract class BasicService
         }
     }
 
-    public void addStatisticsListener(ServiceStatisticsListener statisticsListener)
+    public void addListener(ServiceStatisticsListener statisticsListener)
     {
          listenerHandler.addListener(statisticsListener);
     }
