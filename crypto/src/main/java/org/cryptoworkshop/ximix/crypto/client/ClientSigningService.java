@@ -17,7 +17,9 @@ package org.cryptoworkshop.ximix.crypto.client;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
@@ -28,8 +30,9 @@ import org.cryptoworkshop.ximix.common.service.ClientServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
+import org.cryptoworkshop.ximix.crypto.signature.BLSSignerEngine;
 import org.cryptoworkshop.ximix.crypto.signature.ECDSASignerEngine;
-import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
+import org.cryptoworkshop.ximix.crypto.signature.message.SignatureCreateMessage;
 
 public class ClientSigningService
     implements SigningService
@@ -52,11 +55,27 @@ public class ClientSigningService
     {
         try
         {
-            MessageReply reply = connection.sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new SignatureMessage(Algorithm.ECDSA, ECDSASignerEngine.Type.GENERATE, new ECDSACreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse())));
+            MessageReply reply;
+
+            if (sigGenOptions.getAlgorithm() == Algorithm.ECDSA)
+            {
+                reply = connection.sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new AlgorithmServiceMessage(sigGenOptions.getAlgorithm(), new SignatureMessage(Algorithm.ECDSA, ECDSASignerEngine.Type.GENERATE, new SignatureCreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse()))));
+            }
+            else
+            {
+                reply = connection.sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new AlgorithmServiceMessage(sigGenOptions.getAlgorithm(), new SignatureMessage(Algorithm.BLS, BLSSignerEngine.Type.GENERATE, new SignatureCreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse()))));
+            }
 
             if (reply.getType() == MessageReply.Type.OKAY)
             {
-                return reply.getPayload().toASN1Primitive().getEncoded();
+                if (sigGenOptions.getAlgorithm() == Algorithm.ECDSA)
+                {
+                    return reply.getPayload().toASN1Primitive().getEncoded();
+                }
+                else
+                {
+                    return ASN1OctetString.getInstance(reply.getPayload().toASN1Primitive()).getOctets();
+                }
             }
 
             throw new ClientServiceConnectionException("Unable to create signature");

@@ -27,8 +27,10 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
+import org.cryptoworkshop.ximix.crypto.key.BLSKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyGenerationMessage;
@@ -57,7 +59,16 @@ public class KeyGenerationCommandService
     {
         final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(keyGenOptions.getAlgorithm(), keyID, new KeyGenParams(keyGenOptions.getParameters()[0]), keyGenOptions.getThreshold(), keyGenOptions.getNodesToUse());
 
-        MessageReply reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
+        MessageReply reply;
+
+        if (keyGenOptions.getAlgorithm() == Algorithm.BLS)
+        {
+            reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), BLSKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
+        }
+        else
+        {
+            reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
+        }
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {

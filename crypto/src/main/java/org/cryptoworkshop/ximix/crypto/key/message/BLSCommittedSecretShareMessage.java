@@ -19,11 +19,14 @@ import java.math.BigInteger;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
 import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Pairing;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
 public class BLSCommittedSecretShareMessage
@@ -56,10 +59,13 @@ public class BLSCommittedSecretShareMessage
 
         for (int i = 0; i != commitmentFactors.length; i++)
         {
-            commitmentFactors[i] = blsParameters.getG().duplicate().set(ASN1Integer.getInstance(s.getObjectAt(i)).getValue());
+            commitmentFactors[i] = blsParameters.getG().duplicate();
+            commitmentFactors[i].setFromBytes(DEROctetString.getInstance(s.getObjectAt(i)).getOctets());
         }
 
-        this.pK = blsParameters.getG().duplicate().set(ASN1Integer.getInstance(seq.getObjectAt(4)).getValue());
+        Pairing pairing = PairingFactory.getPairing(blsParameters.getCurveParameters());
+        this.pK = pairing.getG2().newElement();
+        this.pK.setFromBytes(DEROctetString.getInstance(seq.getObjectAt(4)).getOctets());
     }
 
     public static final BLSCommittedSecretShareMessage getInstance(BLS01Parameters blsParameters, Object o)
@@ -84,15 +90,15 @@ public class BLSCommittedSecretShareMessage
         v.add(new ASN1Integer(index));
         v.add(new ASN1Integer(value));
         v.add(new ASN1Integer(witness));
-        v.add(new ASN1Integer(pK.toBigInteger()));
 
         ASN1EncodableVector factV = new ASN1EncodableVector();
         for (int i = 0; i != commitmentFactors.length; i++)
         {
-            factV.add(new ASN1Integer(commitmentFactors[i].toBigInteger()));
+            factV.add(new DEROctetString(commitmentFactors[i].toBytes()));
         }
 
         v.add(new DERSequence(factV));
+        v.add(new DEROctetString(pK.toBytes()));
 
         return new DERSequence(v);
     }

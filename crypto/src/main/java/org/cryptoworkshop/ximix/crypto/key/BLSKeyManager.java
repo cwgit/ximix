@@ -21,11 +21,15 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPrivateKeySpec;
+import java.security.spec.EllipticCurve;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -55,6 +59,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
@@ -70,6 +75,8 @@ import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
@@ -80,7 +87,6 @@ import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.crypto.key.message.BLSCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
-import org.cryptoworkshop.ximix.crypto.key.util.PrivateKeyInfoFactory;
 import org.cryptoworkshop.ximix.crypto.key.util.SubjectPublicKeyInfoFactory;
 import org.cryptoworkshop.ximix.crypto.operator.jpbc.JpbcPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.threshold.BLSCommittedSecretShare;
@@ -154,15 +160,19 @@ public class BLSKeyManager
         {
             BLS01KeyPairGenerator kpGen = new BLS01KeyPairGenerator();
             CurveParameters       curveParameters = new DefaultCurveParameters().load(this.getClass().getResourceAsStream("d62003-159-158.param"));
-            Pairing               pairing = PairingFactory.getInstance().getPairing(curveParameters);
-            Element g = pairing.getG2().newElement();
-            g.setFromBytes(new BigInteger("0102030405060708090a0b0", 16).toByteArray());   // TODO: need to set a joint G value!!!!
+            Random                random = new Random(makeSeed(Strings.toByteArray(keyID)));           // Need a consistent random... TODO: maybe a better way
+            Pairing               pairing = PairingFactory.getInstance().getPairing(curveParameters, random);
+            Element               g = pairing.getG2().newRandomElement();
 
-            BLS01Parameters       blsParameters = new BLS01Parameters(curveParameters, g);
-
+            // we have to do this as the JPBC library ignores the random number generator passed in as
+            // a parameter.
             // TODO: need to sort out source of randomness.
+            random = new SecureRandom();
+            pairing = PairingFactory.getInstance().getPairing(curveParameters, random);
 
-            kpGen.init(new BLS01KeyGenerationParameters(new SecureRandom(), blsParameters));
+            BLS01Parameters       blsParameters = new BLS01Parameters(curveParameters, g.getImmutable());
+
+            kpGen.init(new BLS01KeyGenerationParameters((SecureRandom)random, blsParameters));
 
             AsymmetricCipherKeyPair kp =  kpGen.generateKeyPair();
 
@@ -188,8 +198,8 @@ public class BLSKeyManager
         {
             Element pK = sharedPublicKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS).getValue();
             BLS01Parameters params = paramsMap.get(keyID);
-                                                                                  // TODO;
-            return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new BLS01PublicKeyParameters(params, pK)).getEncoded());
+
+            return SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new BLS01PublicKeyParameters(params, pK));
         }
 
         return null;
@@ -200,11 +210,11 @@ public class BLSKeyManager
         BLS01Parameters domainParams = paramsMap.get(keyID);
         BLSCommittedSecretShare share = new BLSCommittedSecretShare(message.getValue(), message.getWitness(), message.getCommitmentFactors());
 
-        // TODO:
 //        if (share.isRevealed(message.getIndex(), domainParams, hMap.get(keyID)))
 //        {
             sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(message.getIndex(), message.getValue()));
             sharedPublicKeyMap.addValue(keyID, new ElementShare(message.getIndex(), message.getPk()));
+
 //        }
 //        else
 //        {
@@ -214,14 +224,29 @@ public class BLSKeyManager
 
     public BigInteger getPartialPrivateKey(String keyID)
     {
-        return null;
-//        return sharedPrivateKeyMap.getShare(keyID).getValue();
+        return sharedPrivateKeyMap.getShare(keyID).getValue();
     }
 
     public synchronized byte[] getEncoded(char[] password)
         throws IOException, GeneralSecurityException
     {
         KeyFactory fact = KeyFactory.getInstance("ECDSA", "BC");
+
+        EllipticCurve curve = new EllipticCurve(
+            new ECFieldFp(new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839")), // q
+            new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
+            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
+
+        ECParameterSpec spec = new ECParameterSpec(
+            curve,
+            ECPointUtil.decodePoint(curve, Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
+            new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307"), // n
+            1); // h
+
+       // TODO: neeed an EC key for the node
+        ECPrivateKeySpec priKeySpec = new ECPrivateKeySpec(
+            new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d
+            spec);
 
         try
         {
@@ -232,9 +257,7 @@ public class BLSKeyManager
 
             for (String keyID : sharedPrivateKeyMap.getIDs())
             {
-                PrivateKey privKey = fact.generatePrivate(
-                           new PKCS8EncodedKeySpec(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo(sharedPrivateKeyMap.getShare(keyID).getValue(), paramsMap.get(keyID)).getEncoded()));
+                PrivateKey privKey = fact.generatePrivate(priKeySpec);
                 SubjectPublicKeyInfo pubKey = this.fetchPublicKey(keyID);
 
                 PKCS12SafeBagBuilder eeCertBagBuilder = new PKCS12SafeBagBuilder(createCertificate(
@@ -327,11 +350,6 @@ public class BLSKeyManager
         }
     }
 
-//    public ECDomainParameters geParams(String keyID)
-//    {
-//        return paramsMap.get(keyID);
-//    }
-
     @Override
     public void addListener(KeyManagerListener listener)
     {
@@ -397,5 +415,17 @@ public class BLSKeyManager
         }
 
         throw new IllegalStateException("No friendlyNameAttribute found.");
+    }
+
+    private long makeSeed(byte[] bytes)
+    {
+        long rv = 0;
+
+        for (int i = 0; i != bytes.length; i++)
+        {
+            rv += 37 * rv + bytes[i];
+        }
+
+        return rv;
     }
 }

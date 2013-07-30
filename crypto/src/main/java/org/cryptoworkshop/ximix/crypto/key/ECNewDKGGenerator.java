@@ -45,7 +45,7 @@ public class ECNewDKGGenerator
 
     public ECDomainParameters getParameters(String keyID)
     {
-        return keyManager.geParams(keyID);
+        return keyManager.getParams(keyID);
     }
 
     public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, ECKeyGenParams ecKeyGenParams)

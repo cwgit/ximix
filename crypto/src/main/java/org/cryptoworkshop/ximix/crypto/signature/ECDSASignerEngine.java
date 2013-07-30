@@ -47,11 +47,11 @@ import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.operator.ECPrivateKeyOperator;
-import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAFetchMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAInitialiseMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAPartialCreateMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAPointMessage;
+import org.cryptoworkshop.ximix.crypto.signature.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.crypto.threshold.ShamirSecretSplitter;
 import org.cryptoworkshop.ximix.crypto.threshold.SplitSecret;
 import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
@@ -119,7 +119,7 @@ public class ECDSASignerEngine
             switch ((Type)message.getType())
             {
             case GENERATE:
-                final ECDSACreateMessage ecdsaCreate = ECDSACreateMessage.getInstance(message.getPayload());
+                final SignatureCreateMessage ecdsaCreate = SignatureCreateMessage.getInstance(message.getPayload());
 
                 //
                 // if we're not one of the nominated nodes, pass it on to someone who is and send back

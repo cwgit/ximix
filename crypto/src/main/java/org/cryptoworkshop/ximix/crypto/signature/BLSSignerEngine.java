@@ -23,7 +23,7 @@ import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.crypto.operator.BLSPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.signature.message.BLSPartialCreateMessage;
-import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
+import org.cryptoworkshop.ximix.crypto.signature.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.crypto.util.Participant;
 
 public class BLSSignerEngine
@@ -33,21 +33,8 @@ public class BLSSignerEngine
         implements MessageType
     {
         GENERATE,
-        INIT_K_AND_P,
-        INIT_A,
-        INIT_B,
-        INIT_C,
-        INIT_R,
-        INIT_MU,
-        FETCH_P,
-        FETCH_MU,
         FETCH_SEQUENCE_NO,
-        PRIVATE_KEY_SIGN,
-        STORE_K,
-        STORE_A,
-        STORE_B,
-        STORE_C,
-        STORE_P
+        PRIVATE_KEY_SIGN
     }
 
     private final AtomicLong idCounter = new AtomicLong(1);
@@ -64,7 +51,7 @@ public class BLSSignerEngine
             switch ((Type)message.getType())
             {
             case GENERATE:
-                final ECDSACreateMessage ecdsaCreate = ECDSACreateMessage.getInstance(message.getPayload());
+                final SignatureCreateMessage ecdsaCreate = SignatureCreateMessage.getInstance(message.getPayload());
 
                 //
                 // if we're not one of the nominated nodes, pass it on to someone who is and send back
@@ -94,7 +81,7 @@ public class BLSSignerEngine
 
                 SubjectPublicKeyInfo pubKeyInfo = nodeContext.getPublicKey(ecdsaCreate.getKeyID());
                 BLS01Parameters domainParams = BLSPublicKeyFactory.createKey(pubKeyInfo).getParameters();
-                Pairing pairing = PairingFactory.getInstance().getPairing(domainParams.getCurveParameters());
+                Pairing pairing = PairingFactory.getPairing(domainParams.getCurveParameters());
 
                 byte[] hash = ecdsaCreate.getMessage();
                 Element h = pairing.getG1().newElement().setFromHash(hash, 0, hash.length);

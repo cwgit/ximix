@@ -27,7 +27,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class ECDSACreateMessage
+public class SignatureCreateMessage
     extends ASN1Object
 {
     private final String keyID;
@@ -35,7 +35,7 @@ public class ECDSACreateMessage
     private final Set<String> nodesToUse;
     private final int threshold;
 
-    public ECDSACreateMessage(String keyID, byte[] message, int threshold, String... nodesToUse)
+    public SignatureCreateMessage(String keyID, byte[] message, int threshold, String... nodesToUse)
     {
         this.nodesToUse = MessageUtils.toOrderedSet(nodesToUse);
         this.threshold = threshold;
@@ -43,7 +43,7 @@ public class ECDSACreateMessage
         this.message = message;
     }
 
-    private ECDSACreateMessage(ASN1Sequence seq)
+    private SignatureCreateMessage(ASN1Sequence seq)
     {
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
         this.threshold = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue().intValue();
@@ -51,15 +51,15 @@ public class ECDSACreateMessage
         this.nodesToUse = MessageUtils.toOrderedSet(ASN1Sequence.getInstance(seq.getObjectAt(3)));
     }
 
-    public static final ECDSACreateMessage getInstance(Object o)
+    public static final SignatureCreateMessage getInstance(Object o)
     {
-        if (o instanceof ECDSACreateMessage)
+        if (o instanceof SignatureCreateMessage)
         {
-            return (ECDSACreateMessage)o;
+            return (SignatureCreateMessage)o;
         }
         else if (o != null)
         {
-            return new ECDSACreateMessage(ASN1Sequence.getInstance(o));
+            return new SignatureCreateMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;

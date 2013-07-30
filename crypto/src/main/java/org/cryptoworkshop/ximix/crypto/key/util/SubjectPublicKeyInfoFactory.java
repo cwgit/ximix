@@ -36,6 +36,6 @@ public class SubjectPublicKeyInfoFactory
                 {
                     new DERUTF8String(keyParameters.getParameters().getCurveParameters().toString()),
                     new DEROctetString(keyParameters.getParameters().getG().toBytes())
-                })), new DEROctetString(keyParameters.getPk().toBytes()));
+                })), keyParameters.getPk().toBytes());
     }
 }

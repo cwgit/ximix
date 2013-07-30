@@ -37,7 +37,7 @@ public class ElementMessage
         Element G = pairing.getG1().newElement();
         G.setFromBytes(DEROctetString.getInstance(ASN1OctetString.getInstance(octets)).getOctets());
 
-        this.value = G;
+        this.value = G.getImmutable();
     }
 
     public static final ElementMessage getInstance(Pairing pairing, Object o)

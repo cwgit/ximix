@@ -28,6 +28,6 @@ public class ElementShare
     @Override
     public Share<Element> add(Share<Element> other)
     {                                            // just in case, Elements can be mutable
-        return new ElementShare(getSequenceNo(), getValue().duplicate().add(other.getValue()));
+        return new ElementShare(getSequenceNo(), getValue().duplicate().mul(other.getValue()));
     }
 }

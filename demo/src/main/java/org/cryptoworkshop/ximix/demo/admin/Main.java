@@ -98,6 +98,20 @@ public class Main
             sigPubKey = keyGenerationService.generatePublicKey("ECSIGKEY", keyGenOptions);
         }
 
+        byte[] blsPubKey = keyGenerationService.fetchPublicKey("BLSSIGKEY");
+
+        if (blsPubKey == null)
+        {
+            KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.BLS, "d62003-159-158.param")
+                                                       .withThreshold(3)
+                                                       .withNodes("A", "B", "C", "D")
+                                                       .build();
+
+
+            blsPubKey = keyGenerationService.generatePublicKey("BLSSIGKEY", keyGenOptions);
+        }
+
+
         UploadService client = adminRegistrar.connect(UploadService.class);
 
         final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
@@ -117,7 +131,7 @@ public class Main
             }
         };
 
-        final int numMessages = 100;
+        final int numMessages = 10;
 
         final Set<ECPoint> part1 = new HashSet<>();
         final Set<ECPoint> part2 = new HashSet<>();

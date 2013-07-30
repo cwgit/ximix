@@ -59,7 +59,7 @@ import org.cryptoworkshop.ximix.crypto.key.message.KeyGenerationMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.crypto.signature.BLSSignerEngine;
-import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
+import org.cryptoworkshop.ximix.crypto.signature.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.node.XimixNodeContext;
@@ -261,7 +261,7 @@ public class CryptoServicesTest
             Assert.assertEquals(nodeName, pubKey1.getPk(), pubKey2.getPk());
         }
 
-        Pairing pairing = PairingFactory.getInstance().getPairing(pubKey1.getParameters().getCurveParameters());
+        Pairing pairing = PairingFactory.getPairing(pubKey1.getParameters().getCurveParameters());
 
         // create message hash
         MessageDigest mdv = MessageDigest.getInstance("SHA1");
@@ -274,7 +274,7 @@ public class CryptoServicesTest
         MessageReply decReply = null;
         try
         {
-            decReply = fullMap.get("A").sendMessage(ClientMessage.Type.CREATE_SIGNATURE, new AlgorithmServiceMessage(Algorithm.BLS, new SignatureMessage(Algorithm.BLS, BLSSignerEngine.Type.GENERATE, new ECDSACreateMessage("BLSKEY", hashv, 3, "A", "B", "C"))));
+            decReply = fullMap.get("A").sendMessage(ClientMessage.Type.CREATE_SIGNATURE, new AlgorithmServiceMessage(Algorithm.BLS, new SignatureMessage(Algorithm.BLS, BLSSignerEngine.Type.GENERATE, new SignatureCreateMessage("BLSKEY", hashv, 3, "A", "B", "C", "D"))));
         }
         catch (ServiceConnectionException e)
         {

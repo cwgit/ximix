@@ -322,7 +322,7 @@ public class ECKeyManager
         }
     }
 
-    public ECDomainParameters geParams(String keyID)
+    public ECDomainParameters getParams(String keyID)
     {
         return paramsMap.get(keyID);
     }

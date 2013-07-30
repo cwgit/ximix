@@ -20,6 +20,7 @@ import java.security.SecureRandom;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
 import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 
 /**
  * A secret splitter based on the New-DKG Algorithm in "Secure Distributed Key Generation" by R. Gennaro, S. Jarecki, H. Krawczyk, and T. Rabin
@@ -52,7 +53,7 @@ public class BLSNewDKGSecretSplitter
         this.k = threshold;
         this.h = domainParams.getG().duplicate().mul(h);
         this.domainParams = domainParams;
-        this.secretSplitter = new ShamirSecretSplitter(numberOfPeers, threshold, domainParams.getG().getField().getOrder(), random);
+        this.secretSplitter = new ShamirSecretSplitter(numberOfPeers, threshold, PairingFactory.getPairing(domainParams.getCurveParameters()).getZr().getOrder(), random);
         this.random = random;
     }
 
@@ -69,7 +70,7 @@ public class BLSNewDKGSecretSplitter
         // a polynomial
         SplitSecret secretShares = secretSplitter.split(secret);
         // b polynomial
-        SplitSecret bShares = secretSplitter.split(getRandomInteger(domainParams.getG().getField().getOrder(), random));
+        SplitSecret bShares = secretSplitter.split(getRandomInteger(PairingFactory.getPairing(domainParams.getCurveParameters()).getZr().getOrder(), random));
 
         Element[] commitments = new Element[k];
 

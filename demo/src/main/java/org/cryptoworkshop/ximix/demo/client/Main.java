@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.engines.BLS01Signer;
+import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -35,6 +37,7 @@ import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
 import org.cryptoworkshop.ximix.crypto.client.KeyService;
 import org.cryptoworkshop.ximix.crypto.client.SigningService;
+import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
@@ -110,6 +113,9 @@ public class Main
 
         sha256.doFinal(hash, 0);
 
+        //
+        // ECDSA
+        //
         SignatureGenerationOptions sigGenOptions = new SignatureGenerationOptions.Builder(Algorithm.ECDSA)
             .withThreshold(2)
             .withNodes("A", "B", "C", "D")
@@ -129,6 +135,33 @@ public class Main
         BigInteger[] rs = decodeSig(dsaSig);
 
         if (signer.verifySignature(hash, rs[0], rs[1]))
+        {
+            System.out.println("sig verified!");
+        }
+        else
+        {
+            System.out.println("sig failed...");
+        }
+
+        SignatureGenerationOptions blsSigGenOptions = new SignatureGenerationOptions.Builder(Algorithm.BLS)
+            .withThreshold(3)
+            .withNodes("B", "C", "D")
+            .build();
+
+        byte[] blsSig = signingService.generateSignature("BLSSIGKEY", blsSigGenOptions, hash);
+
+        //
+        // check the signature locally.
+        //
+        BLS01Signer blsSigner = new BLS01Signer(sha256);
+
+        BLS01PublicKeyParameters blsPubKey = BLSPublicKeyFactory.createKey(signingService.fetchPublicKey("BLSSIGKEY"));
+
+        blsSigner.init(false, blsPubKey);
+
+        blsSigner.update(message, 0, message.length);
+
+        if (blsSigner.verifySignature(blsSig))
         {
             System.out.println("sig verified!");
         }

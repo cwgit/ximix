@@ -16,7 +16,7 @@
 package org.cryptoworkshop.ximix.crypto.key.util;
 
 import java.io.ByteArrayInputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
@@ -33,30 +33,36 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
 public class BLSPublicKeyFactory
 {
+    public static BLS01PublicKeyParameters createKey(byte[] encoding)
+    {
+        return createKey(SubjectPublicKeyInfo.getInstance(encoding));
+    }
+
     public static BLS01PublicKeyParameters createKey(SubjectPublicKeyInfo publicKeyInfo)
     {
         AlgorithmIdentifier   algId = publicKeyInfo.getAlgorithm();
         CurveParameters       curveParameters;
         Element G;
+        Pairing pairing;
         try
         {
             ASN1Sequence parameters = ASN1Sequence.getInstance(algId.getParameters());
 
             curveParameters = new DefaultCurveParameters().load(new ByteArrayInputStream(DERUTF8String.getInstance(parameters.getObjectAt(0)).getString().getBytes("UTF8")));
-            Pairing pairing = PairingFactory.getInstance().getPairing(curveParameters);
+            pairing = PairingFactory.getPairing(curveParameters);
             G = pairing.getG2().newElement();
             G.setFromBytes(DEROctetString.getInstance(parameters.getObjectAt(1)).getOctets());
         }
-        catch (UnsupportedEncodingException e)
+        catch (IOException e)
         {
             throw new IllegalStateException("Unable to support encoding: " + e.getMessage(), e);
         }
 
-        BLS01Parameters       blsParameters = new BLS01Parameters(curveParameters, G);
-        Element               pK = G.duplicate();
+        BLS01Parameters       blsParameters = new BLS01Parameters(curveParameters, G.getImmutable());
+        Element               pK = pairing.getG2().newElement();
 
         pK.setFromBytes(publicKeyInfo.getPublicKeyData().getBytes());
 
-        return new BLS01PublicKeyParameters(blsParameters, pK);
+        return new BLS01PublicKeyParameters(blsParameters, pK.getImmutable());
     }
 }
