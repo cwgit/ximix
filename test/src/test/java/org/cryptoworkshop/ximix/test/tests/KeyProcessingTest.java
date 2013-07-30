@@ -18,6 +18,8 @@ package org.cryptoworkshop.ximix.test.tests;
 import java.math.BigInteger;
 import java.net.SocketException;
 import java.security.SecureRandom;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -309,7 +311,8 @@ public class KeyProcessingTest extends TestCase
 
         final ECPoint[] plainText1 = new ECPoint[numberOfPoints];
         final ECPoint[] plainText2 = new ECPoint[numberOfPoints];
-
+        Set<ECPoint> plain1 = new HashSet<>();
+        Set<ECPoint> plain2 = new HashSet<>();
 
         //
         // Encrypt and submit.
@@ -318,6 +321,9 @@ public class KeyProcessingTest extends TestCase
         {
             plainText1[i] = generatePoint(pubKey.getParameters(), random);
             plainText2[i] = generatePoint(pubKey.getParameters(), random);
+
+            plain1.add(plainText1[i]);
+            plain2.add(plainText2[i]);
 
             PairSequence encrypted = new PairSequence(new ECPair[]{encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i])});
 
@@ -456,16 +462,16 @@ public class KeyProcessingTest extends TestCase
 
         for (int t = 0; t < plainText1.length; t++)
         {
-            TestCase.assertTrue(plainText1[t].equals(resultText1[t]));
-            TestCase.assertTrue(plainText2[t].equals(resultText2[t]));
+            plain1.remove(resultText1[t]);
+            plain2.remove(resultText2[t]);
         }
 
+        TestCase.assertTrue(plain1.isEmpty());
+        TestCase.assertTrue(plain2.isEmpty());
 
         NodeTestUtil.shutdownNodes();
         client.shutdown();
         commandService.shutdown();
-
-
     }
 
     @Test
