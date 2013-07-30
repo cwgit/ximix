@@ -1,3 +1,7 @@
+package org.cryptoworkshop.ximix.common.service;
+
+import java.util.Map;
+
 /**
  * Copyright 2013 Crypto Workshop Pty Ltd
  *
@@ -13,21 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.service;
-
-import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-
-public interface Service
+public interface ServiceStatisticsListener
 {
-    CapabilityMessage getCapability();
-
-    MessageReply handle(Message message);
-
-    boolean isAbleToHandle(Message message);
-
-    void trigger(ServiceEvent event);
-
-    void addStatisticsListener(ServiceStatisticsListener statusListener);
+    void statisticsUpdate(Service service, Map<String, Object> details);
 }

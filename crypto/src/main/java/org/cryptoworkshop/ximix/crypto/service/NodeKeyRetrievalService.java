@@ -22,18 +22,15 @@ import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.Service;
 
 public class NodeKeyRetrievalService
-    implements Service
+    extends BasicService
 {
-
-    private final NodeContext nodeContext;
-
     public NodeKeyRetrievalService(NodeContext nodeContext, Config config)
     {
-        this.nodeContext = nodeContext;
+        super(nodeContext);
     }
 
     public CapabilityMessage getCapability()

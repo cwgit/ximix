@@ -31,19 +31,17 @@ import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.message.ShareMessage;
+import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
-import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.crypto.operator.ECPrivateKeyOperator;
 
 public class NodeDecryptionService
-    implements Service
+    extends BasicService
 {
-    private final NodeContext nodeContext;
-
     public NodeDecryptionService(NodeContext nodeContext, Config config)
     {
-        this.nodeContext = nodeContext;
+        super(nodeContext);
     }
 
     public CapabilityMessage getCapability()

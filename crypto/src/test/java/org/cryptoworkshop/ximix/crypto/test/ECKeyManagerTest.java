@@ -40,10 +40,9 @@ import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
+import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
-import org.cryptoworkshop.ximix.common.statistics.PassthroughStatisticCollector;
-import org.cryptoworkshop.ximix.common.statistics.StatisticCollector;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
@@ -296,9 +295,9 @@ public class ECKeyManagerTest
         }
 
         @Override
-        public StatisticCollector getStatisticsCollector()
+        public void statisticsUpdate(Service service, Map<String, Object> details)
         {
-            return new PassthroughStatisticCollector();
+            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 }

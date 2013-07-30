@@ -27,7 +27,7 @@
             <implementation>org.cryptoworkshop.ximix.crypto.service.NodeSigningService</implementation>
         </service>
         <service>
-            <implementation>org.cryptoworkshop.ximix.monitor.NodeHealthMonitorService</implementation>
+            <implementation>org.cryptoworkshop.ximix.monitor.NodeMonitorService</implementation>
             <meta-data name="Location">Floor 5, Isle 2, Rack 17, Shelf 2</meta-data>
             <meta-data name="Project">Ximix</meta-data>
             <meta-data name="Org">VEC</meta-data>

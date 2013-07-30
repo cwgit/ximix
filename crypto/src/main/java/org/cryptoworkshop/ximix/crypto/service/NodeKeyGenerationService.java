@@ -24,20 +24,18 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
+import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.crypto.key.BLSKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
 
 public class NodeKeyGenerationService
-    implements Service
+    extends BasicService
 {
-    private final NodeContext nodeContext;
-
     public NodeKeyGenerationService(NodeContext nodeContext, Config config)
     {
-        this.nodeContext = nodeContext;
+        super(nodeContext);
     }
 
     public CapabilityMessage getCapability()

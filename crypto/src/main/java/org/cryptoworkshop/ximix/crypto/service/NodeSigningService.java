@@ -24,20 +24,18 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
+import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.crypto.signature.ECDSASignerEngine;
 
 public class NodeSigningService
-    implements Service
+    extends BasicService
 {
-    private final NodeContext nodeContext;
-
     private final ECDSASignerEngine ecdsaSignerEngine;
 
     public NodeSigningService(NodeContext nodeContext, Config config)
     {
-        this.nodeContext = nodeContext;
+        super(nodeContext);
         // TODO: make this configurable
         this.ecdsaSignerEngine = new ECDSASignerEngine(nodeContext);
     }

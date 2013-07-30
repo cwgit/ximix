@@ -17,8 +17,8 @@ import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.message.NodeStatusRequestMessage;
+import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.statistics.CrossSection;
 import org.cryptoworkshop.ximix.common.statistics.DefaultStatisticsCollector;
 import org.cryptoworkshop.ximix.common.statistics.StatisticCollector;
@@ -27,20 +27,20 @@ import org.w3c.dom.Node;
 /**
  *
  */
-public class NodeHealthMonitorService
-    implements Service
+public class NodeMonitorService
+    extends BasicService
 {
     public static final int MIN_STATISTICS_PERIOD = 1000;
-    private final NodeContext context;
     private final DefaultStatisticsCollector statisticsCollector;
     private final Config config;
     private List<HealthMonitorMetaDataConfig> metaData;
     private Map metaDataMap;
 
 
-    public NodeHealthMonitorService(NodeContext context, Config config)
+    public NodeMonitorService(NodeContext nodeContext, Config config)
     {
-        this.context = context;
+        super(nodeContext);
+
         this.config = config;
         statisticsCollector = new DefaultStatisticsCollector();
         statisticsCollector.start();
@@ -110,7 +110,7 @@ public class NodeHealthMonitorService
                 nsm = new NodeStatusMessage();
                 Runtime rt = Runtime.getRuntime();
                 RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
-                nsm.putValue("name", context.getName());
+                nsm.putValue("name", nodeContext.getName());
                 nsm.putValue("vm.available-processors", rt.availableProcessors());
                 nsm.putValue("vm.free-memory", rt.freeMemory());
                 nsm.putValue("vm.total-memory", rt.totalMemory());
@@ -118,7 +118,7 @@ public class NodeHealthMonitorService
                 nsm.putValue("vm.start-time", mxBean.getStartTime());
 
                 ArrayList<String> cap = new ArrayList<>();
-                for (CapabilityMessage msg : context.getCapabilities())
+                for (CapabilityMessage msg : nodeContext.getCapabilities())
                 {
                     cap.add(msg.getType().name());
                 }
@@ -133,7 +133,7 @@ public class NodeHealthMonitorService
                 Runtime rt = Runtime.getRuntime();
                 RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
                 mxbean.getUptime();
-                nsm.putValue("name", context.getName());
+                nsm.putValue("name", nodeContext.getName());
                 nsm.putValue("vm.vendor", mxbean.getVmVendor());
                 nsm.putValue("vm.vendor-name", mxbean.getVmName());
                 nsm.putValue("vm.vendor-version", mxbean.getVmVersion());
@@ -149,7 +149,7 @@ public class NodeHealthMonitorService
 
             case GET_STATISTICS:
             {
-                CrossSection cs = statisticsCollector.pollOldestCrossSection();
+                CrossSection cs = statisticsCollector.pollOldestCrossSection(false);
                 if (cs == null)
                 {
                     nsm = NodeStatusMessage.NULL_MESSAGE;
@@ -157,7 +157,7 @@ public class NodeHealthMonitorService
                 else
                 {
                     nsm = NodeStatusMessage.getInstance(cs, cs.getStartTime());
-                    nsm.putValue("name", context.getName());
+                    nsm.putValue("name", nodeContext.getName());
                 }
             }
             break;

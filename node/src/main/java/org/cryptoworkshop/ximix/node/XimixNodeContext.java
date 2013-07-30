@@ -48,6 +48,7 @@ import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.NodeInfo;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
+import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
@@ -64,7 +65,6 @@ import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.KeyManager;
 import org.cryptoworkshop.ximix.crypto.key.KeyManagerListener;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
-import org.cryptoworkshop.ximix.monitor.NodeHealthMonitorService;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -83,7 +83,6 @@ public class XimixNodeContext
     private final Map<String, ServicesConnection> peerMap;
     private final CountDownLatch setupCompleteLatch = new CountDownLatch(1);
     private final StatisticCollector statisticCollector = new PassthroughStatisticCollector();
-
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
@@ -142,11 +141,7 @@ public class XimixNodeContext
                     StatisticCollector sc = null;
                     for (Service s : services)
                     {
-                        if (s instanceof NodeHealthMonitorService)
-                        {
-                            sc = ((NodeHealthMonitorService)s).getStatisticCollector();
-                            break;
-                        }
+                        s.addStatisticsListener(XimixNodeContext.this);
                     }
 
                     ((PassthroughStatisticCollector)statisticCollector).setImpl(sc);
@@ -288,7 +283,7 @@ public class XimixNodeContext
 
         if (message.getType() == CommandMessage.Type.NODE_INFO_UPDATE)
         {
-            return new NodeInfoService();
+            return new NodeInfoService(this);
         }
 
         return remoteServicesCache.findRemoteService(message);
@@ -334,12 +329,6 @@ public class XimixNodeContext
     public File getHomeDirectory()
     {
         return homeDirectory;
-    }
-
-    @Override
-    public StatisticCollector getStatisticsCollector()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -436,9 +425,20 @@ public class XimixNodeContext
         });
     }
 
-    private class NodeInfoService
-        implements Service
+    @Override
+    public void statisticsUpdate(Service service, Map<String, Object> details)
     {
+        //TODO:
+    }
+
+    private class NodeInfoService
+        extends BasicService
+    {
+        public NodeInfoService(NodeContext nodeContext)
+        {
+            super(nodeContext);
+        }
+
         @Override
         public CapabilityMessage getCapability()
         {

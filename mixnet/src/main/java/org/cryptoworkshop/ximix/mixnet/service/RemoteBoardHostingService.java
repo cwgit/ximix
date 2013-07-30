@@ -20,21 +20,21 @@ import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
+import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 public class RemoteBoardHostingService
-    implements Service
+    extends BasicService
 {
-    private final NodeContext nodeContext;
     private final String nodeName;
     private final CapabilityMessage capabilityMessage;
 
-    public RemoteBoardHostingService(NodeContext context, String nodeName, CapabilityMessage capabilityMessage)
+    public RemoteBoardHostingService(NodeContext nodeContext, String nodeName, CapabilityMessage capabilityMessage)
     {
+        super(nodeContext);
+
         this.nodeName = nodeName;
-        this.nodeContext = context;
         this.capabilityMessage = capabilityMessage;
     }
 

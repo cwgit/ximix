@@ -15,19 +15,29 @@
  */
 package org.cryptoworkshop.ximix.common.service;
 
-import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-
-public interface Service
+public class ServiceEvent
 {
-    CapabilityMessage getCapability();
+    public static enum Type
+    {
+        PUBLISH_STATISTICS
+    }
 
-    MessageReply handle(Message message);
+    private final Type type;
+    private final Object parameter;
 
-    boolean isAbleToHandle(Message message);
+    public ServiceEvent(Type type, Object parameter)
+    {
+        this.type = type;
+        this.parameter = parameter;
+    }
 
-    void trigger(ServiceEvent event);
+    public Type getType()
+    {
+        return type;
+    }
 
-    void addStatisticsListener(ServiceStatisticsListener statusListener);
+    public Object getParameter()
+    {
+        return parameter;
+    }
 }

@@ -48,9 +48,9 @@ import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardBackupListener;
@@ -62,17 +62,17 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class BoardHostingService
-    implements Service
+    extends BasicService
 {
-    private final NodeContext nodeContext;
     private final Executor decoupler;
 
     private final BulletinBoardRegistry boardRegistry;
 
-    public BoardHostingService(NodeContext context, Config config)
+    public BoardHostingService(NodeContext nodeContext, Config config)
         throws ConfigException
     {
-        this.nodeContext = context;
+        super(nodeContext);
+
         this.decoupler = nodeContext.getDecoupler(Decoupler.SERVICES);
 
         Map<String, Transform> transforms;
