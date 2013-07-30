@@ -116,7 +116,6 @@ public class ECDSASignerEngine
     {
         try
         {
-            System.err.println("node: " + nodeContext.getName() + " " + message.getType().name());
             switch ((Type)message.getType())
             {
             case GENERATE:
@@ -451,43 +450,6 @@ public class ECDSASignerEngine
             trunc = trunc.shiftRight(messageBitLength - log2n);
 
             return trunc;
-        }
-    }
-
-    private class SigID
-    {
-        private final String id;
-
-        public SigID(String id)
-        {
-            this.id = id;
-        }
-
-        public String getID()
-        {
-            return id;
-        }
-
-        public int hashCode()
-        {
-            return id.hashCode();
-        }
-
-        public boolean equals(Object o)
-        {
-            if (o == this)
-            {
-                return true;
-            }
-
-            if (o instanceof SigID)
-            {
-                SigID other = (SigID)o;
-
-                return this.id.equals(other.id);
-            }
-
-            return false;
         }
     }
 

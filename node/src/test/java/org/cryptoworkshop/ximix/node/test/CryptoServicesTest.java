@@ -2,6 +2,7 @@ package org.cryptoworkshop.ximix.node.test;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,7 +14,10 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
+import it.unisa.dia.gas.jpbc.Pairing;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -40,6 +44,7 @@ import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.message.ShareMessage;
+import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
@@ -53,6 +58,8 @@ import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyGenerationMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
+import org.cryptoworkshop.ximix.crypto.signature.BLSSignerEngine;
+import org.cryptoworkshop.ximix.crypto.signature.message.ECDSACreateMessage;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.node.XimixNodeContext;
@@ -254,82 +261,39 @@ public class CryptoServicesTest
             Assert.assertEquals(nodeName, pubKey1.getPk(), pubKey2.getPk());
         }
 
-//        // Create a random plaintext
-//        ECPoint plaintext = generatePoint(pubKey1.getParameters(), new SecureRandom());
-//
-//        // Encrypt it using the joint public key
-//        ECEncryptor enc = new ECElGamalEncryptor();
-//
-//        enc.init(new ParametersWithRandom(pubKey1, new SecureRandom()));
-//
-//        final ECPair cipherText = enc.encrypt(plaintext);
-//
-//
-//        // Note: ordering is important here!!!
-//
-//        ECDecryptor dec = new ECDecryptor()
-//        {
-//            @Override
-//            public void init(CipherParameters cipherParameters)
-//            {
-//                //To change body of implemented methods use File | Settings | File Templates.
-//            }
-//
-//            @Override
-//            public ECPoint decrypt(ECPair ecPair)
-//            {
-//                int index = 0;
-//                ECPoint[] partialDecs = new ECPoint[peers.size()];
-//
-//                Map<String, ServicesConnection> fullMap = new HashMap<>();
-//
-//                fullMap.put("A", contextMap.get("B").getPeerMap().get("A"));
-//                fullMap.put("B", contextMap.get("A").getPeerMap().get("B"));
-//                fullMap.put("C", contextMap.get("A").getPeerMap().get("C"));
-//                fullMap.put("D", contextMap.get("A").getPeerMap().get("D"));
-//                fullMap.put("E", contextMap.get("A").getPeerMap().get("E"));
-//
-//                for (String nodeName : genKeyPairMessage.getNodesToUse())
-//                {
-//                    MessageReply decReply = null;
-//                    try
-//                    {
-//                        decReply = fullMap.get(nodeName).sendMessage(CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage("BLSKEY", Collections.singletonList(new PairSequence(cipherText).getEncoded())));
-//                    }
-//                    catch (ServiceConnectionException e)
-//                    {
-//                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//                    }
-//                    catch (IOException e)
-//                    {
-//                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//                    }
-//                    partialDecs[index++] = PairSequence.getInstance(pubKey1.getParameters().getCurve(), MessageBlock.getInstance(ShareMessage.getInstance(decReply.getPayload()).getShareData()).getMessages().get(0)).getECPairs()[0].getX();
-//                }
-//
-//                LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(peers.size(), pubKey1.getParameters().getN());
-//
-//                BigInteger[] weights = lagrangeWeightCalculator.computeWeights(partialDecs);
-//
-//                // weighting
-//                ECPoint weightedDecryption = partialDecs[0].multiply(weights[0]);
-//                for (int i = 1; i < weights.length; i++)
-//                {
-//                    if (partialDecs[i] != null)
-//                    {
-//                        weightedDecryption = weightedDecryption.add(partialDecs[i].multiply(weights[i]));
-//                    }
-//                }
-//
-//                // Do final decryption to recover plaintext ECPoint
-//                return cipherText.getY().add(weightedDecryption.negate());
-//            }
-//        };
-//
-//        // Do final decryption to recover plaintext ECPoint
-//        ECPoint decrypted = dec.decrypt(cipherText);
-//
-//        Assert.assertEquals(plaintext, decrypted);
+        Pairing pairing = PairingFactory.getInstance().getPairing(pubKey1.getParameters().getCurveParameters());
+
+        // create message hash
+        MessageDigest mdv = MessageDigest.getInstance("SHA1");
+        byte[] hashv = mdv.digest("this is a test message".getBytes());
+
+        Map<String, ServicesConnection> fullMap = new HashMap<>();
+
+        fullMap.put("A", contextMap.get("B").getPeerMap().get("A"));
+
+        MessageReply decReply = null;
+        try
+        {
+            decReply = fullMap.get("A").sendMessage(ClientMessage.Type.CREATE_SIGNATURE, new AlgorithmServiceMessage(Algorithm.BLS, new SignatureMessage(Algorithm.BLS, BLSSignerEngine.Type.GENERATE, new ECDSACreateMessage("BLSKEY", hashv, 3, "A", "B", "C"))));
+        }
+        catch (ServiceConnectionException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+        it.unisa.dia.gas.jpbc.Element finalSignature = pairing.getG1().newElement();
+
+        finalSignature.setFromBytes(ASN1OctetString.getInstance(decReply.getPayload()).getOctets());
+
+        // Create verification hash
+
+        it.unisa.dia.gas.jpbc.Element hv = pairing.getG1().newElement().setFromHash(hashv, 0, hashv.length);
+
+        // Verify the signature
+        it.unisa.dia.gas.jpbc.Element temp1 = pairing.pairing(finalSignature, pubKey1.getParameters().getG());
+        it.unisa.dia.gas.jpbc.Element temp2 = pairing.pairing(hv, pubKey1.getPk());
+
+        Assert.assertTrue("BLS signature failed", temp1.isEqual(temp2));
     }
 
     private Map<String, XimixNodeContext> createContextMap(int size)

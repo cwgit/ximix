@@ -155,7 +155,10 @@ public class BLSKeyManager
             BLS01KeyPairGenerator kpGen = new BLS01KeyPairGenerator();
             CurveParameters       curveParameters = new DefaultCurveParameters().load(this.getClass().getResourceAsStream("d62003-159-158.param"));
             Pairing               pairing = PairingFactory.getInstance().getPairing(curveParameters);
-            BLS01Parameters       blsParameters = new BLS01Parameters(curveParameters, pairing.getG2().newRandomElement());
+            Element g = pairing.getG2().newElement();
+            g.setFromBytes(new BigInteger("0102030405060708090a0b0", 16).toByteArray());   // TODO: need to set a joint G value!!!!
+
+            BLS01Parameters       blsParameters = new BLS01Parameters(curveParameters, g);
 
             // TODO: need to sort out source of randomness.
 

@@ -18,26 +18,31 @@ package org.cryptoworkshop.ximix.crypto.service;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.crypto.signature.BLSSignerEngine;
 import org.cryptoworkshop.ximix.crypto.signature.ECDSASignerEngine;
 
 public class NodeSigningService
     extends BasicService
 {
     private final ECDSASignerEngine ecdsaSignerEngine;
+    private final BLSSignerEngine blsSignerEngine;
 
     public NodeSigningService(NodeContext nodeContext, Config config)
     {
         super(nodeContext);
         // TODO: make this configurable
         this.ecdsaSignerEngine = new ECDSASignerEngine(nodeContext);
+        this.blsSignerEngine = new BLSSignerEngine(nodeContext);
     }
 
     public CapabilityMessage getCapability()
@@ -49,14 +54,23 @@ public class NodeSigningService
     {
         try
         {
+            AlgorithmServiceMessage serviceMessage = AlgorithmServiceMessage.getInstance(message.getPayload());
+
             if (message.getType() instanceof ClientMessage.Type)
             {
                 switch (((ClientMessage)message).getType())
                 {
                 case CREATE_SIGNATURE:
-                    return ecdsaSignerEngine.handle(SignatureMessage.getInstance(ECDSASignerEngine.Type.values(), message.getPayload()));
+                    if (serviceMessage.getAlgorithm() == Algorithm.ECDSA)
+                    {
+                        return ecdsaSignerEngine.handle(SignatureMessage.getInstance(ECDSASignerEngine.Type.values(), serviceMessage.getPayload()));
+                    }
+                    else
+                    {
+                        return blsSignerEngine.handle(SignatureMessage.getInstance(BLSSignerEngine.Type.values(), serviceMessage.getPayload()));
+                    }
                 default:
-                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeSigningService."));
+                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown client command in NodeSigningService."));
                 }
             }
             else
@@ -64,10 +78,14 @@ public class NodeSigningService
                 switch (((CommandMessage)message).getType())
                 {
                 case SIGNATURE_MESSAGE:
-
-                    SignatureMessage sigMessage = SignatureMessage.getInstance(ECDSASignerEngine.Type.values(), message.getPayload());
-
-                    return ecdsaSignerEngine.handle(sigMessage);
+                    if (serviceMessage.getAlgorithm() == Algorithm.ECDSA)
+                    {
+                        return ecdsaSignerEngine.handle(SignatureMessage.getInstance(ECDSASignerEngine.Type.values(), serviceMessage.getPayload()));
+                    }
+                    else
+                    {
+                        return blsSignerEngine.handle(SignatureMessage.getInstance(BLSSignerEngine.Type.values(), serviceMessage.getPayload()));
+                    }
                 default:
                     return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeSigningService."));
                 }

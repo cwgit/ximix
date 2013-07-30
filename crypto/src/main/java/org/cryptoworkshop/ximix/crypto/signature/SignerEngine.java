@@ -3,12 +3,16 @@ package org.cryptoworkshop.ximix.crypto.signature;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
+import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Pairing;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.ECPointMessage;
+import org.cryptoworkshop.ximix.common.message.ElementMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
@@ -43,7 +47,7 @@ public abstract class SignerEngine
         }
         else
         {
-            return nodeContext.getPeerMap().get(node).sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new SignatureMessage(algorithm, type, message));
+            return nodeContext.getPeerMap().get(node).sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new AlgorithmServiceMessage(getAlgorithm(), new SignatureMessage(algorithm, type, message)));
         }
     }
 
@@ -106,6 +110,36 @@ public abstract class SignerEngine
             if (valueShares[i] != null)
             {
                 value = value.add(ECPointMessage.getInstance(curve, valueShares[i]).getPoint().multiply(weights[i]));
+            }
+        }
+
+        return value;
+    }
+
+    protected Element accumulateElement(Participant[] nodes, Enum fetchOperatorType, ASN1Encodable request, Pairing pairing, BigInteger fieldSize)
+        throws ServiceConnectionException
+    {
+        ASN1Encodable[] valueShares = getShareData(nodes, fetchOperatorType, request);
+
+        //
+        // we don't need to know how many peers, just the maximum index (max(sequenceNo) + 1) of the one available
+        //
+        LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(valueShares.length, fieldSize);
+
+        BigInteger[] weights = calculator.computeWeights(valueShares);
+
+        int baseIndex = getBaseIndex(valueShares);
+
+        Element        baseValue = ElementMessage.getInstance(pairing, valueShares[baseIndex]).getValue();
+        BigInteger     baseWeight = weights[baseIndex];
+
+        // weighting
+        Element value = baseValue.powZn(pairing.getZr().newElement(baseWeight));
+        for (int i = baseIndex + 1; i < weights.length; i++)
+        {
+            if (valueShares[i] != null)
+            {
+                value = value.mul(ElementMessage.getInstance(pairing, valueShares[i]).getValue().powZn(pairing.getZr().newElement(weights[i])));
             }
         }
 

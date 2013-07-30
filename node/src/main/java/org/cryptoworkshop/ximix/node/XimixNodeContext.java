@@ -268,6 +268,10 @@ public class XimixNodeContext
     @Override
     public PrivateKeyOperator getPrivateKeyOperator(String keyID)
     {
+        if (blsKeyManager.hasPrivateKey(keyID))
+        {
+            return blsKeyManager.getPrivateKeyOperator(keyID);
+        }
         return ecKeyManager.getPrivateKeyOperator(keyID);
     }
 
