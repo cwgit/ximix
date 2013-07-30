@@ -553,59 +553,6 @@ public class KeyProcessingTest extends TestCase
         CommandService commandService = adminRegistrar.connect(CommandService.class);
 
 
-        //
-        // Perform shuffle.
-        //
-
-//        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED", new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECKEY").build(), "A", "B", "C", "D", "E");
-//
-//        final CountDownLatch shufflerLatch = new CountDownLatch(1);
-//
-//        final ValueObject<Boolean> shuffleCompleted = new ValueObject<Boolean>(false);
-//        final ValueObject<Boolean> shuffleFailed = new ValueObject<Boolean>(false);
-//        final ValueObject<Thread> shuffleThread = new ValueObject<>();
-//
-//
-//        shuffleOp.addListener(new ShuffleOperationListener()
-//        {
-//            @Override
-//            public void completed()
-//            {
-//                shuffleCompleted.set(true);
-//                shuffleThread.set(Thread.currentThread());
-//                shufflerLatch.countDown();
-//            }
-//
-//            @Override
-//            public void failed(String errorObject)
-//            {
-//                shuffleFailed.set(true);
-//                shufflerLatch.countDown();
-//            }
-//        });
-
-        //
-        // Fail if operation did not complete in the nominated time frame.
-        //
-//        TestCase.assertTrue("Shuffle timed out.", shufflerLatch.await(20, TimeUnit.SECONDS));
-
-        //
-        // Check that failed and completed methods are exclusive.
-        //
-
-//        TestCase.assertNotSame("Failed flag and completed flag must be different.", shuffleCompleted.get(), shuffleFailed.get());
-
-        //
-        // Check for success of shuffle.
-        //
-//        TestCase.assertTrue(shuffleCompleted.get());
-
-        //
-        // Check that shuffle did not fail.
-        //
-//        TestCase.assertFalse(shuffleFailed.get());
-
-
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];
         final ValueObject<Boolean> downloadBoardCompleted = new ValueObject<Boolean>(false);
