@@ -41,7 +41,14 @@ public abstract class BasicService
     {
         if (event.getType() == ServiceEvent.Type.PUBLISH_STATISTICS)
         {
-            statisticsNotifier.statisticsUpdate(this, getCurrentStatistics());
+            nodeContext.getDecoupler(Decoupler.SERVICES).execute(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    statisticsNotifier.statisticsUpdate(BasicService.this, getCurrentStatistics());
+                }
+            });
         }
     }
 
