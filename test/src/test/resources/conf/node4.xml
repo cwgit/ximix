@@ -2,6 +2,7 @@
 <node>
     <portNo>12003</portNo>
     <name>D</name>
+    <description></description>
     <services>
         <service>
             <implementation>org.cryptoworkshop.ximix.mixnet.service.BoardHostingService</implementation>

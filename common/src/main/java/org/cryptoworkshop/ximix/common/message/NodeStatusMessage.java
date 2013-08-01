@@ -13,7 +13,6 @@ public class NodeStatusMessage
 {
 
     private static final Charset UTF8 = Charset.forName("UTF8");
-    public static final NodeStatusMessage NULL_MESSAGE;
 
 
     private enum ValueType
@@ -21,34 +20,30 @@ public class NodeStatusMessage
         STRING, INT, LONG, MAP, LIST
     }
 
-
-    static
-    {
-        NULL_MESSAGE = new NodeStatusMessage();
-        NULL_MESSAGE.timestamp = -1;
-    }
-
-    private long timestamp = -1;
-    private Map<String, Object> values = new HashMap<>();
-    private boolean nullStatistics = false;
+    private final Map<String, Object> values;
 
     public NodeStatusMessage()
     {
-
+       this(new HashMap<String,Object>());
     }
 
 
-    private NodeStatusMessage(Map<String, Object> source)
+    public Map<String, Object> getValues()
     {
-        values.putAll(source);
+        return values;
+    }
+
+    public NodeStatusMessage(Map<String, Object> source)
+    {
+        Map<String, Object> tmp = new HashMap<>();
+        tmp.putAll(source);
+        values = Collections.unmodifiableMap(tmp);
     }
 
     private NodeStatusMessage(ASN1Sequence set)
     {
-
         int t = 0;
-        timestamp = ((ASN1Integer)set.getObjectAt(t++)).getValue().longValue();
-
+        values = new HashMap<>();
         for (; t < set.size(); t++)
         {
             ASN1Sequence pair = (ASN1Sequence)set.getObjectAt(t);
@@ -57,55 +52,24 @@ public class NodeStatusMessage
                 asn1TypeToObject((ASN1Sequence)pair.getObjectAt(1))
             );
         }
-
     }
+
 
     public static NodeStatusMessage getInstance(Object o)
     {
 
-        if (o instanceof ASN1Sequence)
+        if (o instanceof NodeStatusMessage)
         {
-            return new NodeStatusMessage((ASN1Sequence)o);
+            return (NodeStatusMessage)o;
+        }
+        else if (o != null)
+        {
+            return new NodeStatusMessage(ASN1Sequence.getInstance(o));
         }
 
-
-        return getInstance(o, null);
+        return null;
     }
 
-    public static NodeStatusMessage getInstance(Object o, Long timestamp)
-    {
-        if (o instanceof HashMap)
-        {
-            return new NodeStatusMessage((Map)o).withTimeStamp(timestamp);
-        }
-        else if (o instanceof NodeStatusMessage)
-        {
-            return new NodeStatusMessage(((NodeStatusMessage)o).values).withTimeStamp(timestamp);
-        }
-
-        throw new IllegalArgumentException("Unsupported object type, " + o.getClass().getName());
-    }
-
-
-    public long getTimestamp()
-    {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp)
-    {
-        this.timestamp = timestamp;
-    }
-
-    public Map<String, Object> getValues()
-    {
-        return values;
-    }
-
-    public void setValues(Map<String, Object> values)
-    {
-        this.values = values;
-    }
 
     private Object asn1TypeToObject(ASN1Sequence sequence)
     {
@@ -161,20 +125,11 @@ public class NodeStatusMessage
         return out;
     }
 
-    private NodeStatusMessage withTimeStamp(Long timestamp)
-    {
-        if (timestamp != null)
-        {
-            this.timestamp = timestamp.longValue();
-        }
-        return this;
-    }
 
     @Override
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector out = new ASN1EncodableVector();
-        out.add(new ASN1Integer(timestamp));
         Iterator<Map.Entry<String, Object>> it = values.entrySet().iterator();
 
         while (it.hasNext())
@@ -239,15 +194,27 @@ public class NodeStatusMessage
         return new DERSequence(out);
     }
 
-    public boolean isNullStatistics()
-    {
-        return timestamp == -1;
-    }
 
-    public void putValue(String name, Object value)
+    public static class Builder
     {
-        values.put(name, value);
-    }
+        private final HashMap<String, Object> values = new HashMap<>();
 
+        public void putAll(Map<String, Object> newValues)
+        {
+            values.putAll(newValues);
+        }
+
+        public void put(String name, Object value)
+        {
+            values.put(name, value);
+        }
+
+        public NodeStatusMessage build()
+        {
+            return new NodeStatusMessage(values);
+        }
+
+
+    }
 
 }

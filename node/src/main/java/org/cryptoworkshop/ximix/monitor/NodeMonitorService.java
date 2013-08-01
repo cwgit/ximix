@@ -1,28 +1,19 @@
 package org.cryptoworkshop.ximix.monitor;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
+import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.service.BasicService;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.service.Service;
+import org.cryptoworkshop.ximix.mixnet.service.BoardHostingService;
+import org.w3c.dom.Node;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
-import org.cryptoworkshop.ximix.common.message.NodeStatusRequestMessage;
-import org.cryptoworkshop.ximix.common.service.BasicService;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.statistics.CrossSection;
-import org.cryptoworkshop.ximix.common.statistics.DefaultStatisticsCollector;
-import org.cryptoworkshop.ximix.common.statistics.StatisticCollector;
-import org.w3c.dom.Node;
 
 /**
  *
@@ -31,10 +22,8 @@ public class NodeMonitorService
     extends BasicService
 {
     public static final int MIN_STATISTICS_PERIOD = 1000;
-    private final DefaultStatisticsCollector statisticsCollector;
+
     private final Config config;
-    private List<HealthMonitorMetaDataConfig> metaData;
-    private Map metaDataMap;
 
 
     public NodeMonitorService(NodeContext nodeContext, Config config)
@@ -42,34 +31,9 @@ public class NodeMonitorService
         super(nodeContext);
 
         this.config = config;
-        statisticsCollector = new DefaultStatisticsCollector();
-        statisticsCollector.start();
-
-        try
-        {
-            metaData = config.getConfigObjects("meta-data", new HealthMonitorConfigFactory());
-
-            metaDataMap = new HashMap();
-            for (HealthMonitorMetaDataConfig h : metaData)
-            {
-                metaDataMap.put(h.getName(), h.getValue());
-            }
-
-
-        }
-        catch (ConfigException e)
-        {
-
-            //TODO log, throws if no meta data, is this desired behavior.
-        }
 
     }
 
-
-    private void applyConfig(Config cfg)
-    {
-
-    }
 
     @Override
     public CapabilityMessage getCapability()
@@ -86,36 +50,20 @@ public class NodeMonitorService
 
         switch (req.getType())
         {
-
-            case TRIM:
-                int totalCount = req.getToCount();
-                if (totalCount < 1)
-                {
-                    totalCount = 1;
-                }
-                statisticsCollector.trim(totalCount);
-
-                break;
-            case SET_PERIOD:
-                int period = req.getPeriod();
-                if (period < 1000)
-                {
-                    period = MIN_STATISTICS_PERIOD;
-                }
-                statisticsCollector.setDurationMillis(period);
-                break;
-
             case GET_FULL_DETAILS:
             {
                 nsm = new NodeStatusMessage();
                 Runtime rt = Runtime.getRuntime();
                 RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
-                nsm.putValue("name", nodeContext.getName());
-                nsm.putValue("vm.available-processors", rt.availableProcessors());
-                nsm.putValue("vm.free-memory", rt.freeMemory());
-                nsm.putValue("vm.total-memory", rt.totalMemory());
-                nsm.putValue("vm.up-time", mxBean.getUptime());
-                nsm.putValue("vm.start-time", mxBean.getStartTime());
+
+                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
+
+                builder.put("name", nodeContext.getName());
+                builder.put("vm.available-processors", rt.availableProcessors());
+                builder.put("vm.free-memory", rt.freeMemory());
+                builder.put("vm.total-memory", rt.totalMemory());
+                builder.put("vm.up-time", mxBean.getUptime());
+                builder.put("vm.start-time", mxBean.getStartTime());
 
                 ArrayList<String> cap = new ArrayList<>();
                 for (CapabilityMessage msg : nodeContext.getCapabilities())
@@ -123,7 +71,10 @@ public class NodeMonitorService
                     cap.add(msg.getType().name());
                 }
 
-                nsm.putValue("node.capabilities", cap);
+                builder.put("node.capabilities", cap);
+
+                nsm = builder.build();
+
             }
             break;
 
@@ -133,32 +84,41 @@ public class NodeMonitorService
                 Runtime rt = Runtime.getRuntime();
                 RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
                 mxbean.getUptime();
-                nsm.putValue("name", nodeContext.getName());
-                nsm.putValue("vm.vendor", mxbean.getVmVendor());
-                nsm.putValue("vm.vendor-name", mxbean.getVmName());
-                nsm.putValue("vm.vendor-version", mxbean.getVmVersion());
 
-                if (metaDataMap != null)
-                {
-                    nsm.putValue("node.metadata", metaDataMap);
-                }
+                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
 
+                builder.put("name", nodeContext.getName());
+                builder.put("vm.vendor", mxbean.getVmVendor());
+                builder.put("vm.vendor-name", mxbean.getVmName());
+                builder.put("vm.vendor-version", mxbean.getVmVersion());
+                builder.put("node.metadata", nodeContext.getDescription());
+
+                nsm = builder.build();
 
             }
             break;
 
             case GET_STATISTICS:
             {
-                CrossSection cs = statisticsCollector.pollOldestCrossSection(false);
-                if (cs == null)
+
+                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
+
+//                Map<String, Object> accumulatedStats = new HashMap<>();
+
+                Map<Service, Map<String, Object>> map = nodeContext.getServiceStatistics();
+
+
+                for (Service service : map.keySet())
                 {
-                    nsm = NodeStatusMessage.NULL_MESSAGE;
+                    if (service instanceof BoardHostingService)
+                    {
+                        builder.put("board.hosting.service", map.get(service));
+                    }
                 }
-                else
-                {
-                    nsm = NodeStatusMessage.getInstance(cs, cs.getStartTime());
-                    nsm.putValue("name", nodeContext.getName());
-                }
+
+                builder.put("name", nodeContext.getName());
+                nsm = builder.build();
+
             }
             break;
         }
@@ -168,6 +128,7 @@ public class NodeMonitorService
 
         return reply;
     }
+
 
     /**
      * @return
@@ -184,11 +145,6 @@ public class NodeMonitorService
     {
         Enum e = message.getType();
         return CommandMessage.Type.NODE_STATISTICS == e;
-    }
-
-    public StatisticCollector getStatisticCollector()
-    {
-        return statisticsCollector;
     }
 
 

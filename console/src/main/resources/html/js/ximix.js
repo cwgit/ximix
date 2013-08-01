@@ -11,7 +11,6 @@ var DAYS = HOURS * 24;
 var ONE_MB = 1024 * 1024;
 
 
-
 jQuery.ajaxSetup({
     'beforeSend': function (xhr) {
         xhr.setRequestHeader("Accept", "text/javascript")
@@ -81,7 +80,7 @@ function renderStaticDetails() {
         if (!outer.length) {
             outer = $("<div class='node' id='node_" + node.name + "_info'>");
             outer.appendTo('#nodes');
-            outer.append("<span id='node_" + node.name + "_info_name' style='display:none'>" +node.name+ "</span>");
+            outer.append("<span id='node_" + node.name + "_info_name' style='display:none'>" + node.name + "</span>");
             outer.append("<div class='nodetitle'>" + node.name + "</div>");
 
             var tab = "<table class='nodetable' border='0'>"
@@ -91,8 +90,7 @@ function renderStaticDetails() {
                     continue;
                 } else if ("node.metadata" === k) {
 
-                    for (kk in node[k])
-                    {
+                    for (kk in node[k]) {
                         tab = tab + "<tr><td>" + (kk) + "</td><td>" + (node[k][kk]) + "</td></tr>";
                     }
                 } else {
@@ -106,8 +104,8 @@ function renderStaticDetails() {
             outer.append(tab);
 
             outer.click(function () {
-              var v = "#"+$(this).attr('id')+"_name";
-                 showNodeDetail($(v).text());
+                var v = "#" + $(this).attr('id') + "_name";
+                showNodeDetail($(v).text());
             });
 
         }
@@ -182,9 +180,27 @@ function showNodeDetail(node_name) {
             $(tab).appendTo(outer);
 
             console.log(data);
+
+            $("<div class='nodetitle'>Statistics</div>").appendTo(outer);
+
+            $.post("/api/statistics/mixnetadmin", {node: node_name}, function (data) {
+                tab = "<table class='nodetable' border='0'>"
+
+                for (var k in data.values) {
+                    if ("name" === k) {
+                        continue;
+                    }
+                    tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (  apply_rtype(k, data.values[k])) + "</td></tr>";
+                }
+
+                tab = tab + "</table>";
+                $(tab).appendTo(outer);
+
+            });
+
         }
-    )
-    ;
+    );
+
 
 }
 

@@ -47,17 +47,7 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.service.Algorithm;
-import org.cryptoworkshop.ximix.common.service.BasicService;
-import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
-import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
-import org.cryptoworkshop.ximix.common.service.Service;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
-import org.cryptoworkshop.ximix.common.statistics.PassthroughStatisticCollector;
-import org.cryptoworkshop.ximix.common.statistics.StatisticCollector;
+import org.cryptoworkshop.ximix.common.service.*;
 import org.cryptoworkshop.ximix.crypto.key.BLSKeyManager;
 import org.cryptoworkshop.ximix.crypto.key.BLSNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
@@ -82,11 +72,15 @@ public class XimixNodeContext
     private final File homeDirectory;
     private final Map<String, ServicesConnection> peerMap;
     private final CountDownLatch setupCompleteLatch = new CountDownLatch(1);
-    private final StatisticCollector statisticCollector = new PassthroughStatisticCollector();
+    private final Map<String, String> description;
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
     {
+
+        description = nodeConfig.getConfigObject("description", new DescriptionConfigFactory()).getDescription();
+
+
 
         this.peerMap = Collections.synchronizedMap(new HashMap<>(peerMap));
 
@@ -137,20 +131,58 @@ public class XimixNodeContext
                 }
                 finally
                 {
-
-                    StatisticCollector sc = null;
-                    for (Service s : services)
-                    {
-                        s.addListener(XimixNodeContext.this);
-                    }
-
-                    ((PassthroughStatisticCollector)statisticCollector).setImpl(sc);
-
-
                     setupCompleteLatch.countDown();
                 }
             }
         });
+    }
+
+
+    @Override
+    public Map<Service, Map<String, Object>> getServiceStatistics()
+    {
+        final Map<Service, Map<String, Object>> stats = new HashMap<>();
+
+        List<Service> serviceList = getServices();
+
+
+        final CountDownLatch latch = new CountDownLatch(serviceList.size());
+
+        ServiceStatisticsListener listener = new ServiceStatisticsListener()
+        {
+            @Override
+            public void statisticsUpdate(Service service, Map<String, Object> details)
+            {
+                stats.put(service, details);
+                latch.countDown();
+
+                service.removeListener(this);
+            }
+        };
+
+
+        for (Service s : serviceList)
+        {
+            s.addListener(listener);
+            s.trigger(new ServiceEvent(ServiceEvent.Type.PUBLISH_STATISTICS, null));
+        }
+
+        try
+        {
+            latch.await(10, TimeUnit.SECONDS); // TODO Make configurable..
+        }
+        catch (InterruptedException e)
+        {
+            // Deliberately ignored.
+        }
+
+        return stats;
+    }
+
+    @Override
+    public Map<String, String> getDescription()
+    {
+        return description;
     }
 
     public String getName()
@@ -259,7 +291,7 @@ public class XimixNodeContext
         }
         catch (IOException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
 
         return null;
@@ -348,7 +380,7 @@ public class XimixNodeContext
             connection.stop();
         }
 
-        // TODOL need to deal with the decoupled executors.
+        // TODO need to deal with the decoupled executors.
 
         multiTaskExecutor.shutdown();
 
@@ -429,11 +461,6 @@ public class XimixNodeContext
         });
     }
 
-    @Override
-    public void statisticsUpdate(Service service, Map<String, Object> details)
-    {
-        //TODO:
-    }
 
     private class NodeInfoService
         extends BasicService
@@ -463,6 +490,65 @@ public class XimixNodeContext
             return message.getType() == CommandMessage.Type.NODE_INFO_UPDATE;
         }
     }
+
+
+    private class DescriptionConfig
+    {
+        private final Map<String, String> description = new HashMap<>();
+
+        public DescriptionConfig(Node node)
+        {
+            NodeList nl = node.getChildNodes();
+            for (int t = 0; t < nl.getLength(); t++)
+            {
+                Node n = nl.item(t);
+
+
+                if ("detail".equals(n.getNodeName()))
+                {
+                    NodeList detailsList = n.getChildNodes();
+                    String item = "";
+                    String value = "";
+
+                    for (int tt = 0; tt < detailsList.getLength(); tt++)
+                    {
+                        Node nn = detailsList.item(tt);
+
+                        if ("item".equals(nn.getNodeName()))
+                        {
+                            item = nn.getTextContent();
+                        }
+                        else if ("value".equals(nn.getNodeName()))
+                        {
+                            value = nn.getTextContent();
+                        }
+                    }
+
+                    description.put(item, value);
+
+                }
+
+            }
+        }
+
+
+        Map<String, String> getDescription()
+        {
+            return Collections.unmodifiableMap(description);
+        }
+
+
+    }
+
+    private class DescriptionConfigFactory
+        implements ConfigObjectFactory<DescriptionConfig>
+    {
+        public DescriptionConfig createObject(Node configNode)
+        {
+            return new DescriptionConfig(configNode);
+        }
+    }
+
 
     private class ServiceConfig
     {
@@ -545,4 +631,7 @@ public class XimixNodeContext
             return new ServiceConfig(configNode);
         }
     }
+
+
 }
+

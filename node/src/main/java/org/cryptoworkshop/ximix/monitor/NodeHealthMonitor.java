@@ -10,10 +10,9 @@ import java.util.List;
  */
 public interface NodeHealthMonitor
 {
-    void resetToLast(int count, String... nodes)
-        throws ServiceConnectionException;
 
-    NodeStatusMessage getLastStatistics(String node);
+    NodeStatusMessage getLastStatistics(String node)
+        throws ServiceConnectionException;
 
 
     List<NodeStatusMessage> getConnectedNodeInfo()

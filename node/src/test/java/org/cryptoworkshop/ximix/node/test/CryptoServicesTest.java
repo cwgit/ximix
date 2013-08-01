@@ -386,6 +386,10 @@ public class CryptoServicesTest
 
             name.appendChild(document.createTextNode(nodeName));
 
+            Element description = document.createElement("description");
+            rootElement.appendChild(description);
+
+
             Element services = document.createElement("services");
             rootElement.appendChild(services);
 

@@ -9,8 +9,7 @@ public class NodeStatusRequestMessage
     extends ASN1Object
 {
     private Type type = null;
-    private Integer period = null;
-    private Integer toCount = null;
+
 
     private NodeStatusRequestMessage(Type type)
     {
@@ -25,24 +24,11 @@ public class NodeStatusRequestMessage
         return msg;
     }
 
-    public static NodeStatusRequestMessage forPeriodChange(int period)
-    {
-        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.SET_PERIOD);
-        msg.period = period;
-        return msg;
-    }
 
-    public static NodeStatusRequestMessage forTrim(int count)
-    {
-        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.TRIM);
-        msg.toCount = count;
-        return msg;
-    }
-
-    public static NodeStatusRequestMessage forStatisticsRequest(int count)
+    public static NodeStatusRequestMessage forStatisticsRequest()
     {
         NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.GET_STATISTICS);
-        msg.toCount = count;
+
         return msg;
     }
 
@@ -69,16 +55,6 @@ public class NodeStatusRequestMessage
 
             Type type = Type.values()[eTYpe.getValue().intValue()];
             NodeStatusRequestMessage out = new NodeStatusRequestMessage(type);
-            switch (type)
-            {
-                case TRIM:
-                    out.toCount = ((ASN1Integer)seq.getObjectAt(1)).getValue().intValue();
-                    break;
-
-                case SET_PERIOD:
-                    out.period = ((ASN1Integer)seq.getObjectAt(1)).getValue().intValue();
-                    break;
-            }
 
             return out;
         }
@@ -91,15 +67,6 @@ public class NodeStatusRequestMessage
         return type;
     }
 
-    public Integer getPeriod()
-    {
-        return period;
-    }
-
-    public Integer getToCount()
-    {
-        return toCount;
-    }
 
     @Override
     public ASN1Primitive toASN1Primitive()
@@ -107,23 +74,13 @@ public class NodeStatusRequestMessage
 
         ASN1EncodableVector seq = new ASN1EncodableVector();
         seq.add(new ASN1Enumerated(type.ordinal()));
-        if (type == Type.SET_PERIOD)
-        {
-            seq.add(new ASN1Integer(period));
-        }
-        else if (type == Type.TRIM)
-        {
-            seq.add(new ASN1Integer(toCount));
-        }
-
-
         return new DERSequence(seq);
     }
 
 
     public static enum Type
     {
-        TRIM,
+
 
         SET_PERIOD,
 

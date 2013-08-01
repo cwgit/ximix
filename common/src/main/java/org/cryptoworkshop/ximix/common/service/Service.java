@@ -30,4 +30,6 @@ public interface Service
     void trigger(ServiceEvent event);
 
     void addListener(ServiceStatisticsListener statusListener);
+
+    void removeListener(ServiceStatisticsListener serviceStatisticsListener);
 }

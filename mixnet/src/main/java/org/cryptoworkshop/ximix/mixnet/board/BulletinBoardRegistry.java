@@ -33,6 +33,8 @@ public class BulletinBoardRegistry
     private final File workingDirectory;
     private final Map<String, Transform> transforms;
     private final Executor boardUpdateExecutor;
+    private final BulletinBoardChangeListener changeListener;
+
     private Map<String, BulletinBoard> boards = new HashMap<>();
     private Map<String, BulletinBoard> transitBoards = new HashMap<String, BulletinBoard>();
     private Map<String, BulletinBoard> backupBoards = new HashMap<String, BulletinBoard>();
@@ -42,11 +44,13 @@ public class BulletinBoardRegistry
     private Set<String> inTransitBoards = new HashSet<>();
     private Set<String> completedBoards = new HashSet<>();
 
-    public BulletinBoardRegistry(NodeContext nodeContext, Map<String, Transform> transforms)
+
+    public BulletinBoardRegistry(NodeContext nodeContext, Map<String, Transform> transforms, BulletinBoardChangeListener changeListener)
     {
         this.nodeContext = nodeContext;
         this.transforms = transforms;
         this.boardUpdateExecutor = nodeContext.getDecoupler(Decoupler.BOARD_REGISTRY);
+        this.changeListener = changeListener;
 
         File homeDirectory = nodeContext.getHomeDirectory();
 
@@ -79,6 +83,7 @@ public class BulletinBoardRegistry
                 File boardDBFile = deriveBoardFile(boardName);
 
                 board = new BulletinBoardImpl(boardName, boardDBFile, nodeContext.getScheduledExecutor());
+                board.addListener(changeListener);
 
                 boards.put(boardName, board);
             }
@@ -91,6 +96,7 @@ public class BulletinBoardRegistry
      * Returns a null board file if the workingDirectory is not specified.
      * It assumes that if no workingDirectory is specified there was no intention
      * to persist data.
+     *
      * @param boardName
      * @return
      */
@@ -258,6 +264,7 @@ public class BulletinBoardRegistry
             BulletinBoard originalBoard = boards.remove(boardName);
 
             ListenerHandler<BulletinBoardBackupListener> listenerHandler = originalBoard.getListenerHandler(BulletinBoardBackupListener.class);
+            ListenerHandler<BulletinBoardChangeListener> changeHandler = originalBoard.getListenerHandler(BulletinBoardChangeListener.class);
 
             if (workingDirectory != null)
             {
@@ -285,8 +292,8 @@ public class BulletinBoardRegistry
 
             transitBoards.put(boardName, originalBoard);
 
-            BulletinBoard board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName), listenerHandler);
-
+            BulletinBoard board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName), listenerHandler, changeHandler);
+            board.addListener(changeListener);
             boards.put(boardName, board);
         }
     }

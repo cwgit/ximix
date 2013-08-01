@@ -2,6 +2,24 @@
 <node>
     <portNo>11004</portNo>
     <name>E</name>
+    <description>
+        <detail>
+            <item>Location</item>
+            <value>Floor 5, Isle 2, Rack 17, Shelf 6</value>
+        </detail>
+        <detail>
+            <item>Project</item>
+            <value>Ximix</value>
+        </detail>
+        <detail>
+            <item>Organisation</item>
+            <value>VEC</value>
+        </detail>
+        <detail>
+            <item>Contact</item>
+            <value>0425 555 555</value>
+        </detail>
+    </description>
     <services>
         <service>
             <implementation>org.cryptoworkshop.ximix.mixnet.service.BoardHostingService</implementation>

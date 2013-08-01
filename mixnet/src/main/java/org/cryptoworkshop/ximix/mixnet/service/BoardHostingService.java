@@ -54,6 +54,7 @@ import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardBackupListener;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardChangeListener;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.mixnet.shuffle.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.mixnet.shuffle.TransformShuffleAndReturnTask;
@@ -65,8 +66,8 @@ public class BoardHostingService
     extends BasicService
 {
     private final Executor decoupler;
-
     private final BulletinBoardRegistry boardRegistry;
+
 
     public BoardHostingService(NodeContext nodeContext, Config config)
         throws ConfigException
@@ -88,7 +89,17 @@ public class BoardHostingService
             transforms = new HashMap<>();
         }
 
-        this.boardRegistry = new BulletinBoardRegistry(nodeContext, transforms);
+        BulletinBoardChangeListener changeListener = new BulletinBoardChangeListener()
+        {
+            @Override
+            public void messagesAdded(BulletinBoard bulletinBoard, int count)
+            {
+                statistics.increment(bulletinBoard.getName()+".message-count", count);
+            }
+        };
+
+
+        this.boardRegistry = new BulletinBoardRegistry(nodeContext, transforms, changeListener);
 
         if (config.hasConfig("boards"))
         {

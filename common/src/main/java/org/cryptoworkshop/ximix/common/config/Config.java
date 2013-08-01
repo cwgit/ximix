@@ -195,6 +195,27 @@ public class Config
         return false;
     }
 
+
+    public <T> T getConfigObject(String name, ConfigObjectFactory<T> factory)
+        throws ConfigException
+
+    {
+
+        String[] path = name.split("\\.");
+
+        for (String elementName : path)
+        {
+            NodeList list = xmlNode.getElementsByTagName(elementName);
+            if (list.getLength() != 0 && list.item(0).getNodeName().equals(path[path.length - 1]))
+            {
+                return factory.createObject(list.item(0));
+            }
+        }
+
+        throw new ConfigException("element " + name + " not found");
+    }
+
+
     public <T> List<T> getConfigObjects(String name, ConfigObjectFactory<T> factory)
         throws ConfigException
 

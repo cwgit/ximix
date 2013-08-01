@@ -2,6 +2,24 @@
 <node>
     <portNo>11000</portNo>
     <name>A</name>
+    <description>
+        <detail>
+            <item>Location</item>
+            <value>Floor 5, Isle 2, Rack 17, Shelf 2</value>
+        </detail>
+        <detail>
+            <item>Project</item>
+            <value>Ximix</value>
+        </detail>
+        <detail>
+            <item>Organisation</item>
+            <value>VEC</value>
+        </detail>
+        <detail>
+            <item>Contact</item>
+            <value>0425 555 555</value>
+        </detail>
+    </description>
     <services>
         <service>
             <implementation>org.cryptoworkshop.ximix.mixnet.service.BoardHostingService</implementation>
@@ -28,12 +46,6 @@
         </service>
         <service>
             <implementation>org.cryptoworkshop.ximix.monitor.NodeMonitorService</implementation>
-            <meta-data name="Location">Floor 5, Isle 2, Rack 17, Shelf 2</meta-data>
-            <meta-data name="Project">Ximix</meta-data>
-            <meta-data name="Org">VEC</meta-data>
-            <meta-data name="Contact">0425 555 555</meta-data>
         </service>
-
-
     </services>
 </node>

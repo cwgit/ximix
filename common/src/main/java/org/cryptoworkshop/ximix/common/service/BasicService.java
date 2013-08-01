@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.common.service;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.cryptoworkshop.ximix.common.statistics.CrossSection;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
@@ -28,10 +29,13 @@ public abstract class BasicService
     private final ServiceStatisticsListener statisticsNotifier;
 
     protected final NodeContext nodeContext;
+    protected final CrossSection statistics;
+
 
     public BasicService(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
+        this.statistics = new CrossSection(nodeContext.getDecoupler(Decoupler.SERVICES));
 
         listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.SERVICES)).createHandler(ServiceStatisticsListener.class);
         statisticsNotifier = listenerHandler.getNotifier();
@@ -46,7 +50,7 @@ public abstract class BasicService
                 @Override
                 public void run()
                 {
-                    statisticsNotifier.statisticsUpdate(BasicService.this, getCurrentStatistics());
+                    statisticsNotifier.statisticsUpdate(BasicService.this, statistics.getMap());
                 }
             });
         }
@@ -54,12 +58,13 @@ public abstract class BasicService
 
     public void addListener(ServiceStatisticsListener statisticsListener)
     {
-         listenerHandler.addListener(statisticsListener);
+        listenerHandler.addListener(statisticsListener);
     }
 
-    // TODO: when all is said and done, this should be abstract, non-abstract at the moment so can be added progressively.
-    protected Map<String,Object> getCurrentStatistics()
+    @Override
+    public void removeListener(ServiceStatisticsListener serviceStatisticsListener)
     {
-        return new HashMap<>();
+        listenerHandler.removeListener(serviceStatisticsListener);
     }
+
 }
