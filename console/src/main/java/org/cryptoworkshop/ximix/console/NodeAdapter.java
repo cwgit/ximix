@@ -66,4 +66,5 @@ public interface NodeAdapter
 
     NodeStatusMessage getNodeDetail(String node);
 
+    NodeStatusMessage getNodeStatistics(String node);
 }

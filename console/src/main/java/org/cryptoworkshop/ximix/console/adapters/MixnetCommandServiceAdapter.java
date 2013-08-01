@@ -182,4 +182,21 @@ public class MixnetCommandServiceAdapter
 
     }
 
+    @Override
+    public NodeStatusMessage getNodeStatistics(String node)
+    {
+        NodeStatusMessage details = null;
+        try
+        {
+            NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
+            details = nhm.getLastStatistics(node);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        return details;
+    }
+
 }

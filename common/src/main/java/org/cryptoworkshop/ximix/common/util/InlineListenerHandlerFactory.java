@@ -55,6 +55,15 @@ public class InlineListenerHandlerFactory
         }
 
         @Override
+        public void removeListener(T listener)
+        {
+            synchronized (listeners)
+            {
+                listeners.remove(listener);
+            }
+        }
+
+        @Override
         public T getNotifier()
         {
             return (T)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{listenerClass}, this);

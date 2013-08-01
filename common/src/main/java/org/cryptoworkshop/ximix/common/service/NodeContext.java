@@ -25,7 +25,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 
 public interface NodeContext
-    extends ServiceStatisticsListener
+
 {
     /**
      * Return the name of the node this context represents.
@@ -64,5 +64,10 @@ public interface NodeContext
     String getBoardHost(String boardName);
 
     File getHomeDirectory();
+
+
+    Map<Service, Map<String, Object>> getServiceStatistics();
+
+    Map<String,String> getDescription();
 
 }

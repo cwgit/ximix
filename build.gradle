@@ -193,6 +193,7 @@ task coverage_report(dependsOn: 'compileTestJava') << {
 
 task make_console_installer(dependsOn: 'jar') << {
 
+
     if (!System.properties.containsKey("config")) {
         System.err.println("No config specified run with '-Dconfig=/path/to/console.xml'");
         System.exit(-1);

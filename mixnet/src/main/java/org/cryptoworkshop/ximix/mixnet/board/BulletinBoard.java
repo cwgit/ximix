@@ -39,4 +39,6 @@ public interface BulletinBoard
     void shutdown();
 
     <T> ListenerHandler<T> getListenerHandler(Class<T> listenerClass);
+
+    void addListener(BulletinBoardChangeListener listener);
 }

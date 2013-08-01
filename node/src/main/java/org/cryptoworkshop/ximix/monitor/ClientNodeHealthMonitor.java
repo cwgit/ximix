@@ -24,20 +24,23 @@ public class ClientNodeHealthMonitor
     }
 
     @Override
-    public void resetToLast(int count, String... nodes)
+    public NodeStatusMessage getLastStatistics(String name)
         throws ServiceConnectionException
     {
-        for (String node : nodes)
+        NodeStatusMessage out = null;
+
+        MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forStatisticsRequest());
+        if (reply.getType() == MessageReply.Type.ERROR)
         {
-            connection.sendMessage(node, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forTrim(1));
+            System.out.println("Got error requesting statistics.");
+        }
+        else
+        {
+            out = NodeStatusMessage.getInstance(reply.getPayload());
         }
 
-    }
 
-    @Override
-    public NodeStatusMessage getLastStatistics(String node)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return out;
     }
 
     @Override
@@ -69,15 +72,15 @@ public class ClientNodeHealthMonitor
     {
         NodeStatusMessage out = null;
 
-            MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
-            if (reply.getType() == MessageReply.Type.ERROR)
-            {
-                System.out.println("Got error requesting vm info.");
-            }
-            else
-            {
-                out = NodeStatusMessage.getInstance(reply.getPayload());
-            }
+        MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
+        if (reply.getType() == MessageReply.Type.ERROR)
+        {
+            System.out.println("Got error requesting vm info.");
+        }
+        else
+        {
+            out = NodeStatusMessage.getInstance(reply.getPayload());
+        }
 
 
         return out;

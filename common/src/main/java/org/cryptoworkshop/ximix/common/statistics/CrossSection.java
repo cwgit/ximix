@@ -3,66 +3,66 @@ package org.cryptoworkshop.ximix.common.statistics;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  *
  */
-public class CrossSection extends HashMap<String, Object>
+public class CrossSection
 {
-    long startTime = System.currentTimeMillis();
-    int duration = 10;
+    private final Map<String, Object> values = new HashMap<>();
+    private final Executor decoupler;
 
-    public CrossSection()
+
+    public CrossSection(Executor decoupler)
     {
         super();
+        this.decoupler = decoupler;
     }
 
-    public CrossSection(CrossSection c)
-    {
-        this.duration = c.duration;
-        this.startTime = c.startTime;
-        putAll(c);
-    }
-
-
-    public CrossSection(long startTime, int duration)
-    {
-        this.duration = duration;
-        this.startTime = startTime;
-    }
 
     public Object get(String name, Object def)
     {
-        if (!containsKey(name))
+        if (!values.containsKey(name))
         {
             return def;
         }
-        return get(name);
+        return values.get(name);
     }
 
-    public long getStartTime()
+    public void increment(final String name, final int step)
     {
-        return startTime;
+        decoupler.execute(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                Integer counter = (Integer)values.get(name);
+                if (counter == null)
+                {
+                    counter = Integer.valueOf(step);
+                }
+                else
+                {
+                    counter += step;
+                }
+
+                values.put(name, counter);
+            }
+        });
+
     }
 
-    public void setStartTime(long startTime)
+    public void increment(String name)
     {
-        this.startTime = startTime;
+        increment(name, 1);
     }
 
-    public int getDuration()
-    {
-        return duration;
-    }
 
-    public void setDuration(int duration)
+    public List getAsList(String name, boolean returnEmpty)
     {
-        this.duration = duration;
-    }
-
-    public List getAsList(String foo, boolean returnEmpty)
-    {
-        Object o = get(foo);
+        Object o = values.get(name);
         if (o != null && o instanceof List)
         {
             return (List)o;
@@ -72,6 +72,13 @@ public class CrossSection extends HashMap<String, Object>
             return Collections.EMPTY_LIST;
         }
 
-        throw new IllegalArgumentException(foo + " cannot be assigned to a List, it is " + o.getClass());
+        throw new IllegalArgumentException(name + " cannot be assigned to a List, it is " + o.getClass());
     }
+
+    public Map<String, Object> getMap()
+    {
+        return Collections.unmodifiableMap(values);
+    }
+
+
 }

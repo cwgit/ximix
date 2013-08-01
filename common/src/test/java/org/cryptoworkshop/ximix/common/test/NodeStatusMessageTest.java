@@ -22,7 +22,6 @@ public class NodeStatusMessageTest
     public void testEncodeDecode()
         throws Exception
     {
-        long ts = System.currentTimeMillis();
 
         List<String> testList = new ArrayList<>();
         testList.add("cats");
@@ -31,34 +30,35 @@ public class NodeStatusMessageTest
         testList.add("rabbit");
 
 
-        NodeStatusMessage msg = new NodeStatusMessage();
-        msg.setTimestamp(ts);
+        NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
 
-        msg.getValues().put("a", "bar");
-        msg.getValues().put("b", 10);
-        msg.putValue("list",testList);
+
+        builder.put("a", "bar");
+        builder.put("b", 10);
+        builder.put("list", testList);
 
 
         Map m = new HashMap<>();
 
-        m.put("foo","bar");
-        m.put("cat",1);
+        m.put("foo", "bar");
+        m.put("cat", 1);
 
 
-        msg.putValue("map",m);
+        builder.put("map", m);
+
+        NodeStatusMessage nsm = builder.build();
 
 
+        ASN1Primitive prim = nsm.toASN1Primitive();
 
-        ASN1Primitive prim = msg.toASN1Primitive();
-
-       System.out.println(ASN1Dump.dumpAsString(prim, true));
+        System.out.println(ASN1Dump.dumpAsString(prim, true));
 
 
         NodeStatusMessage res = NodeStatusMessage.getInstance(prim);
-        TestCase.assertTrue(msg.getValues().get("a").equals(res.getValues().get("a")));
-        TestCase.assertTrue(msg.getValues().get("b").equals(res.getValues().get("b")));
+        TestCase.assertTrue(nsm.getValues().get("a").equals(res.getValues().get("a")));
+        TestCase.assertTrue(nsm.getValues().get("b").equals(res.getValues().get("b")));
 
-        int t=0;
+        int t = 0;
         for (String v : testList)
         {
             TestCase.assertEquals(v, ((List)res.getValues().get("list")).get(t++));

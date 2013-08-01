@@ -35,21 +35,25 @@ public class BulletinBoardImpl
     private final String boardName;
     private final File workingFile;
     private final DB boardDB;
-    private final ConcurrentNavigableMap<Integer,byte[]> boardMap;
+    private final ConcurrentNavigableMap<Integer, byte[]> boardMap;
 
     private final ListenerHandler<BulletinBoardBackupListener> listenerHandler;
+    private final ListenerHandler<BulletinBoardChangeListener> changeListenerHandler;
+
 
     private final BulletinBoardBackupListener notifier;
+    private final BulletinBoardChangeListener changeNotifier;
 
     private final AtomicInteger minimumIndex = new AtomicInteger(0);
     private final AtomicInteger nextIndex = new AtomicInteger(0);
 
+
     public BulletinBoardImpl(String boardName, File workingFile, Executor executor)
     {
-        this(boardName, workingFile, new DecoupledListenerHandlerFactory(executor).createHandler(BulletinBoardBackupListener.class));
+        this(boardName, workingFile, new DecoupledListenerHandlerFactory(executor).createHandler(BulletinBoardBackupListener.class), new DecoupledListenerHandlerFactory(executor).createHandler(BulletinBoardChangeListener.class));
     }
 
-    public BulletinBoardImpl(String boardName, File workingFile, ListenerHandler<BulletinBoardBackupListener> listenerHandler)
+    public BulletinBoardImpl(String boardName, File workingFile, ListenerHandler<BulletinBoardBackupListener> listenerHandler, ListenerHandler<BulletinBoardChangeListener> changeListenerHandler)
     {
         this.boardName = boardName;
 
@@ -58,15 +62,15 @@ public class BulletinBoardImpl
             this.workingFile = workingFile;
 
             boardDB = DBMaker.newFileDB(workingFile)
-                    .closeOnJvmShutdown()
-                    .make();
+                .closeOnJvmShutdown()
+                .make();
         }
         else
         {
             this.workingFile = null;
             boardDB = DBMaker.newMemoryDB()
-                            .closeOnJvmShutdown()
-                            .make();
+                .closeOnJvmShutdown()
+                .make();
         }
 
         boardMap = boardDB.getTreeMap(boardName);
@@ -74,7 +78,11 @@ public class BulletinBoardImpl
         nextIndex.set(boardMap.size());
 
         this.listenerHandler = listenerHandler;
+        this.changeListenerHandler = changeListenerHandler;
+
         this.notifier = listenerHandler.getNotifier();
+        this.changeNotifier = changeListenerHandler.getNotifier();
+
     }
 
     @Override
@@ -90,8 +98,18 @@ public class BulletinBoardImpl
         {
             return (ListenerHandler<T>)listenerHandler;
         }
+        else if (BulletinBoardChangeListener.class.isAssignableFrom(listenerClass))
+        {
+            return (ListenerHandler<T>)listenerHandler;
+        }
 
         throw new IllegalStateException("unknown handler requested");
+    }
+
+    @Override
+    public void addListener(BulletinBoardChangeListener listener)
+    {
+        changeListenerHandler.addListener(listener);
     }
 
     @Override
@@ -119,6 +137,10 @@ public class BulletinBoardImpl
         boardDB.commit();
 
         notifier.messagePosted(this, index, message);
+
+        changeNotifier.messagesAdded(this, 1);
+
+
     }
 
     @Override
@@ -145,6 +167,8 @@ public class BulletinBoardImpl
         {
             notifier.messagePosted(this, message.getIndex(), message.getMessage());
         }
+        changeNotifier.messagesAdded(this, messages.size());
+
     }
 
     @Override
