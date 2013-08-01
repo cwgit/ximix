@@ -527,8 +527,17 @@ public class BoardHostingService
         @Override
         public void run()
         {
-            boardRegistry.moveToTransit(startPandMmessage.getBoardName());
-            new TransformShuffleAndMoveTask(nodeContext, boardRegistry, startPandMmessage).run();
+            try
+            {
+                boardRegistry.moveToTransit(startPandMmessage.getBoardName());
+
+                new TransformShuffleAndMoveTask(nodeContext, boardRegistry, startPandMmessage).run();
+            }
+            catch (Exception e)
+            {
+                // TODO:
+                e.printStackTrace();
+            }
         }
     }
 }

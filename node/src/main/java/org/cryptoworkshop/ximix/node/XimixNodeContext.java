@@ -47,7 +47,17 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.service.*;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
+import org.cryptoworkshop.ximix.common.service.BasicService;
+import org.cryptoworkshop.ximix.common.service.Decoupler;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
+import org.cryptoworkshop.ximix.common.service.Service;
+import org.cryptoworkshop.ximix.common.service.ServiceEvent;
+import org.cryptoworkshop.ximix.common.service.ServiceStatisticsListener;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.BLSKeyManager;
 import org.cryptoworkshop.ximix.crypto.key.BLSNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
@@ -78,9 +88,7 @@ public class XimixNodeContext
         throws ConfigException
     {
 
-        description = nodeConfig.getConfigObject("description", new DescriptionConfigFactory()).getDescription();
-
-
+        this.description = nodeConfig.getConfigObject("description", new DescriptionConfigFactory()).getDescription();
 
         this.peerMap = Collections.synchronizedMap(new HashMap<>(peerMap));
 
@@ -491,7 +499,6 @@ public class XimixNodeContext
         }
     }
 
-
     private class DescriptionConfig
     {
         private final Map<String, String> description = new HashMap<>();
@@ -531,13 +538,10 @@ public class XimixNodeContext
             }
         }
 
-
         Map<String, String> getDescription()
         {
             return Collections.unmodifiableMap(description);
         }
-
-
     }
 
     private class DescriptionConfigFactory

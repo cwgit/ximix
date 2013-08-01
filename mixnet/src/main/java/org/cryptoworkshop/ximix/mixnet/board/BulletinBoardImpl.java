@@ -100,7 +100,7 @@ public class BulletinBoardImpl
         }
         else if (BulletinBoardChangeListener.class.isAssignableFrom(listenerClass))
         {
-            return (ListenerHandler<T>)listenerHandler;
+            return (ListenerHandler<T>)changeListenerHandler;
         }
 
         throw new IllegalStateException("unknown handler requested");
@@ -139,8 +139,6 @@ public class BulletinBoardImpl
         notifier.messagePosted(this, index, message);
 
         changeNotifier.messagesAdded(this, 1);
-
-
     }
 
     @Override
@@ -167,8 +165,8 @@ public class BulletinBoardImpl
         {
             notifier.messagePosted(this, message.getIndex(), message.getMessage());
         }
-        changeNotifier.messagesAdded(this, messages.size());
 
+        changeNotifier.messagesAdded(this, messages.size());
     }
 
     @Override
