@@ -15,25 +15,6 @@
  */
 package org.cryptoworkshop.ximix.node;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -42,31 +23,22 @@ import org.bouncycastle.util.io.Streams;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.service.Algorithm;
-import org.cryptoworkshop.ximix.common.service.BasicService;
-import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
-import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
-import org.cryptoworkshop.ximix.common.service.Service;
-import org.cryptoworkshop.ximix.common.service.ServiceEvent;
-import org.cryptoworkshop.ximix.common.service.ServiceStatisticsListener;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
-import org.cryptoworkshop.ximix.crypto.key.BLSKeyManager;
-import org.cryptoworkshop.ximix.crypto.key.BLSNewDKGGenerator;
-import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
-import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
-import org.cryptoworkshop.ximix.crypto.key.KeyManager;
-import org.cryptoworkshop.ximix.crypto.key.KeyManagerListener;
+import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.service.*;
+import org.cryptoworkshop.ximix.crypto.key.*;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.security.GeneralSecurityException;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class XimixNodeContext
     implements NodeContext
@@ -83,6 +55,8 @@ public class XimixNodeContext
     private final Map<String, ServicesConnection> peerMap;
     private final CountDownLatch setupCompleteLatch = new CountDownLatch(1);
     private final Map<String, String> description;
+    private final ListeningSocketInfo listeningSocketInfo;
+
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
@@ -111,6 +85,11 @@ public class XimixNodeContext
         }
 
         remoteServicesCache = new RemoteServicesCache(this);
+
+        this.listeningSocketInfo = new ListeningSocketInfo(
+            nodeConfig.getIntegerProperty("portNo"),
+            nodeConfig.getIntegerProperty("portBacklog"),
+            nodeConfig.getStringProperty("portAddress"));
 
 
         //
@@ -144,7 +123,6 @@ public class XimixNodeContext
             }
         });
     }
-
 
     @Override
     public Map<Service, Map<String, Object>> getServiceStatistics()
@@ -191,6 +169,12 @@ public class XimixNodeContext
     public Map<String, String> getDescription()
     {
         return description;
+    }
+
+    @Override
+    public ListeningSocketInfo getListeningSocketInfo()
+    {
+        return listeningSocketInfo;
     }
 
     public String getName()
@@ -469,7 +453,6 @@ public class XimixNodeContext
         });
     }
 
-
     private class NodeInfoService
         extends BasicService
     {
@@ -552,7 +535,6 @@ public class XimixNodeContext
             return new DescriptionConfig(configNode);
         }
     }
-
 
     private class ServiceConfig
     {

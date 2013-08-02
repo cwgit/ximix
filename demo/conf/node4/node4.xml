@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <node>
     <portNo>11003</portNo>
+    <portBacklog>10</portBacklog>
+    <portAddress>0.0.0.0</portAddress> <!-- Completely promiscuous -->
     <name>D</name>
     <description>
         <detail>

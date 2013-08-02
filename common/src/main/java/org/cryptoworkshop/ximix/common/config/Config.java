@@ -147,6 +147,7 @@ public class Config
         for (String elementName : path)
         {
             NodeList list = xmlNode.getElementsByTagName(elementName);
+
             if (list.item(0).getNodeName().equals(path[path.length - 1]))
             {
                 return list.item(0).getTextContent();

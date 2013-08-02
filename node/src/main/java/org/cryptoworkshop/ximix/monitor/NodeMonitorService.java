@@ -5,6 +5,7 @@ import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.common.message.*;
 import org.cryptoworkshop.ximix.common.service.BasicService;
+import org.cryptoworkshop.ximix.common.service.ListeningSocketInfo;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.mixnet.service.BoardHostingService;
@@ -22,18 +23,21 @@ public class NodeMonitorService
     extends BasicService
 {
     public static final int MIN_STATISTICS_PERIOD = 1000;
-
     private final Config config;
-
+    private final int hash;
+    private final ListeningSocketInfo socketInfo;
 
     public NodeMonitorService(NodeContext nodeContext, Config config)
     {
         super(nodeContext);
-
         this.config = config;
 
-    }
+        socketInfo = nodeContext.getListeningSocketInfo();
 
+        hash = nodeContext.getName().hashCode() ^ socketInfo.hashCode();
+
+
+    }
 
     @Override
     public CapabilityMessage getCapability()
@@ -59,6 +63,11 @@ public class NodeMonitorService
                 NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
 
                 builder.put("name", nodeContext.getName());
+                builder.put("hash", hash);
+
+                builder.put("vm.vendor", mxBean.getVmVendor());
+                builder.put("vm.vendor-name", mxBean.getVmName());
+                builder.put("vm.vendor-version", mxBean.getVmVersion());
                 builder.put("vm.available-processors", rt.availableProcessors());
                 builder.put("vm.free-memory", rt.freeMemory());
                 builder.put("vm.total-memory", rt.totalMemory());
@@ -82,15 +91,13 @@ public class NodeMonitorService
             {
                 nsm = new NodeStatusMessage();
                 Runtime rt = Runtime.getRuntime();
-                RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
-                mxbean.getUptime();
-
                 NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
 
                 builder.put("name", nodeContext.getName());
-                builder.put("vm.vendor", mxbean.getVmVendor());
-                builder.put("vm.vendor-name", mxbean.getVmName());
-                builder.put("vm.vendor-version", mxbean.getVmVersion());
+                builder.put("hash", hash);
+                builder.put("socket.port", socketInfo.getPort());
+                builder.put("socket.bind-address", socketInfo.getBindAddress());
+                builder.put("socket.backlog",socketInfo.getBacklog());
                 builder.put("node.metadata", nodeContext.getDescription());
 
                 nsm = builder.build();
@@ -100,7 +107,7 @@ public class NodeMonitorService
 
             case GET_STATISTICS:
             {
-
+                RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
                 NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
 
 //                Map<String, Object> accumulatedStats = new HashMap<>();
@@ -117,6 +124,10 @@ public class NodeMonitorService
                 }
 
                 builder.put("name", nodeContext.getName());
+                builder.put("hash", hash);
+                builder.put("vm.up-time", mxBean.getUptime());
+                builder.put("vm.start-time", mxBean.getStartTime());
+
                 nsm = builder.build();
 
             }
@@ -128,7 +139,6 @@ public class NodeMonitorService
 
         return reply;
     }
-
 
     /**
      * @return
@@ -146,7 +156,6 @@ public class NodeMonitorService
         Enum e = message.getType();
         return CommandMessage.Type.NODE_STATISTICS == e;
     }
-
 
     private class HealthMonitorConfigFactory
         implements ConfigObjectFactory<HealthMonitorMetaDataConfig>

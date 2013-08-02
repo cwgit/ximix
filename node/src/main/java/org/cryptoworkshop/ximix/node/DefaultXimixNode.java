@@ -1,20 +1,22 @@
 package org.cryptoworkshop.ximix.node;
 
+import org.bouncycastle.asn1.DEROutputStream;
+import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.config.ConfigException;
+import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.service.ListeningSocketInfo;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.bouncycastle.asn1.DEROutputStream;
-import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
 /**
  * A default ximix node implementation.
@@ -25,7 +27,9 @@ class DefaultXimixNode
     private final Config nodeConfig;
     private final XimixNodeContext nodeContext;
     private final AtomicBoolean stopped = new AtomicBoolean(false);
-    private final int portNo;
+    //    private final int portNo;
+//    private final int portBacklog;
+//    private final String listeningAddress;
     private final ThrowableListener throwableListener;
     private ServerSocket ss = null;
 
@@ -33,18 +37,23 @@ class DefaultXimixNode
         throws ConfigException
     {
         this.nodeConfig = config;
-        this.portNo = nodeConfig.getIntegerProperty("portNo");
+//        this.portNo = nodeConfig.getIntegerProperty("portNo");
+//        this.portBacklog = nodeConfig.getIntegerProperty("portBacklog");
+//        this.listeningAddress = nodeConfig.getStringProperty("portAddress");
         this.nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
         this.throwableListener = throwableListener;
     }
 
     public void start()
     {
-        System.out.println("Starting node '"+nodeContext.getName()+"', listening on port: "+portNo);
+
 
         try
         {
-            ss = new ServerSocket(portNo);
+            ListeningSocketInfo socketInfo = nodeContext.getListeningSocketInfo();
+            System.out.println("Starting node '" + nodeContext.getName() + "Listening Config: " + socketInfo);
+
+            ss = new ServerSocket(socketInfo.getPort(), socketInfo.getBacklog(), InetAddress.getByName(socketInfo.getBindAddress())); // TODO: should also be able to specify ip address to listen to.
 
             ss.setSoTimeout(1000);                       // TODO: should be a config item
 
