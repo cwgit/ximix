@@ -10,6 +10,8 @@ var HOURS = MINUTES * 60;
 var DAYS = HOURS * 24;
 var ONE_MB = 1024 * 1024;
 
+var nodes = {};
+var node_con_state = {}
 
 jQuery.ajaxSetup({
     'beforeSend': function (xhr) {
@@ -31,85 +33,133 @@ jQuery.ajaxSetup({
 
 var multipleInput = {}
 
-function fetchNodes() {
+
+function fetchConfiguredNodes(callback) {
     $.post("/api/nodes/mixnetadmin", null, function (data) {
 
-
-            var toBoRemoved = {}
-
-            for (var name in node_desc) {
-                toBoRemoved[name] = node_desc[name];
+            for (var n in data) {
+                nodes[data[n].hash] = data[n];
             }
 
-            if (data != null) {
+            ensureTabs();
 
-                for (t = 0; t < data.length; t++) {
-                    node = data[t];
-                    node_desc[node.values.name] = node;
 
-                    delete toBoRemoved[node.values.name];
-
-                }
+            if (callback != null) {
+                callback.call();
             }
-
-
-            for (var name in toBoRemoved) {
-                $("#node_" + toBoRemoved[name].values.name + "_info").fadeOut(500, function () {
-                    delete node_desc[name];
-                    $(this).remove();
-                });
-
-            }
-
-            toBoRemoved = null;
-
-            renderStaticDetails();
-
-
         }
-    )
-    ;
+    );
 }
 
 
-function renderStaticDetails() {
-    for (var name in node_desc) {
-        node = node_desc[name].values;
+function ensureTabs() {
 
-        outer = $("#node_" + node.name + "_info");
-        if (!outer.length) {
-            outer = $("<div class='node' id='node_" + node.name + "_info'>");
-            outer.appendTo('#nodes');
-            outer.append("<span id='node_" + node.name + "_info_name' style='display:none'>" + node.name + "</span>");
-            outer.append("<div class='nodetitle'>" + node.name + "</div>");
+    var tablist = $('#tab-list');
+    var tabbody = $('#tabs');
 
-            var tab = "<table class='nodetable' border='0'>"
+    for (var k in nodes) {
+        $('<li><a href="#' + (k) + '_tab"><span class="tabuncon" id="' + (k) + '_tab_title">' + (nodes[k].name) + '</span></a> </li>').appendTo(tablist);
+        $('<div id="' + (k) + '_tab"><div class="node" id="' + (k) + '_details" >Pending..</div></div>').appendTo(tabbody);
+    }
 
-            for (var k in node) {
-                if ("name" === k) {
-                    continue;
-                } else if ("node.metadata" === k) {
+    $("#tabs").tabs();
+}
 
-                    for (kk in node[k]) {
-                        tab = tab + "<tr><td>" + (kk) + "</td><td>" + (node[k][kk]) + "</td></tr>";
+
+function updateConnected(callback) {
+    $.post("/api/connected/mixnetadmin", null, function (data) {
+
+            for (var n in data) {
+
+                var tab = $('#' + (n) + '_tab_title');
+                var detail = $('#' + (n) + '_details');
+
+                if (data[n] != node_con_state[n]) {
+
+                    if (data[n]) {
+                        tab.attr('class', 'tabcon');
+                        fetchDetails(nodes[n]);
+                    } else {
+                        tab.attr('class', 'tabuncon');
+                        detail.html("Not connected.");
                     }
-                } else {
-                    tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (node[k]) + "</td></tr>";
                 }
+                node_con_state[n] = data[n];
+
             }
 
-            tab = tab + "<tr colspan='2'><td>More Info &gt;&gt;</td></tr>";
-            tab = tab + "</table>";
-
-            outer.append(tab);
-
-            outer.click(function () {
-                var v = "#" + $(this).attr('id') + "_name";
-                showNodeDetail($(v).text());
-            });
-
+            if (callback != null) {
+                callback.call();
+            }
         }
-    }
+    );
+}
+
+
+function fetchDetails(info) {
+    $.post("/api/details/mixnetadmin", {name: info.name}, function (data) {
+        nodes[data.values.hash] = data.values;
+        var node = data.values;
+
+        var info = node['info'];
+        var capabilities = node['node.capabilities'];
+        var socket = node['socket'];
+        var vm = node['vm'];
+
+
+        var outer = $('#' + (node.hash) + '_details');
+        outer.html("");
+
+        //
+        // Info block
+        //
+        $("<div class='nodesubheading'>" + lang['info.title'] + "</div>").appendTo(outer);
+        var tab = $("<table class='nodetable' border='0'>");
+        tab.appendTo(outer);
+        for (var k in info) {
+            $('<tr><td>' + (k) + '</td><td>' + (info[k]) + '</td></tr>').appendTo(tab);
+        }
+
+        //
+        // Capabilities.
+        //
+        $("<div class='nodesubheading'>" + lang['capabilities.title'] + "</div>").appendTo(outer)
+        tab = $("<table class='nodetable' border='0'>");
+        tab.appendTo(outer);
+
+        var tr = $('<tr></tr>');
+        tr.appendTo(tab);
+        $('<td>' + lang['node.capabilities'] + '</td>').appendTo(tr);
+
+        var ol = $('<ol></ol>');
+        for (var k in capabilities) {
+            $('<li>' + capabilities[k] + '</li>').appendTo(ol);
+        }
+        tr.append($('<td></td>').append(ol));
+
+
+        //
+        // Socket
+        //
+        $("<div class='nodesubheading'>" + lang['socket.title'] + "</div>").appendTo(outer)
+        tab = $("<table class='nodetable' border='0'>");
+        tab.appendTo(outer);
+        for (var k in socket) {
+            $('<tr><td>' + (lang['socket.' + k]) + '</td><td>' + (socket[k]) + '</td></tr>').appendTo(tab);
+        }
+
+
+        //
+        // Socket
+        //
+        $("<div class='nodesubheading'>" + lang['vm.title'] + "</div>").appendTo(outer)
+        tab = $("<table class='nodetable' border='0'>");
+        tab.appendTo(outer);
+        for (var k in vm) {
+            $('<tr><td>' + (lang['vm.' + k]) + '</td><td>' + (vm[k]) + '</td></tr>').appendTo(tab);
+        }
+
+    });
 }
 
 
@@ -270,11 +320,12 @@ function fetchCommands() {
 }
 
 function pollNodes() {
-    fetchNodes();
+    updateConnected();
 }
 
 
 $(document).ready(function () {
+
 
     var l = languages[lang_id.toLocaleLowerCase()];
     if (l == null) {
@@ -288,7 +339,15 @@ $(document).ready(function () {
     });
 
 
-    pollTimer = setInterval(pollNodes, 5000);
+    fetchConfiguredNodes(function () {
+        pollTimer = setInterval(pollNodes, 5000);
+
+    });
+
+//    fetchNodes(new function () {
+//
+//    });
+
     //fetchCommands();
 });
 

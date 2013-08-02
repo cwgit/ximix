@@ -8,12 +8,14 @@ public class ListeningSocketInfo
     private final int port;
     private final int backlog;
     private final String bindAddress;
+    private final String name;
 
-    public ListeningSocketInfo(int port, int backlog, String bindAddress)
+    public ListeningSocketInfo(String nodeName, int port, int backlog, String bindAddress)
     {
         this.port = port;
         this.backlog = backlog;
         this.bindAddress = bindAddress;
+        this.name = nodeName;
     }
 
     public int getPort()
@@ -55,15 +57,11 @@ public class ListeningSocketInfo
 
         ListeningSocketInfo that = (ListeningSocketInfo)o;
 
-        if (backlog != that.backlog)
-        {
-            return false;
-        }
         if (port != that.port)
         {
             return false;
         }
-        if (bindAddress != null ? !bindAddress.equals(that.bindAddress) : that.bindAddress != null)
+        if (!name.equals(that.name))
         {
             return false;
         }
@@ -75,8 +73,7 @@ public class ListeningSocketInfo
     public int hashCode()
     {
         int result = port;
-        result = 31 * result + backlog;
-        result = 31 * result + (bindAddress != null ? bindAddress.hashCode() : 0);
+        result = 31 * result + name.hashCode();
         return result;
     }
 }

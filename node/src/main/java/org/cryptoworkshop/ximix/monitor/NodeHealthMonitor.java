@@ -3,7 +3,9 @@ package org.cryptoworkshop.ximix.monitor;
 import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -11,14 +13,15 @@ import java.util.List;
 public interface NodeHealthMonitor
 {
 
-    NodeStatusMessage getLastStatistics(String node)
+    NodeStatusMessage getStatistics(String node)
         throws ServiceConnectionException;
 
 
-    List<NodeStatusMessage> getConnectedNodeInfo()
+    List<NodeStatusMessage> getFullInfo()
         throws ServiceConnectionException;
 
-    NodeStatusMessage getFullInfo(String name)
-        throws ServiceConnectionException;
+    Set<String> getConnectedNodeNames();
+
+    NodeStatusMessage getFullInfo(String name);
 
 }

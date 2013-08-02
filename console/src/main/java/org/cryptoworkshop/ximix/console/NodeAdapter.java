@@ -25,6 +25,7 @@ import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.console.model.Command;
 import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
+import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 
 /**
@@ -50,8 +51,6 @@ public interface NodeAdapter
 
     List<Command> getCommandList();
 
-    List<NodeStatusMessage> getNodeInfo();
-
     StandardMessage invoke(int id, Map<String, String[]> params);
 
     String getId();
@@ -64,7 +63,13 @@ public interface NodeAdapter
 
     boolean isOpened();
 
-    NodeStatusMessage getNodeDetail(String node);
+    List<NodeStatusMessage> getNodeDetails();
 
     NodeStatusMessage getNodeStatistics(String node);
+
+    List<XimixRegistrarFactory.NodeConfig> getConfiguredNodes();
+
+    List<XimixRegistrarFactory.NodeConfig> getConnectedNodes();
+
+    NodeStatusMessage getNodeDetails(String name);
 }

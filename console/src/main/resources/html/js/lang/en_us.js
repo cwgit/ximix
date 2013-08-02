@@ -2,17 +2,32 @@
 // EN US Language.
 //
 lang["name"] = "Name";
+
+
+lang['info.title']="Node Information";
+
+lang['vm.title']="Virtual Machine Info"
 lang["vm.vendor"] = "JVM";
 lang["vm.vendor-name"] = "Vendor";
 lang["vm.vendor-version"] = "Version";
-
 lang["vm.available-processors"] = "Processors";
 lang["vm.free-memory"] = "Free Memory";
 lang["vm.start-time"] = "Start Time";
 lang["vm.total-memory"] = "Total Memory";
 lang["vm.up-time"] = "Up-Time";
-lang["node.capabilities"] = "Capabilities";
+lang["capabilities.title"] = "Capabilities";
 lang["board.hosting.service"]="Board Hosting Service"
+
+
+
+lang['node.capabilities'] = "Node Capabilities";
+
+lang['socket.title']="Listening Socket"
+lang['socket.port']="Listening Port";
+lang['socket.bind-address']="Listening Address";
+lang['socket.backlog']="Backlog";
+
+
 
 
 rtype["vm.free-memory"] = "mb";

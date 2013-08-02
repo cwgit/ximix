@@ -9,6 +9,7 @@ import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -24,7 +25,7 @@ public class ClientNodeHealthMonitor
     }
 
     @Override
-    public NodeStatusMessage getLastStatistics(String name)
+    public NodeStatusMessage getStatistics(String name)
         throws ServiceConnectionException
     {
         NodeStatusMessage out = null;
@@ -44,17 +45,17 @@ public class ClientNodeHealthMonitor
     }
 
     @Override
-    public List<NodeStatusMessage> getConnectedNodeInfo()
+    public List<NodeStatusMessage> getFullInfo()
         throws ServiceConnectionException
     {
         List<NodeStatusMessage> out = new ArrayList<>();
 
         for (String name : connection.getActiveNodeNames())
         {
-            MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forStaticInfo());
+            MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
             if (reply.getType() == MessageReply.Type.ERROR)
             {
-                System.out.println("Got error requesting static info.");
+                System.out.println("Got error requesting vm info.");
             }
             else
             {
@@ -62,28 +63,36 @@ public class ClientNodeHealthMonitor
             }
         }
 
-
         return out;
     }
 
     @Override
-    public NodeStatusMessage getFullInfo(String name)
-        throws ServiceConnectionException
+    public Set<String> getConnectedNodeNames()
     {
-        NodeStatusMessage out = null;
+        return connection.getActiveNodeNames();
+    }
 
-        MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
+    @Override
+    public NodeStatusMessage getFullInfo(String name)
+    {
+        MessageReply reply = null;
+        try
+        {
+            reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
+        }
+        catch (ServiceConnectionException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+
         if (reply.getType() == MessageReply.Type.ERROR)
         {
-            System.out.println("Got error requesting vm info.");
-        }
-        else
-        {
-            out = NodeStatusMessage.getInstance(reply.getPayload());
+            return null;
         }
 
-
-        return out;
+        return NodeStatusMessage.getInstance(reply.getPayload());
     }
+
 
 }

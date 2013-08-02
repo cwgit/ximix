@@ -27,8 +27,8 @@ body {
 }
 
 #nodes {
-    float:left;
-    width:350px;
+    float: left;
+    width: 350px;
     margin-right: 2px;
 }
 
@@ -47,9 +47,6 @@ body {
     display: none;
 }
 
-
-
-
 .node {
     margin-top: 2px;
     margin-bottom: 2px;
@@ -62,10 +59,15 @@ body {
     background: #DDEEFF;
 }
 
-
 .nodetitle {
     font-size: 16pt;
     font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.nodesubheading {
+    font-size: 10pt;
+    font-weight: normal;
     margin-bottom: 4px;
 }
 
@@ -124,9 +126,56 @@ table.nodetable {
 
 }
 
+.tabuncon {
+    text-decoration: line-through;
+    font-weight: lighter;
+    font-size: smaller;
+    color: lightgray;
+}
+
+.tabcon {
+    text-decoration: none;
+    font-weight: bold;
+}
+
 .errortxt {
     font-size: 10pt;
     font-weight: normal;
     font-color: red;
     text-align: center;
+}
+
+.ui-tabs-vertical {
+    width: 55em;
+}
+
+.ui-tabs-vertical .ui-tabs-nav {
+    padding: .2em .1em .2em .2em;
+    float: left;
+    width: 12em;
+}
+
+.ui-tabs-vertical .ui-tabs-nav li {
+    clear: left;
+    width: 100%;
+    border-bottom-width: 1px !important;
+    border-right-width: 0 !important;
+    margin: 0 -1px .2em 0;
+}
+
+.ui-tabs-vertical .ui-tabs-nav li a {
+    display: block;
+}
+
+.ui-tabs-vertical .ui-tabs-nav li.ui-tabs-active {
+    padding-bottom: 0;
+    padding-right: .1em;
+    border-right-width: 1px;
+    border-right-width: 1px;
+}
+
+.ui-tabs-vertical .ui-tabs-panel {
+    padding: 1em;
+    float: right;
+    width: 40em;
 }

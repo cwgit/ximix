@@ -68,6 +68,12 @@ public class XimixRegistrarFactory
 
                 throw new RegistrarServiceException("Unable to identify service");
             }
+
+            @Override
+            public List<NodeConfig> getConfiguredNodeNames()
+            {
+                return nodes;
+            }
         };
 
 
@@ -111,6 +117,12 @@ public class XimixRegistrarFactory
                 }
 
                 throw new RegistrarServiceException("Unable to identify service");
+            }
+
+            @Override
+            public List<NodeConfig> getConfiguredNodeNames()
+            {
+                return nodes;
             }
         };
     }
@@ -157,7 +169,7 @@ public class XimixRegistrarFactory
         return rMap;
     }
 
-    private static class NodeConfig
+    public static class NodeConfig
     {
         private InetAddress address;
         private int portNo;
@@ -446,6 +458,8 @@ public class XimixRegistrarFactory
             // TODO: this should only return names with an active connection
             return new HashSet<>(connectionMap.keySet());
         }
+
+
 
         public MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException

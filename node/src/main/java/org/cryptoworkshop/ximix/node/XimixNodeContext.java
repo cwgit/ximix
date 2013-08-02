@@ -86,7 +86,7 @@ public class XimixNodeContext
 
         remoteServicesCache = new RemoteServicesCache(this);
 
-        this.listeningSocketInfo = new ListeningSocketInfo(
+        this.listeningSocketInfo = new ListeningSocketInfo(name,
             nodeConfig.getIntegerProperty("portNo"),
             nodeConfig.getIntegerProperty("portBacklog"),
             nodeConfig.getStringProperty("portAddress"));

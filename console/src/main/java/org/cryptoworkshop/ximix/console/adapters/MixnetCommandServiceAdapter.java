@@ -27,12 +27,12 @@ import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
 import org.cryptoworkshop.ximix.monitor.NodeHealthMonitor;
+import org.cryptoworkshop.ximix.registrar.RegistrarServiceException;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * An adapter for the Mixnet commands service.
@@ -46,7 +46,8 @@ public class MixnetCommandServiceAdapter
     protected CommandService commandService = null;
     protected Class commandType = CommandService.class;
     protected Config config = null;
-
+    protected List<XimixRegistrarFactory.NodeConfig> configuredNodes = null;
+    protected Map<String, XimixRegistrarFactory.NodeConfig> nameToConfig = null;
 
     public MixnetCommandServiceAdapter()
     {
@@ -104,8 +105,12 @@ public class MixnetCommandServiceAdapter
         try
         {
             registrar = XimixRegistrarFactory.createAdminServiceRegistrar(configFile);
-
-
+            configuredNodes = registrar.getConfiguredNodeNames();
+            nameToConfig = new HashMap<>();
+            for (XimixRegistrarFactory.NodeConfig nc : configuredNodes)
+            {
+                nameToConfig.put(nc.getName(), nc);
+            }
         }
         catch (Exception ex)
         {
@@ -141,37 +146,61 @@ public class MixnetCommandServiceAdapter
         builder.setKeyID(keyID);
         commandService.doShuffleAndMove(boardName, builder.build(), nodes);
         return new StandardMessage(true, "It worked..");
-
-
     }
 
     @Override
-    public List<NodeStatusMessage> getNodeInfo()
+    public List<XimixRegistrarFactory.NodeConfig> getConfiguredNodes()
     {
+        return configuredNodes;
+    }
 
-        List<NodeStatusMessage> details = null;
+    @Override
+    public List<XimixRegistrarFactory.NodeConfig> getConnectedNodes()
+    {
+        ArrayList<XimixRegistrarFactory.NodeConfig> out = new ArrayList<>();
         try
         {
             NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
-            details = nhm.getConnectedNodeInfo();
+            Set<String> names = nhm.getConnectedNodeNames();
+
+            for (String n : names)
+            {
+                out.add(nameToConfig.get(n));
+            }
+
         }
-        catch (Exception e)
+        catch (RegistrarServiceException e)
         {
-            e.printStackTrace();
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
 
-        return details;
-
+        return out;
     }
 
     @Override
-    public NodeStatusMessage getNodeDetail(String node)
+    public NodeStatusMessage getNodeDetails(String name)
     {
         NodeStatusMessage details = null;
         try
         {
             NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
-            details = nhm.getFullInfo(node);
+            details = nhm.getFullInfo(name);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return details;
+    }
+
+    @Override
+    public List<NodeStatusMessage> getNodeDetails()
+    {
+        List<NodeStatusMessage> details = null;
+        try
+        {
+            NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
+            details = nhm.getFullInfo();
         }
         catch (Exception e)
         {
@@ -189,7 +218,7 @@ public class MixnetCommandServiceAdapter
         try
         {
             NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
-            details = nhm.getLastStatistics(node);
+            details = nhm.getStatistics(node);
         }
         catch (Exception e)
         {

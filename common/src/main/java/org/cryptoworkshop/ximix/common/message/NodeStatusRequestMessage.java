@@ -32,11 +32,7 @@ public class NodeStatusRequestMessage
         return msg;
     }
 
-    public static ASN1Encodable forStaticInfo()
-    {
-        NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.GET_INFO);
-        return msg;
-    }
+
 
     public static NodeStatusRequestMessage getInstance(Object o)
     {
@@ -84,7 +80,6 @@ public class NodeStatusRequestMessage
 
         SET_PERIOD,
 
-        GET_INFO,
 
         GET_STATISTICS,
 

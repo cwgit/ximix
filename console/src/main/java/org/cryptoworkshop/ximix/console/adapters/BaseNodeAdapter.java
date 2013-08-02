@@ -24,6 +24,7 @@ import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.Command;
 import org.cryptoworkshop.ximix.console.model.ParameterInfo;
+import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -318,4 +319,5 @@ public abstract class BaseNodeAdapter
     {
         this.opened = opened;
     }
+
 }

@@ -15,6 +15,8 @@
  */
 package org.cryptoworkshop.ximix.registrar;
 
+import java.util.List;
+
 /**
  * Registrar which encompasses all the services offered by the peers in the network.
  */
@@ -27,7 +29,8 @@ public interface XimixRegistrar
      * @param <T>
      * @return
      */
-   <T> T connect(Class<T> serviceClass)
-       throws RegistrarServiceException;
+    <T> T connect(Class<T> serviceClass)
+        throws RegistrarServiceException;
 
+    List<XimixRegistrarFactory.NodeConfig> getConfiguredNodeNames();
 }

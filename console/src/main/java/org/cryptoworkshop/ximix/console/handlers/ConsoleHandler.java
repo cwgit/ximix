@@ -23,6 +23,7 @@ import org.cryptoworkshop.ximix.console.config.AdapterConfig;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
+import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
@@ -118,25 +119,6 @@ public class ConsoleHandler extends AbstractHandler
             return;
         }
 
-        //
-        //
-        //
-        if (reqUri.startsWith("/api/details"))
-        {
-            response.setContentType("application/json");
-            NodeAdapter adapter = getAdapter(lastPart);
-            if (adapter == null)
-            {
-                writeObject(new StandardMessage(false, "Unknown adapter."), response);
-                baseRequest.setHandled(true);
-                return;
-            }
-
-            writeObject(adapter.getNodeDetail(request.getParameter("node")), response);
-            baseRequest.setHandled(true);
-            return;
-
-        }
 
         if (reqUri.startsWith("/api/statistics"))
         {
@@ -156,6 +138,54 @@ public class ConsoleHandler extends AbstractHandler
         }
 
 
+        if (reqUri.startsWith("/api/details"))
+        {
+            response.setContentType("application/json");
+            NodeAdapter adapter = getAdapter(lastPart);
+            if (adapter == null)
+            {
+                writeObject(new StandardMessage(false, "Unknown adapter."), response);
+                baseRequest.setHandled(true);
+                return;
+            }
+
+            writeObject(adapter.getNodeDetails(request.getParameter("name")), response);
+            baseRequest.setHandled(true);
+            return;
+
+        }
+
+        if (reqUri.startsWith("/api/connected"))
+        {
+            response.setContentType("application/json");
+            NodeAdapter adapter = getAdapter(lastPart);
+            if (adapter == null)
+            {
+                writeObject(new StandardMessage(false, "Unknown adapter."), response);
+                baseRequest.setHandled(true);
+                return;
+            }
+
+
+            HashMap<Integer, Boolean> out = new HashMap<>();
+
+            List<XimixRegistrarFactory.NodeConfig> nodes = adapter.getConfiguredNodes();
+
+            List<XimixRegistrarFactory.NodeConfig> con = adapter.getConnectedNodes();
+
+            for (XimixRegistrarFactory.NodeConfig nc : nodes)
+            {
+                int result = nc.getPortNo();
+                result = 31 * result + nc.getName().hashCode();
+                out.put(result, con.contains(nc));
+            }
+
+            writeObject(out, response);
+            baseRequest.setHandled(true);
+            return;
+
+        }
+
 
         if (reqUri.startsWith("/api/nodes"))
         {
@@ -168,10 +198,29 @@ public class ConsoleHandler extends AbstractHandler
                 return;
             }
 
-            writeObject(adapter.getNodeInfo(), response);
+            List<HashMap<String, Object>> out = new ArrayList<>();
+            List<XimixRegistrarFactory.NodeConfig> l = adapter.getConfiguredNodes();
+            if (l != null)
+            {
+                for (XimixRegistrarFactory.NodeConfig c : l)
+                {
+
+                    HashMap<String, Object> map = new HashMap<>();
+                    map.put("node.address", c.getAddress().toString());
+                    map.put("name", c.getName());
+                    map.put("node.port", c.getPortNo());
+
+                    int result = c.getPortNo();
+                    result = 31 * result + c.getName().hashCode();
+                    map.put("hash", result);  // Hashes are used to tie the display together..
+
+                    out.add(map);
+                }
+            }
+
+            writeObject(out, response);
             baseRequest.setHandled(true);
             return;
-
         }
 
 
@@ -210,7 +259,7 @@ public class ConsoleHandler extends AbstractHandler
             String cmd = request.getParameter("cmd");
             if (cmd != null)
             {
-             try
+                try
                 {
                     int id = Integer.valueOf(cmd);
                     ret = adapter.invoke(id, request.getParameterMap());

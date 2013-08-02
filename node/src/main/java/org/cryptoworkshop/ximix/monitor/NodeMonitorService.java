@@ -11,6 +11,7 @@ import org.cryptoworkshop.ximix.common.service.Service;
 import org.cryptoworkshop.ximix.mixnet.service.BoardHostingService;
 import org.w3c.dom.Node;
 
+import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
@@ -26,6 +27,8 @@ public class NodeMonitorService
     private final Config config;
     private final int hash;
     private final ListeningSocketInfo socketInfo;
+    private long totalGC = 0;
+    private long gcTime = 0;
 
     public NodeMonitorService(NodeContext nodeContext, Config config)
     {
@@ -34,8 +37,7 @@ public class NodeMonitorService
 
         socketInfo = nodeContext.getListeningSocketInfo();
 
-        hash = nodeContext.getName().hashCode() ^ socketInfo.hashCode();
-
+        hash = socketInfo.hashCode();
 
     }
 
@@ -56,23 +58,28 @@ public class NodeMonitorService
         {
             case GET_FULL_DETAILS:
             {
-                nsm = new NodeStatusMessage();
+
                 Runtime rt = Runtime.getRuntime();
                 RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
 
-                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
+                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder(hash);
 
                 builder.put("name", nodeContext.getName());
                 builder.put("hash", hash);
 
-                builder.put("vm.vendor", mxBean.getVmVendor());
-                builder.put("vm.vendor-name", mxBean.getVmName());
-                builder.put("vm.vendor-version", mxBean.getVmVersion());
-                builder.put("vm.available-processors", rt.availableProcessors());
-                builder.put("vm.free-memory", rt.freeMemory());
-                builder.put("vm.total-memory", rt.totalMemory());
-                builder.put("vm.up-time", mxBean.getUptime());
-                builder.put("vm.start-time", mxBean.getStartTime());
+                builder.put("vm", "vendor", mxBean.getVmVendor());
+                builder.put("vm", "name", mxBean.getVmName());
+                builder.put("vm", "vendor-version", mxBean.getVmVersion());
+                builder.put("vm", "available-processors", rt.availableProcessors());
+                builder.put("vm", "total-memory", rt.totalMemory());
+                builder.put("vm", "start-time", mxBean.getStartTime());
+
+                builder.put("socket", "port", socketInfo.getPort());
+                builder.put("socket", "bind-address", socketInfo.getBindAddress());
+                builder.put("socket", "backlog", socketInfo.getBacklog());
+
+                builder.put("info", nodeContext.getDescription());
+
 
                 ArrayList<String> cap = new ArrayList<>();
                 for (CapabilityMessage msg : nodeContext.getCapabilities())
@@ -87,28 +94,41 @@ public class NodeMonitorService
             }
             break;
 
-            case GET_INFO:
-            {
-                nsm = new NodeStatusMessage();
-                Runtime rt = Runtime.getRuntime();
-                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
-
-                builder.put("name", nodeContext.getName());
-                builder.put("hash", hash);
-                builder.put("socket.port", socketInfo.getPort());
-                builder.put("socket.bind-address", socketInfo.getBindAddress());
-                builder.put("socket.backlog",socketInfo.getBacklog());
-                builder.put("node.metadata", nodeContext.getDescription());
-
-                nsm = builder.build();
-
-            }
-            break;
 
             case GET_STATISTICS:
             {
+                //
+                // Form GC stats
+                //
+
+                long totalGC = 0;
+                long gcTime = 0;
+
+                for (GarbageCollectorMXBean gc :
+                    ManagementFactory.getGarbageCollectorMXBeans())
+                {
+
+                    long count = gc.getCollectionCount();
+
+                    if (count >= 0)
+                    {
+                        totalGC += count;
+                    }
+
+                    long time = gc.getCollectionTime();
+
+                    if (time >= 0)
+                    {
+                        gcTime += time;
+                    }
+                }
+
+
                 RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
-                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder();
+                Runtime rt = Runtime.getRuntime();
+
+
+                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder(hash);
 
 //                Map<String, Object> accumulatedStats = new HashMap<>();
 
@@ -127,8 +147,16 @@ public class NodeMonitorService
                 builder.put("hash", hash);
                 builder.put("vm.up-time", mxBean.getUptime());
                 builder.put("vm.start-time", mxBean.getStartTime());
+                builder.put("vm.free-memory", rt.freeMemory());
+                builder.put("vm.gc.count.delta", totalGC - this.totalGC);
+                builder.put("vm.gc.time.delta", gcTime - this.gcTime);
+
 
                 nsm = builder.build();
+
+                this.gcTime = gcTime;
+                this.totalGC = totalGC;
+
 
             }
             break;
@@ -138,16 +166,6 @@ public class NodeMonitorService
         MessageReply reply = new MessageReply(MessageReply.Type.OKAY, nsm);
 
         return reply;
-    }
-
-    /**
-     * @return
-     */
-    private NodeStatusMessage getStaticInfo()
-    {
-        NodeStatusMessage nsm = new NodeStatusMessage();
-
-        return nsm;
     }
 
     @Override

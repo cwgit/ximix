@@ -13,36 +13,28 @@ public class NodeStatusMessage
 {
 
     private static final Charset UTF8 = Charset.forName("UTF8");
-
-
-    private enum ValueType
-    {
-        STRING, INT, LONG, MAP, LIST
-    }
-
+    private final int hash;
     private final Map<String, Object> values;
 
-    public NodeStatusMessage()
+    public NodeStatusMessage(int hash)
     {
-       this(new HashMap<String,Object>());
+        this(new HashMap<String, Object>(), hash);
+
     }
 
-
-    public Map<String, Object> getValues()
-    {
-        return values;
-    }
-
-    public NodeStatusMessage(Map<String, Object> source)
+    public NodeStatusMessage(Map<String, Object> source, int hash)
     {
         Map<String, Object> tmp = new HashMap<>();
         tmp.putAll(source);
         values = Collections.unmodifiableMap(tmp);
+        this.hash = hash;
     }
+
 
     private NodeStatusMessage(ASN1Sequence set)
     {
         int t = 0;
+        hash = ((ASN1Integer)set.getObjectAt(t++)).getValue().intValue();
         values = new HashMap<>();
         for (; t < set.size(); t++)
         {
@@ -53,7 +45,6 @@ public class NodeStatusMessage
             );
         }
     }
-
 
     public static NodeStatusMessage getInstance(Object o)
     {
@@ -70,6 +61,10 @@ public class NodeStatusMessage
         return null;
     }
 
+    public Map<String, Object> getValues()
+    {
+        return values;
+    }
 
     private Object asn1TypeToObject(ASN1Sequence sequence)
     {
@@ -125,11 +120,11 @@ public class NodeStatusMessage
         return out;
     }
 
-
     @Override
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector out = new ASN1EncodableVector();
+        out.add(new ASN1Integer(hash));
         Iterator<Map.Entry<String, Object>> it = values.entrySet().iterator();
 
         while (it.hasNext())
@@ -194,10 +189,20 @@ public class NodeStatusMessage
         return new DERSequence(out);
     }
 
+    private enum ValueType
+    {
+        STRING, INT, LONG, MAP, LIST
+    }
 
     public static class Builder
     {
+        private final int hash;
         private final HashMap<String, Object> values = new HashMap<>();
+
+        public Builder(int hash)
+        {
+            this.hash = hash;
+        }
 
         public void putAll(Map<String, Object> newValues)
         {
@@ -209,9 +214,23 @@ public class NodeStatusMessage
             values.put(name, value);
         }
 
+        public void put(String key, String name, Object value)
+        {
+            Map<String, Object> m = (Map<String, Object>)values.get(key);
+            if (m == null)
+            {
+                m = new HashMap<>();
+                values.put(key, m);
+            }
+
+            m.put(name, value);
+        }
+
+
+
         public NodeStatusMessage build()
         {
-            return new NodeStatusMessage(values);
+            return new NodeStatusMessage(values, hash);
         }
 
 
