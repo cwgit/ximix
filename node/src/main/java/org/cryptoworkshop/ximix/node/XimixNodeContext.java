@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Logger;
 
 public class XimixNodeContext
     implements NodeContext
@@ -56,7 +57,7 @@ public class XimixNodeContext
     private final CountDownLatch setupCompleteLatch = new CountDownLatch(1);
     private final Map<String, String> description;
     private final ListeningSocketInfo listeningSocketInfo;
-
+    private Logger L = Logger.getLogger(XimixNodeContext.class.getName());
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
@@ -139,13 +140,12 @@ public class XimixNodeContext
             @Override
             public void statisticsUpdate(Service service, Map<String, Object> details)
             {
-                synchronized (stats)
-                {
-                    stats.put(service, details);
-                    latch.countDown();
 
-                    service.removeListener(this);
-                }
+                L.info("Callback from " + service.getClass().getName() + " " + Thread.currentThread().getId());
+                stats.put(service, details);
+                latch.countDown();
+                service.removeListener(this);
+
             }
         };
 
@@ -158,10 +158,12 @@ public class XimixNodeContext
 
         try
         {
-            latch.await(10, TimeUnit.SECONDS); // TODO Make configurable..
+            L.info("Before latch.");
+            L.info("Await result: " + latch.await(10, TimeUnit.SECONDS)); // TODO Make configurable..
         }
         catch (InterruptedException e)
         {
+            System.out.println("Interrupted.. " + e.getMessage());
             // Deliberately ignored.
         }
 
