@@ -15,6 +15,28 @@
  */
 package org.cryptoworkshop.ximix.node;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -23,23 +45,32 @@ import org.bouncycastle.util.io.Streams;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.*;
-import org.cryptoworkshop.ximix.common.service.*;
-import org.cryptoworkshop.ximix.crypto.key.*;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.Message;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.NodeInfo;
+import org.cryptoworkshop.ximix.common.service.Algorithm;
+import org.cryptoworkshop.ximix.common.service.BasicService;
+import org.cryptoworkshop.ximix.common.service.Decoupler;
+import org.cryptoworkshop.ximix.common.service.ListeningSocketInfo;
+import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
+import org.cryptoworkshop.ximix.common.service.Service;
+import org.cryptoworkshop.ximix.common.service.ServiceEvent;
+import org.cryptoworkshop.ximix.common.service.ServiceStatisticsListener;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
+import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
+import org.cryptoworkshop.ximix.crypto.key.BLSKeyManager;
+import org.cryptoworkshop.ximix.crypto.key.BLSNewDKGGenerator;
+import org.cryptoworkshop.ximix.crypto.key.ECKeyManager;
+import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
+import org.cryptoworkshop.ximix.crypto.key.KeyManager;
+import org.cryptoworkshop.ximix.crypto.key.KeyManagerListener;
 import org.cryptoworkshop.ximix.crypto.operator.bc.BcECPublicKeyOperator;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.security.GeneralSecurityException;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.logging.Logger;
 
 public class XimixNodeContext
     implements NodeContext
@@ -635,7 +666,7 @@ public class XimixNodeContext
                 {
                     service.removeListener(this);
 
-                    Map<String, Object> copy = new HashMap<>(); //TODO may be overkill on the copying.
+                    Map<String, Object> copy = new HashMap<>(); //TODO delete, not necessary, in wrong spot, see CrossSection
                     copy.putAll(details);
                     out.put(service, copy);
 

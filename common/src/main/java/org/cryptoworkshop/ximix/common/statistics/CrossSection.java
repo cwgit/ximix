@@ -4,7 +4,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
 
 /**
  *
@@ -77,8 +80,37 @@ public class CrossSection
 
     public Map<String, Object> getMap()
     {
-        return Collections.unmodifiableMap(values);
+        FutureTask<Map<String, Object>> task = new FutureTask(new Callable<Map<String, Object>>()
+        {
+            @Override
+            public Map<String, Object> call()
+                throws Exception
+            {
+                Map<String, Object> rv = new HashMap<String, Object>();
+
+                rv.putAll(values);
+
+                return Collections.unmodifiableMap(values);
+            }
+        });
+
+
+        try
+        {
+            decoupler.execute(task);
+
+            return task.get();
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
+        catch (ExecutionException e)
+        {
+            // TODO:
+            e.printStackTrace();
+        }
+
+        return null;
     }
-
-
 }
