@@ -286,7 +286,7 @@ public class ECKeyManagerTest
         }
 
         @Override
-        public Future<Map<Service, Map<String, Object>>> getServiceStatistics()
+        public Map<Service, Map<String, Object>> getServiceStatistics()
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }

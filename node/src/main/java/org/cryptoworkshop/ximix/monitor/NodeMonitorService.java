@@ -16,7 +16,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -131,12 +130,10 @@ public class NodeMonitorService
 
                 NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder(hash);
 
-//                Map<String, Object> accumulatedStats = new HashMap<>();
-
                 Map<Service, Map<String, Object>> map = null;
                 try
                 {
-                    map = nodeContext.getServiceStatistics().get(2, TimeUnit.SECONDS);
+                    map = nodeContext.getServiceStatistics();
                 }
                 catch (Exception e)
                 {

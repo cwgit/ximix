@@ -66,7 +66,7 @@ public interface NodeContext
 
     File getHomeDirectory();
 
-    Future<Map<Service,Map<String,Object>>> getServiceStatistics();
+    Map<Service,Map<String,Object>> getServiceStatistics();
 
     Map<String,String> getDescription();
 
