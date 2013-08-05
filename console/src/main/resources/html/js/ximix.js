@@ -4,14 +4,16 @@ old_node_size = 0;
 var lang_id = navigator.language || navigator.userLanguage;
 var lang = {};
 var rtype = {};
-var visibleNode = null;
 var MINUTES = 60;
 var HOURS = MINUTES * 60;
 var DAYS = HOURS * 24;
 var ONE_MB = 1024 * 1024;
-
 var nodes = {};
 var node_con_state = {}
+var stats = {};
+var statTimer = null;
+
+var statFetchCtr = 0;
 
 jQuery.ajaxSetup({
     'beforeSend': function (xhr) {
@@ -58,7 +60,7 @@ function ensureTabs() {
     var tabbody = $('#tabs');
 
     for (var k in nodes) {
-        $('<li><a href="#' + (k) + '_tab"><span class="tabuncon" id="' + (k) + '_tab_title">' + (nodes[k].name) + '</span></a> </li>').appendTo(tablist);
+        $('<li><a href="#' + (k) + '_tab">' + (nodes[k].name) + '</a><img id="' + (k) + '_tab_icon"  src=""/></li>').appendTo(tablist);
         $('<div id="' + (k) + '_tab"><div class="node" id="' + (k) + '_details" >Pending..</div></div>').appendTo(tabbody);
     }
 
@@ -71,16 +73,16 @@ function updateConnected(callback) {
 
             for (var n in data) {
 
-                var tab = $('#' + (n) + '_tab_title');
+                var tab = $('#' + (n) + '_tab_icon');
                 var detail = $('#' + (n) + '_details');
 
                 if (data[n] != node_con_state[n]) {
 
                     if (data[n]) {
-                        tab.attr('class', 'tabcon');
+                        tab.attr('src', "/images/con.gif");
                         fetchDetails(nodes[n]);
                     } else {
-                        tab.attr('class', 'tabuncon');
+                        tab.attr('src', '/images/uncon.gif');
                         detail.html("Not connected.");
                     }
                 }
@@ -106,7 +108,6 @@ function fetchDetails(info) {
         var socket = node['socket'];
         var vm = node['vm'];
 
-
         var outer = $('#' + (node.hash) + '_details');
         outer.html("");
 
@@ -117,25 +118,22 @@ function fetchDetails(info) {
         var tab = $("<table class='nodetable' border='0'>");
         tab.appendTo(outer);
         for (var k in info) {
-            $('<tr><td>' + (k) + '</td><td>' + (info[k]) + '</td></tr>').appendTo(tab);
+            $("<tr><td class='nodetableL'>" + (k) + "</td><td class='nodetableR'>" + ( info[k]) + "</td></tr>").appendTo(tab);
         }
 
         //
         // Capabilities.
         //
         $("<div class='nodesubheading'>" + lang['capabilities.title'] + "</div>").appendTo(outer)
-        tab = $("<table class='nodetable' border='0'>");
+        tab = $('<table class="nodetable" border="0">');
         tab.appendTo(outer);
 
-        var tr = $('<tr></tr>');
-        tr.appendTo(tab);
-        $('<td>' + lang['node.capabilities'] + '</td>').appendTo(tr);
-
-        var ol = $('<ol></ol>');
+        var bdy = "<ol>";
         for (var k in capabilities) {
-            $('<li>' + capabilities[k] + '</li>').appendTo(ol);
+            bdy = bdy + "<li>" + (capabilities[k]) + "</li>";
         }
-        tr.append($('<td></td>').append(ol));
+        bdy = bdy + "</ol>";
+        $("<tr><td class='nodetableL'>" + (lang['node.capabilities']) + "</td><td class='nodetableR'>" + bdy + "</td></tr>").appendTo(tab);
 
 
         //
@@ -143,23 +141,136 @@ function fetchDetails(info) {
         //
         $("<div class='nodesubheading'>" + lang['socket.title'] + "</div>").appendTo(outer)
         tab = $("<table class='nodetable' border='0'>");
+
+
         tab.appendTo(outer);
         for (var k in socket) {
-            $('<tr><td>' + (lang['socket.' + k]) + '</td><td>' + (socket[k]) + '</td></tr>').appendTo(tab);
+            var n = 'socket.' + k;
+            $("<tr><td class='nodetableL'>" + (lang[n]) + "</td><td class='nodetableR'>" + (  apply_rtype(n, socket[k])) + "</td></tr>").appendTo(tab);
         }
 
 
         //
-        // Socket
+        // Virtual Machine.
         //
         $("<div class='nodesubheading'>" + lang['vm.title'] + "</div>").appendTo(outer)
         tab = $("<table class='nodetable' border='0'>");
         tab.appendTo(outer);
         for (var k in vm) {
-            $('<tr><td>' + (lang['vm.' + k]) + '</td><td>' + (vm[k]) + '</td></tr>').appendTo(tab);
+            var n = 'vm.' + k;
+            $('<tr><td class="nodetableL">' + (lang['vm.' + k]) + '</td><td class="nodetableR">' + (apply_rtype(n, vm[k])) + '</td></tr>').appendTo(tab);
         }
 
+        $("<div class='nodesubheading'>" + lang['vm.plot.title'] + "</div>").appendTo(outer)
+        $("<div class='vmplot', id='" + (node.hash) + "_graph_vm'></div>").appendTo(outer);
+
+
+        $("<div class='nodesubheading'>" + lang['statistics.title'] + "</div>").appendTo(outer);
+
+        $("<table id='" + (node.hash) + "_stats_tab' class='nodetable' border='0'>").appendTo(outer);
+
     });
+}
+
+
+function memFormatter(v, axis) {
+    return Math.floor((v.toFixed(axis.tickDecimals) / ONE_MB)) + "Mb";
+}
+
+function plotVMInfo(hash) {
+    var st = stats[hash];
+
+    if (st != null) {
+        var data_mem = new Array();
+        var data_gc = new Array();
+        for (var k in st) {
+            var datum = st[k];
+            data_mem.push([datum['zeit'], datum['vm.free-memory']])
+            data_gc.push([datum['zeit'], datum['vm.gc.count.delta']]);
+        }
+
+        $.plot("#" + hash + "_graph_vm", [
+            { data: data_mem, label: "Free Memory" },
+            { data: data_gc, label: "Garbage collections", yaxis: 2}
+
+        ], {
+            xaxes: [
+                { mode: "time" }
+            ],
+            yaxes: [
+                { min: 0, tickFormatter: memFormatter },
+                { min: 0, position: "right"}
+            ],
+            legend: { position: "sw" }
+        });
+
+    }
+}
+
+
+function repaintStats(hash) {
+    var outer = $("#" + hash + "_graph_vm");
+
+    if (outer != null) {
+
+        var tab = $("#" + hash + "_stats_tab");
+        tab.html("");
+
+        var values = stats[hash];
+        if (values.length > 0) {
+            var data = values[values.length - 1];
+
+            for (var k in data) {
+                var n = lang[k];
+                $("<tr><td class='nodetableL'>" + n + "</td><td class='nodetableR'>" + (apply_rtype(n, data[k])) + "</td></tr>").appendTo(tab);
+            }
+        }
+
+        plotVMInfo(hash);
+
+    }
+}
+
+
+function requestStatistics(callback) {
+
+    var reqParam = new Array();
+    for (var k in node_con_state) {
+        if (node_con_state[k]) {
+            reqParam.push(nodes[k].name);
+        }
+    }
+
+
+    $.post("/api/statistics/mixnetadmin", {name: JSON.stringify(reqParam)}, function (_data) {
+        for (var k in _data) {
+            var data = _data[k];
+            if (data == null) {
+                continue;
+            }
+
+            var hash = data.values.hash;
+            if (stats[hash] == null) {
+                stats[hash] = new Array();
+            }
+
+            data.values['zeit'] = new Date().getTime();
+            var values = stats[hash];
+            values.push(data.values);
+            while (values.length > 100) {
+                values.shift();
+            }
+            if ($("#" + hash + "_details").is(':visible')) {
+                repaintStats(hash);
+            }
+        }
+
+        if (callback != null) {
+            callback.call();
+        }
+    });
+
+
 }
 
 
@@ -197,60 +308,6 @@ function formType(index, command, parameter, ui_parent) {
     }
 
     ui_parent.append("<div><input name='" + index + "' id='" + (command.id) + "_" + index + "' class='commandinput' type='text'/></div>");
-
-}
-
-
-function showNodeDetail(node_name) {
-    var outer = $('#node_details');
-    if (node_name === visibleNode) {
-        return;
-    }
-
-    visibleNode = node_name;
-
-    outer.html("");
-    outer.show();
-
-    $('<div class="nodetitle">Node Details: ' + node_name + '</div>').appendTo(outer);
-
-    $.post("/api/details/mixnetadmin", {node: node_name}, function (data) {
-
-
-            var tab = "<table class='nodetable' border='0'>"
-
-            for (var k in data.values) {
-                if ("name" === k) {
-                    continue;
-                }
-                tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (  apply_rtype(k, data.values[k])) + "</td></tr>";
-            }
-
-            tab = tab + "</table>";
-            $(tab).appendTo(outer);
-
-            console.log(data);
-
-            $("<div class='nodetitle'>Statistics</div>").appendTo(outer);
-
-            $.post("/api/statistics/mixnetadmin", {node: node_name}, function (data) {
-                tab = "<table class='nodetable' border='0'>"
-
-                for (var k in data.values) {
-                    if ("name" === k) {
-                        continue;
-                    }
-                    tab = tab + "<tr><td>" + (lang[k]) + "</td><td>" + (  apply_rtype(k, data.values[k])) + "</td></tr>";
-                }
-
-                tab = tab + "</table>";
-                $(tab).appendTo(outer);
-
-            });
-
-        }
-    );
-
 
 }
 
@@ -341,14 +398,25 @@ $(document).ready(function () {
 
     fetchConfiguredNodes(function () {
         pollTimer = setInterval(pollNodes, 5000);
-
+        statTimer = setInterval(requestStatistics, 5000);
     });
 
-//    fetchNodes(new function () {
-//
-//    });
 
-    //fetchCommands();
+    $('#period-selection').change(function () {
+        var period = parseInt($(this).val());
+        if (period < 5) {
+            period = 5;
+        }
+
+        period *= 1000;
+
+        if (statTimer != null) {
+            clearInterval(statTimer);
+        }
+        statTimer = setInterval(requestStatistics, period);
+    });
+
+
 });
 
 function apply_rtype(name, value) {

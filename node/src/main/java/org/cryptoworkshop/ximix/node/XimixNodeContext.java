@@ -139,10 +139,13 @@ public class XimixNodeContext
             @Override
             public void statisticsUpdate(Service service, Map<String, Object> details)
             {
-                stats.put(service, details);
-                latch.countDown();
+                synchronized (stats)
+                {
+                    stats.put(service, details);
+                    latch.countDown();
 
-                service.removeListener(this);
+                    service.removeListener(this);
+                }
             }
         };
 

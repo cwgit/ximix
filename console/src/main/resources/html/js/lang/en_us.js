@@ -7,6 +7,7 @@ lang["name"] = "Name";
 lang['info.title']="Node Information";
 
 lang['vm.title']="Virtual Machine Info"
+lang['vm.plot.title']="VM Health"
 lang["vm.vendor"] = "JVM";
 lang["vm.vendor-name"] = "Vendor";
 lang["vm.vendor-version"] = "Version";
@@ -28,7 +29,10 @@ lang['socket.bind-address']="Listening Address";
 lang['socket.backlog']="Backlog";
 
 
+lang['statistics.title']="Node Statistics";
 
+lang['vm.gc.count.delta']="GC Count";
+lang['vm.gc.time.delta']="GC Time";
 
 rtype["vm.free-memory"] = "mb";
 rtype["vm.start-time"] = "time";

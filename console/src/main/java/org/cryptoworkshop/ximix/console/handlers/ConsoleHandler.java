@@ -17,6 +17,7 @@ package org.cryptoworkshop.ximix.console.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.console.NodeAdapter;
 import org.cryptoworkshop.ximix.console.adapters.BaseNodeAdapter;
 import org.cryptoworkshop.ximix.console.config.AdapterConfig;
@@ -40,7 +41,8 @@ import java.util.logging.Logger;
 /**
  *
  */
-public class ConsoleHandler extends AbstractHandler
+public class ConsoleHandler
+    extends AbstractHandler
 {
 
     private static Logger L = Logger.getLogger("Console");
@@ -131,7 +133,16 @@ public class ConsoleHandler extends AbstractHandler
                 return;
             }
 
-            writeObject(adapter.getNodeStatistics(request.getParameter("node")), response);
+            ArrayList names = objectMapper.readValue(request.getParameter("name"), ArrayList.class);
+            NodeStatusMessage nsm[] = new NodeStatusMessage[names.size()];
+
+            int t = 0;
+            for (Object s : names)
+            {
+                nsm[t++] = adapter.getNodeStatistics(s.toString());
+            }
+
+            writeObject(nsm, response);
             baseRequest.setHandled(true);
             return;
 
