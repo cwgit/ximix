@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.common.service;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -65,7 +66,7 @@ public interface NodeContext
 
     File getHomeDirectory();
 
-    Map<Service, Map<String, Object>> getServiceStatistics();
+    Future<Map<Service,Map<String,Object>>> getServiceStatistics();
 
     Map<String,String> getDescription();
 

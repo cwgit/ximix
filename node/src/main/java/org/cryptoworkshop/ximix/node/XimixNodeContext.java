@@ -126,48 +126,26 @@ public class XimixNodeContext
     }
 
     @Override
-    public Map<Service, Map<String, Object>> getServiceStatistics()
+    public Future<Map<Service, Map<String, Object>>> getServiceStatistics()
     {
         final Map<Service, Map<String, Object>> stats = new HashMap<>();
 
         List<Service> serviceList = getServices();
 
-
-        final CountDownLatch latch = new CountDownLatch(serviceList.size());
-
-        ServiceStatisticsListener listener = new ServiceStatisticsListener()
-        {
-            @Override
-            public void statisticsUpdate(Service service, Map<String, Object> details)
-            {
-
-                L.info("Callback from " + service.getClass().getName() + " " + Thread.currentThread().getId());
-                stats.put(service, details);
-                latch.countDown();
-                service.removeListener(this);
-
-            }
-        };
+        //
+        // This future also has the listener.
+        //
+        StatsFuture future = new StatsFuture(serviceList.size(), stats);
 
 
         for (Service s : serviceList)
         {
-            s.addListener(listener);
+            s.addListener(future);
             s.trigger(new ServiceEvent(ServiceEvent.Type.PUBLISH_STATISTICS, null));
         }
 
-        try
-        {
-            L.info("Before latch.");
-            L.info("Await result: " + latch.await(10, TimeUnit.SECONDS)); // TODO Make configurable..
-        }
-        catch (InterruptedException e)
-        {
-            System.out.println("Interrupted.. " + e.getMessage());
-            // Deliberately ignored.
-        }
 
-        return stats;
+        return future;
     }
 
     @Override
@@ -623,6 +601,67 @@ public class XimixNodeContext
         }
     }
 
+    private class StatsFuture implements Future<Map<Service, Map<String, Object>>>,
+        ServiceStatisticsListener
+    {
+
+        private final Map<Service, Map<String, Object>> value;
+        private final CountDownLatch latch;
+
+        protected StatsFuture(int count, Map<Service, Map<String, Object>> value)
+        {
+            this.value = new HashMap<>();
+            latch = new CountDownLatch(count);
+        }
+
+        @Override
+        public void statisticsUpdate(Service service, Map<String, Object> details)
+        {
+            service.removeListener(this);
+
+            value.put(service, Collections.unmodifiableMap(details));
+            latch.countDown();
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning)
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isDone()
+        {
+            return latch.getCount() == 0;
+        }
+
+        @Override
+        public Map<Service, Map<String, Object>> get()
+            throws InterruptedException, ExecutionException
+        {
+            latch.await();
+            return Collections.unmodifiableMap(value);
+        }
+
+        @Override
+        public Map<Service, Map<String, Object>> get(long timeout, TimeUnit unit)
+            throws InterruptedException, ExecutionException, TimeoutException
+        {
+
+            //
+            // In this instance when the latch times out we return a copy of what we have, empty or otherwise.
+            //
+            latch.await(timeout, unit);
+
+            return Collections.unmodifiableMap(value);
+        }
+    }
 
 }
 

@@ -22,10 +22,7 @@ import java.security.KeyStore;
 import java.security.Security;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -289,7 +286,7 @@ public class ECKeyManagerTest
         }
 
         @Override
-        public Map<Service, Map<String, Object>> getServiceStatistics()
+        public Future<Map<Service, Map<String, Object>>> getServiceStatistics()
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
