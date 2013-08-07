@@ -22,6 +22,7 @@ public class DownloadOptions
         private String keyID;
         private int threshold;
         private String[] nodesToUse;
+        private DecryptionChallengeSpec challengeSpec;
 
         public Builder()
         {
@@ -45,6 +46,13 @@ public class DownloadOptions
         public Builder withNodes(String... nodesToUse)
         {
             this.nodesToUse = nodesToUse;
+
+            return this;
+        }
+
+        public Builder withChallenge(DecryptionChallengeSpec challengeSpec)
+        {
+            this.challengeSpec = challengeSpec;
 
             return this;
         }

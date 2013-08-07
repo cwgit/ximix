@@ -131,7 +131,7 @@ public class Main
             }
         };
 
-        final int numMessages = 10;
+        final int numMessages = 100;
 
         final Set<ECPoint> part1 = new HashSet<>();
         final Set<ECPoint> part2 = new HashSet<>();

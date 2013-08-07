@@ -25,54 +25,36 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class PermuteAndMoveMessage
+public class TransitBoardMessage
     extends ASN1Object
 {
     private final long operationNumber;
     private final String boardName;
     private final int stepNumber;
-    private final String keyID;
-    private final String nodeName;
-    private final String transformName;
 
-    public PermuteAndMoveMessage(long operationNumber, String boardName, int stepNumber, String transformName, String keyID, String nodeName)
+    public TransitBoardMessage(long operationNumber, String boardName, int stepNumber)
     {
         this.operationNumber = operationNumber;
         this.boardName = boardName;
         this.stepNumber = stepNumber;
-        this.transformName = transformName;
-        this.keyID = keyID;
-        this.nodeName = nodeName;
     }
 
-    private PermuteAndMoveMessage(ASN1Sequence seq)
+    private TransitBoardMessage(ASN1Sequence seq)
     {
         this.operationNumber = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().longValue();
         this.boardName = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.stepNumber = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue();
-        this.transformName = DERUTF8String.getInstance(seq.getObjectAt(3)).getString();
-
-        if (seq.size() == 6)
-        {
-            this.keyID = DERUTF8String.getInstance(seq.getObjectAt(4)).getString();
-            this.nodeName = DERUTF8String.getInstance(seq.getObjectAt(5)).getString();
-        }
-        else
-        {
-            this.keyID = null;
-            this.nodeName = DERUTF8String.getInstance(seq.getObjectAt(4)).getString();
-        }
     }
 
-    public static final PermuteAndMoveMessage getInstance(Object o)
+    public static final TransitBoardMessage getInstance(Object o)
     {
-        if (o instanceof PermuteAndMoveMessage)
+        if (o instanceof TransitBoardMessage)
         {
-            return (PermuteAndMoveMessage)o;
+            return (TransitBoardMessage)o;
         }
         else if (o != null)
         {
-            return new PermuteAndMoveMessage(ASN1Sequence.getInstance(o));
+            return new TransitBoardMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -86,21 +68,8 @@ public class PermuteAndMoveMessage
         v.add(new ASN1Integer(BigInteger.valueOf(operationNumber)));
         v.add(new DERUTF8String(boardName));
         v.add(new ASN1Integer(BigInteger.valueOf(stepNumber)));
-        v.add(new DERUTF8String(transformName));
-
-        if (keyID != null)
-        {
-            v.add(new DERUTF8String(keyID));
-        }
-
-        v.add(new DERUTF8String(nodeName));
 
         return new DERSequence(v);
-    }
-
-    public String getKeyID()
-    {
-        return keyID;
     }
 
     public String getBoardName()
@@ -116,15 +85,5 @@ public class PermuteAndMoveMessage
     public int getStepNumber()
     {
         return stepNumber;
-    }
-
-    public String getTransformName()
-    {
-        return transformName;
-    }
-
-    public String getDestinationNode()
-    {
-        return nodeName;
     }
 }

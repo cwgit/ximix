@@ -15,7 +15,10 @@
  */
 package org.cryptoworkshop.ximix.common.message;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -25,75 +28,92 @@ import org.bouncycastle.asn1.DERUTF8String;
 public class PermuteAndReturnMessage
     extends ASN1Object
 {
-    private final String boardName;
-    private final String keyID;
-    private final String transformName;
+    private final long operationNumber;
+     private final String boardName;
+     private final int stepNumber;
+     private final String keyID;
+     private final String transformName;
 
-    public PermuteAndReturnMessage(String boardName, String transformName, String keyID)
-    {
-        this.boardName = boardName;
-        this.transformName = transformName;
-        this.keyID = keyID;
-    }
+     public PermuteAndReturnMessage(long operationNumber, String boardName, int stepNumber, String transformName, String keyID)
+     {
+         this.operationNumber = operationNumber;
+         this.boardName = boardName;
+         this.stepNumber = stepNumber;
+         this.transformName = transformName;
+         this.keyID = keyID;
+     }
 
-    private PermuteAndReturnMessage(ASN1Sequence seq)
-    {
-        if (seq.size() == 3)
-        {
-            this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-            this.transformName = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
-            this.keyID = DERUTF8String.getInstance(seq.getObjectAt(2)).getString();
-        }
-        else
-        {
-            this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-            this.transformName = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
-            this.keyID = null;
-        }
-    }
+     private PermuteAndReturnMessage(ASN1Sequence seq)
+     {
+         this.operationNumber = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().longValue();
+         this.boardName = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+         this.stepNumber = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue();
+         this.transformName = DERUTF8String.getInstance(seq.getObjectAt(3)).getString();
 
-    public static final PermuteAndReturnMessage getInstance(Object o)
-    {
-        if (o instanceof PermuteAndReturnMessage)
-        {
-            return (PermuteAndReturnMessage)o;
-        }
-        else if (o != null)
-        {
-            return new PermuteAndReturnMessage(ASN1Sequence.getInstance(o));
-        }
+         if (seq.size() == 5)
+         {
+             this.keyID = DERUTF8String.getInstance(seq.getObjectAt(4)).getString();
+         }
+         else
+         {
+             this.keyID = null;
+         }
+     }
 
-        return null;
-    }
+     public static final PermuteAndReturnMessage getInstance(Object o)
+     {
+         if (o instanceof PermuteAndReturnMessage)
+         {
+             return (PermuteAndReturnMessage)o;
+         }
+         else if (o != null)
+         {
+             return new PermuteAndReturnMessage(ASN1Sequence.getInstance(o));
+         }
 
-    @Override
-    public ASN1Primitive toASN1Primitive()
-    {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+         return null;
+     }
 
-        v.add(new DERUTF8String(boardName));
-        v.add(new DERUTF8String(transformName));
+     @Override
+     public ASN1Primitive toASN1Primitive()
+     {
+         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        if (keyID != null)
-        {
-            v.add(new DERUTF8String(keyID));
-        }
+         v.add(new ASN1Integer(BigInteger.valueOf(operationNumber)));
+         v.add(new DERUTF8String(boardName));
+         v.add(new ASN1Integer(BigInteger.valueOf(stepNumber)));
+         v.add(new DERUTF8String(transformName));
 
-        return new DERSequence(v);
-    }
+         if (keyID != null)
+         {
+             v.add(new DERUTF8String(keyID));
+         }
 
-    public String getKeyID()
-    {
-        return keyID;
-    }
+         return new DERSequence(v);
+     }
 
-    public String getBoardName()
-    {
-        return boardName;
-    }
+     public String getKeyID()
+     {
+         return keyID;
+     }
 
-    public String getTransformName()
-    {
-        return transformName;
-    }
+     public String getBoardName()
+     {
+         return boardName;
+     }
+
+     public long getOperationNumber()
+     {
+         return operationNumber;
+     }
+
+     public int getStepNumber()
+     {
+         return stepNumber;
+     }
+
+     public String getTransformName()
+     {
+         return transformName;
+     }
 }

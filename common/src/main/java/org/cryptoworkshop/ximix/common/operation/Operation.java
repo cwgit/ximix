@@ -16,24 +16,40 @@
 package org.cryptoworkshop.ximix.common.operation;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
 public class Operation<T extends OperationListener>
 {
+    private static final AtomicLong  operationCounter = new AtomicLong(System.currentTimeMillis());
+
     protected final T notifier;
+    protected final long operationNumber;
+
     private final ListenerHandler<T> handler;
 
     protected Operation(Executor decoupler, Class listenerClass)
     {
         handler = new DecoupledListenerHandlerFactory(decoupler).createHandler(listenerClass);
 
+        this.operationNumber = operationCounter.getAndIncrement();
         this.notifier = handler.getNotifier();
+    }
+
+    public long getOperationNumber()
+    {
+        return operationNumber;
     }
 
     public void addListener(T listener)
     {
         handler.addListener(listener);
+    }
+
+    public void removeListener(T listener)
+    {
+        handler.removeListener(listener);
     }
 }
