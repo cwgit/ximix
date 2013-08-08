@@ -44,6 +44,7 @@ class MessageEvaluator
         alwaysHandleType.add(CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE);
         alwaysHandleType.add(CommandMessage.Type.INITIATE_INTRANSIT_BOARD);
         alwaysHandleType.add(CommandMessage.Type.TRANSFER_TO_BOARD);
+        alwaysHandleType.add(CommandMessage.Type.UPLOAD_TO_BOARD);
         alwaysHandleType.add(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED);
         alwaysHandleType.add(CommandMessage.Type.CLEAR_BACKUP_BOARD);
         alwaysHandleType.add(CommandMessage.Type.TRANSFER_TO_BACKUP_BOARD);

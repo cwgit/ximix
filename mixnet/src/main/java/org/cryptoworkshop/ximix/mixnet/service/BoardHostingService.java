@@ -52,7 +52,11 @@ import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.mixnet.board.*;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardBackupListener;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardChangeListener;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardImpl;
+import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.mixnet.shuffle.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 import org.w3c.dom.Node;
@@ -247,28 +251,28 @@ public class BoardHostingService
                     break;
                 case SHUFFLE_AND_MOVE_BOARD_TO_NODE:
                     PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
+                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, CommandMessage.Type.TRANSFER_TO_BOARD, pAndmMessage));
                     break;
                 case SHUFFLE_AND_RETURN_BOARD:
                     pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
+                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, CommandMessage.Type.UPLOAD_TO_BOARD, pAndmMessage));
                     break;
                 case INITIATE_INTRANSIT_BOARD:
                     TransitBoardMessage transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
                     boardRegistry.markInTransit(transitBoardMessage.getBoardName());
-                    boardRegistry.getTransitBoard(transitBoardMessage.getBoardName()).clear();
+                    boardRegistry.getTransitBoard(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber()).clear();
                     break;
                 case TRANSFER_TO_BOARD:
                     BoardUploadBlockMessage uploadMessage = BoardUploadBlockMessage.getInstance(message.getPayload());
+
                     boardRegistry.markInTransit(uploadMessage.getBoardName());
-                    if (boardRegistry.hasBoard(uploadMessage.getBoardName()))
-                    {
-                        boardRegistry.getBoard(uploadMessage.getBoardName()).postMessageBlock(uploadMessage.getMessageBlock());
-                    }
-                    else
-                    {
-                        boardRegistry.getTransitBoard(uploadMessage.getBoardName()).postMessageBlock(uploadMessage.getMessageBlock());
-                    }
+                    boardRegistry.getTransitBoard(uploadMessage.getOperationNumber(), uploadMessage.getBoardName(), uploadMessage.getStepNumber()).postMessageBlock(uploadMessage.getMessageBlock());
+                    break;
+                case UPLOAD_TO_BOARD:
+                    uploadMessage = BoardUploadBlockMessage.getInstance(message.getPayload());
+
+                    boardRegistry.markInTransit(uploadMessage.getBoardName());
+                    boardRegistry.getBoard(uploadMessage.getBoardName()).postMessageBlock(uploadMessage.getMessageBlock());
                     break;
                 case CLEAR_BACKUP_BOARD:
                     BoardMessage backupBoardMessage = BoardMessage.getInstance(message.getPayload());
@@ -542,9 +546,9 @@ public class BoardHostingService
         {
             try
             {
-                boardRegistry.moveToTransit(startPandMmessage.getBoardName());
+                boardRegistry.moveToTransit(startPandMmessage.getOperationNumber(), startPandMmessage.getBoardName(), startPandMmessage.getStepNumber());
 
-                new TransformShuffleAndMoveTask(nodeContext, boardRegistry, startPandMmessage).run();
+                new TransformShuffleAndMoveTask(nodeContext, boardRegistry, CommandMessage.Type.TRANSFER_TO_BOARD, startPandMmessage).run();
             }
             catch (Exception e)
             {

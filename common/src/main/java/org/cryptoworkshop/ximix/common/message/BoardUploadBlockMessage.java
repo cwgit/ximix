@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.common.message;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -27,17 +28,23 @@ public class BoardUploadBlockMessage
 {
     private final String boardName;
     private final PostedMessageBlock messageBlock;
+    private final int stepNumber;
+    private final long operationNumber;
 
-    public BoardUploadBlockMessage(String boardName, PostedMessageBlock messageBlock)
+    public BoardUploadBlockMessage(long operationNumber, String boardName, int stepNumber, PostedMessageBlock messageBlock)
     {
+        this.operationNumber = operationNumber;
         this.boardName = boardName;
+        this.stepNumber = stepNumber;
         this.messageBlock = messageBlock;
     }
 
     private BoardUploadBlockMessage(ASN1Sequence seq)
     {
-        this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.messageBlock = PostedMessageBlock.getInstance(seq.getObjectAt(1));
+        this.operationNumber = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().longValue();
+        this.boardName = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+        this.stepNumber = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue();
+        this.messageBlock = PostedMessageBlock.getInstance(seq.getObjectAt(3));
     }
 
     public static final BoardUploadBlockMessage getInstance(Object o)
@@ -59,7 +66,9 @@ public class BoardUploadBlockMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
+        v.add(new ASN1Integer(operationNumber));
         v.add(new DERUTF8String(boardName));
+        v.add(new ASN1Integer(stepNumber));
         v.add(messageBlock);
 
         return new DERSequence(v);
@@ -73,5 +82,15 @@ public class BoardUploadBlockMessage
     public PostedMessageBlock getMessageBlock()
     {
         return messageBlock;
+    }
+
+    public long getOperationNumber()
+    {
+        return operationNumber;
+    }
+
+    public int getStepNumber()
+    {
+        return stepNumber;
     }
 }

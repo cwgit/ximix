@@ -31,6 +31,7 @@ public class CommandMessage
         ACTIVATE_BOARD,
         DOWNLOAD_BOARD_CONTENTS,
         MOVE_BOARD_TO_NODE,
+        UPLOAD_TO_BOARD,
         TRANSFER_TO_BOARD,
         TRANSFER_TO_BOARD_ENDED,
         CLEAR_BACKUP_BOARD,

@@ -29,17 +29,33 @@ public class PostedMessage
 {
     private final int    index;
     private final byte[] message;
+    private final byte[] commitment;
 
     private PostedMessage(ASN1Sequence seq)
     {
         this.index = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue();
         this.message = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
+        if (seq.size() == 3)
+        {
+            this.commitment = ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets();
+        }
+        else
+        {
+            this.commitment = null;
+        }
     }
 
     public PostedMessage(int index, byte[] message)
     {
+        this(index, message, null);
+    }
+
+
+    public PostedMessage(int index, byte[] message, byte[] commitment)
+    {
         this.index = index;
         this.message = message;
+        this.commitment = commitment;
     }
 
     public static final PostedMessage getInstance(Object o)
@@ -64,6 +80,11 @@ public class PostedMessage
         v.add(new ASN1Integer(index));
         v.add(new DEROctetString(message));
 
+        if (commitment != null)
+        {
+            v.add(new DEROctetString(commitment));
+        }
+
         return new DERSequence(v);
     }
 
@@ -75,5 +96,10 @@ public class PostedMessage
     public byte[] getMessage()
     {
         return message;
+    }
+
+    public byte[] getCommitment()
+    {
+        return commitment;
     }
 }

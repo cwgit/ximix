@@ -239,16 +239,17 @@ public class BulletinBoardRegistry
         }
     }
 
-    public BulletinBoard getTransitBoard(String boardName)
+    public BulletinBoard getTransitBoard(long operationNumber, String boardName, int stepNumber)
     {
         synchronized (boards)
         {
-            BulletinBoard board = transitBoards.get(boardName);
+            String transitBoardName = operationNumber + "." + boardName + "." + stepNumber;
+            BulletinBoard board = transitBoards.get(transitBoardName);
 
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName + ".transit"), boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, deriveBoardFile(transitBoardName), boardUpdateExecutor);
 
                 transitBoards.put(boardName, board);
             }
@@ -257,7 +258,7 @@ public class BulletinBoardRegistry
         }
     }
 
-    public void moveToTransit(String boardName)
+    public void moveToTransit(long operationNumber, String boardName, int stepNumber)
     {
         synchronized (boards)
         {
@@ -272,8 +273,8 @@ public class BulletinBoardRegistry
 
                 File workingFile = deriveBoardFile(originalBoard.getName());
                 File dotPFile = deriveBoardFile(originalBoard.getName() + ".p");
-                File transitWorkingFile = deriveBoardFile(originalBoard.getName() + ".transit");
-                File transitDotPFile = deriveBoardFile(originalBoard.getName() + ".transit.p");
+                File transitWorkingFile = deriveBoardFile(operationNumber + "." + originalBoard.getName() + "." + stepNumber);
+                File transitDotPFile = deriveBoardFile(operationNumber + "." + originalBoard.getName() + "." + stepNumber + ".p");
 
                 if (!workingFile.renameTo(transitWorkingFile))
                 {
@@ -290,7 +291,7 @@ public class BulletinBoardRegistry
                 originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor());
             }
 
-            transitBoards.put(boardName, originalBoard);
+            transitBoards.put(operationNumber + "." + boardName + "." + stepNumber, originalBoard);
 
             BulletinBoard board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName), listenerHandler, changeHandler);
             board.addListener(changeListener);
