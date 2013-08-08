@@ -251,7 +251,7 @@ public class BulletinBoardRegistry
             {
                 board = new BulletinBoardImpl(boardName, deriveBoardFile(transitBoardName), boardUpdateExecutor);
 
-                transitBoards.put(boardName, board);
+                transitBoards.put(transitBoardName, board);
             }
 
             return board;

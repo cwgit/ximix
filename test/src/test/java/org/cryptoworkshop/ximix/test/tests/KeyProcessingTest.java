@@ -416,6 +416,7 @@ public class KeyProcessingTest extends TestCase
                 @Override
                 public void messageDownloaded(int index, byte[] message)
                 {
+                    System.err.println("d : " + index);
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];
                     resultText2[counter++] = decrypted.getECPoints()[1];
