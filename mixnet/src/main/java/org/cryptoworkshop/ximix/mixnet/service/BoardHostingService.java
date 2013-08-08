@@ -266,7 +266,7 @@ public class BoardHostingService
                     break;
                 case CLEAR_BACKUP_BOARD:
                     BoardMessage backupBoardMessage = BoardMessage.getInstance(message.getPayload());
-                    // TODO: maaybe backup the current backup locally?
+                    // TODO: maybe backup the current backup locally?
                     boardRegistry.getBackupBoard(backupBoardMessage.getBoardName()).clear();
                     break;
                 case TRANSFER_TO_BACKUP_BOARD:

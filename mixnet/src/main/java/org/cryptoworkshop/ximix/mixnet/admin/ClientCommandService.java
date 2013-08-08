@@ -155,7 +155,7 @@ public class ClientCommandService
                 {
                     String curNode = nextNode;
 
-                    whatForCompleteStatus(curNode);
+                    waitForCompleteStatus(curNode);
 
                     nextNode = nodes[i];
                     connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, i + 1));
@@ -163,13 +163,11 @@ public class ClientCommandService
                     connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, i, options.getTransformName(), options.getKeyID(), nextNode));
                 }
 
-                whatForCompleteStatus(nextNode);
-
-                connection.sendMessage(boardHost, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
+                waitForCompleteStatus(nextNode);
 
                 connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, nodes.length, options.getTransformName(), options.getKeyID(), boardHost));
 
-                whatForCompleteStatus(boardHost);
+                waitForCompleteStatus(boardHost);
 
                 connection.sendMessage(CommandMessage.Type.BOARD_SHUFFLE_UNLOCK, new BoardMessage(boardName));
 
@@ -181,7 +179,7 @@ public class ClientCommandService
             }
         }
 
-        private void whatForCompleteStatus(String curNode)
+        private void waitForCompleteStatus(String curNode)
             throws ServiceConnectionException
         {
             MessageReply tReply;
