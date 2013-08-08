@@ -30,17 +30,27 @@ public abstract class BasicService
 
     protected final NodeContext nodeContext;
     protected final CrossSection statistics;
+    protected final boolean resetStatsToPlaceholdersOnGet;
 
 
     public BasicService(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
         this.statistics = new CrossSection(nodeContext.getDecoupler(Decoupler.MONITOR));
-
-
         listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.SERVICES)).createHandler(ServiceStatisticsListener.class);
         statisticsNotifier = listenerHandler.getNotifier();
+        resetStatsToPlaceholdersOnGet = false;
     }
+
+    public BasicService(NodeContext nodeContext, boolean resetStatsToPlaceholdersOnGet)
+    {
+        this.nodeContext = nodeContext;
+        this.statistics = new CrossSection(nodeContext.getDecoupler(Decoupler.MONITOR));
+        listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.SERVICES)).createHandler(ServiceStatisticsListener.class);
+        statisticsNotifier = listenerHandler.getNotifier();
+        this.resetStatsToPlaceholdersOnGet = resetStatsToPlaceholdersOnGet;
+    }
+
 
     public void trigger(ServiceEvent event)
     {
@@ -51,7 +61,7 @@ public abstract class BasicService
                 @Override
                 public void run()
                 {
-                    statisticsNotifier.statisticsUpdate(BasicService.this, statistics.getMap());
+                    statisticsNotifier.statisticsUpdate(BasicService.this, statistics.getMap(resetStatsToPlaceholdersOnGet));
                 }
             });
         }

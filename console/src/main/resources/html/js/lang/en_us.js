@@ -17,7 +17,6 @@ lang["vm.start-time"] = "Start Time";
 lang["vm.total-memory"] = "Total Memory";
 lang["vm.up-time"] = "Up-Time";
 lang["capabilities.title"] = "Capabilities";
-lang["board.hosting.service"]="Board Hosting Service"
 
 
 
@@ -33,6 +32,15 @@ lang['statistics.title']="Node Statistics";
 
 lang['vm.gc.count.delta']="GC Count";
 lang['vm.gc.time.delta']="GC Time";
+
+
+lang["bhs-title"]="Board Hosting Service"
+
+
+
+
+stype['bhs']="tab";
+
 
 rtype["vm.free-memory"] = "mb";
 rtype["vm.start-time"] = "time";

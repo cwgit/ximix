@@ -72,7 +72,8 @@ public class BoardHostingService
     public BoardHostingService(NodeContext nodeContext, Config config)
         throws ConfigException
     {
-        super(nodeContext);
+        super(nodeContext,true); // Stats reset to placeholder values after reading.
+
 
         this.decoupler = nodeContext.getDecoupler(Decoupler.SERVICES);
 
@@ -94,13 +95,13 @@ public class BoardHostingService
             @Override
             public void messagesAdded(BulletinBoard bulletinBoard, int count)
             {
-                statistics.increment("add-message-count:"+bulletinBoard.getName(), count);
+                statistics.increment("bhs:add-message-count:" + bulletinBoard.getName(), count);
             }
 
             @Override
             public void messagesRemoved(BulletinBoardImpl bulletinBoard, int count)
             {
-                statistics.increment("remove-message-count:"+bulletinBoard.getName(),count);
+                statistics.increment("bhs:remove-message-count:" + bulletinBoard.getName(), count);
             }
 
         };
@@ -116,12 +117,21 @@ public class BoardHostingService
             {
                 BulletinBoard board = boardRegistry.createBoard(boardConfig.getName());
 
+                // Add placeholders for statistics.
+
+                statistics.addPlaceholderValue("bhs:add-message-count:" + boardConfig.getName(), 0);
+                statistics.addPlaceholderValue("bhs:remove-message-count:" + boardConfig.getName(), 0);
+
+
                 for (BackupBoardConfig backupConfig : boardConfig.getBackupBoardConfigs())
                 {
-                     board.addListener(new BoardRemoteBackupListener(nodeContext, backupConfig));
+                    board.addListener(new BoardRemoteBackupListener(nodeContext, backupConfig));
                 }
             }
         }
+
+        statistics.ensurePlaceholders();
+
     }
 
     public CapabilityMessage getCapability()

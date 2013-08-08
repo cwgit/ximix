@@ -15,6 +15,7 @@ import java.util.concurrent.FutureTask;
 public class CrossSection
 {
     private final Map<String, Object> values = new HashMap<>();
+    private final Map<String, Object> placeholders = new HashMap<>();
     private final Executor decoupler;
 
 
@@ -78,7 +79,7 @@ public class CrossSection
         throw new IllegalArgumentException(name + " cannot be assigned to a List, it is " + o.getClass());
     }
 
-    public Map<String, Object> getMap()
+    public Map<String, Object> getMap(final boolean resetToPlaceholders)
     {
         FutureTask<Map<String, Object>> task = new FutureTask(new Callable<Map<String, Object>>()
         {
@@ -90,7 +91,13 @@ public class CrossSection
 
                 rv.putAll(values);
 
-                return Collections.unmodifiableMap(values);
+                if (resetToPlaceholders)
+                {
+                    values.clear();
+                    values.putAll(placeholders);
+                }
+
+                return Collections.unmodifiableMap(rv);
             }
         });
 
@@ -112,5 +119,31 @@ public class CrossSection
         }
 
         return null;
+    }
+
+
+    public void addPlaceholderValue(final String name, final Object value)
+    {
+        decoupler.execute(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                placeholders.put(name, value);
+            }
+        });
+    }
+
+
+    public void ensurePlaceholders()
+    {
+        decoupler.execute(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                values.putAll(placeholders);
+            }
+        });
     }
 }
