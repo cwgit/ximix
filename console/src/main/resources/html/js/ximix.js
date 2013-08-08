@@ -221,25 +221,33 @@ function addRowHeading(tab, n) {
     $("<tr><td colspan='2' class='nodetableH'>" + (lang[n]) + "</td></tr>").appendTo(tab);
 }
 
-function addRow(tab, name, value, suffix, indent) {
-    $("<tr><td class='" + (indent ? "nodetableLi" : "nodetableL") + "'>" + (lang[name]) + (suffix != null ? "(" + suffix + ")" : "") + "   </td>" +
+function addRow(tab, name, value, indent) {
+
+    var suffix = null;
+    var key = name;
+    var keySet = lang;
+    if ($.isArray(name)) {
+        keySet = lang[name[0]];
+        key = name[1];
+        if (name.length == 3) {
+            suffix = name[2];
+        }
+    }
+
+    $("<tr><td class='" + (indent ? "nodetableLi" : "nodetableL") + "'>" + (keySet[key]) + (suffix != null ? "(" + suffix + ")" : "") + "   </td>" +
         "<td class='" + (indent ? "nodetableRi" : "nodetableR") + "'>" + (apply_rtype(name, value)) + "</td></tr>").appendTo(tab);
 }
-
 
 
 function addData(tab, data, indent) {
     for (var k in data) {
         if (isSplitKey(k)) {
             var n = splitKeyIntoContext(k);
-            if (n.length == 3) {
-                addRow(tab, n[1], data, n[2], indent);
-            } else {
-                addRow(tab, n[1], data[k], null, indent);
-            }
+            addRow(tab, n, data[k], n[2], indent);
+            continue;
         }
 
-        addRow(tab, k, data[k], null, indent);
+        addRow(tab, k, data[k], indent);
     }
 }
 

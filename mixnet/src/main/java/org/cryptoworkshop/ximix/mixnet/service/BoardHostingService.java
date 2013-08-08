@@ -72,7 +72,7 @@ public class BoardHostingService
     public BoardHostingService(NodeContext nodeContext, Config config)
         throws ConfigException
     {
-        super(nodeContext,true); // Stats reset to placeholder values after reading.
+        super(nodeContext); // Stats reset to placeholder values after reading.
 
 
         this.decoupler = nodeContext.getDecoupler(Decoupler.SERVICES);
