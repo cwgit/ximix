@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
@@ -45,6 +46,7 @@ import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.message.TransitBoardMessage;
@@ -52,6 +54,7 @@ import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardBackupListener;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardChangeListener;
@@ -250,7 +253,7 @@ public class BoardHostingService
                     break;
                 case SHUFFLE_AND_MOVE_BOARD_TO_NODE:
                     PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, CommandMessage.Type.TRANSFER_TO_BOARD, pAndmMessage));
+                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, getPeerConnection(pAndmMessage.getDestinationNode()), CommandMessage.Type.TRANSFER_TO_BOARD, pAndmMessage));
                     break;
                 case RETURN_TO_BOARD:
                     transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
@@ -320,6 +323,38 @@ public class BoardHostingService
             }
         }
         return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+    }
+
+    private ServicesConnection getPeerConnection(String destinationNode)
+    {
+        // return a proxy for ourselves.
+        if (nodeContext.getName().equals(destinationNode))
+        {
+            return new ServicesConnection()
+            {
+                @Override
+                public CapabilityMessage[] getCapabilities()
+                {
+                    return new CapabilityMessage[] { BoardHostingService.this.getCapability() };
+                }
+
+                @Override
+                public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
+                    throws ServiceConnectionException
+                {
+                    return BoardHostingService.this.handle(new CommandMessage((CommandMessage.Type)type, messagePayload));
+                }
+
+                @Override
+                public void close()
+                    throws ServiceConnectionException
+                {
+                    // ignore
+                }
+            };
+        }
+
+        return nodeContext.getPeerMap().get(destinationNode);
     }
 
     public boolean isAbleToHandle(Message message)
@@ -549,7 +584,7 @@ public class BoardHostingService
             {
                 boardRegistry.moveToTransit(startPandMmessage.getOperationNumber(), startPandMmessage.getBoardName(), startPandMmessage.getStepNumber());
 
-                new TransformShuffleAndMoveTask(nodeContext, boardRegistry, CommandMessage.Type.TRANSFER_TO_BOARD, startPandMmessage).run();
+                new TransformShuffleAndMoveTask(nodeContext, boardRegistry, getPeerConnection(startPandMmessage.getDestinationNode()), CommandMessage.Type.TRANSFER_TO_BOARD, startPandMmessage).run();
             }
             catch (Exception e)
             {
