@@ -36,7 +36,9 @@ lang['vm.gc.time.delta']="GC Time";
 
 lang["bhs-title"]="Board Hosting Service"
 
-
+lang["bhs"] = {}
+lang["bhs"]["add-message-count"]="Added Messages";
+lang["bhs"]["remove-message-count"]="Removed Messages";
 
 
 stype['bhs']="tab";

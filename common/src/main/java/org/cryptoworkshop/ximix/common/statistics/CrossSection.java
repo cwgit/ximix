@@ -79,7 +79,7 @@ public class CrossSection
         throw new IllegalArgumentException(name + " cannot be assigned to a List, it is " + o.getClass());
     }
 
-    public Map<String, Object> getMap(final boolean resetToPlaceholders)
+    public Map<String, Object> getMap()
     {
         FutureTask<Map<String, Object>> task = new FutureTask(new Callable<Map<String, Object>>()
         {
@@ -90,12 +90,6 @@ public class CrossSection
                 Map<String, Object> rv = new HashMap<String, Object>();
 
                 rv.putAll(values);
-
-                if (resetToPlaceholders)
-                {
-                    values.clear();
-                    values.putAll(placeholders);
-                }
 
                 return Collections.unmodifiableMap(rv);
             }
