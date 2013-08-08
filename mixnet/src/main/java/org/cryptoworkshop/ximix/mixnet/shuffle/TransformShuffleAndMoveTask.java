@@ -16,8 +16,13 @@
 package org.cryptoworkshop.ximix.mixnet.shuffle;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.Commitment;
+import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.commitments.HashCommitter;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.BoardUploadBlockMessage;
@@ -39,24 +44,29 @@ public class TransformShuffleAndMoveTask
     private final NodeContext nodeContext;
     private final PermuteAndMoveMessage message;
     private final BulletinBoardRegistry boardRegistry;
+    private final CommandMessage.Type type;
 
-    public TransformShuffleAndMoveTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, PermuteAndMoveMessage message)
+    public TransformShuffleAndMoveTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, CommandMessage.Type type, PermuteAndMoveMessage message)
     {
         this.nodeContext = nodeContext;
         this.boardRegistry = boardRegistry;
+        this.type = type;
         this.message = message;
     }
 
     public void run()
     {
-        BulletinBoard board = boardRegistry.getTransitBoard(message.getBoardName());
+        BulletinBoard board = boardRegistry.getTransitBoard(message.getOperationNumber(), message.getBoardName(), message.getStepNumber());
         Transform transform = boardRegistry.getTransform(message.getTransformName());
+        IndexCommitter committer = new IndexCommitter(new SHA256Digest(), new SecureRandom());
 
         try
         {
             ServicesConnection peerConnection = nodeContext.getPeerMap().get(message.getDestinationNode());
             PostedMessageBlock.Builder messageBlockBuilder = new PostedMessageBlock.Builder(20);                  // TODO: make configurable
             IndexNumberGenerator indexGen = new IndexNumberGenerator(board.size(), new SecureRandom());  // TODO: specify random
+
+            int nextStepNumber = message.getStepNumber() + 1;
 
             if (message.getKeyID() != null)
             {
@@ -66,11 +76,13 @@ public class TransformShuffleAndMoveTask
                 {
                     byte[] transformed = transform.transform(postedMessage.getMessage());
 
-                    messageBlockBuilder.add(indexGen.nextIndex(), transformed);
+                    Commitment commitment = committer.commit(postedMessage.getIndex());
+
+                    messageBlockBuilder.add(indexGen.nextIndex(), transformed, commitment.getCommitment());
 
                     if (messageBlockBuilder.isFull())
                     {
-                        MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(board.getName(), messageBlockBuilder.build()));
+                        MessageReply reply = peerConnection.sendMessage(type, new BoardUploadBlockMessage(message.getOperationNumber(), message.getBoardName(), nextStepNumber, messageBlockBuilder.build()));
 
                         if (reply.getType() != MessageReply.Type.OKAY)
                         {
@@ -83,11 +95,13 @@ public class TransformShuffleAndMoveTask
             {
                 for (PostedMessage postedMessage : board)
                 {
-                    messageBlockBuilder.add(postedMessage.getIndex(), postedMessage.getMessage());
+                    Commitment commitment = committer.commit(postedMessage.getIndex());
+
+                    messageBlockBuilder.add(postedMessage.getIndex(), postedMessage.getMessage(), commitment.getCommitment());
 
                     if (messageBlockBuilder.isFull())
                     {
-                        MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(board.getName(), messageBlockBuilder.build()));
+                        MessageReply reply = peerConnection.sendMessage(type, new BoardUploadBlockMessage(message.getOperationNumber(), message.getBoardName(), nextStepNumber, messageBlockBuilder.build()));
 
                         if (reply.getType() != MessageReply.Type.OKAY)
                         {
@@ -99,7 +113,7 @@ public class TransformShuffleAndMoveTask
 
             if (!messageBlockBuilder.isEmpty())
             {
-                MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(board.getName(), messageBlockBuilder.build()));
+                MessageReply reply = peerConnection.sendMessage(type, new BoardUploadBlockMessage(message.getOperationNumber(), board.getName(), nextStepNumber, messageBlockBuilder.build()));
 
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {
@@ -128,6 +142,20 @@ public class TransformShuffleAndMoveTask
         catch (RuntimeException e)
         {
             e.printStackTrace();
+        }
+    }
+
+    private class IndexCommitter
+        extends HashCommitter
+    {
+        public IndexCommitter(ExtendedDigest digest, SecureRandom random)
+        {
+            super(digest, random);
+        }
+
+        public Commitment commit(int index)
+        {
+            return super.commit(BigInteger.valueOf(index).toByteArray());
         }
     }
 }

@@ -49,6 +49,13 @@ public class PostedMessageBlock
             return this;
         }
 
+        public Builder add(int index, byte[] message, byte[] commitment)
+        {
+            messages.add(new PostedMessage(index, message, commitment));
+
+            return this;
+        }
+
         public Builder clear()
         {
             messages.clear();
