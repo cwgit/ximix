@@ -47,7 +47,7 @@ public class MessageTest extends TestCase
         throws Exception
     {
 
-        PermuteAndMoveMessage msg = new PermuteAndMoveMessage("Cat", "Doc", "Fish", "Rabbit");
+        PermuteAndMoveMessage msg = new PermuteAndMoveMessage(1, "Cat", 0, "Doc", "Fish", "Rabbit");
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DEROutputStream derOut = new DEROutputStream(bos);
@@ -71,7 +71,7 @@ public class MessageTest extends TestCase
         throws Exception
     {
 
-        PermuteAndMoveMessage msg = new PermuteAndMoveMessage("Cat", "Doc", null, "Rabbit");
+        PermuteAndMoveMessage msg = new PermuteAndMoveMessage(1, "Cat", 0, "Doc", null, "Rabbit");
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DEROutputStream derOut = new DEROutputStream(bos);
