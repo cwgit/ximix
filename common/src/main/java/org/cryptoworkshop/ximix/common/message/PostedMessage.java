@@ -102,4 +102,9 @@ public class PostedMessage
     {
         return commitment;
     }
+
+    public boolean hasCommitment()
+    {
+        return commitment != null;
+    }
 }

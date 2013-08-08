@@ -126,6 +126,11 @@ public class PostedMessageBlock
         return new DERSequence(v);
     }
 
+    public boolean hasCommitments()
+    {
+        return !messages.isEmpty() && messages.get(0).hasCommitment();
+    }
+
     public List<PostedMessage> getMessages()
     {
         return messages;

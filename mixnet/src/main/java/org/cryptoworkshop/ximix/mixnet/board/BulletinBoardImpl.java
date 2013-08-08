@@ -35,9 +35,9 @@ public class BulletinBoardImpl
     private final String boardName;
     private final File workingFile;
     private final DB boardDB;
-    private final DB commitmentDB;
-    private final DB witnessDB;
     private final ConcurrentNavigableMap<Integer, byte[]> boardMap;
+    private final ConcurrentNavigableMap<Integer, byte[]> commitmentMap;
+    private final ConcurrentNavigableMap<Integer, byte[]> witnessMap;
 
     private final ListenerHandler<BulletinBoardBackupListener> listenerHandler;
     private final ListenerHandler<BulletinBoardChangeListener> changeListenerHandler;
@@ -66,12 +66,6 @@ public class BulletinBoardImpl
             boardDB = DBMaker.newFileDB(workingFile)
                 .closeOnJvmShutdown()
                 .make();
-            commitmentDB = DBMaker.newFileDB(new File(workingFile.getParent(), workingFile.getName() + ".commit"))
-                .closeOnJvmShutdown()
-                .make();
-            witnessDB = DBMaker.newFileDB(new File(workingFile.getParent(), workingFile.getName() + ".witness"))
-                .closeOnJvmShutdown()
-                .make();
         }
         else
         {
@@ -79,15 +73,11 @@ public class BulletinBoardImpl
             boardDB = DBMaker.newMemoryDB()
                 .closeOnJvmShutdown()
                 .make();
-            commitmentDB = DBMaker.newMemoryDB()
-                .closeOnJvmShutdown()
-                .make();
-            witnessDB = DBMaker.newMemoryDB()
-                .closeOnJvmShutdown()
-                .make();
         }
 
         boardMap = boardDB.getTreeMap(boardName);
+        commitmentMap = boardDB.getTreeMap("commitments");
+        witnessMap = boardDB.getTreeMap("witnesses");
 
         nextIndex.set(boardMap.size());
 
@@ -165,6 +155,10 @@ public class BulletinBoardImpl
         for (PostedMessage message : messages)
         {
             boardMap.put(message.getIndex(), message.getMessage());
+            if (message.hasCommitment())
+            {
+                commitmentMap.put(message.getIndex(), message.getCommitment());
+            }
             if (message.getIndex() >= maxIndex)
             {
                 maxIndex = message.getIndex() + 1;    // nextIndex is the number of the next free slot
