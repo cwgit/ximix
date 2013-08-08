@@ -48,6 +48,7 @@ import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
@@ -241,9 +242,9 @@ public class BoardHostingService
                     nodeContext.execute(new TransformShuffleAndReturnTask(nodeContext, boardRegistry, pAndrMessage));
                     break;
                 case INITIATE_INTRANSIT_BOARD:
-                    boardMessage = BoardMessage.getInstance(message.getPayload());
-                    boardRegistry.markInTransit(boardMessage.getBoardName());
-                    boardRegistry.getTransitBoard(boardMessage.getBoardName()).clear();
+                    TransitBoardMessage transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
+                    boardRegistry.markInTransit(transitBoardMessage.getBoardName());
+                    boardRegistry.getTransitBoard(transitBoardMessage.getBoardName()).clear();
                     break;
                 case TRANSFER_TO_BOARD:
                     BoardUploadBlockMessage uploadMessage = BoardUploadBlockMessage.getInstance(message.getPayload());

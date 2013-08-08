@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -163,25 +164,59 @@ public class XimixNodeContext
 
         List<Service> serviceList = getServices();
 
-        FutureTask<Map<Service, Map<String, Object>>> task = new FutureTask<Map<Service, Map<String, Object>>>(new StatsCallable(serviceList));
+        final CountDownLatch latch = new CountDownLatch(serviceList.size());
 
-        decouplers.get(Decoupler.LISTENER).submit(task);  // Stats is added to services.
+        ServiceStatisticsListener listener = new ServiceStatisticsListener()
+        {
+            @Override
+            public void statisticsUpdate(Service service, Map<String, Object> details)
+            {
+                stats.put(service, details);
+                latch.countDown();
 
-        Map<Service, Map<String, Object>> out = null;
+                service.removeListener(this);
+            }
+        };
+
+        for (Service s : serviceList)
+        {
+            s.addListener(listener);
+            s.trigger(new ServiceEvent(ServiceEvent.Type.PUBLISH_STATISTICS, null));
+        }
 
         try
         {
-            Map<Service, Map<String, Object>> m = task.get();
-            out = new HashMap<>();
-            out.putAll(m); // Inner maps copied within callable.
+            latch.await(10, TimeUnit.SECONDS); // TODO Make configurable..
 
+            FutureTask<Map<Service, Map<String, Object>>> future = new FutureTask<Map<Service, Map<String, Object>>>(new Callable<Map<Service, Map<String, Object>>>()
+            {
+                @Override
+                public Map<Service, Map<String, Object>> call()
+                    throws Exception
+                {
+                    Map<Service, Map<String, Object>> rv = new HashMap<>();
+
+                    rv.putAll(rv);
+
+                    return Collections.unmodifiableMap(rv);
+                }
+            });
+
+            getDecoupler(Decoupler.SERVICES).execute(future);
+
+            return future.get();
         }
-        catch (Exception ex)
+        catch (InterruptedException e)
         {
-            ex.printStackTrace(); //TODO
+            Thread.currentThread().interrupt();
+        }
+        catch (ExecutionException e)
+        {
+            // TODO:
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
 
-        return out;
+        return new HashMap<>();
     }
 
     @Override
@@ -636,57 +671,5 @@ public class XimixNodeContext
             return new ServiceConfig(configNode);
         }
     }
-
-    /**
-     * Callable to collect statistics from nodes.
-     */
-    private class StatsCallable implements Callable<Map<Service, Map<String, Object>>>
-    {
-
-        private final List<Service> services;
-        private final CountDownLatch latch;
-
-        public StatsCallable(List<Service> services)
-        {
-            this.services = services;
-            latch = new CountDownLatch(services.size());
-        }
-
-        @Override
-        public Map<Service, Map<String, Object>> call()
-            throws Exception
-        {
-
-            final Map<Service, Map<String, Object>> out = new HashMap<>();
-
-            final ServiceStatisticsListener ssl = new ServiceStatisticsListener()
-            {
-                @Override
-                public void statisticsUpdate(Service service, Map<String, Object> details)
-                {
-                    service.removeListener(this);
-
-                    Map<String, Object> copy = new HashMap<>(); //TODO delete, not necessary, in wrong spot, see CrossSection
-                    copy.putAll(details);
-                    out.put(service, copy);
-
-                    latch.countDown();
-                }
-            };
-
-
-            for (Service s : services)
-            {
-                s.addListener(ssl);
-                s.trigger(new ServiceEvent(ServiceEvent.Type.PUBLISH_STATISTICS, null));
-            }
-
-            latch.await(10, TimeUnit.SECONDS); //TODO configurable.
-
-            return out;
-        }
-    }
-
-
 }
 
