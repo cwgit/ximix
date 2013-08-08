@@ -72,8 +72,7 @@ public class BoardHostingService
     public BoardHostingService(NodeContext nodeContext, Config config)
         throws ConfigException
     {
-        super(nodeContext); // Stats reset to placeholder values after reading.
-
+        super(nodeContext);
 
         this.decoupler = nodeContext.getDecoupler(Decoupler.SERVICES);
 
@@ -219,16 +218,16 @@ public class BoardHostingService
                     boardRegistry.downloadUnlock(boardMessage.getBoardName());
                     break;
                 case FETCH_BOARD_STATUS:
-                    boardMessage = BoardMessage.getInstance(message.getPayload());
-                    if (boardRegistry.isInTransit(boardMessage.getBoardName()))
+                    TransitBoardMessage transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
+                    if (boardRegistry.isInTransit(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber()))
                     {
-                        return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(boardMessage.getBoardName(), BoardStatusMessage.Status.IN_TRANSIT));
+                        return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.IN_TRANSIT));
                     }
-                    if (boardRegistry.isComplete(boardMessage.getBoardName()))
+                    if (boardRegistry.isComplete(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber()))
                     {
-                        return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(boardMessage.getBoardName(), BoardStatusMessage.Status.COMPLETE));
+                        return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.COMPLETE));
                     }
-                    return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(boardMessage.getBoardName(), BoardStatusMessage.Status.UNKNOWN));
+                    return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.UNKNOWN));
                 case BOARD_SHUFFLE_LOCK:
                     boardMessage = BoardMessage.getInstance(message.getPayload());
                     if (boardRegistry.isLocked(boardMessage.getBoardName()))
@@ -253,25 +252,26 @@ public class BoardHostingService
                     PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
                     nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, CommandMessage.Type.TRANSFER_TO_BOARD, pAndmMessage));
                     break;
-                case SHUFFLE_AND_RETURN_BOARD:
-                    pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, CommandMessage.Type.UPLOAD_TO_BOARD, pAndmMessage));
+                case RETURN_TO_BOARD:
+                    transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
+
+                    new ReturnToBoardTask(nodeContext, boardRegistry, transitBoardMessage).run();   // in-line for now, note possible synch issues if not.
                     break;
                 case INITIATE_INTRANSIT_BOARD:
-                    TransitBoardMessage transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
-                    boardRegistry.markInTransit(transitBoardMessage.getBoardName());
+                    transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
+                    boardRegistry.markInTransit(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber());
                     boardRegistry.getTransitBoard(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber()).clear();
                     break;
                 case TRANSFER_TO_BOARD:
                     BoardUploadBlockMessage uploadMessage = BoardUploadBlockMessage.getInstance(message.getPayload());
 
-                    boardRegistry.markInTransit(uploadMessage.getBoardName());
+                    boardRegistry.markInTransit(uploadMessage.getOperationNumber(), uploadMessage.getBoardName(), uploadMessage.getStepNumber());
                     boardRegistry.getTransitBoard(uploadMessage.getOperationNumber(), uploadMessage.getBoardName(), uploadMessage.getStepNumber()).postMessageBlock(uploadMessage.getMessageBlock());
                     break;
                 case UPLOAD_TO_BOARD:
                     uploadMessage = BoardUploadBlockMessage.getInstance(message.getPayload());
 
-                    boardRegistry.markInTransit(uploadMessage.getBoardName());
+                    boardRegistry.markInTransit(uploadMessage.getOperationNumber(), uploadMessage.getBoardName(), uploadMessage.getStepNumber());
                     boardRegistry.getBoard(uploadMessage.getBoardName()).postMessageBlock(uploadMessage.getMessageBlock());
                     break;
                 case CLEAR_BACKUP_BOARD:
@@ -281,11 +281,12 @@ public class BoardHostingService
                     break;
                 case TRANSFER_TO_BACKUP_BOARD:
                     BoardUploadIndexedMessage uploadIndexedMessage = BoardUploadIndexedMessage.getInstance(message.getPayload());
+
                     boardRegistry.getBackupBoard(uploadIndexedMessage.getBoardName()).postMessage(uploadIndexedMessage.getData());
                     break;
                 case TRANSFER_TO_BOARD_ENDED:
-                    boardMessage = BoardMessage.getInstance(message.getPayload());
-                    boardRegistry.markCompleted(boardMessage.getBoardName());
+                    transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
+                    boardRegistry.markCompleted(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber());
                     break;
                 case DOWNLOAD_BOARD_CONTENTS:
                     BoardDownloadMessage downloadRequest = BoardDownloadMessage.getInstance(message.getPayload());
@@ -549,6 +550,45 @@ public class BoardHostingService
                 boardRegistry.moveToTransit(startPandMmessage.getOperationNumber(), startPandMmessage.getBoardName(), startPandMmessage.getStepNumber());
 
                 new TransformShuffleAndMoveTask(nodeContext, boardRegistry, CommandMessage.Type.TRANSFER_TO_BOARD, startPandMmessage).run();
+            }
+            catch (Exception e)
+            {
+                // TODO:
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class ReturnToBoardTask
+        implements Runnable
+    {
+        private final NodeContext nodeContext;
+        private final TransitBoardMessage transitBoardMessage;
+        private final BulletinBoardRegistry boardRegistry;
+
+        public ReturnToBoardTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, TransitBoardMessage transitBoardMessage)
+        {
+            this.nodeContext = nodeContext;
+            this.boardRegistry = boardRegistry;
+            this.transitBoardMessage = transitBoardMessage;
+        }
+
+        @Override
+        public void run()
+        {
+            try
+            {
+                BulletinBoard transitBoard = boardRegistry.getTransitBoard(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber());
+                BulletinBoard homeBoard = boardRegistry.getBoard(transitBoardMessage.getBoardName());
+
+                while (transitBoard.size() > 0)
+                {
+                    PostedMessageBlock.Builder messageFetcher = new PostedMessageBlock.Builder(100);
+
+                    transitBoard.removeMessages(messageFetcher);
+
+                    homeBoard.postMessageBlock(messageFetcher.build());
+                }
             }
             catch (Exception e)
             {
