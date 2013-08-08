@@ -45,11 +45,13 @@ public class TransformShuffleAndMoveTask
     private final PermuteAndMoveMessage message;
     private final BulletinBoardRegistry boardRegistry;
     private final CommandMessage.Type type;
+    private final ServicesConnection peerConnection;
 
-    public TransformShuffleAndMoveTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, CommandMessage.Type type, PermuteAndMoveMessage message)
+    public TransformShuffleAndMoveTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, ServicesConnection peerConnection, CommandMessage.Type type, PermuteAndMoveMessage message)
     {
         this.nodeContext = nodeContext;
         this.boardRegistry = boardRegistry;
+        this.peerConnection = peerConnection;
         this.type = type;
         this.message = message;
     }
@@ -62,7 +64,6 @@ public class TransformShuffleAndMoveTask
 
         try
         {
-            ServicesConnection peerConnection = nodeContext.getPeerMap().get(message.getDestinationNode());
             PostedMessageBlock.Builder messageBlockBuilder = new PostedMessageBlock.Builder(20);                  // TODO: make configurable
             IndexNumberGenerator indexGen = new IndexNumberGenerator(board.size(), new SecureRandom());  // TODO: specify random
 
@@ -121,7 +122,7 @@ public class TransformShuffleAndMoveTask
                 }
             }
 
-            MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED, new TransitBoardMessage(message.getOperationNumber(), board.getName(), message.getStepNumber()));
+            MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED, new TransitBoardMessage(message.getOperationNumber(), board.getName(), nextStepNumber));
 
             if (reply.getType() != MessageReply.Type.OKAY)
             {

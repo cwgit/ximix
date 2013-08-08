@@ -243,7 +243,7 @@ public class BulletinBoardRegistry
     {
         synchronized (boards)
         {
-            String transitBoardName = operationNumber + "." + boardName + "." + stepNumber;
+            String transitBoardName = getTransitBoardName(operationNumber, boardName, stepNumber);
             BulletinBoard board = transitBoards.get(transitBoardName);
 
             // TODO: need to detect twice!
@@ -273,8 +273,8 @@ public class BulletinBoardRegistry
 
                 File workingFile = deriveBoardFile(originalBoard.getName());
                 File dotPFile = deriveBoardFile(originalBoard.getName() + ".p");
-                File transitWorkingFile = deriveBoardFile(operationNumber + "." + originalBoard.getName() + "." + stepNumber);
-                File transitDotPFile = deriveBoardFile(operationNumber + "." + originalBoard.getName() + "." + stepNumber + ".p");
+                File transitWorkingFile = deriveBoardFile(getTransitBoardName(operationNumber, originalBoard.getName(), stepNumber));
+                File transitDotPFile = deriveBoardFile(getTransitBoardName(operationNumber, originalBoard.getName(), stepNumber) + ".p");
 
                 if (!workingFile.renameTo(transitWorkingFile))
                 {
@@ -291,7 +291,7 @@ public class BulletinBoardRegistry
                 originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor());
             }
 
-            transitBoards.put(operationNumber + "." + boardName + "." + stepNumber, originalBoard);
+            transitBoards.put(getTransitBoardName(operationNumber, boardName, stepNumber), originalBoard);
 
             BulletinBoard board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName), listenerHandler, changeHandler);
             board.addListener(changeListener);
@@ -303,8 +303,10 @@ public class BulletinBoardRegistry
     {
         synchronized (boards)
         {
-            inTransitBoards.add(boardName);
-            completedBoards.remove(boardName);
+            String transitName = getTransitBoardName(operationNumber, boardName, stepNumber);
+
+            inTransitBoards.add(transitName);
+            completedBoards.remove(transitName);
         }
     }
 
@@ -312,8 +314,10 @@ public class BulletinBoardRegistry
     {
         synchronized (boards)
         {
-            completedBoards.add(boardName);
-            inTransitBoards.remove(boardName);
+            String transitName = getTransitBoardName(operationNumber, boardName, stepNumber);
+
+            completedBoards.add(transitName);
+            inTransitBoards.remove(transitName);
         }
     }
 
@@ -321,7 +325,9 @@ public class BulletinBoardRegistry
     {
         synchronized (boards)
         {
-            return inTransitBoards.contains(boardName);
+            String transitName = getTransitBoardName(operationNumber, boardName, stepNumber);
+
+            return inTransitBoards.contains(transitName);
         }
     }
 
@@ -329,7 +335,14 @@ public class BulletinBoardRegistry
     {
         synchronized (boards)
         {
-            return completedBoards.contains(boardName);
+            String transitName = getTransitBoardName(operationNumber, boardName, stepNumber);
+
+            return completedBoards.contains(transitName);
         }
+    }
+
+    private String getTransitBoardName(long operationNumber, String boardName, int stepNumber)
+    {
+        return operationNumber + "." + boardName + "." + stepNumber;
     }
 }
