@@ -196,7 +196,7 @@ public class XimixNodeContext
                 {
                     Map<Service, Map<String, Object>> rv = new HashMap<>();
 
-                    rv.putAll(rv);
+                    rv.putAll(stats);
 
                     return Collections.unmodifiableMap(rv);
                 }
