@@ -154,7 +154,11 @@ public class NodeMonitorService
 
                 builder.put("name", nodeContext.getName());
                 builder.put("hash", hash);
-
+                builder.put("vm.up-time", mxBean.getUptime());
+                builder.put("vm.free-memory", rt.freeMemory());
+                builder.put("vm.gc.count.delta", totalGC - this.totalGC);
+                builder.put("vm.gc.time.delta", gcTime - this.gcTime);
+                builder.put("vm.available-memory", rt.totalMemory() - rt.freeMemory());
 
 
                 nsm = builder.build();

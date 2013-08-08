@@ -58,9 +58,20 @@ public class CrossSection
 
     }
 
+
     public void increment(String name)
     {
         increment(name, 1);
+    }
+
+    public void decrement(String name)
+    {
+        increment(name, -1);
+    }
+
+    public void decrement(String name, int value)
+    {
+        increment(name, (Math.abs(value) * -1));
     }
 
 
@@ -140,4 +151,6 @@ public class CrossSection
             }
         });
     }
+
+
 }

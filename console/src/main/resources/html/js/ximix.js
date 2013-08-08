@@ -12,6 +12,8 @@ var ONE_MB = 1024 * 1024;
 var nodes = {};
 var node_con_state = {}
 var stats = {};
+var allow_plot={};
+var to_plot=new Array();
 var statTimer = null;
 
 var statFetchCtr = 0;
@@ -264,6 +266,11 @@ function repaintStats(hash) {
             var data = values[values.length - 1];
 
             for (var k in data) {
+
+                if ("name"===k || "hash"===k || "zeit"===k)
+                {
+                    continue;
+                }
 
                 if (isSplitKey(k)) {
                     var n = splitKeyIntoContext(k);

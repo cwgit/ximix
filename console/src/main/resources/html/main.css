@@ -199,6 +199,13 @@ div.statdiv {
     border: 1px dashed lightgrey;
 }
 
+button.addplot {
+
+}
+
+button.unplot {
+
+}
 
 .ui-tabs-vertical {
     width: 55em;
