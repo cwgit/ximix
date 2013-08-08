@@ -42,7 +42,6 @@ import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
-import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.message.PostedMessageDataBlock;
@@ -167,7 +166,7 @@ public class ClientCommandService
 
                 connection.sendMessage(boardHost, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length));
 
-                connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD, new PermuteAndReturnMessage(this.getOperationNumber(), boardName, nodes.length, options.getTransformName(), options.getKeyID()));
+                connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, nodes.length, options.getTransformName(), options.getKeyID(), boardHost));
 
                 whatForCompleteStatus(boardHost);
 
