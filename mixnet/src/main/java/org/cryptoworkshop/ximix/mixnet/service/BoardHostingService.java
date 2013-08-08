@@ -46,7 +46,6 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
-import org.cryptoworkshop.ximix.common.message.PermuteAndReturnMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.service.BasicService;
@@ -55,7 +54,6 @@ import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.mixnet.board.*;
 import org.cryptoworkshop.ximix.mixnet.shuffle.TransformShuffleAndMoveTask;
-import org.cryptoworkshop.ximix.mixnet.shuffle.TransformShuffleAndReturnTask;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -242,8 +240,8 @@ public class BoardHostingService
                     nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
                     break;
                 case SHUFFLE_AND_RETURN_BOARD:
-                    PermuteAndReturnMessage pAndrMessage = PermuteAndReturnMessage.getInstance(message.getPayload());
-                    nodeContext.execute(new TransformShuffleAndReturnTask(nodeContext, boardRegistry, pAndrMessage));
+                    pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
+                    nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, pAndmMessage));
                     break;
                 case INITIATE_INTRANSIT_BOARD:
                     TransitBoardMessage transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
