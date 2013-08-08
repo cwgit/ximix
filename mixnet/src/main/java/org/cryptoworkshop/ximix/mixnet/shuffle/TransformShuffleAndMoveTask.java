@@ -24,13 +24,13 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.commitments.HashCommitter;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
-import org.cryptoworkshop.ximix.common.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.message.BoardUploadBlockMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
@@ -121,7 +121,7 @@ public class TransformShuffleAndMoveTask
                 }
             }
 
-            MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED, new BoardMessage(board.getName()));
+            MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED, new TransitBoardMessage(message.getOperationNumber(), board.getName(), message.getStepNumber()));
 
             if (reply.getType() != MessageReply.Type.OKAY)
             {

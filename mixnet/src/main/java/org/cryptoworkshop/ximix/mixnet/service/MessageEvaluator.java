@@ -48,7 +48,7 @@ class MessageEvaluator
         alwaysHandleType.add(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED);
         alwaysHandleType.add(CommandMessage.Type.CLEAR_BACKUP_BOARD);
         alwaysHandleType.add(CommandMessage.Type.TRANSFER_TO_BACKUP_BOARD);
-        alwaysHandleType.add(CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD);
+        alwaysHandleType.add(CommandMessage.Type.RETURN_TO_BOARD);
         alwaysHandleType.add(CommandMessage.Type.FETCH_BOARD_STATUS);
     }
 

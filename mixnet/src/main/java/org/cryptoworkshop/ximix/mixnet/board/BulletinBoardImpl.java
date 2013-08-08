@@ -35,6 +35,8 @@ public class BulletinBoardImpl
     private final String boardName;
     private final File workingFile;
     private final DB boardDB;
+    private final DB commitmentDB;
+    private final DB witnessDB;
     private final ConcurrentNavigableMap<Integer, byte[]> boardMap;
 
     private final ListenerHandler<BulletinBoardBackupListener> listenerHandler;
@@ -64,11 +66,23 @@ public class BulletinBoardImpl
             boardDB = DBMaker.newFileDB(workingFile)
                 .closeOnJvmShutdown()
                 .make();
+            commitmentDB = DBMaker.newFileDB(new File(workingFile.getParent(), workingFile.getName() + ".commit"))
+                .closeOnJvmShutdown()
+                .make();
+            witnessDB = DBMaker.newFileDB(new File(workingFile.getParent(), workingFile.getName() + ".witness"))
+                .closeOnJvmShutdown()
+                .make();
         }
         else
         {
             this.workingFile = null;
             boardDB = DBMaker.newMemoryDB()
+                .closeOnJvmShutdown()
+                .make();
+            commitmentDB = DBMaker.newMemoryDB()
+                .closeOnJvmShutdown()
+                .make();
+            witnessDB = DBMaker.newMemoryDB()
                 .closeOnJvmShutdown()
                 .make();
         }

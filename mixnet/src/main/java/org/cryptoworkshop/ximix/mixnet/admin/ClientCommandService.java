@@ -155,7 +155,7 @@ public class ClientCommandService
                 {
                     String curNode = nextNode;
 
-                    whatForCompleteStatus(curNode);
+                    waitForCompleteStatus(this.getOperationNumber(), curNode, i);
 
                     nextNode = nodes[i];
                     connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, i + 1));
@@ -163,13 +163,15 @@ public class ClientCommandService
                     connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, i, options.getTransformName(), options.getKeyID(), nextNode));
                 }
 
-                whatForCompleteStatus(nextNode);
+                waitForCompleteStatus(this.getOperationNumber(), nextNode, nodes.length);
 
-                connection.sendMessage(boardHost, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
+                connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
 
-                connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_RETURN_BOARD, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, nodes.length, options.getTransformName(), options.getKeyID(), boardHost));
+                connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, nodes.length, options.getTransformName(), options.getKeyID(), boardHost));
 
-                whatForCompleteStatus(boardHost);
+                waitForCompleteStatus(this.getOperationNumber(), boardHost, nodes.length + 1);
+
+                connection.sendMessage(boardHost, CommandMessage.Type.RETURN_TO_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
 
                 connection.sendMessage(CommandMessage.Type.BOARD_SHUFFLE_UNLOCK, new BoardMessage(boardName));
 
@@ -181,7 +183,7 @@ public class ClientCommandService
             }
         }
 
-        private void whatForCompleteStatus(String curNode)
+        private void waitForCompleteStatus(long operationNumber, String curNode, int stepNumber)
             throws ServiceConnectionException
         {
             MessageReply tReply;
@@ -196,7 +198,7 @@ public class ClientCommandService
                     Thread.currentThread().interrupt();
                 }
 
-                tReply = connection.sendMessage(curNode, CommandMessage.Type.FETCH_BOARD_STATUS, new BoardMessage(boardName));
+                tReply = connection.sendMessage(curNode, CommandMessage.Type.FETCH_BOARD_STATUS, new TransitBoardMessage(operationNumber, boardName, stepNumber));
             }
             while (tReply.getType() == MessageReply.Type.OKAY && BoardStatusMessage.getInstance(tReply.getPayload()).getStatus() != BoardStatusMessage.Status.COMPLETE);
         }
@@ -233,7 +235,7 @@ public class ClientCommandService
                 {
                     String[] nodes = toOrderedSet(options.getNodesToUse()).toArray(new String[0]);
 
-                    for (; ; )
+                    for (;;)
                     {
                         reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 

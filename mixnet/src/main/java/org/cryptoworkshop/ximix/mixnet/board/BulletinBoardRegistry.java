@@ -299,7 +299,7 @@ public class BulletinBoardRegistry
         }
     }
 
-    public void markInTransit(String boardName)
+    public void markInTransit(long operationNumber, String boardName, int stepNumber)
     {
         synchronized (boards)
         {
@@ -308,7 +308,7 @@ public class BulletinBoardRegistry
         }
     }
 
-    public void markCompleted(String boardName)
+    public void markCompleted(long operationNumber, String boardName, int stepNumber)
     {
         synchronized (boards)
         {
@@ -317,7 +317,7 @@ public class BulletinBoardRegistry
         }
     }
 
-    public boolean isInTransit(String boardName)
+    public boolean isInTransit(long operationNumber, String boardName, int stepNumber)
     {
         synchronized (boards)
         {
@@ -325,7 +325,7 @@ public class BulletinBoardRegistry
         }
     }
 
-    public boolean isComplete(String boardName)
+    public boolean isComplete(long operationNumber, String boardName, int stepNumber)
     {
         synchronized (boards)
         {
