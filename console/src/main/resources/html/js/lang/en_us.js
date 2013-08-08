@@ -4,8 +4,7 @@
 lang["name"] = "Name";
 
 lang["ui.addplot"]="Plot";
-lang["ui.removeplot"]="Unplot";
-
+lang["ui.plot.tooltip"]="Plot Statistic.";
 
 lang['info.title']="Node Information";
 
@@ -18,7 +17,7 @@ lang["vm.available-processors"] = "Processors";
 lang["vm.free-memory"] = "Free Memory";
 lang["vm.start-time"] = "Start Time";
 lang["vm.total-memory"] = "Total Memory";
-lang["vm.available-memory"]="Available Memory";
+lang["vm.used-memory"]="Used Memory";
 lang["vm.up-time"] = "Up-Time";
 lang["capabilities.title"] = "Capabilities";
 
@@ -55,7 +54,7 @@ stype['bhs']="tab";
 rtype["vm.free-memory"] = "mb";
 rtype["vm.start-time"] = "time";
 rtype["vm.total-memory"] = "mb";
-rtype["vm.available-memory"] = "mb";
+rtype["vm.used-memory"] = "mb";
 
 rtype["vm.up-time"] = "hms";
 rtype["node.capabilities"] = "list";
@@ -69,8 +68,11 @@ rtype["board.hosting.service"] = "map";
 allow_plot["vm.gc.count.delta"]={};
 allow_plot["vm.gc.time.delta"] ={};
 allow_plot["vm.free-memory"]={};
-allow_plot["bhs:messages-on-board"]={};
+allow_plot["bhs!messages-on-board"]={};
+allow_plot["vm.used-memory"]={};
 
-
+//
+// Pre load graph.
+//
 to_plot.push("vm.free-memory");
 to_plot.push("vm.gc.count.delta");

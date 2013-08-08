@@ -147,7 +147,7 @@ public class NodeMonitorService
                     {
                         if (!map.get(service).isEmpty())
                         {
-                            builder.put("bhs:bhs-title", map.get(service));
+                            builder.put("bhs!bhs-title", map.get(service));
                         }
                     }
                 }
@@ -158,7 +158,7 @@ public class NodeMonitorService
                 builder.put("vm.free-memory", rt.freeMemory());
                 builder.put("vm.gc.count.delta", totalGC - this.totalGC);
                 builder.put("vm.gc.time.delta", gcTime - this.gcTime);
-                builder.put("vm.available-memory", rt.totalMemory() - rt.freeMemory());
+                builder.put("vm.used-memory", rt.totalMemory() - rt.freeMemory());
 
 
                 nsm = builder.build();

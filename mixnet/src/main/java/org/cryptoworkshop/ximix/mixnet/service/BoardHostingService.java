@@ -97,13 +97,13 @@ public class BoardHostingService
             @Override
             public void messagesAdded(BulletinBoard bulletinBoard, int count)
             {
-                statistics.increment("bhs:messages-on-board:" + bulletinBoard.getName(), count);
+                statistics.increment("bhs!messages-on-board!" + bulletinBoard.getName(), count);
             }
 
             @Override
             public void messagesRemoved(BulletinBoardImpl bulletinBoard, int count)
             {
-                statistics.decrement("bhs:messages-on-board:" + bulletinBoard.getName(), count);
+                statistics.decrement("bhs!messages-on-board!" + bulletinBoard.getName(), count);
             }
 
         };
@@ -121,7 +121,7 @@ public class BoardHostingService
 
                 // Add placeholders for statistics.
 
-                statistics.addPlaceholderValue("bhs:messages-on-board:" + boardConfig.getName(), 0);
+                statistics.addPlaceholderValue("bhs!messages-on-board!" + boardConfig.getName(), 0);
 
                 for (BackupBoardConfig backupConfig : boardConfig.getBackupBoardConfigs())
                 {

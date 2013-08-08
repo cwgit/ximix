@@ -199,13 +199,21 @@ div.statdiv {
     border: 1px dashed lightgrey;
 }
 
-button.addplot {
+button.plot {
 
+    border-radius: 2px;
+    border: 1px solid lightgrey;
+    background: inherit;
+    color: black;
 }
 
-button.unplot {
-
+button.plotDown {
+    border-radius: 2px;
+    border: 1px solid lightgrey;
+    color: black;
+    background: lightgreen;
 }
+
 
 .ui-tabs-vertical {
     width: 55em;

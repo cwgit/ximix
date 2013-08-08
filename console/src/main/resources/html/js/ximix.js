@@ -9,14 +9,22 @@ var MINUTES = 60;
 var HOURS = MINUTES * 60;
 var DAYS = HOURS * 24;
 var ONE_MB = 1024 * 1024;
+var MAX_PLOT_BUF=50;
 var nodes = {};
 var node_con_state = {}
 var stats = {};
-var allow_plot={};
-var to_plot=new Array();
+var allow_plot = {};
+var to_plot = new Array();
 var statTimer = null;
+var stats_rendered = {};
 
 var statFetchCtr = 0;
+
+
+function hsh(e) {
+    for (var r = 0, i = 0; i < e.length; i++)r = (r << 5) - r + e.charCodeAt(i), r &= r;
+    return r
+};
 
 jQuery.ajaxSetup({
     'beforeSend': function (xhr) {
@@ -180,64 +188,142 @@ function memFormatter(v, axis) {
     return Math.floor((v.toFixed(axis.tickDecimals) / ONE_MB)) + "Mb";
 }
 
-function plotVMInfo(hash) {
+
+function formatterForRtype(name) {
+    switch (rtype[name]) {
+        case "mb":
+            return memFormatter;
+            break;
+
+    }
+    return null;
+}
+
+
+function plotInfo(hash) {
     var st = stats[hash];
 
     if (st != null) {
-        var data_mem = new Array();
-        var data_gc = new Array();
-        for (var k in st) {
-            var datum = st[k];
-            data_mem.push([datum['zeit'], datum['vm.free-memory']])
-            data_gc.push([datum['zeit'], datum['vm.gc.count.delta']]);
+
+        var dataset = {};
+
+        for (var pl in to_plot) {
+            var key = to_plot[pl];
+            dataset[key] = new Array();
+            for (k in st) {
+                datum = st[k];
+                if (isSplitKey(key)) {
+
+                    var n = splitKeyIntoContext(key);
+                } else {
+                    dataset[key].push([datum['zeit'], datum[key]]);
+                }
+            }
         }
 
-        $.plot("#" + hash + "_graph_vm", [
-            { data: data_mem, label: "Free Memory" },
-            { data: data_gc, label: "Garbage collections", yaxis: 2}
+        //  var data_mem = new Array();
+        //  var data_gc = new Array();
+        //  for (var k in st) {
+        //      var datum = st[k];
+        //      data_mem.push([datum['zeit'], datum['vm.free-memory']])
+        //      data_gc.push([datum['zeit'], datum['vm.gc.count.delta']]);
+        //  }
 
-        ], {
+        var plotds = new Array();
+        var yaxis = new Array();
+        var axiscount = 1;
+        for (var k in dataset) {
+            var plotinfo = {data: dataset[k], label: lang[k], yaxis: axiscount++};
+            var axisinfo = {min: 0, position: ((axiscount & 1) > 0) ? "left" : "right"};
+
+            var formatter = formatterForRtype(k);
+            if (formatter != null)
+            {
+                axisinfo['tickFormatter'] = formatter;
+            }
+
+            plotds.push(plotinfo);
+            yaxis.push(axisinfo);
+
+        }
+
+
+        $.plot("#" + hash + "_graph_vm", plotds, {
             xaxes: [
                 { mode: "time" }
             ],
-            yaxes: [
-                { min: 0, tickFormatter: memFormatter },
-                { min: 0, position: "right"}
-            ],
-            legend: { position: "sw" }
+            yaxes: yaxis,
+            legend: { position: "sw" },
+            series: {points: {show: true}, lines: {show: true}}
         });
 
+
+        /*
+         $.plot("#" + hash + "_graph_vm", [
+         { data: data_mem, label: "Free Memory" },
+         { data: data_gc, label: "Garbage collections", yaxis: 2}
+
+         ], {
+         xaxes: [
+         { mode: "time" }
+         ],
+         yaxes: [
+         { min: 0, tickFormatter: memFormatter },
+         { min: 0, position: "right"}
+         ],
+         legend: { position: "sw" }
+         });
+         */
     }
 }
 
 
 function isSplitKey(n) {
-    return  (n.indexOf(":") > -1);
+    return  (n.indexOf("!") > -1);
 }
 
 function splitKeyIntoContext(n) {
-    return n.split(":");
+    return n.split("!");
 }
 
 function addRowHeading(tab, n) {
-    $("<tr><td colspan='2' class='nodetableH'>" + (lang[n]) + "</td></tr>").appendTo(tab);
+    $("<tr><td colspan='3' class='nodetableH'>" + (lang[n]) + "</td></tr>").appendTo(tab);
 }
 
 function addRow(tab, name, value, indent) {
 
     var suffix = null;
     var key = name;
+    var id = name;
+    var plot_id = name;
     var keySet = lang;
     if ($.isArray(name)) {
         keySet = lang[name[0]];
         key = name[1];
+        id = name[0] + "!" + name[1];
+        plot_id = id;
         if (name.length == 3) {
             suffix = name[2];
+            id = id + "!" + suffix;
         }
+
     }
 
-    $("<tr><td class='" + (indent ? "nodetableLi" : "nodetableL") + "'>" + (keySet[key]) + (suffix != null ? "(" + suffix + ")" : "") + "   </td>" +
-        "<td class='" + (indent ? "nodetableRi" : "nodetableR") + "'>" + (apply_rtype(name, value)) + "</td></tr>").appendTo(tab);
+    var plot = "-";
+    var plotbt = null;
+    if (allow_plot[plot_id] != null) {
+        plotbt = hsh(plot_id);
+        plot = "<button id='plotbt_"+plotbt +"'  type='button' name='" + id + "' class='plot' title='"+(lang["ui.plot.tooltip"])+"'>" + lang["ui.addplot"] + "</button>";
+    }
+
+    $("<tr><td class='" + (indent ? "nodetableLi" : "nodetableL") + "'>" + (keySet[key]) + (suffix != null ? "(" + suffix + ")" : "") + "</td>" +
+        "<td id='stval_" + hsh(id) + "' class='" + (indent ? "nodetableRi" : "nodetableR") + "'>" + (apply_rtype(name, value)) + "</td><td>" + plot + "</td></tr>").appendTo(tab);
+
+    if (to_plot.indexOf(plot_id) >-1)
+    {
+       $('#plotbt_'+plotbt).addClass("plotDown");
+    }
+
 }
 
 
@@ -259,34 +345,92 @@ function repaintStats(hash) {
     if (outer != null) {
 
         var tab = $("#" + hash + "_stats_tab");
-        tab.html("");
 
-        var values = stats[hash];
-        if (values.length > 0) {
-            var data = values[values.length - 1];
 
-            for (var k in data) {
+        if (stats_rendered[hash] == null) {
+            stats_rendered[hash] = true;
+            //
+            // Add the rows to the table.
+            //
+            var values = stats[hash];
+            if (values.length > 0) {
+                var data = values[values.length - 1];
 
-                if ("name"===k || "hash"===k || "zeit"===k)
-                {
-                    continue;
-                }
+                for (var k in data) {
 
-                if (isSplitKey(k)) {
-                    var n = splitKeyIntoContext(k);
-                    if ("tab" === stype[n[0]]) {
-                        addRowHeading(tab, n[1]);
-                        addData(tab, data[k], true);
+                    if ("name" === k || "hash" === k || "zeit" === k) {
                         continue;
                     }
 
-                } else {
-                    addRow(tab, k, data[k], null, false);
+                    if (isSplitKey(k)) {
+                        var n = splitKeyIntoContext(k);
+                        if ("tab" === stype[n[0]]) {
+                            addRowHeading(tab, n[1]);
+                            addData(tab, data[k], true);
+                            continue;
+                        }
+
+                    } else {
+                        addRow(tab, k, data[k], null, false);
+                    }
                 }
+
             }
+            $(".plot").click(function () {
+                var id = $(this).attr('name');
+                var indx = to_plot.indexOf(id);
+
+                if (indx >= 0) {
+                    to_plot.splice(indx, 1);
+                    $(this).removeClass("plotDown");
+                } else {
+                    $(this).addClass("plotDown");
+                    to_plot.push(id);
+                }
+
+                plotInfo(hash);
+            });
+
+        } else {
+
+            var values = stats[hash];
+            if (values.length > 0) {
+                var data = values[values.length - 1];
+
+                for (var k in data) {
+
+                    if ("name" === k || "hash" === k || "zeit" === k) {
+                        continue;
+                    }
+
+                    if (isSplitKey(k)) {
+                        var n = splitKeyIntoContext(k);
+                        if ("tab" === stype[n[0]]) {
+
+                            var inner = data[k];
+
+                            for (var t in inner) {
+                                var tag = $('#stval_' + hsh(t));
+                                if (tag != null) {
+                                    tag.html(apply_rtype(t, inner[k]));
+                                }
+                            }
+
+                            continue;
+                        }
+                    } else {
+                        var tag = $('#stval_' + hsh(k));
+                        if (tag != null) {
+                            tag.html(apply_rtype(k, data[k]));
+                        }
+                    }
+                }
+
+            }
+
         }
 
-        plotVMInfo(hash);
+        plotInfo(hash);
 
     }
 }
@@ -317,7 +461,8 @@ function requestStatistics(callback) {
             data.values['zeit'] = new Date().getTime();
             var values = stats[hash];
             values.push(data.values);
-            while (values.length > 100) {
+
+            while (values.length > MAX_PLOT_BUF) {
                 values.shift();
             }
             if ($("#" + hash + "_details").is(':visible')) {
