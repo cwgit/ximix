@@ -386,6 +386,24 @@ public class CryptoServicesTest
 
             name.appendChild(document.createTextNode(nodeName));
 
+            Element portNo = document.createElement("portNo");
+
+            rootElement.appendChild(portNo);
+
+            portNo.appendChild(document.createTextNode("99"));
+
+            Element portBacklog = document.createElement("portBacklog");
+
+            rootElement.appendChild(portBacklog);
+
+            portBacklog.appendChild(document.createTextNode("99"));
+
+            Element portAddress = document.createElement("portAddress");
+
+            rootElement.appendChild(portAddress);
+
+            portAddress.appendChild(document.createTextNode("0.0.0.0"));
+
             Element description = document.createElement("description");
             rootElement.appendChild(description);
 

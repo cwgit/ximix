@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <node>
-    <portNo>12004</portNo>
     <name>E</name>
+    <portNo>12004</portNo>
+    <portBacklog>10</portBacklog>
+    <portAddress>0.0.0.0</portAddress> <!-- Completely promiscuous -->
     <description></description>
     <services>
         <service>
