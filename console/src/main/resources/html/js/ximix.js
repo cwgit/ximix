@@ -4,6 +4,7 @@ old_node_size = 0;
 var lang_id = navigator.language || navigator.userLanguage;
 var lang = {};
 var rtype = {};
+var stype = {};
 var MINUTES = 60;
 var HOURS = MINUTES * 60;
 var DAYS = HOURS * 24;
@@ -208,6 +209,40 @@ function plotVMInfo(hash) {
 }
 
 
+function isSplitKey(n) {
+    return  (n.indexOf(":") > -1);
+}
+
+function splitKeyIntoContext(n) {
+    return n.split(":");
+}
+
+function addRowHeading(tab, n) {
+    $("<tr><td colspan='2' class='nodetableH'>" + (lang[n]) + "</td></tr>").appendTo(tab);
+}
+
+function addRow(tab, name, value, suffix, indent) {
+    $("<tr><td class='" + (indent ? "nodetableLi" : "nodetableL") + "'>" + (lang[name]) + (suffix != null ? "(" + suffix + ")" : "") + "   </td>" +
+        "<td class='" + (indent ? "nodetableRi" : "nodetableR") + "'>" + (apply_rtype(name, value)) + "</td></tr>").appendTo(tab);
+}
+
+
+
+function addData(tab, data, indent) {
+    for (var k in data) {
+        if (isSplitKey(k)) {
+            var n = splitKeyIntoContext(k);
+            if (n.length == 3) {
+                addRow(tab, n[1], data, n[2], indent);
+            } else {
+                addRow(tab, n[1], data[k], null, indent);
+            }
+        }
+
+        addRow(tab, k, data[k], null, indent);
+    }
+}
+
 function repaintStats(hash) {
     var outer = $("#" + hash + "_graph_vm");
 
@@ -221,8 +256,18 @@ function repaintStats(hash) {
             var data = values[values.length - 1];
 
             for (var k in data) {
-                var n = lang[k];
-                $("<tr><td class='nodetableL'>" + n + "</td><td class='nodetableR'>" + (apply_rtype(n, data[k])) + "</td></tr>").appendTo(tab);
+
+                if (isSplitKey(k)) {
+                    var n = splitKeyIntoContext(k);
+                    if ("tab" === stype[n[0]]) {
+                        addRowHeading(tab, n[1]);
+                        addData(tab, data[k], true);
+                        continue;
+                    }
+
+                } else {
+                    addRow(tab, k, data[k], null, false);
+                }
             }
         }
 

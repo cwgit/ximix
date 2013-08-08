@@ -145,7 +145,10 @@ public class NodeMonitorService
                 {
                     if (service instanceof BoardHostingService)
                     {
-                        builder.put("board.hosting.service", map.get(service));
+                        if (!map.get(service).isEmpty())
+                        {
+                            builder.put("bhs:bhs-title", map.get(service));
+                        }
                     }
                 }
 

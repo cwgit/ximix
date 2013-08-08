@@ -93,6 +93,23 @@ td.nodetableR {
     width: 60%;
 }
 
+
+td.nodetableH {
+    font-weight: bold;
+}
+
+td.nodetableLi {
+    width: 40%;
+    padding-left: 16px;
+}
+
+td.nodetableRi {
+    width: 60%;
+    padding-left: 16px;
+}
+
+
+
 ol {
     margin-left: 0px;
 }
