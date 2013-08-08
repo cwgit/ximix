@@ -30,7 +30,7 @@ public interface BulletinBoard
 
     void postMessageBlock(final PostedMessageBlock messageBlock);
 
-    PostedMessageBlock getMessages(PostedMessageBlock.Builder blockBuilder);
+    PostedMessageBlock removeMessages(PostedMessageBlock.Builder blockBuilder);
 
     void clear();
 

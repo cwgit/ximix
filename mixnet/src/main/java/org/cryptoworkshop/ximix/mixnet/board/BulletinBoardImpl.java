@@ -170,7 +170,7 @@ public class BulletinBoardImpl
     }
 
     @Override
-    public PostedMessageBlock getMessages(PostedMessageBlock.Builder blockBuilder)
+    public PostedMessageBlock removeMessages(PostedMessageBlock.Builder blockBuilder)
     {
         int count;
         int boardSize = nextIndex.get() - minimumIndex.get();
@@ -197,8 +197,10 @@ public class BulletinBoardImpl
         {
             clear();
         }
+        PostedMessageBlock pmb = blockBuilder.build();
 
-        return blockBuilder.build();
+        changeNotifier.messagesRemoved(this, pmb.getMessages().size());
+        return pmb;
     }
 
     @Override

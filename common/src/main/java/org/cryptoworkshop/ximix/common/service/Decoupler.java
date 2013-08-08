@@ -20,5 +20,5 @@ public enum Decoupler
     LISTENER,
     SHARING,
     SERVICES,
-    BOARD_REGISTRY
+    MONITOR, BOARD_REGISTRY
 }

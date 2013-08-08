@@ -103,6 +103,8 @@ public class XimixNodeContext
         this.decouplers.put(Decoupler.LISTENER, Executors.newSingleThreadExecutor());
         this.decouplers.put(Decoupler.SERVICES, Executors.newSingleThreadExecutor());
         this.decouplers.put(Decoupler.SHARING, Executors.newSingleThreadExecutor());
+        this.decouplers.put(Decoupler.MONITOR,Executors.newSingleThreadExecutor());
+
 
         this.name = nodeConfig.getStringProperty("name");  // TODO:
         this.homeDirectory = nodeConfig.getHomeDirectory();

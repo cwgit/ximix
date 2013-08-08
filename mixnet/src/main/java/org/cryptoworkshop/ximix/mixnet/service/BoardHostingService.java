@@ -53,10 +53,7 @@ import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardBackupListener;
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardChangeListener;
-import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
+import org.cryptoworkshop.ximix.mixnet.board.*;
 import org.cryptoworkshop.ximix.mixnet.shuffle.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.mixnet.shuffle.TransformShuffleAndReturnTask;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
@@ -95,8 +92,15 @@ public class BoardHostingService
             @Override
             public void messagesAdded(BulletinBoard bulletinBoard, int count)
             {
-                statistics.increment(bulletinBoard.getName()+".message-count", count);
+                statistics.increment("add-message-count:"+bulletinBoard.getName(), count);
             }
+
+            @Override
+            public void messagesRemoved(BulletinBoardImpl bulletinBoard, int count)
+            {
+                statistics.increment("remove-message-count:"+bulletinBoard.getName(),count);
+            }
+
         };
 
 
@@ -279,7 +283,7 @@ public class BoardHostingService
                     }
                     BulletinBoard board = boardRegistry.getBoard(downloadRequest.getBoardName());
 
-                    PostedMessageBlock messages = board.getMessages(new PostedMessageBlock.Builder(downloadRequest.getMaxNumberOfMessages()));
+                    PostedMessageBlock messages = board.removeMessages(new PostedMessageBlock.Builder(downloadRequest.getMaxNumberOfMessages()));
 
                     return new MessageReply(MessageReply.Type.OKAY, messages);
                 default:

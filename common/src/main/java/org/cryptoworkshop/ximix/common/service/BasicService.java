@@ -35,7 +35,8 @@ public abstract class BasicService
     public BasicService(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
-        this.statistics = new CrossSection(nodeContext.getDecoupler(Decoupler.SERVICES));
+        this.statistics = new CrossSection(nodeContext.getDecoupler(Decoupler.MONITOR));
+
 
         listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.SERVICES)).createHandler(ServiceStatisticsListener.class);
         statisticsNotifier = listenerHandler.getNotifier();
