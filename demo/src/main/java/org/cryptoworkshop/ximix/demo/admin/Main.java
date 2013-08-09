@@ -146,7 +146,7 @@ public class Main
             part1.add(plainText1[i]);
             part2.add(plainText2[i]);
 
-            PairSequence encrypted = new PairSequence(new ECPair[] { encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i]) });
+            PairSequence encrypted = new PairSequence(new ECPair[] { encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i]) });           // two column ballot
 
             client.uploadMessage("FRED", encrypted.getEncoded());
         }

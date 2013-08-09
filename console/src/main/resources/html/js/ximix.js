@@ -9,7 +9,7 @@ var MINUTES = 60;
 var HOURS = MINUTES * 60;
 var DAYS = HOURS * 24;
 var ONE_MB = 1024 * 1024;
-var MAX_PLOT_BUF=50;
+var MAX_PLOT_BUF = 50;
 var nodes = {};
 var node_con_state = {}
 var stats = {};
@@ -209,12 +209,25 @@ function plotInfo(hash) {
 
         for (var pl in to_plot) {
             var key = to_plot[pl];
+            var issplit = isSplitKey(key);
+            var n = null;
+            if (issplit) {
+                n = splitKeyIntoContext(key);
+            }
+
             dataset[key] = new Array();
             for (k in st) {
                 datum = st[k];
-                if (isSplitKey(key)) {
+                if (issplit) {
+                    // Slow not direct lookup..
+                    $.each(datum, function (_key, _val) {
+                        if (isSplitKey(_key)) {
+                            if (splitKeyIntoContext(_key)[0] === n[0]) {
+                                dataset[key].push([datum['zeit'], _val[key]]);
+                            }
+                        }
+                    });
 
-                    var n = splitKeyIntoContext(key);
                 } else {
                     dataset[key].push([datum['zeit'], datum[key]]);
                 }
@@ -232,20 +245,33 @@ function plotInfo(hash) {
         var plotds = new Array();
         var yaxis = new Array();
         var axiscount = 1;
-        for (var k in dataset) {
-            var plotinfo = {data: dataset[k], label: lang[k], yaxis: axiscount++};
+
+        $.each(dataset, function (_key, _val) {
+            var plotinfo = {data: _val, label: lang[_key], yaxis: axiscount++};
+            var n = null;
+            if (isSplitKey(_key)) {
+                n = splitKeyIntoContext(_key);
+                plotinfo['label'] = lang[n[0]][n[1]];
+            }
+
             var axisinfo = {min: 0, position: ((axiscount & 1) > 0) ? "left" : "right"};
 
-            var formatter = formatterForRtype(k);
-            if (formatter != null)
-            {
+            var formatter = null;
+
+            if (n != null) {
+                formatter = formatterForRtype(n[0] + "!" + n[1]);
+            } else {
+                formatter = formatterForRtype(_key);
+            }
+            if (formatter != null) {
                 axisinfo['tickFormatter'] = formatter;
             }
 
             plotds.push(plotinfo);
             yaxis.push(axisinfo);
 
-        }
+
+        });
 
 
         $.plot("#" + hash + "_graph_vm", plotds, {
@@ -313,15 +339,14 @@ function addRow(tab, name, value, indent) {
     var plotbt = null;
     if (allow_plot[plot_id] != null) {
         plotbt = hsh(plot_id);
-        plot = "<button id='plotbt_"+plotbt +"'  type='button' name='" + id + "' class='plot' title='"+(lang["ui.plot.tooltip"])+"'>" + lang["ui.addplot"] + "</button>";
+        plot = "<button id='plotbt_" + plotbt + "'  type='button' name='" + id + "' class='plot' title='" + (lang["ui.plot.tooltip"]) + "'>" + lang["ui.addplot"] + "</button>";
     }
 
     $("<tr><td class='" + (indent ? "nodetableLi" : "nodetableL") + "'>" + (keySet[key]) + (suffix != null ? "(" + suffix + ")" : "") + "</td>" +
         "<td id='stval_" + hsh(id) + "' class='" + (indent ? "nodetableRi" : "nodetableR") + "'>" + (apply_rtype(name, value)) + "</td><td>" + plot + "</td></tr>").appendTo(tab);
 
-    if (to_plot.indexOf(plot_id) >-1)
-    {
-       $('#plotbt_'+plotbt).addClass("plotDown");
+    if (to_plot.indexOf(plot_id) > -1) {
+        $('#plotbt_' + plotbt).addClass("plotDown");
     }
 
 }
