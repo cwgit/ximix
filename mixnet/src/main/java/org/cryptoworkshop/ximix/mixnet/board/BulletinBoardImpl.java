@@ -16,12 +16,15 @@
 package org.cryptoworkshop.ximix.mixnet.board;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.cryptoworkshop.ximix.common.message.MessageWitness;
+import org.cryptoworkshop.ximix.common.message.MessageWitnessBlock;
 import org.cryptoworkshop.ximix.common.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
@@ -62,7 +65,6 @@ public class BulletinBoardImpl
         if (workingFile != null)
         {
             this.workingFile = workingFile;
-
             boardDB = DBMaker.newFileDB(workingFile)
                 .closeOnJvmShutdown()
                 .make();
@@ -86,7 +88,6 @@ public class BulletinBoardImpl
 
         this.notifier = listenerHandler.getNotifier();
         this.changeNotifier = changeListenerHandler.getNotifier();
-
     }
 
     @Override
@@ -209,6 +210,27 @@ public class BulletinBoardImpl
 
         changeNotifier.messagesRemoved(this, pmb.getMessages().size());
         return pmb;
+    }
+
+    @Override
+    public void postWitnessBlock(MessageWitnessBlock witnessBlock)
+    {
+        List<MessageWitness> witnesses = witnessBlock.getWitnesses();
+
+        for (MessageWitness messageWitness : witnesses)
+        {
+            try
+            {
+                witnessMap.put(messageWitness.getIndex(), messageWitness.getWitness().getEncoded());
+            }
+            catch (IOException e)
+            {
+                // TODO: this should never happen, so perhaps IllegalState or maybe log.
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        }
+
+        boardDB.commit();
     }
 
     @Override

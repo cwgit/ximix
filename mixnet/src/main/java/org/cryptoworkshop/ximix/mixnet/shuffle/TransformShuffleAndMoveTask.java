@@ -26,7 +26,9 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.cryptoworkshop.ximix.common.message.BoardUploadBlockMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.MessageCommitment;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.MessageWitnessBlock;
 import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
@@ -64,7 +66,9 @@ public class TransformShuffleAndMoveTask
 
         try
         {
-            PostedMessageBlock.Builder messageBlockBuilder = new PostedMessageBlock.Builder(20);                  // TODO: make configurable
+            PostedMessageBlock.Builder messageBlockBuilder = new PostedMessageBlock.Builder(20);    // TODO: make configurable
+            MessageWitnessBlock.Builder messageWitnessBlockBuilder = new MessageWitnessBlock.Builder(messageBlockBuilder.capacity());
+
             IndexNumberGenerator indexGen = new IndexNumberGenerator(board.size(), new SecureRandom());  // TODO: specify random
 
             int nextStepNumber = message.getStepNumber() + 1;
@@ -76,14 +80,16 @@ public class TransformShuffleAndMoveTask
                 for (PostedMessage postedMessage : board)
                 {
                     byte[] transformed = transform.transform(postedMessage.getMessage());
+                    int newIndex = indexGen.nextIndex();
+                    Commitment commitment = committer.commit(newIndex);
 
-                    Commitment commitment = committer.commit(postedMessage.getIndex());
-
-                    messageBlockBuilder.add(indexGen.nextIndex(), transformed, commitment.getCommitment());
+                    messageBlockBuilder.add(newIndex, transformed, commitment.getCommitment());
+                    messageWitnessBlockBuilder.add(postedMessage.getIndex(), new MessageCommitment(commitment));
 
                     if (messageBlockBuilder.isFull())
                     {
                         processMessageBlock(messageBlockBuilder, nextStepNumber);
+                        processWitnessBlock(board, messageWitnessBlockBuilder);
                     }
                 }
             }
@@ -91,20 +97,24 @@ public class TransformShuffleAndMoveTask
             {
                 for (PostedMessage postedMessage : board)
                 {
-                    Commitment commitment = committer.commit(postedMessage.getIndex());
+                    int newIndex = indexGen.nextIndex();
+                    Commitment commitment = committer.commit(newIndex);
 
-                    messageBlockBuilder.add(postedMessage.getIndex(), postedMessage.getMessage(), commitment.getCommitment());
+                    messageBlockBuilder.add(newIndex, postedMessage.getMessage(), commitment.getCommitment());
+                    messageWitnessBlockBuilder.add(postedMessage.getIndex(), new MessageCommitment(commitment));
 
                     if (messageBlockBuilder.isFull())
                     {
                         processMessageBlock(messageBlockBuilder, nextStepNumber);
+                        processWitnessBlock(board, messageWitnessBlockBuilder);
                     }
                 }
             }
 
             if (!messageBlockBuilder.isEmpty())
             {
-                    processMessageBlock(messageBlockBuilder, nextStepNumber);
+                processMessageBlock(messageBlockBuilder, nextStepNumber);
+                processWitnessBlock(board, messageWitnessBlockBuilder);
             }
 
             MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED, new TransitBoardMessage(message.getOperationNumber(), board.getName(), nextStepNumber));
@@ -142,6 +152,14 @@ public class TransformShuffleAndMoveTask
         {
             throw new ServiceConnectionException("message failed");
         }
+    }
+
+    private void processWitnessBlock(BulletinBoard board, MessageWitnessBlock.Builder messageWitnessBlockBuilder)
+        throws ServiceConnectionException
+    {
+        board.postWitnessBlock(messageWitnessBlockBuilder.build());
+
+        messageWitnessBlockBuilder.clear();
     }
 
     private class IndexCommitter
