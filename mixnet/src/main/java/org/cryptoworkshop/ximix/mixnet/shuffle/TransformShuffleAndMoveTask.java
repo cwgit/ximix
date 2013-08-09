@@ -83,12 +83,7 @@ public class TransformShuffleAndMoveTask
 
                     if (messageBlockBuilder.isFull())
                     {
-                        MessageReply reply = peerConnection.sendMessage(type, new BoardUploadBlockMessage(message.getOperationNumber(), message.getBoardName(), nextStepNumber, messageBlockBuilder.build()));
-
-                        if (reply.getType() != MessageReply.Type.OKAY)
-                        {
-                            throw new ServiceConnectionException("message failed");
-                        }
+                        processMessageBlock(messageBlockBuilder, nextStepNumber);
                     }
                 }
             }
@@ -102,24 +97,14 @@ public class TransformShuffleAndMoveTask
 
                     if (messageBlockBuilder.isFull())
                     {
-                        MessageReply reply = peerConnection.sendMessage(type, new BoardUploadBlockMessage(message.getOperationNumber(), message.getBoardName(), nextStepNumber, messageBlockBuilder.build()));
-
-                        if (reply.getType() != MessageReply.Type.OKAY)
-                        {
-                            throw new ServiceConnectionException("message failed");
-                        }
+                        processMessageBlock(messageBlockBuilder, nextStepNumber);
                     }
                 }
             }
 
             if (!messageBlockBuilder.isEmpty())
             {
-                MessageReply reply = peerConnection.sendMessage(type, new BoardUploadBlockMessage(message.getOperationNumber(), board.getName(), nextStepNumber, messageBlockBuilder.build()));
-
-                if (reply.getType() != MessageReply.Type.OKAY)
-                {
-                    throw new ServiceConnectionException("message failed");
-                }
+                    processMessageBlock(messageBlockBuilder, nextStepNumber);
             }
 
             MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED, new TransitBoardMessage(message.getOperationNumber(), board.getName(), nextStepNumber));
@@ -143,6 +128,19 @@ public class TransformShuffleAndMoveTask
         catch (RuntimeException e)
         {
             e.printStackTrace();
+        }
+    }
+
+    private void processMessageBlock(PostedMessageBlock.Builder messageBlockBuilder, int nextStepNumber)
+        throws ServiceConnectionException
+    {
+        MessageReply reply = peerConnection.sendMessage(type, new BoardUploadBlockMessage(message.getOperationNumber(), message.getBoardName(), nextStepNumber, messageBlockBuilder.build()));
+
+        messageBlockBuilder.clear();
+
+        if (reply.getType() != MessageReply.Type.OKAY)
+        {
+            throw new ServiceConnectionException("message failed");
         }
     }
 
