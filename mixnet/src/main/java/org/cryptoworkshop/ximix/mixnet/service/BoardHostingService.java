@@ -613,14 +613,15 @@ public class BoardHostingService
             {
                 BulletinBoard transitBoard = boardRegistry.getTransitBoard(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber());
                 BulletinBoard homeBoard = boardRegistry.getBoard(transitBoardMessage.getBoardName());
+                PostedMessageBlock.Builder messageFetcher = new PostedMessageBlock.Builder(100);
 
                 while (transitBoard.size() > 0)
                 {
-                    PostedMessageBlock.Builder messageFetcher = new PostedMessageBlock.Builder(100);
-
                     transitBoard.removeMessages(messageFetcher);
 
                     homeBoard.postMessageBlock(messageFetcher.build());
+
+                    messageFetcher.clear();
                 }
             }
             catch (Exception e)

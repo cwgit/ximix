@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
+import org.cryptoworkshop.ximix.common.message.MessageWitnessBlock;
 import org.cryptoworkshop.ximix.common.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
@@ -31,6 +32,8 @@ public interface BulletinBoard
     void postMessageBlock(final PostedMessageBlock messageBlock);
 
     PostedMessageBlock removeMessages(PostedMessageBlock.Builder blockBuilder);
+
+    void postWitnessBlock(final MessageWitnessBlock witnessBlock);
 
     void clear();
 
