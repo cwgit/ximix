@@ -40,12 +40,22 @@ if [[ "x$XIMIX_HOME" = "x" ]]; then
         exit -1
 fi
 
+
+start() {
+        echo "Starting Ximix Node $NODE"
+        su $XIMIX_USER -c "$XIMIX_HOME/bin/start.sh $NODE 2>&1" > $XIMIX_OUT
+}
+
+stop() {
+        su $XIMIX_USER -c "$XIMIX_HOME/bin/stop.sh $NODE"
+}
+
 case "$1" in
   start)
-        su $XIMIX_USER -c "$XIMIX_HOME/bin/start.sh $NODE 2>&1" > $XIMIX_OUT
+        start
         ;;
   stop)
-        su $XIMIX_USER -c "$XIMIX_HOME/bin/stop.sh $NODE"
+        stop
         ;;
   restart)
         stop
