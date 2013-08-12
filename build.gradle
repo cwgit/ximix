@@ -263,6 +263,7 @@ task make_console_installer(dependsOn: 'jar') << {
     pw.println('        <!-- Make executable if in a posix environment -->');
 
     pw.println('        <posix-exec relpath="ximix-console/bin/start.sh" perm="rwxr-xr-x"/>');
+    pw.println('        <posix-exec relpath="ximix-console/bin/stop.sh" perm="rwxr-xr-x"/>');
     pw.println('   </installation>');
     pw.println('</installer>');
 
@@ -453,6 +454,7 @@ task make_node_installer(dependsOn: 'jar') << {
 //        }
 //    } else {
     pw.println('        <posix-exec relpath="ximix/bin/start.sh" perm="rwxr-xr-x"/>');
+    pw.println('        <posix-exec relpath="ximix/bin/stop.sh" perm="rwxr-xr-x"/>');
     //  }
     pw.println('   </installation>');
     pw.println('</installer>');
