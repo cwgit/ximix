@@ -21,8 +21,8 @@ fi
 #
 # Where to direct stdout and stderr
 #
-if [[ "x$XIMIX_CONSOLE" = "x" ]]; then
-	XIMIX_CONSOLE="/dev/null"
+if [[ "x$XIMIX_OUT" = "x" ]]; then
+	XIMIX_OUT="/dev/null"
 fi
 
 
@@ -42,7 +42,7 @@ fi
 
 case "$1" in
   start)
-        su $XIMIX_USER -c "$XIMIX_HOME/bin/start.sh $NODE 2>&1" > $XIMIX_CONSOLE
+        su $XIMIX_USER -c "$XIMIX_HOME/bin/start.sh $NODE 2>&1" > $XIMIX_OUT
         ;;
   stop)
         su $XIMIX_USER -c "$XIMIX_HOME/bin/stop.sh $NODE"
