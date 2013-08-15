@@ -41,7 +41,7 @@ public class BLSKeyPairGenerator
     public static enum Type
         implements MessageType
     {
-        INITIATE,
+        INITIATE, // must always be first
         GENERATE,
         STORE
     }

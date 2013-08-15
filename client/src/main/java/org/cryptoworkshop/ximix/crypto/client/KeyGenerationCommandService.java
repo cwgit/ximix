@@ -24,12 +24,11 @@ import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPartialPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
-import org.cryptoworkshop.ximix.crypto.key.BLSKeyPairGenerator;
-import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyGenerationMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
@@ -37,6 +36,12 @@ import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
 public class KeyGenerationCommandService
     implements KeyGenerationService
 {
+    private enum Type
+        implements MessageType
+    {
+        INITIATE
+    }
+
     private AdminServicesConnection connection;
 
     public KeyGenerationCommandService(AdminServicesConnection connection)
@@ -61,11 +66,11 @@ public class KeyGenerationCommandService
 
         if (keyGenOptions.getAlgorithm() == Algorithm.BLS)
         {
-            reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), BLSKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
+            reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.INITIATE, genKeyPairMessage)));
         }
         else
         {
-            reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
+            reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.INITIATE, genKeyPairMessage)));
         }
 
         if (reply.getType() != MessageReply.Type.OKAY)
