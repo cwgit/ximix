@@ -18,6 +18,7 @@ var to_plot = new Array();
 var statTimer = null;
 var stats_rendered = {};
 
+
 var statFetchCtr = 0;
 
 
@@ -180,6 +181,7 @@ function fetchDetails(info) {
 
         $("<table id='" + (node.hash) + "_stats_tab' class='nodetable' border='0'>").appendTo(outer);
 
+        requestStatistics(null);
     });
 }
 
@@ -283,23 +285,6 @@ function plotInfo(hash) {
             series: {points: {show: true}, lines: {show: true}}
         });
 
-
-        /*
-         $.plot("#" + hash + "_graph_vm", [
-         { data: data_mem, label: "Free Memory" },
-         { data: data_gc, label: "Garbage collections", yaxis: 2}
-
-         ], {
-         xaxes: [
-         { mode: "time" }
-         ],
-         yaxes: [
-         { min: 0, tickFormatter: memFormatter },
-         { min: 0, position: "right"}
-         ],
-         legend: { position: "sw" }
-         });
-         */
     }
 }
 
@@ -378,7 +363,7 @@ function repaintStats(hash) {
             // Add the rows to the table.
             //
             var values = stats[hash];
-            if (values.length > 0) {
+            if (values != null && values.length > 0) {
                 var data = values[values.length - 1];
 
                 for (var k in data) {
@@ -419,7 +404,7 @@ function repaintStats(hash) {
         } else {
 
             var values = stats[hash];
-            if (values.length > 0) {
+            if (values != null && values.length > 0) {
                 var data = values[values.length - 1];
 
                 for (var k in data) {
@@ -626,28 +611,43 @@ $(document).ready(function () {
     });
 
 
+
     fetchConfiguredNodes(function () {
         pollTimer = setInterval(pollNodes, 5000);
         statTimer = setInterval(requestStatistics, 5000);
+        $("#tabs").tabs({
+            activate: function (event, ui) {
+                requestStatistics(null);
+
+//                for (var hash in nodes) {
+//                    if ($("#" + hash + "_details").is(':visible')) {
+//
+////                        repaintStats(hash);
+////                        console.log("Repaint..");
+//                    }
+//                }
+            }
+        });
     });
+});
 
 
-    $('#period-selection').change(function () {
-        var period = parseInt($(this).val());
-        if (period < 5) {
-            period = 5;
-        }
+$('#period-selection').change(function () {
+    var period = parseInt($(this).val());
+    if (period < 5) {
+        period = 5;
+    }
 
-        period *= 1000;
+    period *= 1000;
 
-        if (statTimer != null) {
-            clearInterval(statTimer);
-        }
-        statTimer = setInterval(requestStatistics, period);
-    });
+    if (statTimer != null) {
+        clearInterval(statTimer);
+    }
+    statTimer = setInterval(requestStatistics, period);
 
 
 });
+
 
 function apply_rtype(name, value) {
     if (rtype[name] == null) {
