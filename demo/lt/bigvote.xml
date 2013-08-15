@@ -1,0 +1,11 @@
+<load-test>
+    <threads>4</threads>
+
+    <race>
+        <numballots>100000</numballots>
+        <candidates>60</candidates>
+    </race>
+
+
+
+</load-test>

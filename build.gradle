@@ -28,6 +28,7 @@ dependencies {
 }
 
 
+
 allprojects {
     apply plugin: 'idea'
     apply plugin: 'eclipse'
@@ -62,6 +63,10 @@ subprojects {
         testCompile group: 'junit', name: 'junit', version: '4.+'
     }
 
+    version=0.9
+    group='com.cryptoworkshop'
+
+
     sourceCompatibility = 1.7
     targetCompatibility = 1.7
 }
@@ -69,9 +74,69 @@ subprojects {
 
 dependencies {
     compile project(':common')
-    compile project(':crypto')
-    compile project(':mixnet')
     compile project(':node')
+}
+
+
+//
+// Sub projects.
+//
+
+
+
+project(':client') {
+    dependencies {
+        compile project(':common')
+    }
+}
+
+
+project(':common') {
+
+}
+
+
+
+
+project(':console') {
+    dependencies {
+        compile project(':common')
+        compile project(':node')
+        compile 'org.eclipse.jetty:jetty-server:9.0.3.v20130506'
+        compile 'com.fasterxml.jackson.core:jackson-core:2.2.0'
+        compile 'com.fasterxml.jackson.core:jackson-databind:2.2.0'
+        compile 'com.fasterxml.jackson.core:jackson-annotations:2.2.0'
+    }
+}
+
+project(':demo') {
+    dependencies {
+        compile project(':common')
+        compile project(':node')
+    }
+}
+
+
+project(':node') {
+    dependencies {
+        compile project(':common')
+    }
+}
+
+project(':test') {
+    dependencies {
+        compile project(':common')
+        compile project(':node')
+    }
+
+    test {
+        testLogging.showStandardStreams = true
+    }
+}
+
+
+project(':installer') {
+
 }
 
 task remove_libs << {
@@ -162,16 +227,12 @@ task coverage_report(dependsOn: 'compileTestJava') << {
 
                 classfiles {
                     fileset dir: "${rootDir}/common/build/classes/main"
-                    fileset dir: "${rootDir}/crypto/build/classes/main"
-                    fileset dir: "${rootDir}/mixnet/build/classes/main"
                     fileset dir: "${rootDir}/node/build/classes/main"
                 }
 
                 // this is for Windows
                 sourcefiles(encoding: 'UTF8') {
                     fileset dir: "${rootDir}/common/src/main/java"
-                    fileset dir: "${rootDir}/crypto/src/main/java"
-                    fileset dir: "${rootDir}/mixnet/src/main/java"
                     fileset dir: "${rootDir}/node/src/main/java"
                 }
             }
@@ -285,8 +346,6 @@ task make_console_installer(dependsOn: 'jar') << {
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':common').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':node').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':console').jar.archivePath, stagedLibs);
-    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':crypto').jar.archivePath, stagedLibs);
-    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':mixnet').jar.archivePath, stagedLibs);
 
     //
     // Console dependencies..
@@ -477,8 +536,6 @@ task make_node_installer(dependsOn: 'jar') << {
     stagedLibs.mkdirs();
 
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':common').jar.archivePath, stagedLibs);
-    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':crypto').jar.archivePath, stagedLibs);
-    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':mixnet').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':node').jar.archivePath, stagedLibs);
 
     // The two betas.
