@@ -15,34 +15,40 @@
  */
 package org.cryptoworkshop.ximix.common.message;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class FetchPublicKeyMessage
+public class FetchPartialPublicKeyMessage
     extends ASN1Object
 {
+    private final String nodeID;
     private final String keyID;
 
-    public FetchPublicKeyMessage(String keyID)
+    public FetchPartialPublicKeyMessage(String nodeID, String keyID)
     {
+        this.nodeID = nodeID;
         this.keyID = keyID;
     }
 
-    private FetchPublicKeyMessage(DERUTF8String keyID)
+    private FetchPartialPublicKeyMessage(ASN1Sequence seq)
     {
-        this.keyID = keyID.getString();
+        this.nodeID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
+        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
     }
 
-    public static final FetchPublicKeyMessage getInstance(Object o)
+    public static final FetchPartialPublicKeyMessage getInstance(Object o)
     {
-        if (o instanceof FetchPublicKeyMessage)
+        if (o instanceof FetchPartialPublicKeyMessage)
         {
-            return (FetchPublicKeyMessage)o;
+            return (FetchPartialPublicKeyMessage)o;
         }
         else if (o != null)
         {
-            return new FetchPublicKeyMessage(DERUTF8String.getInstance(o));
+            return new FetchPartialPublicKeyMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -51,7 +57,17 @@ public class FetchPublicKeyMessage
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERUTF8String(keyID);
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(new DERUTF8String(nodeID));
+        v.add(new DERUTF8String(keyID));
+
+        return new DERSequence(v);
+    }
+
+    public String getNodeID()
+    {
+        return nodeID;
     }
 
     public String getKeyID()
