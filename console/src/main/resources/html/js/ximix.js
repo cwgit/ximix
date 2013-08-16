@@ -1,6 +1,6 @@
 var pollTimer = null;
-node_desc = {};
-old_node_size = 0;
+var node_desc = {};
+var old_node_size = 0;
 var lang_id = navigator.language || navigator.userLanguage;
 var lang = {};
 var rtype = {};
@@ -27,23 +27,6 @@ function hsh(e) {
     return r
 };
 
-jQuery.ajaxSetup({
-    'beforeSend': function (xhr) {
-        xhr.setRequestHeader("Accept", "text/javascript")
-    }
-});
-
-(function ($) {
-    // Disable a form field.
-    $.fn.disable = function () {
-        return this.attr("disabled", "disabled");
-    };
-
-    // Enable it again.
-    $.fn.enable = function () {
-        return this.removeAttr("disabled");
-    };
-}(jQuery));
 
 var multipleInput = {}
 
@@ -539,6 +522,25 @@ function pollNodes() {
 
 
 $(document).ready(function () {
+
+    jQuery.ajaxSetup({
+        'beforeSend': function (xhr) {
+            xhr.setRequestHeader("Accept", "text/javascript")
+        }
+    });
+
+    (function ($) {
+        // Disable a form field.
+        $.fn.disable = function () {
+            return this.attr("disabled", "disabled");
+        };
+
+        // Enable it again.
+        $.fn.enable = function () {
+            return this.removeAttr("disabled");
+        };
+    }(jQuery));
+
 
 
     var l = languages[lang_id.toLocaleLowerCase()];

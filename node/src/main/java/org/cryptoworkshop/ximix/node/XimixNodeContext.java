@@ -36,6 +36,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -89,7 +91,45 @@ public class XimixNodeContext
     private final CountDownLatch setupCompleteLatch = new CountDownLatch(1);
     private final Map<String, String> description;
     private final ListeningSocketInfo listeningSocketInfo;
-    private EventNotifier eventNotifier;
+    private EventNotifier eventNotifier = new EventNotifier()
+    {
+        Logger L = Logger.getLogger("ximix");
+
+        @Override
+        public void notify(Level level, Throwable throwable)
+        {
+            notify(level, null, throwable);
+        }
+
+        @Override
+        public void notify(Level level, Object detail)
+        {
+            notify(level, detail, null);
+        }
+
+        @Override
+        public void notify(Level level, Object detail, Throwable throwable)
+        {
+            java.util.logging.Level level1 = null;
+            switch (level)
+            {
+                case DEBUG:
+                    level1 = java.util.logging.Level.FINE;
+                    break;
+                case INFO:
+                    level1 = java.util.logging.Level.INFO;
+                    break;
+                case WARN:
+                    level1 = java.util.logging.Level.WARNING;
+                    break;
+                case ERROR:
+                    level1 = java.util.logging.Level.SEVERE;
+                    break;
+            }
+
+            L.log(level1, detail.toString(), throwable);
+        }
+    };
 
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
@@ -315,7 +355,7 @@ public class XimixNodeContext
         }
         catch (IOException e)
         {
-            getEventNotifier().notify(EventNotifier.Level.ERROR,"Public key info: "+keyID+" "+e.getMessage(),e);
+            getEventNotifier().notify(EventNotifier.Level.ERROR, "Public key info: " + keyID + " " + e.getMessage(), e);
         }
         return null;
     }
