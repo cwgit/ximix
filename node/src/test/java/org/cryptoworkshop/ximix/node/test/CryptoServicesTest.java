@@ -39,11 +39,15 @@ import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
+import org.cryptoworkshop.ximix.common.message.KeyGenParams;
+import org.cryptoworkshop.ximix.common.message.KeyGenerationMessage;
+import org.cryptoworkshop.ximix.common.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.message.ShareMessage;
+import org.cryptoworkshop.ximix.common.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Service;
@@ -54,12 +58,9 @@ import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.common.message.KeyGenParams;
-import org.cryptoworkshop.ximix.common.message.KeyGenerationMessage;
-import org.cryptoworkshop.ximix.common.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.crypto.signature.BLSSignerEngine;
-import org.cryptoworkshop.ximix.common.message.SignatureCreateMessage;
+import org.cryptoworkshop.ximix.crypto.test.TestNotifier;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.node.XimixNodeContext;
@@ -74,7 +75,7 @@ public class CryptoServicesTest
     public void testBasicGenerationNoPeers()
         throws Exception
     {
-        XimixNodeContext context = new XimixNodeContext(new HashMap<String, ServicesConnection>(), new Config(createConfig("A")));
+        XimixNodeContext context = new XimixNodeContext(new HashMap<String, ServicesConnection>(), new Config(createConfig("A")), new TestNotifier());
 
         try
         {
@@ -312,7 +313,7 @@ public class CryptoServicesTest
         {
             final String nodeName = String.valueOf((char)('A' + i));
             final int    nodeNo = i;
-            final XimixNodeContext context = new XimixNodeContext(connectionMaps[nodeNo], new Config(createConfig(nodeName)));
+            final XimixNodeContext context = new XimixNodeContext(connectionMaps[nodeNo], new Config(createConfig(nodeName)), new TestNotifier());
 
             nodeMap.put(nodeName, context);
 
