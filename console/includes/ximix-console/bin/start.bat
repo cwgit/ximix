@@ -3,8 +3,8 @@ IF NOT EXIST "%XIMIX_CONSOLE_HOME%" (
 	SET XIMIX_CONSOLE_HOME=%~dp0..\
 )
 
-IF NOT EXIST "%XIMIX_CONSOLE_HOME%\libs\node.jar" (
-	ECHO XIMIX_CONSOLE_HOME is incorrect could not find XIMIX_CONSOLE_HOME\libs\node.jar
+IF NOT EXIST "%XIMIX_CONSOLE_HOME%\libs" (
+	ECHO XIMIX_CONSOLE_HOME is incorrect could not find XIMIX_CONSOLE_HOME\libs
 	goto END	
 )
 

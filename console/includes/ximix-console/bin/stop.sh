@@ -6,8 +6,8 @@ if [[ -z "$XIMXI_CONSOLE_HOME" ]]; then
 
 fi
 
-if [[ ! -f "$XIMIX_CONSOLE_HOME/libs/node.jar" ]]; then
-        echo "Could not find libs/node.jar off XIMIX_CONSOLE_HOME ( $XIMIX_CONSOLE_HOME )"
+if [[ ! -d "$XIMIX_CONSOLE_HOME/libs" ]]; then
+        echo "Could not find libs directory off XIMIX_CONSOLE_HOME ( $XIMIX_CONSOLE_HOME )"
         exit -1
 fi
 

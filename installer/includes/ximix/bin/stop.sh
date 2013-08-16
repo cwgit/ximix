@@ -6,8 +6,13 @@ if [[ -z "$XIMXI_HOME" ]]; then
 
 fi
 
-if [[ ! -f "$XIMIX_HOME/libs/node.jar" ]]; then
-        echo "Could not find libs/node.jar off XIMIX_HOME ( $XIMIX_HOME )"
+if [[ "x$1" = "x" ]]; then
+        echo "Parameter 1 must be node name, eg stop.sh node1"
+        exit -1
+fi
+
+if [[ ! -d "$XIMIX_HOME/libs" ]]; then
+        echo "Could not find libs directory off XIMIX_HOME ( $XIMIX_HOME )"
         exit -1
 fi
 

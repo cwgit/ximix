@@ -346,6 +346,7 @@ task make_console_installer(dependsOn: 'jar') << {
     File stagedLibs = new File(ximixStage, "/libs");
     stagedLibs.mkdirs();
 
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':client').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':common').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':node').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':console').jar.archivePath, stagedLibs);
@@ -538,6 +539,8 @@ task make_node_installer(dependsOn: 'jar') << {
     File stagedLibs = new File(ximixStage, "/libs");
     stagedLibs.mkdirs();
 
+
+    org.apache.commons.io.FileUtils.copyFileToDirectory(project(':client').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':common').jar.archivePath, stagedLibs);
     org.apache.commons.io.FileUtils.copyFileToDirectory(project(':node').jar.archivePath, stagedLibs);
 
