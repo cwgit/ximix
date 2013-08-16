@@ -35,7 +35,7 @@ class DefaultXimixNode
         throws ConfigException
     {
         this.nodeConfig = config;
-        this.nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
+        this.nodeContext = new XimixNodeContext(servicesMap, nodeConfig, eventNotifier);
         this.eventNotifier = eventNotifier;
     }
 

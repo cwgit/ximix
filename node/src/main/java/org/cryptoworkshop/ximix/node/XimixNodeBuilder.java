@@ -30,25 +30,41 @@ public class XimixNodeBuilder
 {
     static EventNotifier eventNotifier = new EventNotifier()
     {
-        Logger logger = Logger.getLogger("ximix");
-
+        Logger L = Logger.getLogger("ximix");
 
         @Override
-        public void notify(Level level, Throwable throwable)
+        public void notify(EventNotifier.Level level, Throwable throwable)
         {
-            logger.log(java.util.logging.Level.WARNING, "", throwable);
+            notify(level, null, throwable);
         }
 
         @Override
-        public void notify(Level level, Object message)
+        public void notify(EventNotifier.Level level, Object detail)
         {
-            logger.log(java.util.logging.Level.WARNING, message.toString());
+            notify(level, detail, null);
         }
 
         @Override
-        public void notify(Level level, Object message, Throwable throwable)
+        public void notify(EventNotifier.Level level, Object detail, Throwable throwable)
         {
-            logger.log(java.util.logging.Level.WARNING, message.toString(), throwable);
+            java.util.logging.Level level1 = null;
+            switch (level)
+            {
+                case DEBUG:
+                    level1 = java.util.logging.Level.FINE;
+                    break;
+                case INFO:
+                    level1 = java.util.logging.Level.INFO;
+                    break;
+                case WARN:
+                    level1 = java.util.logging.Level.WARNING;
+                    break;
+                case ERROR:
+                    level1 = java.util.logging.Level.SEVERE;
+                    break;
+            }
+
+            L.log(level1, detail.toString(), throwable);
         }
     };
 
