@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
+import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
 import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.node.XimixNodeBuilder;
 
@@ -52,7 +52,7 @@ public class NodeTestUtil
     }
 
 
-    public static XimixNode getXimixNode(String networkConfig, String nodeConfigPath, ThrowableListener handler)
+    public static XimixNode getXimixNode(String networkConfig, String nodeConfigPath, EventNotifier handler)
         throws ConfigException
     {
         XimixNodeBuilder builder = new XimixNodeBuilder(ResourceAnchor.load(networkConfig)).withThrowableListener(handler);
@@ -66,14 +66,7 @@ public class NodeTestUtil
         throws ConfigException
     {
 
-       return getXimixNode(networkConfig,nodeConfigPath,new ThrowableListener()
-        {
-            @Override
-            public void notify(Throwable throwable)
-            {
-                throwable.printStackTrace();
-            }
-        });
+       return getXimixNode(networkConfig,nodeConfigPath,new TestNotifier());
 
     }
 

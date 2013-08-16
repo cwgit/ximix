@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DEROutputStream;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
+import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
 import org.cryptoworkshop.ximix.common.message.Message;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.NodeInfo;
@@ -37,7 +37,7 @@ class XimixServices
     {
         private final XimixNodeContext nodeContext;
 
-        private ThrowableListener throwableListener = XimixNodeBuilder.throwableListener;
+        private EventNotifier eventNotifier = XimixNodeBuilder.eventNotifier;
 
         Builder(XimixNodeContext nodeContext)
         {
@@ -47,18 +47,18 @@ class XimixServices
         /**
          * Set a throwable handler for any uncaught exceptions.
          *
-         * @param throwableListener The listener, may be null.
+         * @param eventNotifier The listener, may be null.
          * @return the current builder.
          */
-        public Builder withThrowableListener(ThrowableListener throwableListener)
+        public Builder withThrowableListener(EventNotifier eventNotifier)
         {
-            if (throwableListener != null)
+            if (eventNotifier != null)
             {
-                this.throwableListener = throwableListener;
+                this.eventNotifier = eventNotifier;
             }
             else
             {
-                this.throwableListener = XimixNodeBuilder.throwableListener;
+                this.eventNotifier = XimixNodeBuilder.eventNotifier;
             }
 
             return this;
@@ -66,19 +66,19 @@ class XimixServices
 
         public XimixServices build(Socket s)
         {
-            return new XimixServices(nodeContext, s, throwableListener);
+            return new XimixServices(nodeContext, s, eventNotifier);
         }
     }
 
     private final Socket s;
     private final XimixNodeContext nodeContext;
-    private final ThrowableListener throwableHandler;
+    private final EventNotifier throwableHandler;
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
 
     private int maxInputSize = 32 * 1024;  //TODO should be config item.
 
-    private XimixServices(XimixNodeContext nodeContext, Socket s, ThrowableListener throwableHandler)
+    private XimixServices(XimixNodeContext nodeContext, Socket s, EventNotifier throwableHandler)
     {
         this.s = s;
         this.nodeContext = nodeContext;
@@ -111,16 +111,14 @@ class XimixServices
                         Message message = Message.getInstance(o);
 
                         Service service = nodeContext.getService(message);
-                        System.err.println("message received: " + message.getType() + " " + service);
+                        nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Received Message: " + message);
                         MessageReply reply = service.handle(message);
 
-                        System.err.println("message received: " + reply);
+                        nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Reply Message: " + reply);
                         aOut.writeObject(reply);
                     }
 
-                    // if we are here we've either had a null (eof) of isStopCalled is true
-                    // we exit the loop
-                    // TODO: log if node stopped or client hung up
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.INFO, "Service connection on " + nodeContext.getName() + " shutdown, stop called = " + nodeContext.isStopCalled());
                     break;
                 }
                 catch (SocketTimeoutException e)
@@ -131,7 +129,7 @@ class XimixServices
         }
         catch (IOException e)
         {
-            throwableHandler.notify(e);
+            throwableHandler.notify(EventNotifier.Level.WARN, e);
         }
     }
 

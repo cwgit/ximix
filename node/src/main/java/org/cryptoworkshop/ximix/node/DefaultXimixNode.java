@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
+import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.ListeningSocketInfo;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
@@ -27,16 +27,16 @@ class DefaultXimixNode
     private final Config nodeConfig;
     private final XimixNodeContext nodeContext;
     private final AtomicBoolean stopped = new AtomicBoolean(false);
-    private final ThrowableListener throwableListener;
+    private final EventNotifier eventNotifier;
 
     private ServerSocket ss = null;
 
-    DefaultXimixNode(Config config, Map<String, ServicesConnection> servicesMap, ThrowableListener throwableListener)
+    DefaultXimixNode(Config config, Map<String, ServicesConnection> servicesMap, EventNotifier eventNotifier)
         throws ConfigException
     {
         this.nodeConfig = config;
         this.nodeContext = new XimixNodeContext(servicesMap, nodeConfig);
-        this.throwableListener = throwableListener;
+        this.eventNotifier = eventNotifier;
     }
 
     public void start()
@@ -50,7 +50,7 @@ class DefaultXimixNode
 
             ss.setSoTimeout(1000);                       // TODO: should be a config item
 
-            XimixServices.Builder servicesBuilder = new XimixServices.Builder(nodeContext).withThrowableListener(throwableListener);
+            XimixServices.Builder servicesBuilder = new XimixServices.Builder(nodeContext).withThrowableListener(eventNotifier);
 
             while (!stopped.get())
             {
@@ -75,7 +75,7 @@ class DefaultXimixNode
         }
         catch (Exception e)
         {
-            throwableListener.notify(e);
+            eventNotifier.notify(EventNotifier.Level.WARN, e);
         }
     }
 

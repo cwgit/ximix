@@ -34,6 +34,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.Decoupler;
@@ -314,6 +315,11 @@ public class ECKeyManagerTest
         }
 
 
+        @Override
+        public EventNotifier getEventNotifier()
+        {
 
+            return new TestNotifier();
+        }
     }
 }

@@ -18,21 +18,37 @@ package org.cryptoworkshop.ximix.node;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
+import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 public class XimixNodeBuilder
 {
-    static ThrowableListener throwableListener = new ThrowableListener()
+    static EventNotifier eventNotifier = new EventNotifier()
     {
+        Logger logger = Logger.getLogger("ximix");
+
+
         @Override
-        public void notify(Throwable throwable)
+        public void notify(Level level, Throwable throwable)
         {
-            throwable.printStackTrace(System.err);
+            logger.log(java.util.logging.Level.WARNING, "", throwable);
+        }
+
+        @Override
+        public void notify(Level level, Object message)
+        {
+            logger.log(java.util.logging.Level.WARNING, message.toString());
+        }
+
+        @Override
+        public void notify(Level level, Object message, Throwable throwable)
+        {
+            logger.log(java.util.logging.Level.WARNING, message.toString(), throwable);
         }
     };
 
@@ -50,9 +66,9 @@ public class XimixNodeBuilder
         this(new Config(file));
     }
 
-    public XimixNodeBuilder withThrowableListener(ThrowableListener throwableListener)
+    public XimixNodeBuilder withThrowableListener(EventNotifier eventNotifier)
     {
-        this.throwableListener = throwableListener;
+        this.eventNotifier = eventNotifier;
 
         return this;
     }
@@ -62,7 +78,7 @@ public class XimixNodeBuilder
     {
         final Map<String, ServicesConnection> servicesMap = XimixRegistrarFactory.createServicesRegistrarMap(peersConfig);
 
-        return new DefaultXimixNode(nodeConfig, servicesMap, throwableListener);
+        return new DefaultXimixNode(nodeConfig, servicesMap, eventNotifier);
     }
 
     public XimixNode build(File file)

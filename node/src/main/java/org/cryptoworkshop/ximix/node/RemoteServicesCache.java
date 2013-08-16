@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
@@ -46,7 +47,7 @@ public class RemoteServicesCache
     private static final int TIME_OUT = 2;
     private static final int LIFE_TIME = 2;
 
-    private final NodeContext    nodeContext;
+    private final NodeContext nodeContext;
 
     private final ExecutorService threadPool = Executors.newCachedThreadPool();
 
@@ -140,9 +141,9 @@ public class RemoteServicesCache
             }
             catch (Exception e)
             {
-                // TODO: log
                 invalidateEntry(entry);
                 future = null;
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.WARN, "Node entry invalid: " + nodeName + " " + e.getMessage(), e);
             }
         }
 

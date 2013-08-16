@@ -1,6 +1,6 @@
 package org.cryptoworkshop.ximix.test.node;
 
-import org.cryptoworkshop.ximix.common.handlers.ThrowableListener;
+import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,13 +8,25 @@ import java.util.List;
 /**
  * Test throwable handler.
  */
-public class SquelchingThrowableHandler implements ThrowableListener
+public class SquelchingThrowableHandler implements EventNotifier
 {
     private List<Class> squelchTypes = new ArrayList<Class>();
     private boolean printOnly = false;
 
     @Override
-    public void notify(Throwable throwable)
+    public void notify(Level level, Throwable throwable)
+    {
+        notify(level,null, throwable);
+    }
+
+    @Override
+    public void notify(Level level, Object detail)
+    {
+        System.err.println(level+" "+detail);
+    }
+
+    @Override
+    public void notify(Level level, Object detail, Throwable throwable)
     {
         if (squelchTypes.contains(throwable.getClass()))
         {
@@ -23,7 +35,8 @@ public class SquelchingThrowableHandler implements ThrowableListener
         }
         if (printOnly)
         {
-            throwable.printStackTrace();
+            System.err.println(level+" "+detail);
+            throwable.printStackTrace(System.err);
         }
         else
         {

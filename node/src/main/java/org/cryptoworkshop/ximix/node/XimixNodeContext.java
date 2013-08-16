@@ -36,7 +36,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -46,6 +45,7 @@ import org.bouncycastle.util.io.Streams;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
+import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
 import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.Message;
@@ -89,7 +89,8 @@ public class XimixNodeContext
     private final CountDownLatch setupCompleteLatch = new CountDownLatch(1);
     private final Map<String, String> description;
     private final ListeningSocketInfo listeningSocketInfo;
-    private Logger L = Logger.getLogger(XimixNodeContext.class.getName());
+    private EventNotifier eventNotifier;
+
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig)
         throws ConfigException
@@ -103,7 +104,7 @@ public class XimixNodeContext
         this.decouplers.put(Decoupler.LISTENER, Executors.newSingleThreadExecutor());
         this.decouplers.put(Decoupler.SERVICES, Executors.newSingleThreadExecutor());
         this.decouplers.put(Decoupler.SHARING, Executors.newSingleThreadExecutor());
-        this.decouplers.put(Decoupler.MONITOR,Executors.newSingleThreadExecutor());
+        this.decouplers.put(Decoupler.MONITOR, Executors.newSingleThreadExecutor());
 
 
         this.name = nodeConfig.getStringProperty("name");  // TODO:
@@ -143,13 +144,13 @@ public class XimixNodeContext
                     {
                         if (config.getThrowable() != null)
                         {
-                            config.getThrowable().printStackTrace();   // TODO: log!
+                            getEventNotifier().notify(EventNotifier.Level.ERROR, config.getThrowable());
                         }
                     }
                 }
                 catch (ConfigException e)
                 {
-                    // TODO:
+                    getEventNotifier().notify(EventNotifier.Level.ERROR, "Configuration error: " + e.getMessage(), e);
                 }
                 finally
                 {
@@ -214,8 +215,7 @@ public class XimixNodeContext
         }
         catch (ExecutionException e)
         {
-            // TODO:
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            getEventNotifier().notify(EventNotifier.Level.WARN, "Get service statistics:" + e.getMessage(), e);
         }
 
         return new HashMap<>();
@@ -247,7 +247,7 @@ public class XimixNodeContext
         {
             CapabilityMessage msg = service.getCapability();
             if (msg == null)
-            {                 // TODO: log error.
+            {
                 System.err.println("Service " + service.getClass().getName() + " does not supply a capability.");
                 continue;
             }
@@ -315,8 +315,7 @@ public class XimixNodeContext
         }
         catch (IOException e)
         {
-            e.printStackTrace();  // TODO:
-
+            getEventNotifier().notify(EventNotifier.Level.ERROR,"Public key info: "+keyID+" "+e.getMessage(),e);
         }
         return null;
     }
@@ -453,14 +452,12 @@ public class XimixNodeContext
                 // TODO: password!!!!
                 keyManager.load("Hello".toCharArray(), Streams.readAll(new FileInputStream(store)));
             }
-            catch (IOException e)
+            catch (Exception e)
             {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                getEventNotifier().notify(EventNotifier.Level.ERROR, "Loading Store: " + store, e);
+                return;
             }
-            catch (GeneralSecurityException e)
-            {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
+
         }
 
         keyManager.addListener(new KeyManagerListener()
@@ -478,7 +475,7 @@ public class XimixNodeContext
                         {
                             if (!keyDir.mkdir())
                             {
-                                System.err.println("Eeeek!");  // TODO
+                                throw new NodeContextException("Unable to create dir: " + keyDir);
                             }
                         }
 
@@ -486,7 +483,9 @@ public class XimixNodeContext
                         {
                             if (!store.renameTo(new File(keyDir, keyManager.getID() + ".p12.bak")))
                             {
-                                System.err.println("Eeeek!"); // TODO
+
+                                throw new NodeContextException("Unable to rename store from: " + store + " to: " + keyManager.getID() + ".p12.bak");
+
                             }
                         }
 
@@ -496,17 +495,20 @@ public class XimixNodeContext
 
                         fOut.close();
                     }
-                    catch (IOException e)
+                    catch (Exception e)
                     {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        getEventNotifier().notify(EventNotifier.Level.ERROR, "Setting up Key Manager: " + e.getMessage(), e);
                     }
-                    catch (GeneralSecurityException e)
-                    {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
+
                 }
             }
         });
+    }
+
+    @Override
+    public EventNotifier getEventNotifier()
+    {
+        return eventNotifier;
     }
 
     private class NodeInfoService
@@ -672,6 +674,16 @@ public class XimixNodeContext
         {
             return new ServiceConfig(configNode);
         }
+    }
+
+    private class NodeContextException
+        extends RuntimeException
+    {
+        public NodeContextException(String s)
+        {
+            super(s);
+        }
+
     }
 }
 

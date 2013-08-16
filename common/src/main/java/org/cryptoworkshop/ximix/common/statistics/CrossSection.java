@@ -1,5 +1,7 @@
 package org.cryptoworkshop.ximix.common.statistics;
 
+import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -17,12 +19,14 @@ public class CrossSection
     private final Map<String, Object> values = new HashMap<>();
     private final Map<String, Object> placeholders = new HashMap<>();
     private final Executor decoupler;
+    private final EventNotifier eventNotifier;
 
 
-    public CrossSection(Executor decoupler)
+    public CrossSection(Executor decoupler, EventNotifier eventNotifier)
     {
         super();
         this.decoupler = decoupler;
+        this.eventNotifier = eventNotifier;
     }
 
 
@@ -119,8 +123,7 @@ public class CrossSection
         }
         catch (ExecutionException e)
         {
-            // TODO:
-            e.printStackTrace();
+            eventNotifier.notify(EventNotifier.Level.ERROR, "Forming crosssection: " + e.getMessage(), e);
         }
 
         return null;

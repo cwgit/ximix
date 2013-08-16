@@ -560,14 +560,6 @@ $(document).ready(function () {
         $("#tabs").tabs({
             activate: function (event, ui) {
                 requestStatistics(null);
-
-//                for (var hash in nodes) {
-//                    if ($("#" + hash + "_details").is(':visible')) {
-//
-////                        repaintStats(hash);
-////                        console.log("Repaint..");
-//                    }
-//                }
             }
         });
     });
