@@ -31,9 +31,9 @@ import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
-import org.cryptoworkshop.ximix.crypto.key.message.KeyGenerationMessage;
-import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
+import org.cryptoworkshop.ximix.common.message.KeyGenParams;
+import org.cryptoworkshop.ximix.common.message.KeyGenerationMessage;
+import org.cryptoworkshop.ximix.common.message.KeyPairGenerateMessage;
 
 public class ECKeyPairGenerator
     extends KeyPairGenerator

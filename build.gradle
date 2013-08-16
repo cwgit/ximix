@@ -120,6 +120,7 @@ project(':demo') {
 project(':node') {
     dependencies {
         compile project(':common')
+        compile project(':client')
     }
 }
 

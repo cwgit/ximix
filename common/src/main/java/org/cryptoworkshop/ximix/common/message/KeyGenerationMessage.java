@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.key.message;
+package org.cryptoworkshop.ximix.common.message;
 
 import java.util.ArrayList;
 import java.util.Arrays;

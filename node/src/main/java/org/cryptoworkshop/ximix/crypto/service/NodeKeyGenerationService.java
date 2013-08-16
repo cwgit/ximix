@@ -28,7 +28,7 @@ import org.cryptoworkshop.ximix.common.service.BasicService;
 import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.crypto.key.BLSKeyPairGenerator;
 import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
-import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
+import org.cryptoworkshop.ximix.common.message.KeyPairGenerateMessage;
 
 public class NodeKeyGenerationService
     extends BasicService

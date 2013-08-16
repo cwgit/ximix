@@ -15,23 +15,24 @@
  */
 package org.cryptoworkshop.ximix.crypto.client;
 
-import java.io.IOException;
-
 import org.bouncycastle.asn1.ASN1String;
 import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPartialPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.message.KeyGenParams;
+import org.cryptoworkshop.ximix.common.message.KeyGenerationMessage;
+import org.cryptoworkshop.ximix.common.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
-import org.cryptoworkshop.ximix.crypto.key.message.KeyGenParams;
-import org.cryptoworkshop.ximix.crypto.key.message.KeyGenerationMessage;
-import org.cryptoworkshop.ximix.crypto.key.message.KeyPairGenerateMessage;
+
+import java.io.IOException;
+
 
 public class KeyGenerationCommandService
     implements KeyGenerationService

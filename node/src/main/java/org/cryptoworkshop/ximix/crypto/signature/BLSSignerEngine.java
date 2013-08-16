@@ -23,7 +23,7 @@ import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.crypto.operator.BLSPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.signature.message.BLSPartialCreateMessage;
-import org.cryptoworkshop.ximix.crypto.signature.message.SignatureCreateMessage;
+import org.cryptoworkshop.ximix.common.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.crypto.util.Participant;
 
 public class BLSSignerEngine

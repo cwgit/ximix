@@ -51,7 +51,7 @@ import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAFetchMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAInitialiseMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAPartialCreateMessage;
 import org.cryptoworkshop.ximix.crypto.signature.message.ECDSAPointMessage;
-import org.cryptoworkshop.ximix.crypto.signature.message.SignatureCreateMessage;
+import org.cryptoworkshop.ximix.common.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.crypto.threshold.ShamirSecretSplitter;
 import org.cryptoworkshop.ximix.crypto.threshold.SplitSecret;
 import org.cryptoworkshop.ximix.crypto.util.BigIntegerShare;
