@@ -531,65 +531,7 @@ function formType(index, command, parameter, ui_parent) {
 //
 //
 
-function fetchCommands() {
-    $.post("/api/commands/mixnetadmin", null, function (data) {
 
-        console.log(data);
-
-        if (data != null) {
-
-            for (t = 0; t < data.length; t++) {
-
-                node = data[t];
-
-                outer = $("#" + node.id + "_command");
-                if (!outer.length) {
-                    outer = $("<div class='command' id='" + node.id + "_command'>");
-                    outer.appendTo('#commands');
-                    outer.append("<div class='commandtitle'>" + node.title + "</div>");
-                    form = $("<form class='commandform' id='cmd" + node.id + "'>");
-                    form.submit(function () {
-                        $("#" + node.id + "_command_err").hide();
-                        $("#" + node.id + "_command_err").html("");
-
-
-                        $.post("/api/invoke/mixnetadmin", form.serialize(), function (data) {
-                            if (data != null) {
-                                if (data.successful == false) {
-                                    $("#" + node.id + "_command_err").html(data.message);
-                                    $("#" + node.id + "_command_err").show();
-                                }
-                            }
-                        });
-                        return false;
-                    });
-
-                    form.append("<input type='hidden' name='cmd' value='" + node.id + "'/>");
-                    outer.append(form);
-                    tab = $("<table></table>");
-                    tab.appendTo(form);
-
-
-                    if (node.parameters != null) {
-                        for (a = 0; a < node.parameters.length; a++) {
-                            row = $("<tr></tr>");
-                            row.appendTo(tab);
-
-                            param = node.parameters[a];
-                            label = $("<td class='commandtext'>" + (param.name) + "</td>");
-                            row.append(label);
-                            td = $("<td></td>");
-                            td.appendTo(row);
-                            formType(a, node, param, td);
-                        }
-                    }
-                    form.append("<input type='submit' class='commandbutton' value='Invoke'/>");
-                    outer.append("<div id='" + node.id + "_command_err' class='errortxt' style='display:none'></div>");
-                }
-            }
-        }
-    });
-}
 
 function pollNodes() {
     updateConnected();

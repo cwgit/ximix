@@ -16,8 +16,6 @@
 package org.cryptoworkshop.ximix.console.adapters;
 
 import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.console.annotations.CommandParam;
-import org.cryptoworkshop.ximix.common.console.annotations.ConsoleCommand;
 import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.console.config.AdapterConfig;
@@ -55,17 +53,6 @@ public class MixnetCommandServiceAdapter
     }
 
 
-//    @Override
-//    public void init(String name, Config config)
-//            throws Exception
-//    {
-//        this.id = name;
-//        this.config = config;
-//        // this.configFile = new File(config.getProperty("config.file"));
-//        commandList = new ArrayList<>();
-//        findCommands(this);
-//    }
-
     @Override
     public AdapterInfo getInfo()
     {
@@ -95,7 +82,6 @@ public class MixnetCommandServiceAdapter
         }
 
         configFile = new File(f);
-        findCommands(this);
     }
 
     @Override
@@ -125,27 +111,6 @@ public class MixnetCommandServiceAdapter
         throws Exception
     {
         // TODO close it.
-    }
-
-    @ConsoleCommand(name = "Do Shuffle & Move")
-    public StandardMessage doShuffleAndMove(
-        @CommandParam(name = "Board Name")
-        String boardName,
-        @CommandParam(name = "Transform Name")
-        String transformName,
-        @CommandParam(name = "Key id")
-        String keyID,
-        @CommandParam(name = "Nodes")
-        String... nodes)
-        throws ServiceConnectionException
-    {
-
-        //TODO add sensitisation.
-
-        ShuffleOptions.Builder builder = new ShuffleOptions.Builder(transformName);
-        builder.setKeyID(keyID);
-        commandService.doShuffleAndMove(boardName, builder.build(), nodes);
-        return new StandardMessage(true, "It worked..");
     }
 
     @Override

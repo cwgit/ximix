@@ -229,12 +229,14 @@ task coverage_report(dependsOn: 'compileTestJava') << {
                 classfiles {
                     fileset dir: "${rootDir}/common/build/classes/main"
                     fileset dir: "${rootDir}/node/build/classes/main"
+                    fileset dir: "${rootDir}/client/build/classes/main"
                 }
 
                 // this is for Windows
                 sourcefiles(encoding: 'UTF8') {
                     fileset dir: "${rootDir}/common/src/main/java"
                     fileset dir: "${rootDir}/node/src/main/java"
+                    fileset dir: "${rootDir}/client/src/main/java"
                 }
             }
 
@@ -246,7 +248,7 @@ task coverage_report(dependsOn: 'compileTestJava') << {
     //
     // Delete source file..
     //
-    new File("{$rootDir}/coverage/jacoco.exe").delete();
+    new File("{$rootDir}/build/coverage/jacoco.exe").delete();
 
     println("\r\nCoverage Report can be found in: \r\n" + coverageReport);
 

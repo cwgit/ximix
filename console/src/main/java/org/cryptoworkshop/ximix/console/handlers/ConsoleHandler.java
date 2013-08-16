@@ -235,23 +235,7 @@ public class ConsoleHandler
         }
 
 
-        if (reqUri.startsWith("/api/commands"))
-        {
-            response.setContentType("application/json");
 
-            NodeAdapter adapter = getAdapter(lastPart);
-            if (adapter == null)
-            {
-                writeObject(new StandardMessage(false, "Unknown adapter."), response);
-                baseRequest.setHandled(true);
-                return;
-            }
-
-
-            writeObject(adapter.getCommandList(), response);
-            baseRequest.setHandled(true);
-            return;
-        }
 
         if (reqUri.startsWith("/api/invoke"))
         {
