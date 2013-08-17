@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.threshold;
+package org.cryptoworkshop.ximix.common.crypto.threshold;
 
 import java.math.BigInteger;
 
-import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
-import it.unisa.dia.gas.jpbc.Element;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.math.ec.ECPoint;
 
-public class BLSCommittedSecretShare
+public class ECCommittedSecretShare
 {
     private final BigInteger share;
     private final BigInteger witness;
-    private final Element[]  commitmentFactors;
+    private final ECPoint[]  commitmentFactors;
 
-    public BLSCommittedSecretShare(BigInteger share, BigInteger witness, Element[] commitmentFactors)
+    public ECCommittedSecretShare(BigInteger share, BigInteger witness, ECPoint[] commitmentFactors)
     {
         this.share = share;
         this.witness = witness;
@@ -48,7 +48,7 @@ public class BLSCommittedSecretShare
         return witness;
     }
 
-    public Element[] getCommitmentFactors()
+    public ECPoint[] getCommitmentFactors()
     {
         return commitmentFactors;
     }
@@ -59,9 +59,9 @@ public class BLSCommittedSecretShare
      * @param shareNumber the number of this share.
      * @return the EC point representing the committed value.
      */
-    public Element getCommitment(int shareNumber)
+    public ECPoint getCommitment(int shareNumber)
     {
-        Element commitment = commitmentFactors[0];
+        ECPoint commitment = commitmentFactors[0];
         BigInteger alpha = BigInteger.valueOf(shareNumber + 1);  // note: this is related to a value.
         BigInteger powAplha = BigInteger.ONE;
 
@@ -69,7 +69,7 @@ public class BLSCommittedSecretShare
         {
             powAplha = powAplha.multiply(alpha);
 
-            commitment = commitment.add(commitmentFactors[k].duplicate().mul(powAplha));
+            commitment = commitment.add(commitmentFactors[k].multiply(powAplha));
         }
 
         return commitment;
@@ -83,10 +83,10 @@ public class BLSCommittedSecretShare
      * @param hValue the value of h used to commit against.
      * @return true if share is revealed by commitment, false otherwise.
      */
-    public boolean isRevealed(int shareNumber, BLS01Parameters domainParams, BigInteger hValue)
+    public boolean isRevealed(int shareNumber, ECDomainParameters domainParams, BigInteger hValue)
     {
-        Element h = domainParams.getG().duplicate().mul(hValue);
+        ECPoint h = domainParams.getG().multiply(hValue);
 
-        return getCommitment(shareNumber).equals(domainParams.getG().duplicate().mul(share).add(h.duplicate().mul(witness)));
+        return getCommitment(shareNumber).equals(domainParams.getG().multiply(share).add(h.multiply(witness)));
     }
 }

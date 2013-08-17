@@ -52,10 +52,10 @@ import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
+import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 
 public class ClientCommandService
     implements CommandService

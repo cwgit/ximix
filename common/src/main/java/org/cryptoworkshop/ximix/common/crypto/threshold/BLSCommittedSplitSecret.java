@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.threshold;
+package org.cryptoworkshop.ximix.common.crypto.threshold;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.math.ec.ECPoint;
+import it.unisa.dia.gas.jpbc.Element;
 
-public class ECCommittedSplitSecret
+public class BLSCommittedSplitSecret
     extends SplitSecret
 {
-    private final ECPoint[] commitments;
+    private final Element[] commitments;
     private final BigInteger[] witnesses;
 
-    public ECCommittedSplitSecret(BigInteger[] shares, BigInteger[] coefficients, BigInteger[] witnesses, ECPoint[] commitments)
+    public BLSCommittedSplitSecret(BigInteger[] shares, BigInteger[] coefficients, BigInteger[] witnesses, Element[] commitments)
     {
         super(shares, coefficients);
 
@@ -33,14 +33,14 @@ public class ECCommittedSplitSecret
         this.witnesses = witnesses;
     }
 
-    public ECCommittedSecretShare[] getCommittedShares()
+    public BLSCommittedSecretShare[] getCommittedShares()
     {
         BigInteger[] shares = this.getShares();
-        ECCommittedSecretShare[] committedSecretShares = new ECCommittedSecretShare[shares.length];
+        BLSCommittedSecretShare[] committedSecretShares = new BLSCommittedSecretShare[shares.length];
 
         for (int i = 0; i != committedSecretShares.length; i++)
         {
-            committedSecretShares[i] = new ECCommittedSecretShare(shares[i], witnesses[i], commitments);
+            committedSecretShares[i] = new BLSCommittedSecretShare(shares[i], witnesses[i], commitments);
         }
 
         return committedSecretShares;

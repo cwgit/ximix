@@ -24,9 +24,9 @@ import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParamet
 import it.unisa.dia.gas.jpbc.Element;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
-import org.cryptoworkshop.ximix.crypto.threshold.BLSCommittedSecretShare;
-import org.cryptoworkshop.ximix.crypto.threshold.BLSCommittedSplitSecret;
-import org.cryptoworkshop.ximix.crypto.threshold.BLSNewDKGSecretSplitter;
+import org.cryptoworkshop.ximix.common.crypto.threshold.BLSCommittedSecretShare;
+import org.cryptoworkshop.ximix.common.crypto.threshold.BLSCommittedSplitSecret;
+import org.cryptoworkshop.ximix.common.crypto.threshold.BLSNewDKGSecretSplitter;
 import org.cryptoworkshop.ximix.node.crypto.key.message.BLSCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
