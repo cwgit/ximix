@@ -30,7 +30,7 @@ import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.client.SignatureGenerationOptions;
 import org.cryptoworkshop.ximix.client.SigningService;
-import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.node.XimixNode;

@@ -12,7 +12,7 @@ import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.UploadService;
-import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.node.XimixNode;

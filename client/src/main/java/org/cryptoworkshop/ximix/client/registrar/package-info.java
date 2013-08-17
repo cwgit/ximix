@@ -13,24 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+Ximix Registrar support classes.
+*/
 package org.cryptoworkshop.ximix.client.registrar;
 
-import java.util.List;
 
-/**
- * Registrar which encompasses all the services offered by the peers in the network.
- */
-public interface XimixRegistrar
-{
-    /**
-     * Connect to a specific service.
-     *
-     * @param serviceClass
-     * @param <T>
-     * @return
-     */
-    <T> T connect(Class<T> serviceClass)
-        throws RegistrarServiceException;
-
-    List<XimixRegistrarFactory.NodeConfig> getConfiguredNodeNames();
-}

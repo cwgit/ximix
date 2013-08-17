@@ -15,8 +15,6 @@
  */
 package org.cryptoworkshop.ximix.client.registrar;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,14 +33,7 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.cryptoworkshop.ximix.client.CommandService;
-import org.cryptoworkshop.ximix.client.KeyGenerationService;
-import org.cryptoworkshop.ximix.client.KeyService;
-import org.cryptoworkshop.ximix.client.MonitorService;
 import org.cryptoworkshop.ximix.client.NodeDetail;
-import org.cryptoworkshop.ximix.client.SigningService;
-import org.cryptoworkshop.ximix.client.UploadService;
-import org.cryptoworkshop.ximix.client.XimixRegistrar;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
@@ -59,88 +50,36 @@ import org.cryptoworkshop.ximix.common.service.SpecificServicesConnection;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class XimixRegistrarFactory
+public class XimixConnectionMapFactory
 {
-    public static XimixRegistrar createServicesRegistrar(File config)
-        throws ConfigException, FileNotFoundException
-    {
-        final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
-
-        return new XimixRegistrar()
-        {
-            @Override
-            public List<NodeDetail> getConfiguredNodeNames()
-            {
-                return getDetailList(nodes);
-            }
-
-            public <T> T connect(Class<T> serviceClass)
-                throws RegistrarServiceException
-            {
-                if (serviceClass.isAssignableFrom(UploadService.class))
-                {
-                    return (T)new ClientUploadService(new ServicesConnectionImpl(nodes));
-                }
-                if (serviceClass.isAssignableFrom(KeyService.class))
-                {
-                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
-                }
-                if (serviceClass.isAssignableFrom(SigningService.class))
-                {
-                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
-                }
-
-                throw new RegistrarServiceException("Unable to identify service");
-            }
-        };
-    }
-
-    public static XimixRegistrar createAdminServiceRegistrar(File config)
-        throws ConfigException, FileNotFoundException
-    {
-        return createAdminServiceRegistrar(new Config(config));
-    }
-
-    public static XimixRegistrar createAdminServiceRegistrar(Config config)
-        throws ConfigException, FileNotFoundException
+    /**
+     * @param config
+     * @return
+     * @throws org.cryptoworkshop.ximix.common.config.ConfigException
+     */
+    public static Map<String, ServicesConnection> createServicesConnectionMap(Config config)
+        throws ConfigException
     {
         final List<NodeConfig> nodes = config.getConfigObjects("node", new NodeConfigFactory());
 
-        return new XimixRegistrar()
+        return createServicesConnectionMap(nodes);
+    }
+
+    private static Map<String, ServicesConnection> createServicesConnectionMap(List<NodeConfig> nodes)
+    {
+        Map<String, ServicesConnection> rMap = new HashMap<>();
+
+        for (int i = 0; i != nodes.size(); i++)
         {
-            @Override
-            public List<NodeDetail> getConfiguredNodeNames()
-            {
-                return getDetailList(nodes);
-            }
+            NodeConfig node = nodes.get(i);
 
-            public <T> T connect(Class<T> serviceClass)
-                throws RegistrarServiceException
-            {
-                if (serviceClass.isAssignableFrom(CommandService.class))
-                {
-                    return (T)new ClientCommandService(new AdminServicesConnectionImpl(nodes));
-                }
-                if (serviceClass.isAssignableFrom(KeyGenerationService.class))
-                {
-                    return (T)new KeyGenerationCommandService(new AdminServicesConnectionImpl(nodes));
-                }
-                if (serviceClass.isAssignableFrom(UploadService.class))
-                {
-                    return (T)new ClientUploadService(new AdminServicesConnectionImpl(nodes));
-                }
-                if (serviceClass.isAssignableFrom(SigningService.class))
-                {
-                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
-                }
-                if (serviceClass.isAssignableFrom(MonitorService.class))
-                {
-                    return (T)new ClientNodeHealthMonitor(new AdminServicesConnectionImpl(nodes));
-                }
+            final String name = node.getName();
+            final List<NodeConfig> thisNode = Collections.singletonList(node);
 
-                throw new RegistrarServiceException("Unable to identify service");
-            }
-        };
+            rMap.put(name, new ServicesConnectionImpl(thisNode));
+        }
+
+        return rMap;
     }
 
     private static class NodeConfig

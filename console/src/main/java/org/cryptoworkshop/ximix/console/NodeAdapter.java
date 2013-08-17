@@ -18,7 +18,7 @@ package org.cryptoworkshop.ximix.console;
 import java.util.List;
 import java.util.Map;
 
-import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.client.NodeDetail;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.console.config.AdapterConfig;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
@@ -66,9 +66,9 @@ public interface NodeAdapter
 
     NodeStatusMessage getNodeStatistics(String node);
 
-    List<XimixRegistrarFactory.NodeConfig> getConfiguredNodes();
+    List<NodeDetail> getConfiguredNodes();
 
-    List<XimixRegistrarFactory.NodeConfig> getConnectedNodes();
+    List<NodeDetail> getConnectedNodes();
 
     NodeStatusMessage getNodeDetails(String name);
 }

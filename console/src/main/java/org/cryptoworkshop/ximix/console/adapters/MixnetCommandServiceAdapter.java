@@ -24,8 +24,9 @@ import java.util.Set;
 
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.MonitorService;
+import org.cryptoworkshop.ximix.client.NodeDetail;
+import org.cryptoworkshop.ximix.client.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.RegistrarServiceException;
-import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
@@ -45,8 +46,8 @@ public class MixnetCommandServiceAdapter
     protected CommandService commandService = null;
     protected Class commandType = CommandService.class;
     protected Config config = null;
-    protected List<XimixRegistrarFactory.NodeConfig> configuredNodes = null;
-    protected Map<String, XimixRegistrarFactory.NodeConfig> nameToConfig = null;
+    protected List<NodeDetail> configuredNodes = null;
+    protected Map<String, NodeDetail> nameToConfig = null;
 
     public MixnetCommandServiceAdapter()
     {
@@ -94,7 +95,7 @@ public class MixnetCommandServiceAdapter
             registrar = XimixRegistrarFactory.createAdminServiceRegistrar(configFile);
             configuredNodes = registrar.getConfiguredNodeNames();
             nameToConfig = new HashMap<>();
-            for (XimixRegistrarFactory.NodeConfig nc : configuredNodes)
+            for (NodeDetail nc : configuredNodes)
             {
                 nameToConfig.put(nc.getName(), nc);
             }
@@ -115,15 +116,15 @@ public class MixnetCommandServiceAdapter
     }
 
     @Override
-    public List<XimixRegistrarFactory.NodeConfig> getConfiguredNodes()
+    public List<NodeDetail> getConfiguredNodes()
     {
         return configuredNodes;
     }
 
     @Override
-    public List<XimixRegistrarFactory.NodeConfig> getConnectedNodes()
+    public List<NodeDetail> getConnectedNodes()
     {
-        ArrayList<XimixRegistrarFactory.NodeConfig> out = new ArrayList<>();
+        ArrayList<NodeDetail> out = new ArrayList<>();
         try
         {
             MonitorService nhm = registrar.connect(MonitorService.class);

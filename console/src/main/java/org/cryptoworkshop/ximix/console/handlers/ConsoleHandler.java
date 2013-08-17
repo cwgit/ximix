@@ -33,7 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.client.NodeDetail;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.console.NodeAdapter;
 import org.cryptoworkshop.ximix.console.adapters.BaseNodeAdapter;
@@ -186,11 +186,11 @@ public class ConsoleHandler
 
             HashMap<Integer, Boolean> out = new HashMap<>();
 
-            List<XimixRegistrarFactory.NodeConfig> nodes = adapter.getConfiguredNodes();
+            List<NodeDetail> nodes = adapter.getConfiguredNodes();
 
-            List<XimixRegistrarFactory.NodeConfig> con = adapter.getConnectedNodes();
+            List<NodeDetail> con = adapter.getConnectedNodes();
 
-            for (XimixRegistrarFactory.NodeConfig nc : nodes)
+            for (NodeDetail nc : nodes)
             {
                 int result = nc.getPortNo();
                 result = 31 * result + nc.getName().hashCode();
@@ -216,10 +216,10 @@ public class ConsoleHandler
             }
 
             List<HashMap<String, Object>> out = new ArrayList<>();
-            List<XimixRegistrarFactory.NodeConfig> l = adapter.getConfiguredNodes();
+            List<NodeDetail> l = adapter.getConfiguredNodes();
             if (l != null)
             {
-                for (XimixRegistrarFactory.NodeConfig c : l)
+                for (NodeDetail c : l)
                 {
 
                     HashMap<String, Object> map = new HashMap<>();

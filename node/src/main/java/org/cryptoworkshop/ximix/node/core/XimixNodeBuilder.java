@@ -20,7 +20,7 @@ import java.io.FileNotFoundException;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.client.registrar.XimixConnectionMapFactory;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
@@ -93,7 +93,7 @@ public class XimixNodeBuilder
     public XimixNode build(Config nodeConfig)
         throws ConfigException
     {
-        final Map<String, ServicesConnection> servicesMap = XimixRegistrarFactory.createServicesRegistrarMap(peersConfig);
+        final Map<String, ServicesConnection> servicesMap = XimixConnectionMapFactory.createServicesConnectionMap(peersConfig);
 
         return new DefaultXimixNode(nodeConfig, servicesMap, eventNotifier);
     }
