@@ -22,7 +22,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
-public class ClientUploadService
+class ClientUploadService
     implements UploadService
 {
     private ServicesConnection connection;

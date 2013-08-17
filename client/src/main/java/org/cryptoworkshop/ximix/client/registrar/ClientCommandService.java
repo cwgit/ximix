@@ -57,7 +57,7 @@ import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
-public class ClientCommandService
+class ClientCommandService
     implements CommandService
 {
     private ExecutorService decouple = Executors.newSingleThreadExecutor();

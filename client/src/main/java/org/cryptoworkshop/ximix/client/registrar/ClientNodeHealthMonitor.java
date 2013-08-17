@@ -15,7 +15,7 @@ import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 /**
  *
  */
-public class ClientNodeHealthMonitor
+class ClientNodeHealthMonitor
     implements MonitorService
 {
     private AdminServicesConnection connection = null;

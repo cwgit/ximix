@@ -35,7 +35,7 @@ import org.cryptoworkshop.ximix.common.service.ClientServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
-public class ClientSigningService
+class ClientSigningService
     implements SigningService
 {
     private enum Type

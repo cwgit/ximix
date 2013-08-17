@@ -18,7 +18,7 @@ package org.cryptoworkshop.ximix.client.registrar;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
 import org.w3c.dom.Node;
 
-public class NodeConfigFactory
+class NodeConfigFactory
     implements ConfigObjectFactory<NodeConfig>
 {
     public NodeConfig createObject(Node configNode)

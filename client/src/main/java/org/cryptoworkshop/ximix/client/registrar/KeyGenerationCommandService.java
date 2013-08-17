@@ -35,7 +35,7 @@ import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 
-public class KeyGenerationCommandService
+class KeyGenerationCommandService
     implements KeyGenerationService
 {
     private enum Type
