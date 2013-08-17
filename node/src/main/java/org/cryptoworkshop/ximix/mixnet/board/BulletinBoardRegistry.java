@@ -22,10 +22,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
-import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
+import org.cryptoworkshop.ximix.node.service.Decoupler;
+import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 public class BulletinBoardRegistry
 {

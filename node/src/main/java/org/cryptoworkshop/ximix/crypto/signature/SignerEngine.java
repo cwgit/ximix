@@ -8,19 +8,19 @@ import it.unisa.dia.gas.jpbc.Pairing;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
-import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.ECPointMessage;
-import org.cryptoworkshop.ximix.common.message.ElementMessage;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.ShareMessage;
-import org.cryptoworkshop.ximix.common.message.SignatureMessage;
-import org.cryptoworkshop.ximix.common.service.Algorithm;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BigIntegerMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ECPointMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ElementMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
+import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
+import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.crypto.util.Participant;
+import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 public abstract class SignerEngine
 {

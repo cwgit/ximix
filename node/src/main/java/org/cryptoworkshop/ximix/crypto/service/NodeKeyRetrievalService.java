@@ -16,14 +16,14 @@
 package org.cryptoworkshop.ximix.crypto.service;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.Message;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.service.BasicService;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 public class NodeKeyRetrievalService
     extends BasicService

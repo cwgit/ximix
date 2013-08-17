@@ -18,7 +18,7 @@ package org.cryptoworkshop.ximix.client;
 import java.util.List;
 import java.util.Set;
 
-import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 /**

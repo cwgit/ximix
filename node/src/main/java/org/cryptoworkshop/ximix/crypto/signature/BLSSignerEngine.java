@@ -10,21 +10,21 @@ import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
-import org.cryptoworkshop.ximix.common.message.ElementMessage;
-import org.cryptoworkshop.ximix.common.message.KeyIDMessage;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.MessageType;
-import org.cryptoworkshop.ximix.common.message.ShareMessage;
-import org.cryptoworkshop.ximix.common.message.SignatureMessage;
-import org.cryptoworkshop.ximix.common.service.Algorithm;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.common.asn1.message.BigIntegerMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ElementMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.KeyIDMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
+import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.SignatureCreateMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
+import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.crypto.operator.BLSPrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.signature.message.BLSPartialCreateMessage;
-import org.cryptoworkshop.ximix.common.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.crypto.util.Participant;
+import org.cryptoworkshop.ximix.node.service.NodeContext;
+import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
 public class BLSSignerEngine
     extends SignerEngine

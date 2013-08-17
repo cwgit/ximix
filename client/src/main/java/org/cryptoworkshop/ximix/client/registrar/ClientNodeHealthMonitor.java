@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Set;
 
 import org.cryptoworkshop.ximix.client.MonitorService;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
-import org.cryptoworkshop.ximix.common.message.NodeStatusRequestMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
+import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusRequestMessage;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 

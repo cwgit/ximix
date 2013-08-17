@@ -18,14 +18,13 @@ package org.cryptoworkshop.ximix.console;
 import java.util.List;
 import java.util.Map;
 
-import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.console.config.AdapterConfig;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 import org.cryptoworkshop.ximix.console.model.Command;
-import org.cryptoworkshop.ximix.mixnet.admin.NodeDetail;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 
 /**

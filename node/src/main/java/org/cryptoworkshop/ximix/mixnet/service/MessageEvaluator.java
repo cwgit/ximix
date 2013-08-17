@@ -18,14 +18,14 @@ package org.cryptoworkshop.ximix.mixnet.service;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
-import org.cryptoworkshop.ximix.common.message.BoardMessage;
-import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
-import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.Message;
+import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
 
 class MessageEvaluator
 {

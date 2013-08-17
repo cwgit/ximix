@@ -16,9 +16,9 @@
 package org.cryptoworkshop.ximix.client.registrar;
 
 import org.cryptoworkshop.ximix.client.UploadService;
-import org.cryptoworkshop.ximix.common.message.BoardUploadMessage;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 

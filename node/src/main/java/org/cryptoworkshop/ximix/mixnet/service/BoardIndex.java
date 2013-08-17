@@ -16,8 +16,8 @@
 package org.cryptoworkshop.ximix.mixnet.service;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.cryptoworkshop.ximix.common.message.BoardDetails;
-import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardDetails;
+import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 
 public class BoardIndex
 {

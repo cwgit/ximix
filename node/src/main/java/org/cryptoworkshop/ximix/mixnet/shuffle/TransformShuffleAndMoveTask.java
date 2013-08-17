@@ -24,21 +24,21 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.commitments.HashCommitter;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
-import org.cryptoworkshop.ximix.common.message.BoardUploadBlockMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.MessageCommitment;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.MessageWitnessBlock;
-import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
-import org.cryptoworkshop.ximix.common.message.PostedMessage;
-import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
-import org.cryptoworkshop.ximix.common.message.TransitBoardMessage;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadBlockMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageCommitment;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageWitnessBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.mixnet.transform.Transform;
+import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 public class TransformShuffleAndMoveTask
     implements Runnable

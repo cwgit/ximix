@@ -22,19 +22,19 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
+import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
+import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.DecryptDataMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.Message;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.DecryptDataMessage;
-import org.cryptoworkshop.ximix.common.message.Message;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.PostedMessageDataBlock;
-import org.cryptoworkshop.ximix.common.message.ShareMessage;
-import org.cryptoworkshop.ximix.common.service.BasicService;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.crypto.operator.ECPrivateKeyOperator;
+import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.NodeContext;
+import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
 public class NodeDecryptionService
     extends BasicService

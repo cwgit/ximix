@@ -21,20 +21,19 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.cryptoworkshop.ximix.client.SignatureGenerationOptions;
 import org.cryptoworkshop.ximix.client.SigningService;
-import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
-import org.cryptoworkshop.ximix.common.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.FetchPartialPublicKeyMessage;
-import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
-import org.cryptoworkshop.ximix.common.message.MessageReply;
-import org.cryptoworkshop.ximix.common.message.MessageType;
-import org.cryptoworkshop.ximix.common.message.SignatureCreateMessage;
-import org.cryptoworkshop.ximix.common.message.SignatureMessage;
-import org.cryptoworkshop.ximix.common.service.Algorithm;
+import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.FetchPartialPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
+import org.cryptoworkshop.ximix.common.asn1.message.SignatureCreateMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
+import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ClientServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-
 
 public class ClientSigningService
     implements SigningService

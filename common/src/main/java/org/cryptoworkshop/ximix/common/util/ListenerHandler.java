@@ -15,8 +15,6 @@
  */
 package org.cryptoworkshop.ximix.common.util;
 
-import org.cryptoworkshop.ximix.common.service.ServiceStatisticsListener;
-
 import java.lang.reflect.InvocationHandler;
 
 public interface ListenerHandler<T>

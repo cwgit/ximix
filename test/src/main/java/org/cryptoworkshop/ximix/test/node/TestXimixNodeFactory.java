@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.node.XimixNodeBuilder;
+import org.cryptoworkshop.ximix.node.core.XimixNodeBuilder;
 
 /**
  *

@@ -15,9 +15,9 @@
  */
 package org.cryptoworkshop.ximix.mixnet.board;
 
-import org.cryptoworkshop.ximix.common.message.MessageWitnessBlock;
-import org.cryptoworkshop.ximix.common.message.PostedMessage;
-import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageWitnessBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
 public interface BulletinBoard

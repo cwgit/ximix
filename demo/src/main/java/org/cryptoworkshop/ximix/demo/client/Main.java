@@ -32,14 +32,14 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
-import org.cryptoworkshop.ximix.common.service.Algorithm;
-import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
-import org.cryptoworkshop.ximix.crypto.client.KeyService;
-import org.cryptoworkshop.ximix.crypto.client.SigningService;
+import org.cryptoworkshop.ximix.client.KeyService;
+import org.cryptoworkshop.ximix.client.SignatureGenerationOptions;
+import org.cryptoworkshop.ximix.client.SigningService;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
+import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 
 public class Main
 {

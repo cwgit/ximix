@@ -78,10 +78,7 @@ import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
-import org.cryptoworkshop.ximix.common.service.Algorithm;
-import org.cryptoworkshop.ximix.common.service.Decoupler;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.crypto.key.message.BLSCommittedSecretShareMessage;
@@ -95,6 +92,9 @@ import org.cryptoworkshop.ximix.crypto.util.ElementShare;
 import org.cryptoworkshop.ximix.crypto.util.Share;
 import org.cryptoworkshop.ximix.crypto.util.ShareMap;
 import org.cryptoworkshop.ximix.crypto.util.ShareMapListener;
+import org.cryptoworkshop.ximix.node.service.Decoupler;
+import org.cryptoworkshop.ximix.node.service.NodeContext;
+import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
 public class BLSKeyManager
     implements KeyManager

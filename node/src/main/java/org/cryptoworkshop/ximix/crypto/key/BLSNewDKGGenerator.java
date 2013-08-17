@@ -23,13 +23,13 @@ import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PrivateKeyParame
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
 import it.unisa.dia.gas.jpbc.Element;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.cryptoworkshop.ximix.common.service.Algorithm;
-import org.cryptoworkshop.ximix.common.service.ThresholdKeyPairGenerator;
+import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.crypto.key.message.BLSCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.crypto.threshold.BLSCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.BLSCommittedSplitSecret;
 import org.cryptoworkshop.ximix.crypto.threshold.BLSNewDKGSecretSplitter;
+import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
 
 public class BLSNewDKGGenerator
     implements ThresholdKeyPairGenerator

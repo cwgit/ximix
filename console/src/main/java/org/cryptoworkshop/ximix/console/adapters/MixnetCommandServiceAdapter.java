@@ -15,22 +15,23 @@
  */
 package org.cryptoworkshop.ximix.console.adapters;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.cryptoworkshop.ximix.client.CommandService;
+import org.cryptoworkshop.ximix.client.MonitorService;
+import org.cryptoworkshop.ximix.client.registrar.RegistrarServiceException;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.console.config.AdapterConfig;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
-import org.cryptoworkshop.ximix.console.handlers.messages.StandardMessage;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
-import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
-import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
-import org.cryptoworkshop.ximix.monitor.NodeHealthMonitor;
-import org.cryptoworkshop.ximix.registrar.RegistrarServiceException;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
-
-import java.io.File;
-import java.util.*;
 
 /**
  * An adapter for the Mixnet commands service.
@@ -125,7 +126,7 @@ public class MixnetCommandServiceAdapter
         ArrayList<XimixRegistrarFactory.NodeConfig> out = new ArrayList<>();
         try
         {
-            NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
+            MonitorService nhm = registrar.connect(MonitorService.class);
             Set<String> names = nhm.getConnectedNodeNames();
 
             for (String n : names)
@@ -148,7 +149,7 @@ public class MixnetCommandServiceAdapter
         NodeStatusMessage details = null;
         try
         {
-            NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
+            MonitorService nhm = registrar.connect(MonitorService.class);
             details = nhm.getFullInfo(name);
         }
         catch (Exception e)
@@ -164,7 +165,7 @@ public class MixnetCommandServiceAdapter
         List<NodeStatusMessage> details = null;
         try
         {
-            NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
+            MonitorService nhm = registrar.connect(MonitorService.class);
             details = nhm.getFullInfo();
         }
         catch (Exception e)
@@ -182,7 +183,7 @@ public class MixnetCommandServiceAdapter
         NodeStatusMessage details = null;
         try
         {
-            NodeHealthMonitor nhm = registrar.connect(NodeHealthMonitor.class);
+            MonitorService nhm = registrar.connect(MonitorService.class);
             details = nhm.getStatistics(node);
         }
         catch (Exception e)

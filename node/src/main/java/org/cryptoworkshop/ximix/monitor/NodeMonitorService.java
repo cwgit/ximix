@@ -1,21 +1,26 @@
 package org.cryptoworkshop.ximix.monitor;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.*;
-import org.cryptoworkshop.ximix.common.service.BasicService;
-import org.cryptoworkshop.ximix.common.service.ListeningSocketInfo;
-import org.cryptoworkshop.ximix.common.service.NodeContext;
-import org.cryptoworkshop.ximix.common.service.Service;
-import org.cryptoworkshop.ximix.mixnet.service.BoardHostingService;
-import org.w3c.dom.Node;
-
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Map;
+
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.Message;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
+import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusRequestMessage;
+import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
+import org.cryptoworkshop.ximix.mixnet.service.BoardHostingService;
+import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
+import org.cryptoworkshop.ximix.node.service.NodeContext;
+import org.cryptoworkshop.ximix.node.service.Service;
+import org.w3c.dom.Node;
 
 /**
  *

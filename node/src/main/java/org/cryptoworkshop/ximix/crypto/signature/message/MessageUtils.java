@@ -1,16 +1,9 @@
 package org.cryptoworkshop.ximix.crypto.signature.message;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Set;
-import java.util.TreeSet;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSequence;
-import org.cryptoworkshop.ximix.common.message.ParticipantMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ParticipantMessage;
 import org.cryptoworkshop.ximix.crypto.util.Participant;
 
 class MessageUtils

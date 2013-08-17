@@ -8,11 +8,11 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DEROutputStream;
-import org.cryptoworkshop.ximix.common.message.BigIntegerMessage;
-import org.cryptoworkshop.ximix.common.message.BoardErrorStatusMessage;
-import org.cryptoworkshop.ximix.common.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.message.PermuteAndMoveMessage;
-import org.cryptoworkshop.ximix.common.message.PermuteMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BigIntegerMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardErrorStatusMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.PermuteMessage;
 import org.junit.Test;
 
 /**

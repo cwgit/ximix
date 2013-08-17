@@ -23,7 +23,7 @@ import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.ec.ECPairTransform;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
+import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 
 public class MultiColumnRowTransform
     implements Transform

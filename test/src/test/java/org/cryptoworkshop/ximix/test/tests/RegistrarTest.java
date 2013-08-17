@@ -1,12 +1,12 @@
 package org.cryptoworkshop.ximix.test.tests;
 
 import junit.framework.TestCase;
-import org.cryptoworkshop.ximix.common.service.Algorithm;
+import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
+import org.cryptoworkshop.ximix.client.KeyGenerationService;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
-import org.cryptoworkshop.ximix.crypto.client.KeyGenerationService;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrar;
-import org.cryptoworkshop.ximix.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.junit.Test;
 

@@ -1,15 +1,15 @@
 package org.cryptoworkshop.ximix.common.test;
 
-import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.util.ASN1Dump;
-import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.util.ASN1Dump;
+import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
+import org.junit.Test;
 
 /**
  *

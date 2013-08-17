@@ -16,7 +16,7 @@
 package org.cryptoworkshop.ximix.crypto.operator;
 
 import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.cryptoworkshop.ximix.common.service.PublicKeyOperator;
+import org.cryptoworkshop.ximix.node.service.PublicKeyOperator;
 
 public interface ECPublicKeyOperator
     extends PublicKeyOperator

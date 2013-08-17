@@ -16,7 +16,7 @@
 package org.cryptoworkshop.ximix.crypto.operator;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
-import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
 public interface BLSPrivateKeyOperator
     extends PrivateKeyOperator

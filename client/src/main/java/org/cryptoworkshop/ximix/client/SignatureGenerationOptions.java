@@ -15,7 +15,7 @@
  */
 package org.cryptoworkshop.ximix.client;
 
-import org.cryptoworkshop.ximix.common.service.Algorithm;
+import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
 public class SignatureGenerationOptions
 {

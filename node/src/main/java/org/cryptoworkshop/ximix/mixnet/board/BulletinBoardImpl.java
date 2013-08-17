@@ -23,10 +23,10 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.cryptoworkshop.ximix.common.message.MessageWitness;
-import org.cryptoworkshop.ximix.common.message.MessageWitnessBlock;
-import org.cryptoworkshop.ximix.common.message.PostedMessage;
-import org.cryptoworkshop.ximix.common.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageWitness;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageWitnessBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.mapdb.DB;

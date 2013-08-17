@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.cryptoworkshop.ximix.common.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
 public interface KeyManager
 {
