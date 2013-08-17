@@ -1,6 +1,4 @@
-package org.cryptoworkshop.ximix.common.statistics;
-
-import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
+package org.cryptoworkshop.ximix.node.service;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,6 +8,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
+
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  *

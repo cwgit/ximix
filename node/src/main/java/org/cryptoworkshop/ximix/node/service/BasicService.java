@@ -15,7 +15,6 @@
  */
 package org.cryptoworkshop.ximix.node.service;
 
-import org.cryptoworkshop.ximix.common.statistics.CrossSection;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 

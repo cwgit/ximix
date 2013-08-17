@@ -1,9 +1,9 @@
 package org.cryptoworkshop.ximix.test.node;
 
-import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  * Test throwable handler.

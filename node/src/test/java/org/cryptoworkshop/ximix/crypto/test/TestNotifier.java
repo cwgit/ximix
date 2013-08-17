@@ -1,6 +1,6 @@
 package org.cryptoworkshop.ximix.crypto.test;
 
-import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  *

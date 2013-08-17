@@ -27,7 +27,7 @@ import org.bouncycastle.asn1.DEROutputStream;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.handlers.EventNotifier;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.service.Service;
 
 class XimixServices
