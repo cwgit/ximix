@@ -15,11 +15,14 @@
  */
 package org.cryptoworkshop.ximix.client.registrar;
 
-public class RegistrarConnectionException
-    extends Exception
+import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
+import org.w3c.dom.Node;
+
+public class NodeConfigFactory
+    implements ConfigObjectFactory<NodeConfig>
 {
-    public RegistrarConnectionException(String message)
+    public NodeConfig createObject(Node configNode)
     {
-        super(message);
+        return new NodeConfig(configNode);
     }
 }

@@ -17,8 +17,6 @@ package org.cryptoworkshop.ximix.client;
 
 import java.util.List;
 
-import org.cryptoworkshop.ximix.client.registrar.RegistrarServiceException;
-
 /**
  * Registrar which encompasses all the services offered by the peers in the network.
  */
