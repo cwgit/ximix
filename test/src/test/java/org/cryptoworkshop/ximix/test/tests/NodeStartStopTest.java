@@ -18,7 +18,7 @@ package org.cryptoworkshop.ximix.test.tests;
 import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
-import org.cryptoworkshop.ximix.node.core.XimixNode;
+import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
 
 /**

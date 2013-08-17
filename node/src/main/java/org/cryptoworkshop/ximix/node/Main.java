@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.core;
+package org.cryptoworkshop.ximix.node;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,6 +21,7 @@ import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
+import org.cryptoworkshop.ximix.node.core.XimixNodeBuilder;
 
 public class Main
 {

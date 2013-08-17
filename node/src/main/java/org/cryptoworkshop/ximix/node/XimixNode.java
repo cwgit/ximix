@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.console.model;
+package org.cryptoworkshop.ximix.node;
 
-/**
- * Class that holds invocation parameters as passed back from the ui.
- */
-public class Invocation
+import java.util.concurrent.TimeUnit;
+
+public interface XimixNode
 {
+    void start();
 
+    boolean shutdown(int timeout, TimeUnit unit)
+        throws InterruptedException;
 }
+

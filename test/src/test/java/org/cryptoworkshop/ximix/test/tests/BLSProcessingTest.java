@@ -28,7 +28,7 @@ import org.cryptoworkshop.ximix.client.SigningService;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
-import org.cryptoworkshop.ximix.node.core.XimixNode;
+import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
 import org.cryptoworkshop.ximix.test.node.ResourceAnchor;

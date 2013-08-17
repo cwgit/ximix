@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
-import org.cryptoworkshop.ximix.node.core.XimixNode;
+import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.node.core.XimixNodeBuilder;
 
 /**

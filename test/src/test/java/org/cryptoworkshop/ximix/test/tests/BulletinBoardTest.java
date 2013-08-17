@@ -15,7 +15,7 @@ import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.operation.Operation;
-import org.cryptoworkshop.ximix.node.core.XimixNode;
+import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
 import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;

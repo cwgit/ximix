@@ -49,7 +49,7 @@ allprojects {
     }
 
     test {
-        jvmArgs "-javaagent:${configurations.codeCoverage.singleFile}=destfile=${rootDir}/coverage/jacoco.exec,sessionid=HSServ,append=true",
+        jvmArgs "-javaagent:${configurations.codeCoverage.singleFile}=destfile=${rootDir}/build/coverage/jacoco.exec,sessionid=HSServ,append=true",
                 '-Djacoco=true',
                 '-Xms128m',
                 '-Xmx512m',
@@ -199,7 +199,7 @@ task coverage_report(dependsOn: 'compileTestJava') << {
         }
     }
 
-    File root = new File(projectDir, "coverage");
+    File root = new File(projectDir, "build/coverage");
 
     root.mkdirs();
 
@@ -219,7 +219,7 @@ task coverage_report(dependsOn: 'compileTestJava') << {
     ant {
         jacocoreport {
             executiondata {
-                fileset(dir: "${rootDir}/coverage/") {
+                fileset(dir: "${rootDir}/build/coverage/") {
                     file(file: 'jacoco.exec')
                 }
             }
