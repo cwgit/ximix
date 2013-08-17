@@ -13,12 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.admin;
+package org.cryptoworkshop.ximix.client.registrar;
+
+import java.util.List;
 
 /**
- *   By way of example..
- *   I suggest we
- *
+ * Registrar which encompasses all the services offered by the peers in the network.
  */
-public class NodeStatistics {
+public interface XimixRegistrar
+{
+    /**
+     * Connect to a specific service.
+     *
+     * @param serviceClass
+     * @param <T>
+     * @return
+     */
+    <T> T connect(Class<T> serviceClass)
+        throws RegistrarServiceException;
+
+    List<XimixRegistrarFactory.NodeConfig> getConfiguredNodeNames();
 }

@@ -13,18 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.client;
+package org.cryptoworkshop.ximix.client.registrar;
 
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.client.SignatureGenerationOptions;
+import org.cryptoworkshop.ximix.client.SigningService;
+import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.FetchPartialPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.MessageType;
+import org.cryptoworkshop.ximix.common.message.SignatureCreateMessage;
+import org.cryptoworkshop.ximix.common.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ClientServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
 
 
 public class ClientSigningService

@@ -13,24 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.registrar;
+package org.cryptoworkshop.ximix.client;
 
-import java.util.List;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
-/**
- * Registrar which encompasses all the services offered by the peers in the network.
- */
-public interface XimixRegistrar
+public interface SigningService
+    extends KeyService
 {
-    /**
-     * Connect to a specific service.
-     *
-     * @param serviceClass
-     * @param <T>
-     * @return
-     */
-    <T> T connect(Class<T> serviceClass)
-        throws RegistrarServiceException;
+    byte[] generateSignature(String keyID, SignatureGenerationOptions options, byte[] message)
+        throws ServiceConnectionException;
 
-    List<XimixRegistrarFactory.NodeConfig> getConfiguredNodeNames();
+    void shutdown() throws ServiceConnectionException;
 }

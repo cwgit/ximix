@@ -13,24 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.admin;
+package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
 
-public interface DownloadOperation
+/**
+ * Support interface for requesting a shuffle.
+ */
+public interface ShuffleOperation
 {
     /**
-     * Download the contents of a board.
+     * Do a shuffle. If a shuffle is to be repeated on a node twice, repeat the node name in the nodes argument.
      *
-     * @param boardName name of the board to download from.
-     * @param options
-     * @param defaultListener the listener to be sent messages
+     * @param boardName board to do the shuffle on.
+     * @param options applicable shuffle options to use.
+     * @param nodes the node path to use.
+     * @throws org.cryptoworkshop.ximix.common.service.ServiceConnectionException
      */
-    Operation<DownloadOperationListener> downloadBoardContents(
+    Operation<ShuffleOperationListener> doShuffleAndMove(
             String boardName,
-            DownloadOptions options,
-            DownloadOperationListener defaultListener)
+            ShuffleOptions options,
+            String... nodes)
         throws ServiceConnectionException;
+
 }

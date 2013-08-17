@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet;
+package org.cryptoworkshop.ximix.client;
 
-public class DownloadOptions
+import org.cryptoworkshop.ximix.common.service.Algorithm;
+
+public class KeyGenerationOptions
 {
     public static class Builder
     {
-        private String keyID;
+        private final Algorithm algorithm;
+        private final String[] parameters;
+
         private int threshold;
         private String[] nodesToUse;
-        private DecryptionChallengeSpec challengeSpec;
 
-        public Builder()
+        public Builder(Algorithm algorithm, String... parameters)
         {
-
-        }
-
-        public Builder withKeyID(String keyID)
-        {
-            this.keyID = keyID;
-
-            return this;
+            this.algorithm = algorithm;
+            this.parameters = parameters;
         }
 
         public Builder withThreshold(int threshold)
@@ -50,42 +47,42 @@ public class DownloadOptions
             return this;
         }
 
-        public Builder withChallenge(DecryptionChallengeSpec challengeSpec)
+        public KeyGenerationOptions build()
         {
-            this.challengeSpec = challengeSpec;
-
-            return this;
-        }
-
-        public DownloadOptions build()
-        {
-            return new DownloadOptions(this);
+            return new KeyGenerationOptions(this);
         }
     }
 
-    private final String keyID;
+    private final Algorithm algorithm;
+    private final String[] parameters;
     private final int threshold;
     private final String[] nodesToUse;
 
-    private DownloadOptions(Builder builder)
+    private KeyGenerationOptions(Builder builder)
     {
-        this.keyID = builder.keyID;
+        this.algorithm = builder.algorithm;
+        this.parameters = builder.parameters;
         this.threshold = builder.threshold;
-        this.nodesToUse = builder.nodesToUse.clone();
+        this.nodesToUse = builder.nodesToUse;
     }
 
-    public String getKeyID()
+    public Algorithm getAlgorithm()
     {
-        return keyID;
+        return algorithm;
+    }
+
+    public String[] getParameters()
+    {
+        return parameters;
+    }
+
+    public String[] getNodesToUse()
+    {
+        return nodesToUse;
     }
 
     public int getThreshold()
     {
         return threshold;
-    }
-
-    public String[] getNodesToUse()
-    {
-        return nodesToUse.clone();
     }
 }

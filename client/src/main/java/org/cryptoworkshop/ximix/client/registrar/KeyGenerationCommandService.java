@@ -13,9 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.client;
+package org.cryptoworkshop.ximix.client.registrar;
+
+import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1String;
+import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
+import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.common.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
@@ -29,9 +33,6 @@ import org.cryptoworkshop.ximix.common.message.MessageType;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.crypto.KeyGenerationOptions;
-
-import java.io.IOException;
 
 
 public class KeyGenerationCommandService

@@ -13,13 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.registrar;
+package org.cryptoworkshop.ximix.client;
 
-public class RegistrarServiceException
-    extends Exception
+import java.util.List;
+import java.util.Set;
+
+import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+
+/**
+ *
+ */
+public interface MonitorService
 {
-    public RegistrarServiceException(String message)
-    {
-        super(message);
-    }
+
+    NodeStatusMessage getStatistics(String node)
+        throws ServiceConnectionException;
+
+
+    List<NodeStatusMessage> getFullInfo()
+        throws ServiceConnectionException;
+
+    Set<String> getConnectedNodeNames();
+
+    NodeStatusMessage getFullInfo(String name);
+
 }

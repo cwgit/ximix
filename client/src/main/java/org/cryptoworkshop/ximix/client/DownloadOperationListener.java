@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.admin;
+package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.common.operation.OperationListener;
 
-public interface ShuffleOperationListener
+public interface DownloadOperationListener
     extends OperationListener<String>
 {
+    public void messageDownloaded(int index, byte[] message);
 }

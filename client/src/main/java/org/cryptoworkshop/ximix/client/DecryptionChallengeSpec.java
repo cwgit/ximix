@@ -13,25 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet;
+package org.cryptoworkshop.ximix.client;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.io.OutputStream;
 
-public class MixNetNodeContext
+public class DecryptionChallengeSpec
 {
+    private final MessageChooser chooser;
+    private final OutputStream logStream;
 
-    private Executor multiTaskExecutor = Executors.newCachedThreadPool();
-
-    public void addConnection(Runnable task)
+    public DecryptionChallengeSpec(MessageChooser chooser, OutputStream logStream)
     {
-        multiTaskExecutor.execute(task);
+        this.chooser = chooser;
+        this.logStream = logStream;
     }
 
-    public void scheduleTask(Runnable task)
+    public MessageChooser getChooser()
     {
-        multiTaskExecutor.execute(task);
+        return chooser;
     }
 
-
+    public OutputStream getLogStream()
+    {
+        return logStream;
+    }
 }

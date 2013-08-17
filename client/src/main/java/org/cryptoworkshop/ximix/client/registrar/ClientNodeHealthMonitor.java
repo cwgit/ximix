@@ -1,5 +1,10 @@
-package org.cryptoworkshop.ximix.monitor;
+package org.cryptoworkshop.ximix.client.registrar;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import org.cryptoworkshop.ximix.client.MonitorService;
 import org.cryptoworkshop.ximix.common.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.message.MessageReply;
 import org.cryptoworkshop.ximix.common.message.NodeStatusMessage;
@@ -7,15 +12,11 @@ import org.cryptoworkshop.ximix.common.message.NodeStatusRequestMessage;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 /**
  *
  */
 public class ClientNodeHealthMonitor
-    implements NodeHealthMonitor
+    implements MonitorService
 {
     private AdminServicesConnection connection = null;
 

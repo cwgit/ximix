@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.admin;
+package org.cryptoworkshop.ximix.client.registrar;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -31,6 +31,11 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.client.CommandService;
+import org.cryptoworkshop.ximix.client.DownloadOperationListener;
+import org.cryptoworkshop.ximix.client.DownloadOptions;
+import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
+import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.common.board.asn1.PairSequence;
 import org.cryptoworkshop.ximix.common.board.asn1.PointSequence;
 import org.cryptoworkshop.ximix.common.message.BoardDownloadMessage;
@@ -51,8 +56,6 @@ import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
-import org.cryptoworkshop.ximix.mixnet.DownloadOptions;
-import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 
 public class ClientCommandService
     implements CommandService

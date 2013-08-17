@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet;
+package org.cryptoworkshop.ximix.client;
 
-/**
- * General interface for indicating to an internal service that a particular message, or messages, require some additional processing.
- */
-public interface MessageChooser
+import org.cryptoworkshop.ximix.common.operation.Operation;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+
+public interface DownloadOperation
 {
     /**
-     * Return true if a message with a particular index is chosen, false otherwise.
+     * Download the contents of a board.
      *
-     * @param index the index number of a message on its bulletin board.
-     * @return true if the message is regarded as chosen, false otherwise.
+     * @param boardName name of the board to download from.
+     * @param options
+     * @param defaultListener the listener to be sent messages
      */
-    boolean chooseMessage(int index);
+    Operation<DownloadOperationListener> downloadBoardContents(
+            String boardName,
+            DownloadOptions options,
+            DownloadOperationListener defaultListener)
+        throws ServiceConnectionException;
 }

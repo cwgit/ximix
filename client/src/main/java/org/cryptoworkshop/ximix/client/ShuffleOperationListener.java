@@ -13,16 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.client;
+package org.cryptoworkshop.ximix.client;
 
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.crypto.SignatureGenerationOptions;
+import org.cryptoworkshop.ximix.common.operation.OperationListener;
 
-public interface SigningService
-    extends KeyService
+public interface ShuffleOperationListener
+    extends OperationListener<String>
 {
-    byte[] generateSignature(String keyID, SignatureGenerationOptions options, byte[] message)
-        throws ServiceConnectionException;
-
-    void shutdown() throws ServiceConnectionException;
 }

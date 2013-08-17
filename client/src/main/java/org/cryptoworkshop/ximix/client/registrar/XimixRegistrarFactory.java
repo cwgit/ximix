@@ -13,33 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.registrar;
+package org.cryptoworkshop.ximix.client.registrar;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.cryptoworkshop.ximix.client.CommandService;
+import org.cryptoworkshop.ximix.client.KeyGenerationService;
+import org.cryptoworkshop.ximix.client.KeyService;
+import org.cryptoworkshop.ximix.client.MonitorService;
+import org.cryptoworkshop.ximix.client.SigningService;
+import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.message.*;
+import org.cryptoworkshop.ximix.common.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.message.MessageReply;
+import org.cryptoworkshop.ximix.common.message.MessageType;
+import org.cryptoworkshop.ximix.common.message.NodeInfo;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.service.SpecificServicesConnection;
-import org.cryptoworkshop.ximix.crypto.client.*;
-import org.cryptoworkshop.ximix.mixnet.admin.ClientCommandService;
-import org.cryptoworkshop.ximix.mixnet.admin.CommandService;
-import org.cryptoworkshop.ximix.mixnet.client.ClientUploadService;
-import org.cryptoworkshop.ximix.mixnet.client.UploadService;
-import org.cryptoworkshop.ximix.monitor.ClientNodeHealthMonitor;
-import org.cryptoworkshop.ximix.monitor.NodeHealthMonitor;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.*;
 
 public class XimixRegistrarFactory
 {
@@ -111,7 +126,7 @@ public class XimixRegistrarFactory
                 {
                     return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
                 }
-                if (serviceClass.isAssignableFrom(NodeHealthMonitor.class))
+                if (serviceClass.isAssignableFrom(MonitorService.class))
                 {
                     return (T)new ClientNodeHealthMonitor(new AdminServicesConnectionImpl(nodes));
                 }

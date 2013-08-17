@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.crypto.client;
+package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 

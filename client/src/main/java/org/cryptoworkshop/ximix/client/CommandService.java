@@ -13,25 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.admin;
+package org.cryptoworkshop.ximix.client;
 
-import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.mixnet.ShuffleOptions;
 
-public interface ShuffleOperation
+public interface CommandService
+    extends ShuffleOperation, DownloadOperation
 {
     /**
-     * Do a shuffle.
-     * @param boardName
-     * @param options
-     * @param nodes
-     * @throws org.cryptoworkshop.ximix.common.service.ServiceConnectionException
+     * Close any io used by this service.
      */
-    Operation<ShuffleOperationListener> doShuffleAndMove(
-            String boardName,
-            ShuffleOptions options,
-            String... nodes)
-        throws ServiceConnectionException;
-
+    void shutdown() throws ServiceConnectionException;
 }

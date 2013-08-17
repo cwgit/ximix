@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet.admin;
+package org.cryptoworkshop.ximix.client.registrar;
 
-import org.cryptoworkshop.ximix.common.operation.OperationListener;
-
-public interface DownloadOperationListener
-    extends OperationListener<String>
+public class RegistrarServiceException
+    extends Exception
 {
-    public void messageDownloaded(int index, byte[] message);
+    public RegistrarServiceException(String message)
+    {
+        super(message);
+    }
 }

@@ -13,28 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.mixnet;
+package org.cryptoworkshop.ximix.client;
 
-import java.io.OutputStream;
-
-public class DecryptionChallengeSpec
+/**
+ * General interface for indicating to an internal service that a particular message, or messages, require some additional processing.
+ */
+public interface MessageChooser
 {
-    private final MessageChooser chooser;
-    private final OutputStream logStream;
-
-    public DecryptionChallengeSpec(MessageChooser chooser, OutputStream logStream)
-    {
-        this.chooser = chooser;
-        this.logStream = logStream;
-    }
-
-    public MessageChooser getChooser()
-    {
-        return chooser;
-    }
-
-    public OutputStream getLogStream()
-    {
-        return logStream;
-    }
+    /**
+     * Return true if a message with a particular index is chosen, false otherwise.
+     *
+     * @param index the index number of a message on its bulletin board.
+     * @return true if the message is regarded as chosen, false otherwise.
+     */
+    boolean chooseMessage(int index);
 }
