@@ -8,7 +8,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Base64;
-import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
+import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
 import org.junit.Assert;
 import org.junit.Test;
 

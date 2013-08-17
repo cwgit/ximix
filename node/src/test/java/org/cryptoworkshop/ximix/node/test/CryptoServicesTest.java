@@ -52,17 +52,17 @@ import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
-import org.cryptoworkshop.ximix.crypto.key.BLSKeyPairGenerator;
-import org.cryptoworkshop.ximix.crypto.key.ECKeyPairGenerator;
-import org.cryptoworkshop.ximix.crypto.key.ECNewDKGGenerator;
-import org.cryptoworkshop.ximix.crypto.key.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.crypto.key.message.ECKeyGenParams;
-import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
-import org.cryptoworkshop.ximix.crypto.signature.BLSSignerEngine;
 import org.cryptoworkshop.ximix.crypto.test.TestNotifier;
 import org.cryptoworkshop.ximix.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.node.core.XimixNodeContext;
+import org.cryptoworkshop.ximix.node.crypto.key.BLSKeyPairGenerator;
+import org.cryptoworkshop.ximix.node.crypto.key.ECKeyPairGenerator;
+import org.cryptoworkshop.ximix.node.crypto.key.ECNewDKGGenerator;
+import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
+import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
+import org.cryptoworkshop.ximix.node.crypto.signature.BLSSignerEngine;
 import org.cryptoworkshop.ximix.node.service.Service;
 import org.junit.Assert;
 import org.junit.Test;
@@ -415,10 +415,10 @@ public class CryptoServicesTest
             Element service = document.createElement("service");
             services.appendChild(service);
 
-            services.appendChild(createService(document, "org.cryptoworkshop.ximix.crypto.service.NodeKeyRetrievalService"));
-            services.appendChild(createService(document, "org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService"));
-            services.appendChild(createService(document, "org.cryptoworkshop.ximix.crypto.service.NodeSigningService"));
-            services.appendChild(createService(document, "org.cryptoworkshop.ximix.crypto.service.NodeDecryptionService"));
+            services.appendChild(createService(document, "org.cryptoworkshop.ximix.node.crypto.service.NodeKeyRetrievalService"));
+            services.appendChild(createService(document, "org.cryptoworkshop.ximix.node.crypto.service.NodeKeyGenerationService"));
+            services.appendChild(createService(document, "org.cryptoworkshop.ximix.node.crypto.service.NodeSigningService"));
+            services.appendChild(createService(document, "org.cryptoworkshop.ximix.node.crypto.service.NodeDecryptionService"));
 
             return rootElement;
         }

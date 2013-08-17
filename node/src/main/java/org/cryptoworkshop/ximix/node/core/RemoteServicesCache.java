@@ -37,8 +37,8 @@ import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
-import org.cryptoworkshop.ximix.mixnet.service.BoardIndex;
-import org.cryptoworkshop.ximix.mixnet.service.RemoteBoardHostingService;
+import org.cryptoworkshop.ximix.node.mixnet.service.BoardIndex;
+import org.cryptoworkshop.ximix.node.mixnet.service.RemoteBoardHostingService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.cryptoworkshop.ximix.node.service.Service;
 

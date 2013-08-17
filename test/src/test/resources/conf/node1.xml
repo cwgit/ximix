@@ -7,7 +7,7 @@
     <description></description>
     <services>
         <service>
-            <implementation>org.cryptoworkshop.ximix.mixnet.service.BoardHostingService</implementation>
+            <implementation>org.cryptoworkshop.ximix.node.mixnet.service.BoardHostingService</implementation>
             <boards>
                 <board>
                     <name>TED</name>
@@ -15,24 +15,24 @@
             </boards>
             <transforms>
                 <transform>
-                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform</implementation>
+                    <implementation>org.cryptoworkshop.ximix.node.mixnet.transform.MultiColumnRowTransform</implementation>
                 </transform>
                 <transform>
-                    <implementation>org.cryptoworkshop.ximix.mixnet.transform.NullTransform</implementation>
+                    <implementation>org.cryptoworkshop.ximix.node.mixnet.transform.NullTransform</implementation>
                 </transform>
             </transforms>
         </service>
         <service>
-            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeKeyRetrievalService</implementation>
+            <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeKeyRetrievalService</implementation>
         </service>
         <service>
-            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeKeyGenerationService</implementation>
+            <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeKeyGenerationService</implementation>
         </service>
         <service>
-            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeDecryptionService</implementation>
+            <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeDecryptionService</implementation>
         </service>
         <service>
-            <implementation>org.cryptoworkshop.ximix.crypto.service.NodeSigningService</implementation>
+            <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeSigningService</implementation>
         </service>
     </services>
 </node>

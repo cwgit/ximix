@@ -39,7 +39,7 @@ import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
-import org.cryptoworkshop.ximix.crypto.key.util.BLSPublicKeyFactory;
+import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
 
 public class Main
 {

@@ -42,7 +42,7 @@ import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.operation.Operation;
-import org.cryptoworkshop.ximix.mixnet.transform.MultiColumnRowTransform;
+import org.cryptoworkshop.ximix.node.mixnet.transform.MultiColumnRowTransform;
 
 public class Main
 {
