@@ -19,7 +19,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 
-public interface Service
+public interface NodeService
 {
     CapabilityMessage getCapability();
 

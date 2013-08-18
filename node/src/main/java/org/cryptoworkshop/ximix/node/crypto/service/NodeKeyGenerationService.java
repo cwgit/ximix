@@ -27,11 +27,11 @@ import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.node.crypto.key.BLSKeyPairGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.ECKeyPairGenerator;
-import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 public class NodeKeyGenerationService
-    extends BasicService
+    extends BasicNodeService
 {
     public NodeKeyGenerationService(NodeContext nodeContext, Config config)
     {

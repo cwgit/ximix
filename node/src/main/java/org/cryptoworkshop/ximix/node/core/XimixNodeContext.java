@@ -59,13 +59,13 @@ import org.cryptoworkshop.ximix.node.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.KeyManager;
 import org.cryptoworkshop.ximix.node.crypto.key.KeyManagerListener;
 import org.cryptoworkshop.ximix.node.crypto.operator.bc.BcECPublicKeyOperator;
-import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
+import org.cryptoworkshop.ximix.node.service.NodeService;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.node.service.PublicKeyOperator;
-import org.cryptoworkshop.ximix.node.service.Service;
 import org.cryptoworkshop.ximix.node.service.ServiceEvent;
 import org.cryptoworkshop.ximix.node.service.ServiceStatisticsListener;
 import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
@@ -78,7 +78,7 @@ public class XimixNodeContext
     private final ExecutorService connectionExecutor = Executors.newCachedThreadPool();   // TODO configurable or linked to threshold
     private final ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);   // TODO configurable or linked to threshold
     private final Map<Decoupler, ExecutorService> decouplers = new HashMap<>();
-    private final List<Service> services = new ArrayList<>();
+    private final List<NodeService> nodeServices = new ArrayList<>();
     private final String name;
     private final ECKeyManager ecKeyManager;
     private final BLSKeyManager blsKeyManager;
@@ -160,18 +160,18 @@ public class XimixNodeContext
     }
 
     @Override
-    public Map<Service, Map<String, Object>> getServiceStatistics()
+    public Map<NodeService, Map<String, Object>> getServiceStatistics()
     {
-        final Map<Service, Map<String, Object>> stats = new HashMap<>();
+        final Map<NodeService, Map<String, Object>> stats = new HashMap<>();
 
-        List<Service> serviceList = getServices();
+        List<NodeService> nodeServiceList = getNodeServices();
 
-        final CountDownLatch latch = new CountDownLatch(serviceList.size());
+        final CountDownLatch latch = new CountDownLatch(nodeServiceList.size());
 
         ServiceStatisticsListener listener = new ServiceStatisticsListener()
         {
             @Override
-            public void statisticsUpdate(Service service, Map<String, Object> details)
+            public void statisticsUpdate(NodeService service, Map<String, Object> details)
             {
                 stats.put(service, details);
                 latch.countDown();
@@ -180,7 +180,7 @@ public class XimixNodeContext
             }
         };
 
-        for (Service s : serviceList)
+        for (NodeService s : nodeServiceList)
         {
             s.addListener(listener);
             s.trigger(new ServiceEvent(ServiceEvent.Type.PUBLISH_STATISTICS, null));
@@ -190,13 +190,13 @@ public class XimixNodeContext
         {
             latch.await(10, TimeUnit.SECONDS); // TODO Make configurable..
 
-            FutureTask<Map<Service, Map<String, Object>>> future = new FutureTask<Map<Service, Map<String, Object>>>(new Callable<Map<Service, Map<String, Object>>>()
+            FutureTask<Map<NodeService, Map<String, Object>>> future = new FutureTask<Map<NodeService, Map<String, Object>>>(new Callable<Map<NodeService, Map<String, Object>>>()
             {
                 @Override
-                public Map<Service, Map<String, Object>> call()
+                public Map<NodeService, Map<String, Object>> call()
                     throws Exception
                 {
-                    Map<Service, Map<String, Object>> rv = new HashMap<>();
+                    Map<NodeService, Map<String, Object>> rv = new HashMap<>();
 
                     rv.putAll(stats);
 
@@ -242,12 +242,12 @@ public class XimixNodeContext
         List<CapabilityMessage> capabilityList = new ArrayList<>();
 
 
-        for (Service service : getServices())
+        for (NodeService nodeService : getNodeServices())
         {
-            CapabilityMessage msg = service.getCapability();
+            CapabilityMessage msg = nodeService.getCapability();
             if (msg == null)
             {
-                System.err.println("Service " + service.getClass().getName() + " does not supply a capability.");
+                System.err.println("Service " + nodeService.getClass().getName() + " does not supply a capability.");
                 continue;
             }
 
@@ -257,7 +257,7 @@ public class XimixNodeContext
         return capabilityList.toArray(new CapabilityMessage[capabilityList.size()]);
     }
 
-    private List<Service> getServices()
+    private List<NodeService> getNodeServices()
     {
         // we need to wait for the config task to finish
         try
@@ -269,7 +269,7 @@ public class XimixNodeContext
             Thread.currentThread().interrupt();
         }
 
-        return services;
+        return nodeServices;
     }
 
     public void addConnection(XimixServices task)
@@ -353,13 +353,13 @@ public class XimixNodeContext
         return ecKeyManager.getPrivateKeyOperator(keyID);
     }
 
-    public Service getService(Message message)
+    public NodeService getService(Message message)
     {
-        for (Service service : getServices())
+        for (NodeService nodeService : getNodeServices())
         {
-            if (service.isAbleToHandle(message))
+            if (nodeService.isAbleToHandle(message))
             {
-                return service;
+                return nodeService;
             }
         }
 
@@ -511,7 +511,7 @@ public class XimixNodeContext
     }
 
     private class NodeInfoService
-        extends BasicService
+        extends BasicNodeService
     {
         public NodeInfoService(NodeContext nodeContext)
         {
@@ -626,9 +626,9 @@ public class XimixNodeContext
 
                                 Constructor constructor = clazz.getConstructor(NodeContext.class, Config.class);
 
-                                Service impl = (Service)constructor.newInstance(XimixNodeContext.this, new Config(xmlNode));
+                                NodeService impl = (NodeService)constructor.newInstance(XimixNodeContext.this, new Config(xmlNode));
 
-                                services.add(impl);
+                                nodeServices.add(impl);
                             }
                             catch (ClassNotFoundException e)
                             {

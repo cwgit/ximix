@@ -22,11 +22,11 @@ import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.config.Config;
-import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 public class NodeKeyRetrievalService
-    extends BasicService
+    extends BasicNodeService
 {
     public NodeKeyRetrievalService(NodeContext nodeContext, Config config)
     {

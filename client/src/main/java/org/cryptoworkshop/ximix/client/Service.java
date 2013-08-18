@@ -13,11 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.service;
+package org.cryptoworkshop.ximix.client;
 
-import java.util.Map;
+import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
-public interface ServiceStatisticsListener
+/**
+ * Base interface for a service.
+ */
+public interface Service
 {
-    void statisticsUpdate(NodeService nodeService, Map<String, Object> details);
+    /**
+     * Free any resources used by this service.
+     *
+     * @throws org.cryptoworkshop.ximix.common.service.ServiceConnectionException in case of failure to cleanly shutdown.
+     */
+    void shutdown()
+        throws ServiceConnectionException;
 }

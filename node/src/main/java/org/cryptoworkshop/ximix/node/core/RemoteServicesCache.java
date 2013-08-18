@@ -40,7 +40,7 @@ import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.node.mixnet.service.BoardIndex;
 import org.cryptoworkshop.ximix.node.mixnet.service.RemoteBoardHostingService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
-import org.cryptoworkshop.ximix.node.service.Service;
+import org.cryptoworkshop.ximix.node.service.NodeService;
 
 public class RemoteServicesCache
 {
@@ -269,7 +269,7 @@ public class RemoteServicesCache
         }
     }
 
-    public Service findRemoteService(Message message)
+    public NodeService findRemoteService(Message message)
     {
         Enum type = message.getType();
         Set<String> peers = new HashSet<>(nodeContext.getPeerMap().keySet());
@@ -284,7 +284,7 @@ public class RemoteServicesCache
                 {
                     if (capability.getType().equals(CapabilityMessage.Type.BOARD_HOSTING))
                     {
-                        Service remoteBoard = new RemoteBoardHostingService(this.nodeContext, nodeName, capability);
+                        NodeService remoteBoard = new RemoteBoardHostingService(this.nodeContext, nodeName, capability);
 
                         if (remoteBoard.isAbleToHandle(message))
                         {

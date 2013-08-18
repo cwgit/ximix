@@ -154,7 +154,7 @@ public class Main
         CommandService commandService = adminRegistrar.connect(CommandService.class);
 
         // board is hosted on "B" move to "A" then to "C" then back to "B"
-        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECENCKEY").build(), "A", "C", "C");
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECENCKEY").build(), "A", "C", "C");
 
         final CountDownLatch shuffleLatch = new CountDownLatch(1);
 

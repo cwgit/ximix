@@ -17,6 +17,9 @@ package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.common.operation.OperationListener;
 
+/**
+ * Listener for monitoring shuffle operations.
+ */
 public interface ShuffleOperationListener
     extends OperationListener<String>
 {

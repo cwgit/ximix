@@ -21,6 +21,7 @@ import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
  * Carrier interface for methods connected with key retrieval.
  */
 public interface KeyService
+    extends Service
 {
     /**
      * Return the public key associated with key ID keyID.

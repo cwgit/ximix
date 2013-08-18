@@ -17,10 +17,12 @@ package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
+/**
+ * Carrier service interface for methods associated with message upload.
+ */
 public interface UploadService
+    extends Service
 {
     void uploadMessage(String boardName, byte[] message)
         throws ServiceConnectionException;
-
-    void shutdown() throws ServiceConnectionException;
 }

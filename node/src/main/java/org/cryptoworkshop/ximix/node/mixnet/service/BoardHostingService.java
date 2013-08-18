@@ -59,14 +59,14 @@ import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardImpl;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.node.mixnet.shuffle.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.node.mixnet.transform.Transform;
-import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class BoardHostingService
-    extends BasicService
+    extends BasicNodeService
 {
     private final Executor decoupler;
     private final BulletinBoardRegistry boardRegistry;

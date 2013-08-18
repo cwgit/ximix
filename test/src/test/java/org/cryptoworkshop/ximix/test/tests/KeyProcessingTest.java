@@ -338,7 +338,7 @@ public class KeyProcessingTest extends TestCase
         //
 
         Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",
-            new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECKEY").build(), "A", "C", "D", "E");
+            new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECKEY").build(), "A", "C", "D", "E");
 
         final CountDownLatch shufflerLatch = new CountDownLatch(1);
 

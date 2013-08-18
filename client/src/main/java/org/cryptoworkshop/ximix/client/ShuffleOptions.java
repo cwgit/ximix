@@ -15,26 +15,48 @@
  */
 package org.cryptoworkshop.ximix.client;
 
+/**
+ * Carrier for available options that can be set on bulletin board shuffle.
+ */
 public class ShuffleOptions
 {
+    /**
+     * Public builder for creating shuffle option objects.
+     */
     public static class Builder
     {
         private final String transformName;
 
         private String keyID;
 
+        /**
+         * Base constructor
+         *
+         * @param transformName the name of the transform to apply.
+         */
         public Builder(String transformName)
         {
              this.transformName = transformName;
         }
 
-        public Builder setKeyID(String keyID)
+        /**
+         * Flag that extra randomness to messages needs to be further encrypted using the public key associated with keyID.
+         *
+         * @param keyID identity of the private key to use.
+         * @return the current builder instance.
+         */
+        public Builder withKeyID(String keyID)
         {
             this.keyID = keyID;
 
             return this;
         }
 
+        /**
+         * Build an actual shuffle options object suitable for use with services supporting the shuffle operation.
+         *
+         * @return a ShuffleOptions object.
+         */
         public ShuffleOptions build()
         {
             return new ShuffleOptions(this);
@@ -50,11 +72,21 @@ public class ShuffleOptions
         this.keyID = builder.keyID;
     }
 
+    /**
+     * Return the transform to be applied during the shuffle.
+     *
+     * @return the name of the transform to use.
+     */
     public String getTransformName()
     {
         return  transformName;
     }
 
+    /**
+     * Return the id of the public key required for mixing in further randomness.
+     *
+     * @return key id of key to be used to mix in further randomness.
+     */
     public String getKeyID()
     {
         return  keyID;

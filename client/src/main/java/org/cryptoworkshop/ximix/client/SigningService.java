@@ -17,11 +17,12 @@ package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
+/**
+ * Carrier service interface for methods associated with signing.
+ */
 public interface SigningService
     extends KeyService
 {
     byte[] generateSignature(String keyID, SignatureGenerationOptions options, byte[] message)
         throws ServiceConnectionException;
-
-    void shutdown() throws ServiceConnectionException;
 }

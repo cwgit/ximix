@@ -28,7 +28,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeInfo;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
-import org.cryptoworkshop.ximix.node.service.Service;
+import org.cryptoworkshop.ximix.node.service.NodeService;
 
 class XimixServices
     implements Runnable
@@ -110,9 +110,9 @@ class XimixServices
                     {
                         Message message = Message.getInstance(o);
 
-                        Service service = nodeContext.getService(message);
+                        NodeService nodeService = nodeContext.getService(message);
                         nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Received Message: " + message);
-                        MessageReply reply = service.handle(message);
+                        MessageReply reply = nodeService.handle(message);
 
                         nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Reply Message: " + reply);
                         aOut.writeObject(reply);

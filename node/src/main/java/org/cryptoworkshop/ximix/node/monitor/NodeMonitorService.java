@@ -31,17 +31,17 @@ import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusRequestMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.node.mixnet.service.BoardHostingService;
-import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
-import org.cryptoworkshop.ximix.node.service.Service;
+import org.cryptoworkshop.ximix.node.service.NodeService;
 import org.w3c.dom.Node;
 
 /**
  *
  */
 public class NodeMonitorService
-    extends BasicService
+    extends BasicNodeService
 {
     public static final int MIN_STATISTICS_PERIOD = 1000;
     private final Config config;
@@ -150,7 +150,7 @@ public class NodeMonitorService
 
                 NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder(hash);
 
-                Map<Service, Map<String, Object>> map = null;
+                Map<NodeService, Map<String, Object>> map = null;
                 try
                 {
                     map = nodeContext.getServiceStatistics();
@@ -161,13 +161,13 @@ public class NodeMonitorService
                 }
 
 
-                for (Service service : map.keySet())
+                for (NodeService nodeService : map.keySet())
                 {
-                    if (service instanceof BoardHostingService)
+                    if (nodeService instanceof BoardHostingService)
                     {
-                        if (!map.get(service).isEmpty())
+                        if (!map.get(nodeService).isEmpty())
                         {
-                            builder.put("bhs!bhs-title", map.get(service));
+                            builder.put("bhs!bhs-title", map.get(nodeService));
                         }
                     }
                 }

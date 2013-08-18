@@ -18,8 +18,8 @@ package org.cryptoworkshop.ximix.node.service;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
-public abstract class BasicService
-    implements Service
+public abstract class BasicNodeService
+    implements NodeService
 {
     private final ListenerHandler<ServiceStatisticsListener> listenerHandler;
     private final ServiceStatisticsListener statisticsNotifier;
@@ -28,7 +28,7 @@ public abstract class BasicService
     protected final CrossSection statistics;
 
 
-    public BasicService(NodeContext nodeContext)
+    public BasicNodeService(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
         this.statistics = new CrossSection(nodeContext.getDecoupler(Decoupler.MONITOR), nodeContext.getEventNotifier());
@@ -47,7 +47,7 @@ public abstract class BasicService
                 @Override
                 public void run()
                 {
-                    statisticsNotifier.statisticsUpdate(BasicService.this, statistics.getMap());
+                    statisticsNotifier.statisticsUpdate(BasicNodeService.this, statistics.getMap());
                 }
             });
         }

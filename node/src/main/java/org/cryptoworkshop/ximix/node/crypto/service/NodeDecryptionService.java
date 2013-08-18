@@ -32,12 +32,12 @@ import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.node.crypto.operator.ECPrivateKeyOperator;
-import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
 public class NodeDecryptionService
-    extends BasicService
+    extends BasicNodeService
 {
     public NodeDecryptionService(NodeContext nodeContext, Config config)
     {

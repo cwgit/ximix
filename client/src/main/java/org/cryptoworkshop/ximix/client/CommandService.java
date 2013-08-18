@@ -15,18 +15,10 @@
  */
 package org.cryptoworkshop.ximix.client;
 
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-
 /**
  * Combined interface for issuing mix network commands.
  */
 public interface CommandService
-    extends ShuffleOperation, DownloadOperation
+    extends Service, ShuffleOperation, DownloadOperation
 {
-    /**
-     * Free any resources used by this service.
-     *
-     * @throws ServiceConnectionException in case of failure to cleanly shutdown.
-     */
-    void shutdown() throws ServiceConnectionException;
 }

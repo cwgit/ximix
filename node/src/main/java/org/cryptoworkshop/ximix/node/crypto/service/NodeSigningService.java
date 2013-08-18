@@ -28,11 +28,11 @@ import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.node.crypto.signature.BLSSignerEngine;
 import org.cryptoworkshop.ximix.node.crypto.signature.ECDSASignerEngine;
-import org.cryptoworkshop.ximix.node.service.BasicService;
+import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 public class NodeSigningService
-    extends BasicService
+    extends BasicNodeService
 {
     private final ECDSASignerEngine ecdsaSignerEngine;
     private final BLSSignerEngine blsSignerEngine;

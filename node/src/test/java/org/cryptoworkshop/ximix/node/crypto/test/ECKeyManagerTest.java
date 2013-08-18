@@ -44,9 +44,9 @@ import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
+import org.cryptoworkshop.ximix.node.service.NodeService;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 import org.cryptoworkshop.ximix.node.service.PublicKeyOperator;
-import org.cryptoworkshop.ximix.node.service.Service;
 import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -297,7 +297,7 @@ public class ECKeyManagerTest
         }
 
         @Override
-        public Map<Service, Map<String, Object>> getServiceStatistics()
+        public Map<NodeService, Map<String, Object>> getServiceStatistics()
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }

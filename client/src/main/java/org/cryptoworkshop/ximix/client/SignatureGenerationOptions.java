@@ -17,8 +17,14 @@ package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
+/**
+ * Carrier for available options that can be set on signature generation.
+ */
 public class SignatureGenerationOptions
 {
+    /**
+     * Public builder for creating signature generation option objects.
+     */
     public static class Builder
     {
         private final Algorithm algorithm;
@@ -87,7 +93,7 @@ public class SignatureGenerationOptions
 
     public String[] getParameters()
     {
-        return parameters;
+        return parameters.clone();
     }
 
     public String[] getNodesToUse()

@@ -63,7 +63,7 @@ import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.node.crypto.signature.BLSSignerEngine;
 import org.cryptoworkshop.ximix.node.crypto.test.TestNotifier;
-import org.cryptoworkshop.ximix.node.service.Service;
+import org.cryptoworkshop.ximix.node.service.NodeService;
 import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -340,9 +340,9 @@ public class CryptoServicesTest
                         message = new ClientMessage((ClientMessage.Type)type, messagePayload);
                     }
 
-                    Service service = context.getService(message);
+                    NodeService nodeService = context.getService(message);
 
-                    return service.handle(message);
+                    return nodeService.handle(message);
                 }
 
                 @Override
