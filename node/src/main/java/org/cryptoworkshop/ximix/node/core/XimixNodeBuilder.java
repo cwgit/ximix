@@ -29,10 +29,10 @@ import org.cryptoworkshop.ximix.node.XimixNode;
 
 public class XimixNodeBuilder
 {
+    private static final Logger L = Logger.getLogger("ximix");
+
     private EventNotifier eventNotifier = new EventNotifier()
     {
-        Logger L = Logger.getLogger("ximix");
-
         @Override
         public void notify(EventNotifier.Level level, Throwable throwable)
         {
