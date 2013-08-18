@@ -33,6 +33,12 @@ public class SignatureGenerationOptions
         private int threshold;
         private String[] nodesToUse;
 
+        /**
+         * Basic constructor, specify the algorithm and any parameters required.
+         *
+         * @param algorithm the algorithm the key is for.
+         * @param parameters the parameters to use.
+         */
         public Builder(Algorithm algorithm, String... parameters)
         {
             this.algorithm = algorithm;
@@ -67,6 +73,11 @@ public class SignatureGenerationOptions
             return this;
         }
 
+        /**
+         * Build an actual signature generation options object suitable for use with services supporting signature generation..
+         *
+         * @return a ShuffleOptions object.
+         */
         public SignatureGenerationOptions build()
         {
             return new SignatureGenerationOptions(this);
@@ -86,21 +97,41 @@ public class SignatureGenerationOptions
         this.nodesToUse = builder.nodesToUse;
     }
 
+    /**
+     * Return the algorithm id for the signature to be generated.
+     *
+     * @return the algorithm id.
+     */
     public Algorithm getAlgorithm()
     {
         return algorithm;
     }
 
+    /**
+     * Return a string representation of the parameter set for signature generation.
+     *
+     * @return an array of string defining the parameter set to be used in the generation.
+     */
     public String[] getParameters()
     {
         return parameters.clone();
     }
 
+    /**
+     * Return the names of the nodes to choose the threshold number of nodes from.
+     *
+     * @return the node names to be used.
+     */
     public String[] getNodesToUse()
     {
-        return nodesToUse;
+        return nodesToUse.clone();
     }
 
+    /**
+     * Return the minimum number of nodes required to generate a signature.
+     *
+     * @return the number of nodes required to generate a signature.
+     */
     public int getThreshold()
     {
         return threshold;

@@ -32,7 +32,4 @@ public interface KeyGenerationService
      */
     byte[] generatePublicKey(String keyID, KeyGenerationOptions keyGenOptions)
         throws ServiceConnectionException;
-
-    void shutdown()
-        throws ServiceConnectionException;
 }

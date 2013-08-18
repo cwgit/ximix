@@ -23,6 +23,13 @@ import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 public interface UploadService
     extends Service
 {
+    /**
+     * Upload the passed in message to the board boardName.
+     *
+     * @param boardName the name of the board to upload to.
+     * @param message a byte[] representing an encoding of the message.
+     * @throws ServiceConnectionException
+     */
     void uploadMessage(String boardName, byte[] message)
         throws ServiceConnectionException;
 }

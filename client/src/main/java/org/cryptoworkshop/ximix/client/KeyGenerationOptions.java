@@ -125,7 +125,7 @@ public class KeyGenerationOptions
     /**
      * Return the minimum number of nodes required to recover a private key.
      *
-     * @return the number of nodes required to recovery the private key.
+     * @return the number of nodes required to recover the private key.
      */
     public int getThreshold()
     {

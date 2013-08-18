@@ -23,6 +23,16 @@ import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 public interface SigningService
     extends KeyService
 {
+    /**
+     * Generate a signature using the given keyID and options for the passed in message. The type of signature
+     * is determined by the algorithm associated with keyID, and a byte encoding suitable for verification is returned.
+     *
+     * @param keyID the id for the key to be used in signing.
+     * @param options any options required for the signature generation.
+     * @param message the message to be signed.
+     * @return a byte[] encoding of the signature in a format suitable for later verification.
+     * @throws ServiceConnectionException in case of failure.
+     */
     byte[] generateSignature(String keyID, SignatureGenerationOptions options, byte[] message)
         throws ServiceConnectionException;
 }
