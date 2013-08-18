@@ -13,21 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client;
-
-import org.cryptoworkshop.ximix.common.util.OperationListener;
+package org.cryptoworkshop.ximix.common.util;
 
 /**
- * Listener for monitoring download operations.
+ * The basic operation listener interface.
+ *
+ * @param <E>  the type used to convey status and error details.
  */
-public interface DownloadOperationListener
-    extends OperationListener<String>
+public interface OperationListener<E>
 {
     /**
-     * Signal that the passed in message was downloaded with the passed in index.
-     *
-     * @param index index of the downloaded message on the bulletin board.
-     * @param message the downloaded message.
+     * Called whn the operation is completed.
      */
-    public void messageDownloaded(int index, byte[] message);
+    void completed();
+
+    /**
+     * Called when a status message is sent.
+     *
+     * @param statusObject an object providing some status details.
+     */
+    void status(E statusObject);
+
+    /**
+     * Called if the operation fails and will not complete.
+     *
+     * @param errorObject an object providing some error details.
+     */
+    void failed(E errorObject);
 }

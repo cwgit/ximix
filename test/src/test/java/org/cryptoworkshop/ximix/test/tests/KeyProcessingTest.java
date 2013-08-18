@@ -40,17 +40,18 @@ import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.UploadService;
-import org.cryptoworkshop.ximix.client.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
-import org.cryptoworkshop.ximix.common.operation.Operation;
+import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.node.mixnet.transform.MultiColumnRowTransform;
 import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
 import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;
+import org.cryptoworkshop.ximix.test.node.TestNotifier;
 import org.cryptoworkshop.ximix.test.node.ValueObject;
 import org.junit.Test;
 
@@ -123,7 +124,7 @@ public class KeyProcessingTest extends TestCase
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
         NodeTestUtil.launch(nodeFive, true);
 
-        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"));
+        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
@@ -282,7 +283,7 @@ public class KeyProcessingTest extends TestCase
 
         SecureRandom random = new SecureRandom();
 
-        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"));
+        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
@@ -506,7 +507,7 @@ public class KeyProcessingTest extends TestCase
 
         SecureRandom random = new SecureRandom();
 
-        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"));
+        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 

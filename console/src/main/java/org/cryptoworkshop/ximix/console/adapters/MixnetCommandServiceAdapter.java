@@ -25,10 +25,11 @@ import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.MonitorService;
 import org.cryptoworkshop.ximix.client.NodeDetail;
 import org.cryptoworkshop.ximix.client.RegistrarServiceException;
-import org.cryptoworkshop.ximix.client.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.console.config.AdapterConfig;
 import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
@@ -89,8 +90,27 @@ public class MixnetCommandServiceAdapter
         throws Exception
     {
         try
-        {
-            registrar = XimixRegistrarFactory.createAdminServiceRegistrar(configFile);
+        {                                      // TODO: put in something meaningful
+            registrar = XimixRegistrarFactory.createAdminServiceRegistrar(configFile, new EventNotifier()
+            {
+                @Override
+                public void notify(Level level, Throwable throwable)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                @Override
+                public void notify(Level level, Object detail)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                @Override
+                public void notify(Level level, Object detail, Throwable throwable)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+            });
             nameToConfig = registrar.connect(MonitorService.class).getConfiguredNodeDetails();
         }
         catch (Exception ex)

@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
 public class ShareMap<K, V>
@@ -34,11 +35,11 @@ public class ShareMap<K, V>
     private final ListenerHandler<ShareMapListener> listenerHandler;
     private final ShareMapListener notifier;
 
-    public ShareMap(ScheduledExecutorService executor, Executor decoupler)
+    public ShareMap(ScheduledExecutorService executor, Executor decoupler, EventNotifier eventNotifier)
     {
         this.executor = executor;
 
-        this.listenerHandler = new DecoupledListenerHandlerFactory(decoupler).createHandler(ShareMapListener.class);
+        this.listenerHandler = new DecoupledListenerHandlerFactory(decoupler, eventNotifier).createHandler(ShareMapListener.class);
         this.notifier = listenerHandler.getNotifier();
     }
 

@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.operation;
+package org.cryptoworkshop.ximix.common.util;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
-import org.cryptoworkshop.ximix.common.util.ListenerHandler;
-
+/**
+ * Base class for an operation, used to provide an operation number and an anchor point for listeners.
+ *
+ * @param <T> the type of the operation listener this operation will accept.
+ */
 public class Operation<T extends OperationListener>
 {
     private static final AtomicLong  operationCounter = new AtomicLong(System.currentTimeMillis());
@@ -30,24 +32,46 @@ public class Operation<T extends OperationListener>
 
     private final ListenerHandler<T> handler;
 
-    protected Operation(Executor decoupler, Class listenerClass)
+    /**
+     * Base constructor.
+     *
+     * @param decoupler the executor to decouple listener calls on.
+     * @param eventNotifier the notifier to log errors, warnings, and debug statements with.
+     * @param listenerClass the interface that our listeners follow.
+     */
+    protected Operation(Executor decoupler, EventNotifier eventNotifier, Class<T> listenerClass)
     {
-        handler = new DecoupledListenerHandlerFactory(decoupler).createHandler(listenerClass);
+        handler = new DecoupledListenerHandlerFactory(decoupler, eventNotifier).createHandler(listenerClass);
 
         this.operationNumber = operationCounter.getAndIncrement();
         this.notifier = handler.getNotifier();
     }
 
+    /**
+     * Return the unique number associated with this operation.
+     *
+     * @return the operation number.
+     */
     public long getOperationNumber()
     {
         return operationNumber;
     }
 
+    /**
+     * Add a listener to the operation.
+     *
+     * @param listener the type of the listener to be added.
+     */
     public void addListener(T listener)
     {
         handler.addListener(listener);
     }
 
+    /**
+     * Remove a listener from this operation.
+     *
+     * @param listener the listener to be removed.
+     */
     public void removeListener(T listener)
     {
         handler.removeListener(listener);

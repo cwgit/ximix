@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client;
+package org.cryptoworkshop.ximix.client.registrar;
 
-import org.cryptoworkshop.ximix.common.util.OperationListener;
+import org.cryptoworkshop.ximix.client.RegistrarServiceException;
 
 /**
- * Listener for monitoring download operations.
+ * Registrar which encompasses all the services offered by the peers in the network.
  */
-public interface DownloadOperationListener
-    extends OperationListener<String>
+public interface XimixRegistrar
 {
     /**
-     * Signal that the passed in message was downloaded with the passed in index.
+     * Connect to a specific service.
      *
-     * @param index index of the downloaded message on the bulletin board.
-     * @param message the downloaded message.
+     * @param serviceClass the interface for the service being requested.
+     * @return an implementation of serviceClass supporting the passed in service.
+     * @throws org.cryptoworkshop.ximix.client.RegistrarServiceException in case of failure.
      */
-    public void messageDownloaded(int index, byte[] message);
+    <T> T connect(Class<T> serviceClass)
+        throws RegistrarServiceException;
 }

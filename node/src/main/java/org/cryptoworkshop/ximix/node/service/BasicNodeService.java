@@ -32,7 +32,7 @@ public abstract class BasicNodeService
     {
         this.nodeContext = nodeContext;
         this.statistics = new CrossSection(nodeContext.getDecoupler(Decoupler.MONITOR), nodeContext.getEventNotifier());
-        listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.SERVICES)).createHandler(ServiceStatisticsListener.class);
+        listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.SERVICES), nodeContext.getEventNotifier()).createHandler(ServiceStatisticsListener.class);
         statisticsNotifier = listenerHandler.getNotifier();
 
     }

@@ -13,20 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client;
-
 /**
- * Registrar which encompasses all the services offered by the peers in the network.
- */
-public interface XimixRegistrar
-{
-    /**
-     * Connect to a specific service.
-     *
-     * @param serviceClass the interface for the service being requested.
-     * @return an implementation of serviceClass supporting the passed in service.
-     * @throws RegistrarServiceException in case of failure.
-     */
-    <T> T connect(Class<T> serviceClass)
-        throws RegistrarServiceException;
-}
+Utility classes for dealing with common issues such as event handling and listeners.
+*/
+package org.cryptoworkshop.ximix.common.util;
+
+

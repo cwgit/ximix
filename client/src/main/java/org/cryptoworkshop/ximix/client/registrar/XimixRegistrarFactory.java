@@ -36,7 +36,6 @@ import org.cryptoworkshop.ximix.client.NodeDetail;
 import org.cryptoworkshop.ximix.client.RegistrarServiceException;
 import org.cryptoworkshop.ximix.client.SigningService;
 import org.cryptoworkshop.ximix.client.UploadService;
-import org.cryptoworkshop.ximix.client.XimixRegistrar;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
@@ -44,6 +43,7 @@ import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  * Factory class to allow clients to build Ximix registrars.Once an actual registrar is built services on the running
@@ -68,29 +68,7 @@ public class XimixRegistrarFactory
     public static XimixRegistrar createServicesRegistrar(File configFile)
         throws ConfigException, FileNotFoundException
     {
-        final List<NodeConfig> nodes = new Config(configFile).getConfigObjects("node", new NodeConfigFactory());
-
-        return new XimixRegistrar()
-        {
-            public <T> T connect(Class<T> serviceClass)
-                throws RegistrarServiceException
-            {
-                if (serviceClass.isAssignableFrom(UploadService.class))
-                {
-                    return (T)new ClientUploadService(new ServicesConnectionImpl(nodes));
-                }
-                if (serviceClass.isAssignableFrom(KeyService.class))
-                {
-                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
-                }
-                if (serviceClass.isAssignableFrom(SigningService.class))
-                {
-                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
-                }
-
-                throw new RegistrarServiceException("Unable to identify service");
-            }
-        };
+        return createServicesRegistrar(new Config(configFile));
     }
 
     /**
@@ -133,15 +111,17 @@ public class XimixRegistrarFactory
      * Create a privileged registrar that can create privileged services using the configuration in configFile. A privileged user
      * can perform any operations on the Ximix including download, decryption and shuffling.
      *
+     *
      * @param configFile file containing the Ximix configuration to use.
+     * @param eventNotifier notifier to be used in case of error messages or warnings.
      * @return a XimixRegistrar that can be used to discover services.
      * @throws ConfigException if there is an error in the configuration.
      * @throws FileNotFoundException if the File object configFile is a reference to file that does not exist.
      */
-    public static XimixRegistrar createAdminServiceRegistrar(File configFile)
+    public static XimixRegistrar createAdminServiceRegistrar(File configFile, EventNotifier eventNotifier)
         throws ConfigException, FileNotFoundException
     {
-        return createAdminServiceRegistrar(new Config(configFile));
+        return createAdminServiceRegistrar(new Config(configFile), eventNotifier);
     }
 
     /**
@@ -149,10 +129,11 @@ public class XimixRegistrarFactory
      * can perform any operations on the Ximix including download, decryption and shuffling.
      *
      * @param config Ximix configuration to use.
+     * @param eventNotifier notifier to be used in case of error messages or warnings.
      * @return a XimixRegistrar that can be used to discover services.
      * @throws ConfigException if there is an error in the configuration.
      */
-    public static XimixRegistrar createAdminServiceRegistrar(Config config)
+    public static XimixRegistrar createAdminServiceRegistrar(Config config, final EventNotifier eventNotifier)
         throws ConfigException, FileNotFoundException
     {
         final List<NodeConfig> nodes = config.getConfigObjects("node", new NodeConfigFactory());
@@ -164,7 +145,7 @@ public class XimixRegistrarFactory
             {
                 if (serviceClass.isAssignableFrom(CommandService.class))
                 {
-                    return (T)new ClientCommandService(new AdminServicesConnectionImpl(nodes));
+                    return (T)new ClientCommandService(new AdminServicesConnectionImpl(nodes), eventNotifier);
                 }
                 if (serviceClass.isAssignableFrom(KeyGenerationService.class))
                 {
@@ -192,7 +173,7 @@ public class XimixRegistrarFactory
         implements AdminServicesConnection
     {
         private Map<String, NodeServicesConnection> connectionMap = Collections.synchronizedMap(new HashMap<String, NodeServicesConnection>());
-        private Set<CapabilityMessage> capabilitySet = new HashSet<CapabilityMessage>();
+        private Set<CapabilityMessage> capabilitySet = new HashSet<>();
 
         public AdminServicesConnectionImpl(List<NodeConfig> configList)
         {

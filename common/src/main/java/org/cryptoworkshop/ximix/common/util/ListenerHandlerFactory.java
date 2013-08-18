@@ -15,7 +15,17 @@
  */
 package org.cryptoworkshop.ximix.common.util;
 
+/**
+ * Template interface for a listener handler factory.
+ */
 public interface ListenerHandlerFactory
 {
+    /**
+     * Create a handler for the passed in listenerClass.
+     *
+     * @param listenerClass  the interface that notifications are sent on.
+     * @param <T> the type of the interface notifies are called on.
+     * @return a ListenerHandler.
+     */
     <T> ListenerHandler<T> createHandler(Class<T> listenerClass);
 }

@@ -28,6 +28,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageWitnessBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -52,10 +53,9 @@ public class BulletinBoardImpl
     private final AtomicInteger minimumIndex = new AtomicInteger(0);
     private final AtomicInteger nextIndex = new AtomicInteger(0);
 
-
-    public BulletinBoardImpl(String boardName, File workingFile, Executor executor)
+    public BulletinBoardImpl(String boardName, File workingFile, Executor executor, EventNotifier eventNotifier)
     {
-        this(boardName, workingFile, new DecoupledListenerHandlerFactory(executor).createHandler(BulletinBoardBackupListener.class), new DecoupledListenerHandlerFactory(executor).createHandler(BulletinBoardChangeListener.class));
+        this(boardName, workingFile, new DecoupledListenerHandlerFactory(executor, eventNotifier).createHandler(BulletinBoardBackupListener.class), new DecoupledListenerHandlerFactory(executor, eventNotifier).createHandler(BulletinBoardChangeListener.class));
     }
 
     public BulletinBoardImpl(String boardName, File workingFile, ListenerHandler<BulletinBoardBackupListener> listenerHandler, ListenerHandler<BulletinBoardChangeListener> changeListenerHandler)

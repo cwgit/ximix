@@ -29,7 +29,7 @@ import org.cryptoworkshop.ximix.node.XimixNode;
 
 public class XimixNodeBuilder
 {
-    static EventNotifier eventNotifier = new EventNotifier()
+    private EventNotifier eventNotifier = new EventNotifier()
     {
         Logger L = Logger.getLogger("ximix");
 

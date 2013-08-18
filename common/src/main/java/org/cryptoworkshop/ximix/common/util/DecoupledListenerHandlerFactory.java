@@ -15,33 +15,50 @@
  */
 package org.cryptoworkshop.ximix.common.util;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+/**
+ * Factory class for creating decoupled listener handlers.
+ */
 public class DecoupledListenerHandlerFactory
     implements ListenerHandlerFactory
 {
     private final Executor decoupler;
-    private final List listeners = new ArrayList();
+    private final EventNotifier eventNotifier;
 
-    public DecoupledListenerHandlerFactory(Executor decoupler)
+    /**
+     * Base constructor - set the decoupler.
+     *
+     * @param decoupler  the executor listener calls are to be decoupled on.
+     * @param eventNotifier the notifier to log errors, warnings, and debug statements with.
+     */
+    public DecoupledListenerHandlerFactory(Executor decoupler, EventNotifier eventNotifier)
     {
         this.decoupler = decoupler;
+        this.eventNotifier = eventNotifier;
     }
 
+    /**
+     * Create a decoupling handler for the passed in listenerClass.
+     *
+     * @param listenerClass  the interface that notifications are sent on.
+     * @param <T> the type of the interface notifies are called on.
+     * @return a ListenerHandler.
+     */
     public <T> ListenerHandler<T> createHandler(Class<T> listenerClass)
     {
-        return new Handler<T>(listenerClass);
+        return new Handler<>(listenerClass);
     }
 
     private class Handler<T>
         implements ListenerHandler<T>
     {
         private final Class<T> listenerClass;
+        private final List<T> listeners = new ArrayList<>();
 
         public Handler(Class<T> listenerClass)
         {
@@ -108,13 +125,9 @@ public class DecoupledListenerHandlerFactory
                 {
                     method.invoke(o, objects);
                 }
-                catch (IllegalAccessException e)
+                catch (Exception e)
                 {
-                    e.printStackTrace();  //TODO: this should never happen, but needs to be logged somewhere!
-                }
-                catch (InvocationTargetException e)
-                {
-                    e.printStackTrace();  //TODO: this should never happen, but needs to be logged somewhere!
+                    eventNotifier.notify(EventNotifier.Level.ERROR, "Exception in decoupled listener handler: " + e.getMessage(), e);
                 }
             }
         }

@@ -61,7 +61,7 @@ public class RemoteServicesCache
     {
         this.nodeContext = nodeContext;
         this.scheduler = nodeContext.getScheduledExecutor();
-        this.listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(null)).createHandler(RemoteServicesListener.class);
+        this.listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(null), nodeContext.getEventNotifier()).createHandler(RemoteServicesListener.class);
         this.notifier = listenerHandler.getNotifier();
     }
 

@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import junit.framework.TestCase;
+import org.cryptoworkshop.ximix.node.crypto.test.TestNotifier;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardBackupListener;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardImpl;
@@ -23,7 +24,7 @@ public class BulletinBoardTest
     public void testListener()
         throws Exception
     {
-        BulletinBoard board = new BulletinBoardImpl("FRED", null, Executors.newSingleThreadExecutor());
+        BulletinBoard board = new BulletinBoardImpl("FRED", null, Executors.newSingleThreadExecutor(), new TestNotifier());
         final CountDownLatch uploadLatch = new CountDownLatch(2);
         final AtomicInteger clearCount = new AtomicInteger(0);
         final ArrayList<byte[]> messages = new ArrayList<>();

@@ -25,7 +25,7 @@ import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.client.SignatureGenerationOptions;
 import org.cryptoworkshop.ximix.client.SigningService;
-import org.cryptoworkshop.ximix.client.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.node.XimixNode;
@@ -33,6 +33,7 @@ import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
 import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;
+import org.cryptoworkshop.ximix.test.node.TestNotifier;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -92,7 +93,7 @@ public class BLSProcessingTest
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
         NodeTestUtil.launch(nodeFive, true);
 
-        XimixRegistrar registrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"));
+        XimixRegistrar registrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
         KeyGenerationService keyGenerationService = registrar.connect(KeyGenerationService.class);
 
@@ -169,7 +170,7 @@ public class BLSProcessingTest
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
         NodeTestUtil.launch(nodeFive, true);
 
-        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"));
+        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 

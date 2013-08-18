@@ -12,13 +12,14 @@ import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.UploadService;
-import org.cryptoworkshop.ximix.client.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
-import org.cryptoworkshop.ximix.common.operation.Operation;
+import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
 import org.cryptoworkshop.ximix.test.node.ResourceAnchor;
 import org.cryptoworkshop.ximix.test.node.SquelchingThrowableHandler;
+import org.cryptoworkshop.ximix.test.node.TestNotifier;
 import org.junit.Test;
 
 import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
@@ -80,7 +81,7 @@ public class BulletinBoardTest
 
         SecureRandom random = new SecureRandom();
 
-        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"));
+        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
 
         UploadService client = adminRegistrar.connect(UploadService.class);
@@ -221,7 +222,7 @@ public class BulletinBoardTest
 
         SecureRandom random = new SecureRandom();
 
-        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"));
+        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
 
         UploadService client = adminRegistrar.connect(UploadService.class);

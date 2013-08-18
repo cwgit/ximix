@@ -13,21 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client;
-
-import org.cryptoworkshop.ximix.common.util.OperationListener;
-
 /**
- * Listener for monitoring download operations.
- */
-public interface DownloadOperationListener
-    extends OperationListener<String>
-{
-    /**
-     * Signal that the passed in message was downloaded with the passed in index.
-     *
-     * @param index index of the downloaded message on the bulletin board.
-     * @param message the downloaded message.
-     */
-    public void messageDownloaded(int index, byte[] message);
-}
+ASN.1 messages for Ximix communications.
+*/
+package org.cryptoworkshop.ximix.common.asn1.message;
+
+

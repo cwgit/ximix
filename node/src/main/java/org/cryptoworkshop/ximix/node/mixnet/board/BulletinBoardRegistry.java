@@ -82,7 +82,7 @@ public class BulletinBoardRegistry
             {
                 File boardDBFile = deriveBoardFile(boardName);
 
-                board = new BulletinBoardImpl(boardName, boardDBFile, nodeContext.getScheduledExecutor());
+                board = new BulletinBoardImpl(boardName, boardDBFile, nodeContext.getScheduledExecutor(), nodeContext.getEventNotifier());
                 board.addListener(changeListener);
 
                 boards.put(boardName, board);
@@ -230,7 +230,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName + ".backup"), boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName + ".backup"), boardUpdateExecutor, nodeContext.getEventNotifier());
 
                 backupBoards.put(boardName, board);
             }
@@ -249,7 +249,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, deriveBoardFile(transitBoardName), boardUpdateExecutor);
+                board = new BulletinBoardImpl(boardName, deriveBoardFile(transitBoardName), boardUpdateExecutor, nodeContext.getEventNotifier());
 
                 transitBoards.put(transitBoardName, board);
             }
@@ -288,7 +288,7 @@ public class BulletinBoardRegistry
                     // TODO:
                 }
 
-                originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor());
+                originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor(), nodeContext.getEventNotifier());
             }
 
             transitBoards.put(getTransitBoardName(operationNumber, boardName, stepNumber), originalBoard);

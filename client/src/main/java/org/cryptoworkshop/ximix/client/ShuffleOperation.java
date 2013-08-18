@@ -15,8 +15,8 @@
  */
 package org.cryptoworkshop.ximix.client;
 
-import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.util.Operation;
 
 /**
  * Support interface for requesting a shuffle.

@@ -53,20 +53,24 @@ import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
-import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
+import org.cryptoworkshop.ximix.common.util.Operation;
 
 class ClientCommandService
     implements CommandService
 {
+    private final EventNotifier eventNotifier;
+
     private ExecutorService decouple = Executors.newSingleThreadExecutor();
     private ExecutorService executor = Executors.newScheduledThreadPool(4);
     private AdminServicesConnection connection;
 
-    public ClientCommandService(AdminServicesConnection connection)
+    public ClientCommandService(AdminServicesConnection connection, EventNotifier eventNotifier)
     {
         this.connection = connection;
+        this.eventNotifier = eventNotifier;
     }
 
     static Set<String> toOrderedSet(String[] nodes)
@@ -133,7 +137,7 @@ class ClientCommandService
 
         public ShuffleOp(String boardName, ShuffleOptions options, String... nodes)
         {
-            super(decouple, ShuffleOperationListener.class);
+            super(decouple, eventNotifier, ShuffleOperationListener.class);
 
             this.boardName = boardName;
             this.options = options;
@@ -216,7 +220,7 @@ class ClientCommandService
 
         public DownloadOp(String boardName, DownloadOptions options)
         {
-            super(decouple, DownloadOperationListener.class);
+            super(decouple, eventNotifier, DownloadOperationListener.class);
 
             this.boardName = boardName;
             this.options = options;

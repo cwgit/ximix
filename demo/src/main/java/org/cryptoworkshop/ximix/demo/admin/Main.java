@@ -36,12 +36,13 @@ import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.UploadService;
-import org.cryptoworkshop.ximix.client.XimixRegistrar;
+import org.cryptoworkshop.ximix.client.registrar.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.registrar.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
-import org.cryptoworkshop.ximix.common.operation.Operation;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
+import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.node.mixnet.transform.MultiColumnRowTransform;
 
 public class Main
@@ -68,8 +69,28 @@ public class Main
     {
         SecureRandom random = new SecureRandom();
 
-        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(new File(args[0]));
+        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(new File(args[0]), new EventNotifier()
+        {
+            @Override
+            public void notify(Level level, Throwable throwable)
+            {
+                System.err.print(level + " " + throwable.getMessage());
+                throwable.printStackTrace(System.err);
+            }
 
+            @Override
+            public void notify(Level level, Object detail)
+            {
+                System.err.println(level + " " + detail.toString());
+            }
+
+            @Override
+            public void notify(Level level, Object detail, Throwable throwable)
+            {
+                System.err.println(level + " " + detail.toString());
+                throwable.printStackTrace(System.err);
+            }
+        });
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 

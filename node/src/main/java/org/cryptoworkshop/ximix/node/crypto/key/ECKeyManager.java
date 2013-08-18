@@ -107,11 +107,11 @@ public class ECKeyManager
     public ECKeyManager(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
-        this.listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.LISTENER)).createHandler(KeyManagerListener.class);
+        this.listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.LISTENER), nodeContext.getEventNotifier()).createHandler(KeyManagerListener.class);
         this.notifier = listenerHandler.getNotifier();
 
-        sharedPublicKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
-        sharedPrivateKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING));
+        sharedPublicKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING), nodeContext.getEventNotifier());
+        sharedPrivateKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING), nodeContext.getEventNotifier());
 
         sharedPrivateKeyMap.addListener(new ShareMapListener<String, BigInteger>()
         {
