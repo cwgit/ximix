@@ -17,6 +17,9 @@ package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
+/**
+ * Carrier interface for methods connected with key generation and retrieval.
+ */
 public interface KeyGenerationService
     extends KeyService
 {

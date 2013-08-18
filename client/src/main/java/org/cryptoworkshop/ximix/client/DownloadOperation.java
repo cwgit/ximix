@@ -18,6 +18,9 @@ package org.cryptoworkshop.ximix.client;
 import org.cryptoworkshop.ximix.common.operation.Operation;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
+/**
+ * Interface defining available download operations.
+ */
 public interface DownloadOperation
 {
     /**

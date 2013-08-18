@@ -18,7 +18,6 @@ package org.cryptoworkshop.ximix.client.registrar;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,12 +54,6 @@ public class XimixRegistrarFactory
 
         return new XimixRegistrar()
         {
-            @Override
-            public List<NodeDetail> getConfiguredNodeNames()
-            {
-                return getDetailList(nodes);
-            }
-
             public <T> T connect(Class<T> serviceClass)
                 throws RegistrarServiceException
             {
@@ -95,12 +88,6 @@ public class XimixRegistrarFactory
 
         return new XimixRegistrar()
         {
-            @Override
-            public List<NodeDetail> getConfiguredNodeNames()
-            {
-                return getDetailList(nodes);
-            }
-
             public <T> T connect(Class<T> serviceClass)
                 throws RegistrarServiceException
             {
@@ -122,7 +109,7 @@ public class XimixRegistrarFactory
                 }
                 if (serviceClass.isAssignableFrom(MonitorService.class))
                 {
-                    return (T)new ClientNodeHealthMonitor(new AdminServicesConnectionImpl(nodes));
+                    return (T)new ClientNodeHealthMonitor(new AdminServicesConnectionImpl(nodes), getDetailMap(nodes));
                 }
 
                 throw new RegistrarServiceException("Unable to identify service");
@@ -208,15 +195,15 @@ public class XimixRegistrarFactory
         }
     }
 
-    private static List<NodeDetail> getDetailList(List<NodeConfig> nodes)
+    private static Map<String, NodeDetail> getDetailMap(List<NodeConfig> nodes)
     {
-        List<NodeDetail> details = new ArrayList<>(nodes.size());
+        Map<String, NodeDetail> details = new HashMap<>(nodes.size());
 
         for (NodeConfig config : nodes)
         {
             if (config.getThrowable() == null)
             {
-                details.add(new NodeDetail(config.getName(), config.getAddress(), config.getPortNo()));
+                details.put(config.getName(), new NodeDetail(config.getName(), config.getAddress(), config.getPortNo()));
             }
         }
 

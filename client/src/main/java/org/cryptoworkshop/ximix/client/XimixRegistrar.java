@@ -15,15 +15,11 @@
  */
 package org.cryptoworkshop.ximix.client;
 
-import java.util.List;
-
 /**
  * Registrar which encompasses all the services offered by the peers in the network.
  */
 public interface XimixRegistrar
 {
-    List<NodeDetail> getConfiguredNodeNames();
-
     /**
      * Connect to a specific service.
      *

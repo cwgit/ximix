@@ -1,10 +1,13 @@
 package org.cryptoworkshop.ximix.client.registrar;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.cryptoworkshop.ximix.client.MonitorService;
+import org.cryptoworkshop.ximix.client.NodeDetail;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
@@ -19,10 +22,18 @@ class ClientNodeHealthMonitor
     implements MonitorService
 {
     private AdminServicesConnection connection = null;
+    private Map<String, NodeDetail> configuredNodeDetails;
 
-    public ClientNodeHealthMonitor(AdminServicesConnection connection)
+    public ClientNodeHealthMonitor(AdminServicesConnection connection, Map<String, NodeDetail> configuredNodeDetails)
     {
         this.connection = connection;
+        this.configuredNodeDetails = Collections.unmodifiableMap(configuredNodeDetails);
+    }
+
+    @Override
+    public Map<String, NodeDetail> getConfiguredNodeDetails()
+    {
+        return configuredNodeDetails;
     }
 
     @Override
@@ -75,17 +86,9 @@ class ClientNodeHealthMonitor
 
     @Override
     public NodeStatusMessage getFullInfo(String name)
+        throws ServiceConnectionException
     {
-        MessageReply reply = null;
-        try
-        {
-            reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
-        }
-        catch (ServiceConnectionException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-
+        MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
 
         if (reply.getType() == MessageReply.Type.ERROR)
         {

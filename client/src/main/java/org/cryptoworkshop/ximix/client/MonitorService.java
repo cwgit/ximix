@@ -16,26 +16,57 @@
 package org.cryptoworkshop.ximix.client;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 /**
- *
+ * Carrier interface for methods associated with node health and state monitoring.
  */
 public interface MonitorService
 {
+    /**
+     * Return a map of the details for all the nodes configured on the registrar this MonitorService is from.
+     *
+     * @return a map of node details, keyed by node name.
+     */
+    Map<String, NodeDetail> getConfiguredNodeDetails();
 
+    /**
+     * Return a set of the currently connected nodes that the registrar this MonitorService is from has available.
+     *
+     * @return a set of connected node names.
+     */
+    Set<String> getConnectedNodeNames();
+
+    /**
+     * Return the statistics and status for a particular node.
+     *
+     * @param node name of the node of interest.
+     * @return the status and statistics for the node of interest.
+     * @throws ServiceConnectionException in case of failure.
+     */
     NodeStatusMessage getStatistics(String node)
         throws ServiceConnectionException;
 
-
+    /**
+     * Return the statistics and status for a particular node.
+     *
+     * @return the status and statistics for all nodes.
+     * @throws ServiceConnectionException in case of failure.
+     */
     List<NodeStatusMessage> getFullInfo()
         throws ServiceConnectionException;
 
-    Set<String> getConnectedNodeNames();
-
-    NodeStatusMessage getFullInfo(String name);
-
+    /**
+     * Return the statistics and status for a particular node.
+     *
+     * @param node name of the node of interest.
+     * @return the status and statistics for the node of interest.
+     * @throws ServiceConnectionException in case of failure.
+     */
+    NodeStatusMessage getFullInfo(String node)
+        throws ServiceConnectionException;
 }

@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.client;
 
+/**
+ * Basic registrar service exception.
+ */
 public class RegistrarServiceException
     extends Exception
 {

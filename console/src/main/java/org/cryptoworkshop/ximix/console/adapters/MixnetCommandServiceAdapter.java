@@ -17,7 +17,6 @@ package org.cryptoworkshop.ximix.console.adapters;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +45,6 @@ public class MixnetCommandServiceAdapter
     protected CommandService commandService = null;
     protected Class commandType = CommandService.class;
     protected Config config = null;
-    protected List<NodeDetail> configuredNodes = null;
     protected Map<String, NodeDetail> nameToConfig = null;
 
     public MixnetCommandServiceAdapter()
@@ -93,12 +91,7 @@ public class MixnetCommandServiceAdapter
         try
         {
             registrar = XimixRegistrarFactory.createAdminServiceRegistrar(configFile);
-            configuredNodes = registrar.getConfiguredNodeNames();
-            nameToConfig = new HashMap<>();
-            for (NodeDetail nc : configuredNodes)
-            {
-                nameToConfig.put(nc.getName(), nc);
-            }
+            nameToConfig = registrar.connect(MonitorService.class).getConfiguredNodeDetails();
         }
         catch (Exception ex)
         {
@@ -118,7 +111,11 @@ public class MixnetCommandServiceAdapter
     @Override
     public List<NodeDetail> getConfiguredNodes()
     {
-        return configuredNodes;
+        List nodes = new ArrayList();
+
+        nodes.addAll(nameToConfig.values());
+
+        return nodes;
     }
 
     @Override

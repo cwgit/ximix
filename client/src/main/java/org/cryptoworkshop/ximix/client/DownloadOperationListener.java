@@ -17,8 +17,17 @@ package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.common.operation.OperationListener;
 
+/**
+ * Listener for monitoring download operations.
+ */
 public interface DownloadOperationListener
     extends OperationListener<String>
 {
+    /**
+     * Signal that the passed in message was downloaded with the passed in index.
+     *
+     * @param index index of the downloaded message on the bulletin board.
+     * @param message the downloaded message.
+     */
     public void messageDownloaded(int index, byte[] message);
 }

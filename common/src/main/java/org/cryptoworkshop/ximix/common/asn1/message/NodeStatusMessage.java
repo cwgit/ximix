@@ -24,7 +24,6 @@ import org.bouncycastle.asn1.DERUTF8String;
 public class NodeStatusMessage
     extends ASN1Object
 {
-
     private static final Charset UTF8 = Charset.forName("UTF8");
     private final int hash;
     private final Map<String, Object> values;
@@ -32,7 +31,6 @@ public class NodeStatusMessage
     public NodeStatusMessage(int hash)
     {
         this(new HashMap<String, Object>(), hash);
-
     }
 
     public NodeStatusMessage(Map<String, Object> source, int hash)
@@ -44,14 +42,14 @@ public class NodeStatusMessage
     }
 
 
-    private NodeStatusMessage(ASN1Sequence set)
+    private NodeStatusMessage(ASN1Sequence seq)
     {
         int t = 0;
-        hash = ((ASN1Integer)set.getObjectAt(t++)).getValue().intValue();
+        hash = ((ASN1Integer)seq.getObjectAt(t++)).getValue().intValue();
         values = new HashMap<>();
-        for (; t < set.size(); t++)
+        for (; t < seq.size(); t++)
         {
-            ASN1Sequence pair = (ASN1Sequence)set.getObjectAt(t);
+            ASN1Sequence pair = (ASN1Sequence)seq.getObjectAt(t);
             values.put(
                 ((DERUTF8String)pair.getObjectAt(0)).getString(),
                 asn1TypeToObject((ASN1Sequence)pair.getObjectAt(1))
@@ -88,46 +86,46 @@ public class NodeStatusMessage
         switch (type)
         {
 
-            case STRING:
-            {
-                out = ((DERUTF8String)sequence.getObjectAt(1)).getString();
-            }
-            break;
-            case INT:
-            {
-                out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().intValue();
-            }
-            break;
-            case LONG:
-            {
-                out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().longValue();
-            }
-            break;
+        case STRING:
+        {
+            out = ((DERUTF8String)sequence.getObjectAt(1)).getString();
+        }
+        break;
+        case INT:
+        {
+            out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().intValue();
+        }
+        break;
+        case LONG:
+        {
+            out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().longValue();
+        }
+        break;
 
-            case LIST:
+        case LIST:
+        {
+            out = new ArrayList<Object>();
+            Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
+            while (e.hasMoreElements())
             {
-                out = new ArrayList<Object>();
-                Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
-                while (e.hasMoreElements())
-                {
-                    ((List)out).add(asn1TypeToObject((ASN1Sequence)e.nextElement()));
-                }
+                ((List)out).add(asn1TypeToObject((ASN1Sequence)e.nextElement()));
             }
-            break;
+        }
+        break;
 
-            case MAP:
+        case MAP:
+        {
+            out = new HashMap();
+
+            Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
+
+            while (e.hasMoreElements())
             {
-                out = new HashMap();
-
-                Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
-
-                while (e.hasMoreElements())
-                {
-                    ((Map)out).put(asn1TypeToObject((ASN1Sequence)e.nextElement()), asn1TypeToObject((ASN1Sequence)e.nextElement()));
-                }
-
+                ((Map)out).put(asn1TypeToObject((ASN1Sequence)e.nextElement()), asn1TypeToObject((ASN1Sequence)e.nextElement()));
             }
-            break;
+
+        }
+        break;
         }
 
         return out;
@@ -238,7 +236,6 @@ public class NodeStatusMessage
 
             m.put(name, value);
         }
-
 
 
         public NodeStatusMessage build()
