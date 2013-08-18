@@ -60,7 +60,7 @@ public class XimixRegistrarFactory
      * Create an unprivileged registrar that can create privileged services using the configuration in configFile. An
      * unprivileged user is only allowed to upload messages and request public keys or signatures.
      *
-     * @param configFile file containing the mixnet configuration to use.
+     * @param configFile file containing the Ximix configuration to use.
      * @return a XimixRegistrar that can be used to discover services.
      * @throws ConfigException if there is an error in the configuration.
      * @throws FileNotFoundException if the File object configFile is a reference to file that does not exist.
@@ -97,7 +97,7 @@ public class XimixRegistrarFactory
      * Create an unprivileged registrar that can create privileged services using the configuration in config. An
      * unprivileged user is only allowed to upload messages and request public keys or signatures.
      *
-     * @param config mixnet configuration to use.
+     * @param config Ximix configuration to use.
      * @return a XimixRegistrar that can be used to discover services.
      * @throws ConfigException if there is an error in the configuration.
      */
@@ -131,9 +131,9 @@ public class XimixRegistrarFactory
 
     /**
      * Create a privileged registrar that can create privileged services using the configuration in configFile. A privileged user
-     * can perform any operations on the mixnet including download, decryption and shuffling.
+     * can perform any operations on the Ximix including download, decryption and shuffling.
      *
-     * @param configFile file containing the mixnet configuration to use.
+     * @param configFile file containing the Ximix configuration to use.
      * @return a XimixRegistrar that can be used to discover services.
      * @throws ConfigException if there is an error in the configuration.
      * @throws FileNotFoundException if the File object configFile is a reference to file that does not exist.
@@ -146,9 +146,9 @@ public class XimixRegistrarFactory
 
     /**
      * Create a privileged registrar that can create privileged services using the configuration in configFile. A privileged user
-     * can perform any operations on the mixnet including download, decryption and shuffling.
+     * can perform any operations on the Ximix including download, decryption and shuffling.
      *
-     * @param config mixnet configuration to use.
+     * @param config Ximix configuration to use.
      * @return a XimixRegistrar that can be used to discover services.
      * @throws ConfigException if there is an error in the configuration.
      */

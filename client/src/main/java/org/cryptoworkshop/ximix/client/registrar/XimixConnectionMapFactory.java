@@ -27,9 +27,11 @@ import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 public class XimixConnectionMapFactory
 {
     /**
-     * @param config
-     * @return
-     * @throws org.cryptoworkshop.ximix.common.config.ConfigException
+     * Create a map of ServicesConnection objects for the passed in Ximix configuration config.
+     *
+     * @param config Ximix configuration to use.
+     * @return a map of ServicesConnection objects representing handles to each node in the network.
+     * @throws ConfigException if there is an error in the configuration.
      */
     public static Map<String, ServicesConnection> createServicesConnectionMap(Config config)
         throws ConfigException
