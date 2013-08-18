@@ -37,11 +37,12 @@ class XimixServices
     {
         private final XimixNodeContext nodeContext;
 
-        private EventNotifier eventNotifier = XimixNodeBuilder.eventNotifier;
+        private EventNotifier eventNotifier;
 
         Builder(XimixNodeContext nodeContext)
         {
             this.nodeContext = nodeContext;
+            this.eventNotifier = nodeContext.getEventNotifier();
         }
 
         /**
@@ -58,7 +59,7 @@ class XimixServices
             }
             else
             {
-                this.eventNotifier = XimixNodeBuilder.eventNotifier;
+                this.eventNotifier = nodeContext.getEventNotifier();
             }
 
             return this;
