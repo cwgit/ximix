@@ -24,6 +24,9 @@ import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
+/**
+ * Factory class to allow building of services connection maps. Normally just used for inter-node communication.
+ */
 public class XimixConnectionMapFactory
 {
     /**

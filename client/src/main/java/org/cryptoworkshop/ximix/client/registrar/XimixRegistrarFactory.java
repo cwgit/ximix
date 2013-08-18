@@ -52,7 +52,7 @@ import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
  *   XimixRegistrar registrar = XimixRegistrarFactory.createServicesRegistrar(configFile);
  *
  *   KeyService    keyFetcher = registrar.connect(KeyService.class);
- * /pre>
+ * </pre>
  */
 public class XimixRegistrarFactory
 {

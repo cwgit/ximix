@@ -22,6 +22,9 @@ import org.cryptoworkshop.ximix.common.crypto.Algorithm;
  */
 public class KeyGenerationOptions
 {
+    /**
+     * Public builder for creating key generation option objects.
+     */
     public static class Builder
     {
         private final Algorithm algorithm;
