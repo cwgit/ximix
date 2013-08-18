@@ -45,12 +45,30 @@ import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
 import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
+/**
+ * Factory class to allow clients to build Ximix registrars.Once an actual registrar is built services on the running
+ * network can be discovered by passing in the appropriate interface. For example:
+ * <pre>
+ *   XimixRegistrar registrar = XimixRegistrarFactory.createServicesRegistrar(configFile);
+ *
+ *   KeyService    keyFetcher = registrar.connect(KeyService.class);
+ * /pre>
+ */
 public class XimixRegistrarFactory
 {
-    public static XimixRegistrar createServicesRegistrar(File config)
+    /**
+     * Create an unprivileged registrar that can create privileged services using the configuration in configFile. An
+     * unprivileged user is only allowed to upload messages and request public keys or signatures.
+     *
+     * @param configFile file containing the mixnet configuration to use.
+     * @return a XimixRegistrar that can be used to discover services.
+     * @throws ConfigException if there is an error in the configuration.
+     * @throws FileNotFoundException if the File object configFile is a reference to file that does not exist.
+     */
+    public static XimixRegistrar createServicesRegistrar(File configFile)
         throws ConfigException, FileNotFoundException
     {
-        final List<NodeConfig> nodes = new Config(config).getConfigObjects("node", new NodeConfigFactory());
+        final List<NodeConfig> nodes = new Config(configFile).getConfigObjects("node", new NodeConfigFactory());
 
         return new XimixRegistrar()
         {
@@ -75,12 +93,65 @@ public class XimixRegistrarFactory
         };
     }
 
-    public static XimixRegistrar createAdminServiceRegistrar(File config)
-        throws ConfigException, FileNotFoundException
+    /**
+     * Create an unprivileged registrar that can create privileged services using the configuration in config. An
+     * unprivileged user is only allowed to upload messages and request public keys or signatures.
+     *
+     * @param config mixnet configuration to use.
+     * @return a XimixRegistrar that can be used to discover services.
+     * @throws ConfigException if there is an error in the configuration.
+     */
+    public static XimixRegistrar createServicesRegistrar(Config config)
+        throws ConfigException
     {
-        return createAdminServiceRegistrar(new Config(config));
+        final List<NodeConfig> nodes = config.getConfigObjects("node", new NodeConfigFactory());
+
+        return new XimixRegistrar()
+        {
+            public <T> T connect(Class<T> serviceClass)
+                throws RegistrarServiceException
+            {
+                if (serviceClass.isAssignableFrom(UploadService.class))
+                {
+                    return (T)new ClientUploadService(new ServicesConnectionImpl(nodes));
+                }
+                if (serviceClass.isAssignableFrom(KeyService.class))
+                {
+                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
+                }
+                if (serviceClass.isAssignableFrom(SigningService.class))
+                {
+                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
+                }
+
+                throw new RegistrarServiceException("Unable to identify service");
+            }
+        };
     }
 
+    /**
+     * Create a privileged registrar that can create privileged services using the configuration in configFile. A privileged user
+     * can perform any operations on the mixnet including download, decryption and shuffling.
+     *
+     * @param configFile file containing the mixnet configuration to use.
+     * @return a XimixRegistrar that can be used to discover services.
+     * @throws ConfigException if there is an error in the configuration.
+     * @throws FileNotFoundException if the File object configFile is a reference to file that does not exist.
+     */
+    public static XimixRegistrar createAdminServiceRegistrar(File configFile)
+        throws ConfigException, FileNotFoundException
+    {
+        return createAdminServiceRegistrar(new Config(configFile));
+    }
+
+    /**
+     * Create a privileged registrar that can create privileged services using the configuration in configFile. A privileged user
+     * can perform any operations on the mixnet including download, decryption and shuffling.
+     *
+     * @param config mixnet configuration to use.
+     * @return a XimixRegistrar that can be used to discover services.
+     * @throws ConfigException if there is an error in the configuration.
+     */
     public static XimixRegistrar createAdminServiceRegistrar(Config config)
         throws ConfigException, FileNotFoundException
     {
