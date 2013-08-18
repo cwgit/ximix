@@ -24,7 +24,8 @@ public interface XimixRegistrar
      * Connect to a specific service.
      *
      * @param serviceClass the interface for the service being requested.
-     * @return
+     * @return an implementation of serviceClass supporting the passed in service.
+     * @throws RegistrarServiceException in case of failure.
      */
     <T> T connect(Class<T> serviceClass)
         throws RegistrarServiceException;
