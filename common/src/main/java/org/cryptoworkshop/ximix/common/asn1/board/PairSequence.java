@@ -23,16 +23,29 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.math.ec.ECCurve;
 
+/**
+ * Helper class for carrying an array of EC pairs.
+ */
 public class PairSequence
     extends ASN1Object
 {
     private final ECPair[] ecPairs;
 
+    /**
+     * Create a sequence from a single pair.
+     *
+     * @param ecPair the pair to include
+     */
     public PairSequence(ECPair ecPair)
     {
         this.ecPairs = new ECPair[] { ecPair };
     }
 
+    /**
+     * Create a sequence from a collection of pairs.
+     *
+     * @param ecPairs the pairs to include.
+     */
     public PairSequence(ECPair... ecPairs)
     {
         this.ecPairs = ecPairs.clone();
@@ -67,6 +80,13 @@ public class PairSequence
         return new DERSequence(v);
     }
 
+    /**
+     * Reconstruct a PairSequence from it's ASN.1 representation.
+     *
+     * @param curve the curve that the points in the sequence belong to.
+     * @param o the sequence object.
+     * @return a constructed EC pair sequence.
+     */
     public static PairSequence getInstance(ECCurve curve, Object o)
     {
         if (o instanceof PairSequence)
@@ -81,11 +101,21 @@ public class PairSequence
         return null;
     }
 
+    /**
+     * Return the EC pairs held in this sequence.
+     *
+     * @return an array of EC pairs.
+     */
     public ECPair[] getECPairs()
     {
         return ecPairs;
     }
 
+    /**
+     * Return the number of pairs contained in the sequence.
+     *
+     * @return the size of the sequence.
+     */
     public int size()
     {
         return ecPairs.length;

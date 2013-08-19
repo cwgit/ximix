@@ -21,6 +21,9 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 
+/**
+ * General carrier for a BigInteger value.
+ */
 public class BigIntegerMessage
     extends ASN1Object
 {
@@ -50,6 +53,12 @@ public class BigIntegerMessage
         return null;
     }
 
+    /**
+     * <pre>
+     * INTEGER value.
+     * </pre>
+     * @return
+     */
     @Override
     public ASN1Primitive toASN1Primitive()
     {

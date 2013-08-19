@@ -22,6 +22,9 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
+/**
+ * General carrier for an EC point.
+ */
 public class ECPointMessage
     extends ASN1Object
 {
@@ -48,6 +51,12 @@ public class ECPointMessage
         return null;
     }
 
+    /**
+     * <pre>
+     * OCTET STRING  value.
+     * </pre>
+     * @return
+     */
     @Override
     public ASN1Primitive toASN1Primitive()
     {

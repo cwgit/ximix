@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-ASN.1 Messages for producing byte arrays suitable for uploading to a message board.
+Helper ASN.1 Messages for producing byte arrays suitable for uploading to a message board.
 */
 package org.cryptoworkshop.ximix.common.asn1.board;
 

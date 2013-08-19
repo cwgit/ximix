@@ -25,16 +25,29 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
+/**
+ * Helper class for carrying an array of EC points.
+ */
 public class PointSequence
     extends ASN1Object
 {
     private final ECPoint[] ecPoints;
 
+    /**
+     * Create a sequence from a single point.
+     *
+     * @param ecPoint the point to include.
+     */
     public PointSequence(ECPoint ecPoint)
     {
         this.ecPoints = new ECPoint[] { ecPoint };
     }
 
+    /**
+     * Create a sequence from a collection of points.
+     *
+     * @param ecPoints the points to include.
+     */
     public PointSequence(ECPoint... ecPoints)
     {
         this.ecPoints = ecPoints.clone();
@@ -69,6 +82,13 @@ public class PointSequence
         return new DERSequence(v);
     }
 
+    /**
+     * Reconstruct a PointSequence from it's ASN.1 representation.
+     *
+     * @param curve the curve that the points in the sequence belong to.
+     * @param o the sequence object.
+     * @return a constructed EC pair sequence.
+     */
     public static PointSequence getInstance(ECCurve curve, Object o)
     {
         if (o instanceof PointSequence)
@@ -83,11 +103,21 @@ public class PointSequence
         return null;
     }
 
+    /**
+     * Return the EC points held in this sequence.
+     *
+     * @return an array of EC points..
+     */
     public ECPoint[] getECPoints()
     {
         return ecPoints;
     }
 
+    /**
+     * Return the number of points contained in the sequence.
+     *
+     * @return the size of the sequence.
+     */
     public int size()
     {
         return ecPoints.length;

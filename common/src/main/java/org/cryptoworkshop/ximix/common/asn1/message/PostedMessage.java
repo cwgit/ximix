@@ -24,6 +24,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * Carrier class for a single posted message with optional commitment.
+ */
 public class PostedMessage
     extends ASN1Object
 {
