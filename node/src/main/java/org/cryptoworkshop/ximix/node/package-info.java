@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Cryptography support classes.
+Main XimixNode interface and Main controller.
 */
 package org.cryptoworkshop.ximix.node;
 

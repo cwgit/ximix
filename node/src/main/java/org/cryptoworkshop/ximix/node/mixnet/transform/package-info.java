@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Classes supporting Ximix MixNet related services.
+Supported transformations that can be applied during a message shuffle.
 */
 package org.cryptoworkshop.ximix.node.mixnet.transform;
 

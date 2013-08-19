@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Utility classes to support private and public key encoding.
+Signing operators implemented using the JPBC API.
 */
 package org.cryptoworkshop.ximix.node.crypto.operator.jpbc;
 

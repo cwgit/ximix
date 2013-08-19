@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Internal Ximix messages related to key generation.
+Utility classes to support private and public key encoding.
 */
 package org.cryptoworkshop.ximix.node.crypto.key.util;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Main XimixNode interface and Main controller.
+Classes supporting Ximix MixNet related services.
 */
 package org.cryptoworkshop.ximix.node.mixnet;
 

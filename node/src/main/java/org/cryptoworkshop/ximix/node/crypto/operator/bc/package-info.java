@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Utility classes to support private and public key encoding.
+Encryption/Decryption/Signing operators implemented using the Bouncy Castle APIs.
 */
 package org.cryptoworkshop.ximix.node.crypto.operator.bc;
 

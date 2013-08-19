@@ -17,6 +17,9 @@ package org.cryptoworkshop.ximix.node.crypto.util;
 
 import it.unisa.dia.gas.jpbc.Element;
 
+/**
+ * Share object to provide support for constructing shares made up of JPBC Element objects.
+ */
 public class ElementShare
     extends Share<Element>
 {

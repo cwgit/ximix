@@ -17,6 +17,9 @@ package org.cryptoworkshop.ximix.node.crypto.util;
 
 import org.bouncycastle.math.ec.ECPoint;
 
+/**
+ * Share object to provide support for constructing shares made up of ECPoint objects.
+ */
 public class ECPointShare
     extends Share<ECPoint>
 {

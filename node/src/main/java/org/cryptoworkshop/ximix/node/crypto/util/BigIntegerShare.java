@@ -17,6 +17,9 @@ package org.cryptoworkshop.ximix.node.crypto.util;
 
 import java.math.BigInteger;
 
+/**
+ * Share object to provide support for constructing shares made up of BigInteger objects.
+ */
 public class BigIntegerShare
     extends Share<BigInteger>
 {

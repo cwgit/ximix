@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Classes supporting Ximix MixNet related services.
+Node monitoring service and support objects.
 */
 package org.cryptoworkshop.ximix.node.monitor;
 

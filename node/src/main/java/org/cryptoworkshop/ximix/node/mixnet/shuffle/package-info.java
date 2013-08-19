@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Classes supporting Ximix MixNet related services.
+Ximix message shuffling tasks and support objects.
 */
 package org.cryptoworkshop.ximix.node.mixnet.shuffle;
 

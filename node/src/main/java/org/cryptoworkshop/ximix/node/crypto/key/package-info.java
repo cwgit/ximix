@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Utility classes to support private and public key encoding.
+Classes to support key generation.
 */
 package org.cryptoworkshop.ximix.node.crypto.key;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Main XimixNode interface and Main controller.
+Core node utility classes and objects.
 */
 package org.cryptoworkshop.ximix.node.core;
 

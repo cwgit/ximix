@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Utility classes to support private and public key encoding.
+Core interfaces used to provide public and private key operations to a Ximix node.
 */
 package org.cryptoworkshop.ximix.node.crypto.operator;
 

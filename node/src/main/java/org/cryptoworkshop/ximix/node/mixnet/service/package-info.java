@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Classes supporting Ximix MixNet related services.
+Ximix node board related services.
 */
 package org.cryptoworkshop.ximix.node.mixnet.service;
 

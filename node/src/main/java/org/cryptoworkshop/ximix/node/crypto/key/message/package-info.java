@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Core bulletin board objects and listeners.
+Internal Ximix messages related to key generation.
 */
 package org.cryptoworkshop.ximix.node.crypto.key.message;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Classes supporting cryptography related Ximix services..
+Utility classes to support threshold storage and manipulation of shares used in decryption and signing operations..
 */
 package org.cryptoworkshop.ximix.node.crypto.util;
 

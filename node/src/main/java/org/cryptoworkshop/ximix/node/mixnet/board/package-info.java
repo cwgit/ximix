@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
-Classes supporting Ximix MixNet related services.
+Core bulletin board objects and listeners.
 */
 package org.cryptoworkshop.ximix.node.mixnet.board;
 
