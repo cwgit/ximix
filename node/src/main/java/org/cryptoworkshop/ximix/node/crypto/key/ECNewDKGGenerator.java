@@ -28,7 +28,7 @@ import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSplitSecret;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECNewDKGSecretSplitter;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
 
 public class ECNewDKGGenerator
@@ -48,7 +48,7 @@ public class ECNewDKGGenerator
         return keyManager.getParams(keyID);
     }
 
-    public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, ECKeyGenParams ecKeyGenParams)
+    public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, NamedKeyGenParams ecKeyGenParams)
     {
         // TODO: should have a source of randomness.
         AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams);

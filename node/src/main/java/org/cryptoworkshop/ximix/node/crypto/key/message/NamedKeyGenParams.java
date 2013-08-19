@@ -29,7 +29,10 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
-public class ECKeyGenParams
+/**
+ * Carrier class for key generation parameters using a named parameter set.
+ */
+public class NamedKeyGenParams
     extends KeyGenerationParameters
 {
     private final String domainParameters;
@@ -39,10 +42,9 @@ public class ECKeyGenParams
     private final List<String> nodesToUse;
     private final Algorithm algorithm;
 
-
-    public ECKeyGenParams(String keyID, Algorithm algorithm, BigInteger h, String domainParameters, int threshold, List<String> nodesToUse)
+    public NamedKeyGenParams(String keyID, Algorithm algorithm, BigInteger h, String domainParameters, int threshold, List<String> nodesToUse)
     {
-        super(EC_REG_CURVE);
+        super(NAMED_PARAMETER_SET);
         this.keyID = keyID;
         this.algorithm = algorithm;
         this.domainParameters = domainParameters;
@@ -51,9 +53,9 @@ public class ECKeyGenParams
         this.nodesToUse = nodesToUse;
     }
 
-    ECKeyGenParams(ASN1Sequence seq)
+    NamedKeyGenParams(ASN1Sequence seq)
     {
-        super(EC_REG_CURVE);
+        super(NAMED_PARAMETER_SET);
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
         this.algorithm = Algorithm.values()[ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue()];
         this.domainParameters = DERUTF8String.getInstance(seq.getObjectAt(3)).getString();
@@ -67,7 +69,7 @@ public class ECKeyGenParams
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new ASN1Integer(EC_REG_CURVE));
+        v.add(new ASN1Integer(NAMED_PARAMETER_SET));
         v.add(new DERUTF8String(keyID));
         v.add(new ASN1Integer(algorithm.ordinal()));
         v.add(new DERUTF8String(domainParameters));
@@ -78,11 +80,21 @@ public class ECKeyGenParams
         return new DERSequence(v);
     }
 
+    /**
+     * Return the name of the domain parameters for this set.
+     *
+     * @return name for domain parameters for generated key.
+     */
     public String getDomainParameters()
     {
         return domainParameters;
     }
 
+    /**
+     * Return the ID of the key to be generated.
+     *
+     * @return ID of the key.
+     */
     public String getKeyID()
     {
         return keyID;
@@ -117,16 +129,31 @@ public class ECKeyGenParams
         return new DERSequence(v);
     }
 
+    /**
+     * Return the list of nodes to be used in the generation process.
+     *
+     * @return list of nodes to use.
+     */
     public List<String> getNodesToUse()
     {
         return nodesToUse;
     }
 
+    /**
+     * Return the threshold setting for the number of nodes required for private key operations.
+     *
+     * @return the threshold number for key sharing.
+     */
     public int getThreshold()
     {
         return threshold;
     }
 
+    /**
+     * Return the algorithm to generate the key for.
+     *
+     * @return the resulting key's algorithm,
+     */
     public Algorithm getAlgorithm()
     {
         return algorithm;

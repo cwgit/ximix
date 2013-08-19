@@ -32,7 +32,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.StoreMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 public class ECKeyPairGenerator
@@ -76,7 +76,7 @@ public class ECKeyPairGenerator
                     // Generate H, start everyone else      TODO generate H
                     //
                     ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(initiateMessage.getAlgorithm());
-                    ECKeyGenParams ecKeyGenParams = new ECKeyGenParams(initiateMessage.getKeyID(), message.getAlgorithm(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
+                    NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams(initiateMessage.getKeyID(), message.getAlgorithm(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
                     ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
 
                     nodeContext.execute(new SendShareTask(generator, message.getAlgorithm(), ecKeyGenParams.getKeyID(), ecKeyGenParams.getNodesToUse(), messages));
@@ -92,7 +92,7 @@ public class ECKeyPairGenerator
 
                 return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
             case GENERATE:
-                final ECKeyGenParams ecKeyGenParams = (ECKeyGenParams)ECKeyGenParams.getInstance(message.getPayload());
+                final NamedKeyGenParams ecKeyGenParams = (NamedKeyGenParams)NamedKeyGenParams.getInstance(message.getPayload());
                 final List<String> involvedPeers = ecKeyGenParams.getNodesToUse();
 
                 if (involvedPeers.contains(nodeContext.getName()))
@@ -130,11 +130,11 @@ public class ECKeyPairGenerator
     private class InitiateKeyGenTask
         implements Runnable
     {
-        private final ECKeyGenParams initiateMessage;
+        private final NamedKeyGenParams initiateMessage;
         private final List<String> peersToInitiate;
         private final Algorithm algorithm;
 
-        InitiateKeyGenTask( Algorithm algorithm, ECKeyGenParams initiateMessage)
+        InitiateKeyGenTask( Algorithm algorithm, NamedKeyGenParams initiateMessage)
         {
             this.algorithm = algorithm;
             this.initiateMessage = initiateMessage;

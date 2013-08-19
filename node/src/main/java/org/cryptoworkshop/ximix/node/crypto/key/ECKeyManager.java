@@ -79,7 +79,7 @@ import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.crypto.operator.bc.BcECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.node.crypto.util.BigIntegerShare;
 import org.cryptoworkshop.ximix.node.crypto.util.ECPointShare;
@@ -141,7 +141,7 @@ public class ECKeyManager
         return signingKeys.contains(keyID);
     }
 
-    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, ECKeyGenParams keyGenParams)
+    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, NamedKeyGenParams keyGenParams)
     {
         ECDomainParameters domainParameters = paramsMap.get(keyID);
 

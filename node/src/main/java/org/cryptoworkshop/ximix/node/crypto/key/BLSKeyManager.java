@@ -71,7 +71,6 @@ import org.bouncycastle.pkcs.PKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.PKCS12SafeBagFactory;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCSException;
-import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
@@ -83,8 +82,9 @@ import org.cryptoworkshop.ximix.common.crypto.threshold.BLSCommittedSecretShare;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.node.crypto.key.message.BLSCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
+import org.cryptoworkshop.ximix.node.crypto.key.util.PrivateKeyInfoFactory;
 import org.cryptoworkshop.ximix.node.crypto.key.util.SubjectPublicKeyInfoFactory;
 import org.cryptoworkshop.ximix.node.crypto.operator.jpbc.JpbcPrivateKeyOperator;
 import org.cryptoworkshop.ximix.node.crypto.util.BigIntegerShare;
@@ -152,7 +152,7 @@ public class BLSKeyManager
         return paramsMap.get(keyID);
     }
 
-    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, ECKeyGenParams keyGenParams)
+    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, NamedKeyGenParams keyGenParams)
     {
         BLS01Parameters domainParameters = paramsMap.get(keyID);
 
@@ -257,11 +257,11 @@ public class BLSKeyManager
 
             for (String keyID : sharedPrivateKeyMap.getIDs())
             {
-                PrivateKey privKey = fact.generatePrivate(priKeySpec);
+                PrivateKey sigKey = fact.generatePrivate(priKeySpec);
                 SubjectPublicKeyInfo pubKey = this.fetchPublicKey(keyID);
 
                 PKCS12SafeBagBuilder eeCertBagBuilder = new PKCS12SafeBagBuilder(createCertificate(
-                                                                 keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), privKey));
+                                                                 keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), sigKey));
 
                 eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
 
@@ -269,7 +269,7 @@ public class BLSKeyManager
 
                 eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);
 
-                PKCS12SafeBagBuilder keyBagBuilder = new JcaPKCS12SafeBagBuilder(privKey, encOut);
+                PKCS12SafeBagBuilder keyBagBuilder = new PKCS12SafeBagBuilder(PrivateKeyInfoFactory.createPrivateKeyInfo(sharedPrivateKeyMap.getShare(keyID).getValue(), paramsMap.get(keyID)), encOut);
 
                 keyBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
                 keyBagBuilder.addBagAttribute(PKCS12SafeBag.localKeyIdAttribute, pubKeyId);

@@ -22,7 +22,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 public abstract class KeyGenerationParameters
     extends ASN1Object
 {
-    public static final int EC_REG_CURVE = 0;
+    public static final int NAMED_PARAMETER_SET = 0;
 
     private final int type;
 
@@ -41,9 +41,9 @@ public abstract class KeyGenerationParameters
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(o);
 
-            if (ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue() == EC_REG_CURVE)
+            if (ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue() == NAMED_PARAMETER_SET)
             {
-                return new ECKeyGenParams(seq);
+                return new NamedKeyGenParams(seq);
             }
         }
 

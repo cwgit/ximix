@@ -59,7 +59,7 @@ import org.cryptoworkshop.ximix.node.crypto.key.BLSKeyPairGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
+import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.node.crypto.signature.BLSSignerEngine;
 import org.cryptoworkshop.ximix.node.crypto.test.TestNotifier;
@@ -80,7 +80,7 @@ public class CryptoServicesTest
         try
         {
             List<String> peers = Arrays.asList("A", "B", "C");
-            ECKeyGenParams kGenParams = new ECKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
+            NamedKeyGenParams kGenParams = new NamedKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
             ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
 
             Assert.fail("no exception!");
@@ -103,7 +103,7 @@ public class CryptoServicesTest
         XimixNodeContext context = contextMap.get("A");
 
         List<String> peers = Arrays.asList("A", "B", "C", "D", "E");
-        ECKeyGenParams kGenParams = new ECKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
+        NamedKeyGenParams kGenParams = new NamedKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
         ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
 
         Assert.assertEquals(5, messages.length);
