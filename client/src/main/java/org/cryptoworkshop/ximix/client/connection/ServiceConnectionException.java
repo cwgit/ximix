@@ -15,17 +15,20 @@
  */
 package org.cryptoworkshop.ximix.client.connection;
 
+/**
+ * Exception class for general service connection exceptions.
+ */
 public class ServiceConnectionException
     extends Exception
 {
+    /**
+     * Base constructor.
+     *
+     * @param message exception detail.
+     */
     public ServiceConnectionException(String message)
     {
         super(message);
-    }
-
-    public ServiceConnectionException(Throwable cause)
-    {
-        super(cause);
     }
 
     /**

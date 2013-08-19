@@ -44,6 +44,7 @@ public interface ServicesConnection
         throws ServiceConnectionException;
 
     /**
+     * Close the underlying Ximix connection.
      *
      * @throws ServiceConnectionException in case of failure to shutdown cleanly.
      */

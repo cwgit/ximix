@@ -65,7 +65,7 @@ class NodeServicesConnection
         }
         catch (Exception ex)
         {
-            throw new ServiceConnectionException(ex);
+            throw new ServiceConnectionException(ex.getMessage());
         }
     }
 
