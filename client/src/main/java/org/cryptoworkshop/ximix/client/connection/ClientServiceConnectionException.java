@@ -15,14 +15,28 @@
  */
 package org.cryptoworkshop.ximix.client.connection;
 
+/**
+ * Exception class for client side service connection exceptions.
+ */
 public class ClientServiceConnectionException
     extends ServiceConnectionException
 {
+    /**
+     * Base constructor.
+     *
+     * @param message exception detail.
+     */
     public ClientServiceConnectionException(String message)
     {
         super(message);
     }
 
+    /**
+     * Base constructor - nested case.
+     *
+     * @param message exception detail.
+     * @param cause the exception giving rise to this one.
+     */
     public ClientServiceConnectionException(String message, Throwable cause)
     {
         super(message, cause);

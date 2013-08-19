@@ -15,8 +15,16 @@
  */
 package org.cryptoworkshop.ximix.client.connection;
 
+/**
+ * Interface for a service connection associated with a specific node.
+ */
 public interface SpecificServicesConnection
     extends ServicesConnection
 {
+    /**
+     * Return the name of the node bound to this connection.
+     *
+     * @return the name of the node the connection represents.
+     */
     String getName();
 }
