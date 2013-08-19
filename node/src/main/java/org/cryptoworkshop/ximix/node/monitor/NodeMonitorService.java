@@ -82,7 +82,7 @@ public class NodeMonitorService
                 Runtime rt = Runtime.getRuntime();
                 RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
 
-                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder(hash);
+                NodeStatusMessage.Builder<NodeStatusMessage.InfoMessage> builder = new NodeStatusMessage.Builder(hash, NodeStatusMessage.InfoMessage.class);
 
                 builder.put("name", nodeContext.getName());
                 builder.put("hash", hash);
@@ -148,7 +148,7 @@ public class NodeMonitorService
                 Runtime rt = Runtime.getRuntime();
 
 
-                NodeStatusMessage.Builder builder = new NodeStatusMessage.Builder(hash);
+                NodeStatusMessage.Builder<NodeStatusMessage.StatisticsMessage> builder = new NodeStatusMessage.Builder(hash, NodeStatusMessage.StatisticsMessage.class);
 
                 Map<NodeService, Map<String, Object>> map = null;
                 try

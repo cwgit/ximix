@@ -37,10 +37,10 @@ class ClientNodeHealthMonitor
     }
 
     @Override
-    public NodeStatusMessage getStatistics(String name)
+    public NodeStatusMessage.StatisticsMessage getStatistics(String name)
         throws ServiceConnectionException
     {
-        NodeStatusMessage out = null;
+        NodeStatusMessage.StatisticsMessage out = null;
 
         MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forStatisticsRequest());
         if (reply.getType() == MessageReply.Type.ERROR)
@@ -49,7 +49,7 @@ class ClientNodeHealthMonitor
         }
         else
         {
-            out = NodeStatusMessage.getInstance(reply.getPayload());
+            out = NodeStatusMessage.StatisticsMessage.getInstance(reply.getPayload());
         }
 
 
@@ -57,10 +57,10 @@ class ClientNodeHealthMonitor
     }
 
     @Override
-    public List<NodeStatusMessage> getFullInfo()
+    public List<NodeStatusMessage.InfoMessage> getFullInfo()
         throws ServiceConnectionException
     {
-        List<NodeStatusMessage> out = new ArrayList<>();
+        List<NodeStatusMessage.InfoMessage> out = new ArrayList<>();
 
         for (String name : connection.getActiveNodeNames())
         {
@@ -71,7 +71,7 @@ class ClientNodeHealthMonitor
             }
             else
             {
-                out.add(NodeStatusMessage.getInstance(reply.getPayload()));
+                out.add(NodeStatusMessage.InfoMessage.getInstance(reply.getPayload()));
             }
         }
 
@@ -85,7 +85,7 @@ class ClientNodeHealthMonitor
     }
 
     @Override
-    public NodeStatusMessage getFullInfo(String name)
+    public NodeStatusMessage.InfoMessage getFullInfo(String name)
         throws ServiceConnectionException
     {
         MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
@@ -95,7 +95,7 @@ class ClientNodeHealthMonitor
             return null;
         }
 
-        return NodeStatusMessage.getInstance(reply.getPayload());
+        return NodeStatusMessage.InfoMessage.getInstance(reply.getPayload());
     }
 
 

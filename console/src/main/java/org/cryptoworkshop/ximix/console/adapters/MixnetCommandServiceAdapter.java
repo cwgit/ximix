@@ -155,7 +155,7 @@ public class MixnetCommandServiceAdapter
         }
         catch (RegistrarServiceException e)
         {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
 
         return out;
@@ -178,9 +178,9 @@ public class MixnetCommandServiceAdapter
     }
 
     @Override
-    public List<NodeStatusMessage> getNodeDetails()
+    public List<NodeStatusMessage.InfoMessage> getNodeDetails()
     {
-        List<NodeStatusMessage> details = null;
+        List<NodeStatusMessage.InfoMessage> details = null;
         try
         {
             MonitorService nhm = registrar.connect(MonitorService.class);

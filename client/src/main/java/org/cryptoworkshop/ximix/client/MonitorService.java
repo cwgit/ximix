@@ -48,7 +48,7 @@ public interface MonitorService
      * @return the status and statistics for the node of interest.
      * @throws ServiceConnectionException in case of failure.
      */
-    NodeStatusMessage getStatistics(String node)
+    NodeStatusMessage.StatisticsMessage getStatistics(String node)
         throws ServiceConnectionException;
 
     /**
@@ -57,7 +57,7 @@ public interface MonitorService
      * @return the status and statistics for all nodes.
      * @throws ServiceConnectionException in case of failure.
      */
-    List<NodeStatusMessage> getFullInfo()
+    List<NodeStatusMessage.InfoMessage> getFullInfo()
         throws ServiceConnectionException;
 
     /**
@@ -67,6 +67,6 @@ public interface MonitorService
      * @return the status and statistics for the node of interest.
      * @throws ServiceConnectionException in case of failure.
      */
-    NodeStatusMessage getFullInfo(String node)
+    NodeStatusMessage.InfoMessage getFullInfo(String node)
         throws ServiceConnectionException;
 }

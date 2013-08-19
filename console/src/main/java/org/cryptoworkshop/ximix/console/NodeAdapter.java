@@ -62,7 +62,7 @@ public interface NodeAdapter
 
     boolean isOpened();
 
-    List<NodeStatusMessage> getNodeDetails();
+    List<NodeStatusMessage.InfoMessage> getNodeDetails();
 
     NodeStatusMessage getNodeStatistics(String node);
 

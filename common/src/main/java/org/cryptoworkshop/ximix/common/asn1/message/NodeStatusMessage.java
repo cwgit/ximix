@@ -1,5 +1,6 @@
 package org.cryptoworkshop.ximix.common.asn1.message;
 
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +29,7 @@ public class NodeStatusMessage
     private final int hash;
     private final Map<String, Object> values;
 
+
     public NodeStatusMessage(int hash)
     {
         this(new HashMap<String, Object>(), hash);
@@ -45,6 +47,7 @@ public class NodeStatusMessage
     private NodeStatusMessage(ASN1Sequence seq)
     {
         int t = 0;
+
         hash = ((ASN1Integer)seq.getObjectAt(t++)).getValue().intValue();
         values = new HashMap<>();
         for (; t < seq.size(); t++)
@@ -86,46 +89,46 @@ public class NodeStatusMessage
         switch (type)
         {
 
-        case STRING:
-        {
-            out = ((DERUTF8String)sequence.getObjectAt(1)).getString();
-        }
-        break;
-        case INT:
-        {
-            out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().intValue();
-        }
-        break;
-        case LONG:
-        {
-            out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().longValue();
-        }
-        break;
-
-        case LIST:
-        {
-            out = new ArrayList<Object>();
-            Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
-            while (e.hasMoreElements())
+            case STRING:
             {
-                ((List)out).add(asn1TypeToObject((ASN1Sequence)e.nextElement()));
+                out = ((DERUTF8String)sequence.getObjectAt(1)).getString();
             }
-        }
-        break;
-
-        case MAP:
-        {
-            out = new HashMap();
-
-            Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
-
-            while (e.hasMoreElements())
+            break;
+            case INT:
             {
-                ((Map)out).put(asn1TypeToObject((ASN1Sequence)e.nextElement()), asn1TypeToObject((ASN1Sequence)e.nextElement()));
+                out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().intValue();
             }
+            break;
+            case LONG:
+            {
+                out = ((ASN1Integer)sequence.getObjectAt(1)).getValue().longValue();
+            }
+            break;
 
-        }
-        break;
+            case LIST:
+            {
+                out = new ArrayList<Object>();
+                Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
+                while (e.hasMoreElements())
+                {
+                    ((List)out).add(asn1TypeToObject((ASN1Sequence)e.nextElement()));
+                }
+            }
+            break;
+
+            case MAP:
+            {
+                out = new HashMap();
+
+                Enumeration e = ((ASN1Sequence)sequence.getObjectAt(1)).getObjects();
+
+                while (e.hasMoreElements())
+                {
+                    ((Map)out).put(asn1TypeToObject((ASN1Sequence)e.nextElement()), asn1TypeToObject((ASN1Sequence)e.nextElement()));
+                }
+
+            }
+            break;
         }
 
         return out;
@@ -205,14 +208,17 @@ public class NodeStatusMessage
         STRING, INT, LONG, MAP, LIST
     }
 
-    public static class Builder
+    public static class Builder<T extends NodeStatusMessage>
     {
         private final int hash;
+        private final Class<T> type;
         private final HashMap<String, Object> values = new HashMap<>();
+        private final Class[] params = new Class[]{Map.class, int.class};
 
-        public Builder(int hash)
+        public Builder(int hash, Class<T> type)
         {
             this.hash = hash;
+            this.type = type;
         }
 
         public void putAll(Map<String, Object> newValues)
@@ -238,11 +244,95 @@ public class NodeStatusMessage
         }
 
 
-        public NodeStatusMessage build()
+        public T build()
         {
-            return new NodeStatusMessage(values, hash);
+            try
+            {
+                return type.getConstructor(params).newInstance(values, hash);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException("Unable to build " + type);
+            }
+
         }
 
+    }
+
+    /**
+     * Statistics message.
+     */
+    public static class StatisticsMessage
+        extends NodeStatusMessage
+    {
+
+        public StatisticsMessage(int hash)
+        {
+            super(hash);
+        }
+
+        public StatisticsMessage(Map<String, Object> source, int hash)
+        {
+            super(source, hash);
+        }
+
+        public StatisticsMessage(ASN1Sequence seq)
+        {
+            super(seq);
+        }
+
+        public static StatisticsMessage getInstance(Object o)
+        {
+
+            if (o instanceof StatisticsMessage)
+            {
+                return (StatisticsMessage)o;
+            }
+            else if (o != null)
+            {
+                return new StatisticsMessage(ASN1Sequence.getInstance(o));
+            }
+
+            return null;
+        }
+
+    }
+
+    /**
+     * Info message.
+     */
+    public static class InfoMessage
+        extends NodeStatusMessage
+    {
+        public InfoMessage(int hash)
+        {
+            super(hash);
+        }
+
+        public InfoMessage(Map<String, Object> source, int hash)
+        {
+            super(source, hash);
+        }
+
+        public InfoMessage(ASN1Sequence seq)
+        {
+            super(seq);
+        }
+
+        public static InfoMessage getInstance(Object o)
+        {
+
+            if (o instanceof InfoMessage)
+            {
+                return (InfoMessage)o;
+            }
+            else if (o != null)
+            {
+                return new InfoMessage(ASN1Sequence.getInstance(o));
+            }
+
+            return null;
+        }
 
     }
 
