@@ -368,7 +368,7 @@ task make_console_installer(dependsOn: 'jar') << {
 
     File jarFile = new File(root, "XimixConsoleInstaller.jar");
 
-    ant.jar(destfile: jarFile, manifest: new File(projectDir, "installer/manifest/MANIFEST.MF")) {
+    ant.jar(destfile: jarFile, manifest: new File(projectDir, "installer/manifest/MANIFEST.mf")) {
         fileset(dir: new File(projectDir, 'installer/build/classes/main/'));
         fileset(dir: installerJarStageDir);
     }
@@ -568,7 +568,7 @@ task make_node_installer(dependsOn: 'jar') << {
 
     File jarFile = new File(root, "XimixNodeInstaller.jar");
 
-    ant.jar(destfile: jarFile, manifest: new File(projectDir, "installer/manifest/MANIFEST.MF")) {
+    ant.jar(destfile: jarFile, manifest: new File(projectDir, "installer/manifest/MANIFEST.mf")) {
         fileset(dir: new File(projectDir, 'installer/build/classes/main/'));
         fileset(dir: installerJarStageDir);
     }
