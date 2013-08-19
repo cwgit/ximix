@@ -11,10 +11,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bouncycastle.asn1.DEROutputStream;
+import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;

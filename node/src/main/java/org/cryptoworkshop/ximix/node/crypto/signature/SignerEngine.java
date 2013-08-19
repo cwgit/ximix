@@ -8,6 +8,7 @@ import it.unisa.dia.gas.jpbc.Pairing;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
@@ -18,7 +19,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.node.crypto.util.Participant;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 

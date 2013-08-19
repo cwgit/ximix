@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 /**
  * Carrier interface for methods associated with node health and state monitoring.

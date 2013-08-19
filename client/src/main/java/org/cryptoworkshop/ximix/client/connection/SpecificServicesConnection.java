@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.service;
+package org.cryptoworkshop.ximix.client.connection;
 
-public class ClientServiceConnectionException
-    extends ServiceConnectionException
+public interface SpecificServicesConnection
+    extends ServicesConnection
 {
-    public ClientServiceConnectionException(String message)
-    {
-        super(message);
-    }
-
-    public ClientServiceConnectionException(String message, Throwable cause)
-    {
-        super(message, cause);
-    }
+    String getName();
 }

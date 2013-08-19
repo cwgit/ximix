@@ -28,12 +28,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;

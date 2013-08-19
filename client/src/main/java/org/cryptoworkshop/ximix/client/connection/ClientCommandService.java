@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.registrar;
+package org.cryptoworkshop.ximix.client.connection;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -53,8 +53,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
-import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
 

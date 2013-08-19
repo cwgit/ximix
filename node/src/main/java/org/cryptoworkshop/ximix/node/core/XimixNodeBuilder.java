@@ -20,10 +20,10 @@ import java.io.FileNotFoundException;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.cryptoworkshop.ximix.client.registrar.XimixConnectionMapFactory;
+import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
+import org.cryptoworkshop.ximix.client.connection.XimixConnectionMapFactory;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.XimixNode;
 

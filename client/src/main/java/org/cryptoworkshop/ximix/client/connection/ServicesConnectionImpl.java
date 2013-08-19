@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.registrar;
+package org.cryptoworkshop.ximix.client.connection;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,8 +22,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
 class ServicesConnectionImpl
     implements ServicesConnection

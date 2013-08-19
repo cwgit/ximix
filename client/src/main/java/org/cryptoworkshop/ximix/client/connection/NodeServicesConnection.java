@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.registrar;
+package org.cryptoworkshop.ximix.client.connection;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +28,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeInfo;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.common.service.SpecificServicesConnection;
 
 class NodeServicesConnection
     implements SpecificServicesConnection

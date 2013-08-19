@@ -13,29 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.service;
+package org.cryptoworkshop.ximix.client.connection;
 
-public class ServiceConnectionException
-    extends Exception
+import org.cryptoworkshop.ximix.client.RegistrarServiceException;
+
+/**
+ * Registrar which encompasses all the services offered by the peers in the network.
+ */
+public interface XimixRegistrar
 {
-    public ServiceConnectionException(String message)
-    {
-        super(message);
-    }
-
-    public ServiceConnectionException(Throwable cause)
-    {
-        super(cause);
-    }
-
     /**
-     * Protected to prevent constructor been used on remote side of connection...
+     * Connect to a specific service.
      *
-     * @param message the message to carry.
-     * @param cause underlying cause of the exception.
+     * @param serviceClass the interface for the service being requested.
+     * @return an implementation of serviceClass supporting the passed in service.
+     * @throws org.cryptoworkshop.ximix.client.RegistrarServiceException in case of failure.
      */
-    protected ServiceConnectionException(String message, Throwable cause)
-    {
-        super(message, cause);
-    }
+    <T> T connect(Class<T> serviceClass)
+        throws RegistrarServiceException;
 }

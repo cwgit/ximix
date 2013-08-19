@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.registrar;
+package org.cryptoworkshop.ximix.client.connection;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
 /**
  * Factory class to allow building of services connection maps. Normally just used for inter-node communication.

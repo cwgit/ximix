@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.registrar;
+package org.cryptoworkshop.ximix.client.connection;
 
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 
 class ClientUploadService
     implements UploadService

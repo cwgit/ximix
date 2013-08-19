@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.service;
+package org.cryptoworkshop.ximix.client.connection;
 
 import java.util.Set;
 
@@ -21,11 +21,28 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 
+/**
+ * Basic interface for privileged service connections.
+ */
 public interface AdminServicesConnection
     extends ServicesConnection
 {
+    /**
+     * Return the current set of active nodes behind this connection.
+     *
+     * @return the set of active nodes.
+     */
     Set<String> getActiveNodeNames();
 
+    /**
+     * Send a message to a specific node.
+     *
+     * @param nodeName node message is to be sent to.
+     * @param type type of the message.
+     * @param messagePayload the data making up the message payload.
+     * @return a reply indicating message acceptance or rejection.
+     * @throws ServiceConnectionException in case of network failure.
+     */
     MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
         throws ServiceConnectionException;
 }

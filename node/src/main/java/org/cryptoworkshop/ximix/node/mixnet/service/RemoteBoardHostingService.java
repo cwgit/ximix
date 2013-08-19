@@ -16,11 +16,11 @@
 package org.cryptoworkshop.ximix.node.mixnet.service;
 
 import org.bouncycastle.asn1.DERUTF8String;
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 

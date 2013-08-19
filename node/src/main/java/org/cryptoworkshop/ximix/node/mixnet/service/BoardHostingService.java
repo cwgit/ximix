@@ -30,6 +30,8 @@ import java.util.concurrent.FutureTask;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
+import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDetails;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardErrorStatusMessage;
@@ -50,8 +52,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
-import org.cryptoworkshop.ximix.common.service.ServicesConnection;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardBackupListener;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardChangeListener;

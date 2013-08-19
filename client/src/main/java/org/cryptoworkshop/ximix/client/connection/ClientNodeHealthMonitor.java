@@ -1,4 +1,4 @@
-package org.cryptoworkshop.ximix.client.registrar;
+package org.cryptoworkshop.ximix.client.connection;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,8 +12,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusRequestMessage;
-import org.cryptoworkshop.ximix.common.service.AdminServicesConnection;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 
 /**
  *

@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
@@ -31,7 +32,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.StoreMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
 import org.cryptoworkshop.ximix.node.crypto.key.message.BLSCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.NodeContext;

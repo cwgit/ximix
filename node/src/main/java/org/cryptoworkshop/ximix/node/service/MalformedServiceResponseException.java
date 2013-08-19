@@ -15,7 +15,7 @@
  */
 package org.cryptoworkshop.ximix.node.service;
 
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 
 public class MalformedServiceResponseException
     extends ServiceConnectionException

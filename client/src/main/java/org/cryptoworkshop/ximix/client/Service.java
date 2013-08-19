@@ -15,7 +15,7 @@
  */
 package org.cryptoworkshop.ximix.client;
 
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 
 /**
  * Base interface for a service.
@@ -25,7 +25,7 @@ public interface Service
     /**
      * Free any resources used by this service.
      *
-     * @throws org.cryptoworkshop.ximix.common.service.ServiceConnectionException in case of failure to cleanly shutdown.
+     * @throws org.cryptoworkshop.ximix.client.connection.ServiceConnectionException in case of failure to cleanly shutdown.
      */
     void shutdown()
         throws ServiceConnectionException;

@@ -13,16 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.registrar;
+/**
+Ximix service registrar and service connection support classes.
+*/
+package org.cryptoworkshop.ximix.client.connection;
 
-import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.w3c.dom.Node;
 
-class NodeConfigFactory
-    implements ConfigObjectFactory<NodeConfig>
-{
-    public NodeConfig createObject(Node configNode)
-    {
-        return new NodeConfig(configNode);
-    }
-}

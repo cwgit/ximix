@@ -15,7 +15,7 @@
  */
 package org.cryptoworkshop.ximix.client;
 
-import org.cryptoworkshop.ximix.common.service.ServiceConnectionException;
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.util.Operation;
 
 /**
