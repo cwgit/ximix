@@ -140,6 +140,16 @@ project(':installer') {
 
 }
 
+def apiProjects() {
+    subprojects.findAll { project -> (project.name == 'client' || project.name == 'common' || project.name == 'node') }
+}
+
+task apiJavadoc(type: Javadoc) {
+    source apiProjects().collect {project -> project.sourceSets.main.allJava } 
+    classpath = files(subprojects.collect {project -> project.sourceSets.main.compileClasspath}) 
+    destinationDir = new File(projectDir, 'build/docs')
+}
+
 task remove_libs << {
     File root = new File(projectDir, libsJarPath);
     if (root.exists()) {
