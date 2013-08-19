@@ -284,8 +284,7 @@ function addRowHeading(tab, n) {
     $("<tr><td colspan='3' class='nodetableH'>" + (lang[n]) + "</td></tr>").appendTo(tab);
 }
 
-function addRow(tab, name, value, indent) {
-
+function addRow(hash,tab, name, value, indent) {
     var suffix = null;
     var key = name;
     var id = name;
@@ -306,7 +305,7 @@ function addRow(tab, name, value, indent) {
     var plot = "-";
     var plotbt = null;
     if (allow_plot[plot_id] != null) {
-        plotbt = hsh(plot_id);
+        plotbt = hsh(plot_id+hash);
         plot = "<button id='plotbt_" + plotbt + "'  type='button' name='" + id + "' class='plot' title='" + (lang["ui.plot.tooltip"]) + "'>" + lang["ui.addplot"] + "</button>";
     }
 
@@ -320,15 +319,15 @@ function addRow(tab, name, value, indent) {
 }
 
 
-function addData(tab, data, indent) {
+function addData(hash, tab, data, indent) {
     for (var k in data) {
         if (isSplitKey(k)) {
             var n = splitKeyIntoContext(k);
-            addRow(tab, n, data[k], n[2], indent);
+            addRow(hash, tab, n, data[k], n[2], indent);
             continue;
         }
 
-        addRow(tab, k, data[k], indent);
+        addRow(hash, tab, k, data[k], indent);
     }
 }
 
@@ -359,12 +358,12 @@ function repaintStats(hash) {
                         var n = splitKeyIntoContext(k);
                         if ("tab" === stype[n[0]]) {
                             addRowHeading(tab, n[1]);
-                            addData(tab, data[k], true);
+                            addData(hash, tab, data[k], true);
                             continue;
                         }
 
                     } else {
-                        addRow(tab, k, data[k], null, false);
+                        addRow(hash, tab, k, data[k], null, false);
                     }
                 }
 
@@ -517,8 +516,9 @@ function formType(index, command, parameter, ui_parent) {
 
 
 function pollNodes() {
-    updateConnected();
+    updateConnected(null);
 }
+
 
 
 $(document).ready(function () {

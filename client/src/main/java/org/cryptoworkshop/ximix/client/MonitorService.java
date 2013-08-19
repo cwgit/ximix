@@ -52,7 +52,7 @@ public interface MonitorService
         throws ServiceConnectionException;
 
     /**
-     * Return the statistics and status for a particular node.
+     * Return the statistics and status for all nodes.
      *
      * @return the status and statistics for all nodes.
      * @throws ServiceConnectionException in case of failure.
