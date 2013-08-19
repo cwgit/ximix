@@ -57,7 +57,7 @@ public class BigIntegerMessage
      * <pre>
      * INTEGER value.
      * </pre>
-     * @return
+     * @return the ASN.1 primitive representing this object.
      */
     @Override
     public ASN1Primitive toASN1Primitive()

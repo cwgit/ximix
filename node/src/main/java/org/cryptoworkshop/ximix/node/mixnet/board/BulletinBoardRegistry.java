@@ -98,7 +98,7 @@ public class BulletinBoardRegistry
      * to persist data.
      *
      * @param boardName
-     * @return
+     * @return board working directory, null if none is available.
      */
     private File deriveBoardFile(String boardName)
     {
