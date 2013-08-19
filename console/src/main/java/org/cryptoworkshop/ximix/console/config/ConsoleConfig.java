@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.console.config;
 
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
+import org.cryptoworkshop.ximix.common.util.JDKLoggingEventNotifier;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,8 +28,10 @@ public class ConsoleConfig
 {
     private HTTPConfig httpConfig = null;
     private List<AdapterConfig> adapters = null;
+    private EventNotifier eventNotifier = null;
 
-    public ConsoleConfig() {
+    public ConsoleConfig()
+    {
 
     }
 
@@ -60,4 +65,13 @@ public class ConsoleConfig
         adapters.add(cfg);
     }
 
+    public EventNotifier getEventNotifier()
+    {
+        return eventNotifier;
+    }
+
+    public void setEventNotifier(EventNotifier eventNotifier)
+    {
+        this.eventNotifier = eventNotifier;
+    }
 }

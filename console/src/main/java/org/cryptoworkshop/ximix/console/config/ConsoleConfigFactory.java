@@ -15,14 +15,17 @@
  */
 package org.cryptoworkshop.ximix.console.config;
 
+import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
  * Console config factory..
  */
-public class ConsoleConfigFactory implements ConfigObjectFactory<ConsoleConfig>
+public class ConsoleConfigFactory
+    implements ConfigObjectFactory<ConsoleConfig>
 {
 
     private static ConsoleConfigFactory factory = new ConsoleConfigFactory();
@@ -49,9 +52,22 @@ public class ConsoleConfigFactory implements ConfigObjectFactory<ConsoleConfig>
                 {
                     cfg.setHttpConfig(new HTTPConfig(n));
                     continue;
-                } else if ("adapter".equals(n.getNodeName()))
+                }
+                else if ("adapter".equals(n.getNodeName()))
                 {
                     cfg.addAdapterConfig(new AdapterConfig(n));
+                }
+                else if ("event-notifier".equals(n.getNodeName()))
+                {
+                    try
+                    {
+                        Class cl = Class.forName(n.getAttributes().getNamedItem("class").getTextContent());
+                        cfg.setEventNotifier((EventNotifier)(cl.getConstructor(new Class[]{Node.class}).newInstance(n)));
+                    }
+                    catch (Exception e)
+                    {
+                        throw new IllegalArgumentException("Unable to initialise EventNotifier from config.");
+                    }
                 }
             }
         }

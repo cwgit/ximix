@@ -35,17 +35,30 @@ import org.cryptoworkshop.ximix.console.config.ConsoleConfig;
 import org.cryptoworkshop.ximix.console.model.AdapterInfo;
 
 /**
- * An adapter for the Mixnet commands service.
+ *
  */
 public class MixnetCommandServiceAdapter
     extends BaseNodeAdapter
 {
 
+    /**
+     * Config file.
+     */
     protected File configFile = null;
+
+    /**
+     * Ximix registrar.
+     */
     protected XimixRegistrar registrar = null;
-    protected CommandService commandService = null;
-    protected Class commandType = CommandService.class;
+
+    /**
+     * Console config.
+     */
     protected Config config = null;
+
+    /**
+     * Maps node name to details.
+     */
     protected Map<String, NodeDetail> nameToConfig = null;
 
     public MixnetCommandServiceAdapter()
@@ -96,19 +109,19 @@ public class MixnetCommandServiceAdapter
                 @Override
                 public void notify(Level level, Throwable throwable)
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+
                 }
 
                 @Override
                 public void notify(Level level, Object detail)
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+
                 }
 
                 @Override
                 public void notify(Level level, Object detail, Throwable throwable)
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+
                 }
             });
             nameToConfig = registrar.connect(MonitorService.class).getConfiguredNodeDetails();
@@ -162,9 +175,9 @@ public class MixnetCommandServiceAdapter
     }
 
     @Override
-    public NodeStatusMessage getNodeDetails(String name)
+    public NodeStatusMessage.InfoMessage getNodeDetails(String name)
     {
-        NodeStatusMessage details = null;
+        NodeStatusMessage.InfoMessage details = null;
         try
         {
             MonitorService nhm = registrar.connect(MonitorService.class);

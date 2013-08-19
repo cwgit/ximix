@@ -38,11 +38,32 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class BaseNodeAdapter
         implements NodeAdapter
 {
+    /**
+     * List of commands that me be invoked by this adapter.
+     */
     protected List<Command> commandList = new ArrayList<>();
+    /**
+     * Maps command id to command.
+     */
     protected Map<Integer, Command> idToCommand = new ConcurrentHashMap<>();
+
+    /**
+     * Id of this adapter.
+     */
     protected String id = null;
+    /**
+     * Name of this adapter.
+     */
     protected String name = null;
+
+    /**
+     * Node description.
+     */
     protected String description = null;
+
+    /**
+     * Connection has been established, opened.
+     */
     protected boolean opened = false;
 
     public BaseNodeAdapter()

@@ -11,8 +11,14 @@
             <id>mixnetadmin</id>
             <name>Mixnet Admin</name>
             <description>Admin panel for the Mixnet</description>
-            <property name="mixnet-file"></property>    <!-- Force it to use system property, set from command line argument #2 -->
+            <property name="mixnet-file"></property>
+            <!-- Force it to use system property, set from command line argument #2 -->
         </adapter>
+
+        <event-notifier class="org.cryptoworkshop.ximix.common.util.JDKLoggingEventNotifier">
+            <name>ximix-console</name>
+        </event-notifier>
+
 
     </console>
 </config>

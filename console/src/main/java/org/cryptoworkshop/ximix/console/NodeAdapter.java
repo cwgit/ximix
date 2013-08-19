@@ -37,38 +37,119 @@ public interface NodeAdapter
     /**
      * Open connection to node.
      */
-    void open() throws Exception;
+    void open()
+        throws Exception;
 
     /**
      * Close connection to the mode.
      */
-    void close() throws Exception;
+    void close()
+        throws Exception;
 
-    void init(ConsoleConfig consoleConfig,  AdapterConfig config) throws Exception;
+    /**
+     * Initialise this adapter.
+     *
+     * @param consoleConfig The console configuration.
+     * @param config        The adapter configuration.
+     * @throws Exception rethrows all exceptions.
+     */
+    void init(ConsoleConfig consoleConfig, AdapterConfig config)
+        throws Exception;
 
+    /**
+     * The details of this adapter.
+     *
+     * @return The details of this adapter.
+     */
     AdapterInfo getInfo();
 
+    /**
+     * Command list.
+     *
+     * @return The command list.
+     */
     List<Command> getCommandList();
 
+    /**
+     * Invoke a command on the adapter.
+     *
+     * @param id     The id.
+     * @param params The params.
+     * @return The response.
+     */
     StandardMessage invoke(int id, Map<String, String[]> params);
 
+    /**
+     * The id.
+     *
+     * @return The id of the message.
+     */
     String getId();
+
+    /**
+     * The name of the adapter.
+     *
+     * @return The name of the adabper.
+     */
 
     String getName();
 
+    /**
+     * The adapters description.
+     *
+     * @return The description.
+     */
     String getDescription();
 
+    /**
+     * Return a command name for an id.
+     *
+     * @param id The id.
+     * @return The command id.
+     */
     String getCommandNameForId(int id);
 
+    /**
+     * Is this adapter open.
+     *
+     * @return true = opened.
+     */
     boolean isOpened();
 
+    /**
+     * Return a list of node details.
+     *
+     * @return The details of each node.
+     */
     List<NodeStatusMessage.InfoMessage> getNodeDetails();
 
+    /**
+     * Return the statistics for a node.
+     *
+     * @param node The node.
+     * @return The statistics object.
+     */
     NodeStatusMessage getNodeStatistics(String node);
 
+    /**
+     * Return the details of each configured node.
+     *
+     * @return
+     */
     List<NodeDetail> getConfiguredNodes();
 
+    /**
+     * Return the currently connected nodes.
+     *
+     * @return
+     */
     List<NodeDetail> getConnectedNodes();
 
-    NodeStatusMessage getNodeDetails(String name);
+    /**
+     * Return the detauls of each node.
+     *
+     * @param name
+     * @return
+     */
+    NodeStatusMessage.InfoMessage getNodeDetails(String name);
 }
