@@ -28,7 +28,6 @@ dependencies {
 }
 
 
-
 allprojects {
     apply plugin: 'idea'
     apply plugin: 'eclipse'
@@ -55,6 +54,8 @@ allprojects {
                 '-Xmx512m',
                 '-XX:MaxPermSize=128m'
     }
+
+
 }
 
 subprojects {
@@ -69,6 +70,7 @@ subprojects {
 
     sourceCompatibility = 1.7
     targetCompatibility = 1.7
+
 }
 
 
@@ -88,11 +90,16 @@ project(':client') {
     dependencies {
         compile project(':common')
     }
+    jar {
+        baseName= rootProject.name+"-client";
+    }
 }
 
 
 project(':common') {
-
+    jar {
+        baseName= rootProject.name+"-common";
+    }
 }
 
 
@@ -107,12 +114,18 @@ project(':console') {
         compile 'com.fasterxml.jackson.core:jackson-databind:2.2.0'
         compile 'com.fasterxml.jackson.core:jackson-annotations:2.2.0'
     }
+    jar {
+        baseName= rootProject.name+"-console";
+    }
 }
 
 project(':demo') {
     dependencies {
         compile project(':common')
         compile project(':node')
+    }
+    jar {
+        baseName= rootProject.name+"-demo";
     }
 }
 
@@ -121,6 +134,9 @@ project(':node') {
     dependencies {
         compile project(':common')
         compile project(':client')
+    }
+    jar {
+        baseName= rootProject.name+"-node";
     }
 }
 
@@ -133,11 +149,16 @@ project(':test') {
     test {
         testLogging.showStandardStreams = true
     }
+    jar {
+        baseName= rootProject.name+"-test";
+    }
 }
 
 
 project(':installer') {
-
+    jar {
+        baseName= rootProject.name+"-installer";
+    }
 }
 
 def apiProjects() {
