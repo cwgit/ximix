@@ -293,8 +293,20 @@ public class BulletinBoardRegistry
 
             transitBoards.put(getTransitBoardName(operationNumber, boardName, stepNumber), originalBoard);
 
-            BulletinBoard board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName), listenerHandler, changeHandler);
-            board.addListener(changeListener);
+            BulletinBoard board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName), nodeContext.getScheduledExecutor(), nodeContext.getEventNotifier());
+
+            for (BulletinBoardBackupListener listener : listenerHandler.listeners())
+            {
+                board.addListener(listener);
+                listenerHandler.removeListener(listener);
+            }
+
+            for (BulletinBoardChangeListener listener : changeHandler.listeners())
+            {
+                board.addListener(listener);
+                changeHandler.removeListener(listener);
+            }
+
             boards.put(boardName, board);
         }
     }

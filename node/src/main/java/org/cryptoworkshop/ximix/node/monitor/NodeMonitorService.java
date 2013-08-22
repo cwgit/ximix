@@ -58,7 +58,6 @@ public class NodeMonitorService
         socketInfo = nodeContext.getListeningSocketInfo();
 
         hash = socketInfo.hashCode();
-
     }
 
     @Override
@@ -82,7 +81,7 @@ public class NodeMonitorService
                 Runtime rt = Runtime.getRuntime();
                 RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
 
-                NodeStatusMessage.Builder<NodeStatusMessage.InfoMessage> builder = new NodeStatusMessage.Builder(hash, NodeStatusMessage.InfoMessage.class);
+                NodeStatusMessage.Builder<NodeStatusMessage.InfoMessage> builder = new NodeStatusMessage.Builder(NodeStatusMessage.InfoMessage.class);
 
                 builder.put("name", nodeContext.getName());
                 builder.put("hash", hash);
@@ -148,7 +147,7 @@ public class NodeMonitorService
                 Runtime rt = Runtime.getRuntime();
 
 
-                NodeStatusMessage.Builder<NodeStatusMessage.StatisticsMessage> builder = new NodeStatusMessage.Builder(hash, NodeStatusMessage.StatisticsMessage.class);
+                NodeStatusMessage.Builder<NodeStatusMessage.StatisticsMessage> builder = new NodeStatusMessage.Builder(NodeStatusMessage.StatisticsMessage.class);
 
                 Map<NodeService, Map<String, Object>> map = null;
                 try

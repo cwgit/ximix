@@ -20,21 +20,54 @@ import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
+/**
+ * Basic interface for a bulletin board.
+ */
 public interface BulletinBoard
     extends Iterable<PostedMessage>
 {
+    /**
+     * Return the name of the board.
+     *
+     * @return the board name.
+     */
     String getName();
 
+    /**
+     * Return the number of messages on the board.
+     *
+     * @return current message count.
+     */
     int size();
 
+    /**
+     * Post a message to the end of the board.
+     *
+     * @param message message to be posted.
+     */
     void postMessage(final byte[] message);
 
+    /**
+     * Replace or add a block of messages by index.
+     *
+     * @param messageBlock the block of messages to be added/replaced.
+     */
     void postMessageBlock(final PostedMessageBlock messageBlock);
 
+    /**
+     * Remove a block of messages from the start of the message list.
+     *
+     * @param blockBuilder the builder to construct the messages block with.
+     *
+     * @return a block of messages.
+     */
     PostedMessageBlock removeMessages(PostedMessageBlock.Builder blockBuilder);
 
     void postWitnessBlock(final MessageWitnessBlock witnessBlock);
 
+    /**
+     * Clear all the messages from the board.
+     */
     void clear();
 
     void addListener(BulletinBoardBackupListener bulletinBoardBackupListener);

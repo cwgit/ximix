@@ -30,7 +30,7 @@ public class NodeStatusMessageTest
         testList.add("rabbit");
 
 
-        NodeStatusMessage.Builder<NodeStatusMessage.InfoMessage> builder = new NodeStatusMessage.Builder(10, NodeStatusMessage.InfoMessage.class);
+        NodeStatusMessage.Builder<NodeStatusMessage.InfoMessage> builder = new NodeStatusMessage.Builder(NodeStatusMessage.InfoMessage.class);
 
 
         builder.put("a", "bar");

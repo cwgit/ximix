@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.common.util;
 
 import java.lang.reflect.InvocationHandler;
+import java.util.Collection;
 
 /**
  * The basic interface for a ListenerHandler.
@@ -31,6 +32,11 @@ public interface ListenerHandler<T>
      * @return the notifier encapsulating any added listeners.
      */
     T  getNotifier();
+
+    /**
+     * @return the available listeners
+     */
+    Collection<T> listeners();
 
     /**
      * Add a listener to this handler.

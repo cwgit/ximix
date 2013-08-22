@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.cryptoworkshop.ximix.client.FullInfoData;
 import org.cryptoworkshop.ximix.client.MonitorService;
 import org.cryptoworkshop.ximix.client.NodeDetail;
+import org.cryptoworkshop.ximix.client.StatisticsData;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
@@ -35,7 +37,7 @@ class ClientNodeHealthMonitor
     }
 
     @Override
-    public NodeStatusMessage.StatisticsMessage getStatistics(String name)
+    public StatisticsData getStatistics(String name)
         throws ServiceConnectionException
     {
         NodeStatusMessage.StatisticsMessage out = null;
@@ -51,14 +53,14 @@ class ClientNodeHealthMonitor
         }
 
 
-        return out;
+        return new StatisticsData(out.getValues());
     }
 
     @Override
-    public List<NodeStatusMessage.InfoMessage> getFullInfo()
+    public List<FullInfoData> getFullInfo()
         throws ServiceConnectionException
     {
-        List<NodeStatusMessage.InfoMessage> out = new ArrayList<>();
+        List<FullInfoData> out = new ArrayList<>();
 
         for (String name : connection.getActiveNodeNames())
         {
@@ -69,7 +71,7 @@ class ClientNodeHealthMonitor
             }
             else
             {
-                out.add(NodeStatusMessage.InfoMessage.getInstance(reply.getPayload()));
+                out.add(new FullInfoData(NodeStatusMessage.InfoMessage.getInstance(reply.getPayload()).getValues()));
             }
         }
 

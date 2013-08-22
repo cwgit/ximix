@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.cryptoworkshop.ximix.client.CommandService;
+import org.cryptoworkshop.ximix.client.FullInfoData;
 import org.cryptoworkshop.ximix.client.MonitorService;
 import org.cryptoworkshop.ximix.client.NodeDetail;
 import org.cryptoworkshop.ximix.client.RegistrarServiceException;
@@ -193,11 +193,14 @@ public class MixnetCommandServiceAdapter
     @Override
     public List<NodeStatusMessage.InfoMessage> getNodeDetails()
     {
-        List<NodeStatusMessage.InfoMessage> details = null;
+        List<NodeStatusMessage.InfoMessage> details = new ArrayList<>();
         try
         {
             MonitorService nhm = registrar.connect(MonitorService.class);
-            details = nhm.getFullInfo();
+            for (FullInfoData data : nhm.getFullInfo())
+            {
+                details.add(new NodeStatusMessage.InfoMessage(data.getDataMap()));
+            }
         }
         catch (Exception e)
         {
@@ -215,7 +218,7 @@ public class MixnetCommandServiceAdapter
         try
         {
             MonitorService nhm = registrar.connect(MonitorService.class);
-            details = nhm.getStatistics(node);
+            details = new NodeStatusMessage(nhm.getStatistics(node).getDataMap());
         }
         catch (Exception e)
         {

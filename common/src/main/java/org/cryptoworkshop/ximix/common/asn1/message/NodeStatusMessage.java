@@ -1,6 +1,5 @@
 package org.cryptoworkshop.ximix.common.asn1.message;
 
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,21 +25,13 @@ public class NodeStatusMessage
     extends ASN1Object
 {
     private static final Charset UTF8 = Charset.forName("UTF8");
-    private final int hash;
     private final Map<String, Object> values;
 
-
-    public NodeStatusMessage(int hash)
-    {
-        this(new HashMap<String, Object>(), hash);
-    }
-
-    public NodeStatusMessage(Map<String, Object> source, int hash)
+    public NodeStatusMessage(Map<String, Object> source)
     {
         Map<String, Object> tmp = new HashMap<>();
         tmp.putAll(source);
         values = Collections.unmodifiableMap(tmp);
-        this.hash = hash;
     }
 
 
@@ -48,7 +39,6 @@ public class NodeStatusMessage
     {
         int t = 0;
 
-        hash = ((ASN1Integer)seq.getObjectAt(t++)).getValue().intValue();
         values = new HashMap<>();
         for (; t < seq.size(); t++)
         {
@@ -138,7 +128,6 @@ public class NodeStatusMessage
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector out = new ASN1EncodableVector();
-        out.add(new ASN1Integer(hash));
         Iterator<Map.Entry<String, Object>> it = values.entrySet().iterator();
 
         while (it.hasNext())
@@ -210,14 +199,12 @@ public class NodeStatusMessage
 
     public static class Builder<T extends NodeStatusMessage>
     {
-        private final int hash;
         private final Class<T> type;
         private final HashMap<String, Object> values = new HashMap<>();
-        private final Class[] params = new Class[]{Map.class, int.class};
+        private final Class[] params = new Class[]{Map.class};
 
-        public Builder(int hash, Class<T> type)
+        public Builder(Class<T> type)
         {
-            this.hash = hash;
             this.type = type;
         }
 
@@ -248,7 +235,7 @@ public class NodeStatusMessage
         {
             try
             {
-                return type.getConstructor(params).newInstance(values, hash);
+                return type.getConstructor(params).newInstance(values);
             }
             catch (Exception e)
             {
@@ -265,18 +252,12 @@ public class NodeStatusMessage
     public static class StatisticsMessage
         extends NodeStatusMessage
     {
-
-        public StatisticsMessage(int hash)
+        public StatisticsMessage(Map<String, Object> source)
         {
-            super(hash);
+            super(source);
         }
 
-        public StatisticsMessage(Map<String, Object> source, int hash)
-        {
-            super(source, hash);
-        }
-
-        public StatisticsMessage(ASN1Sequence seq)
+        private StatisticsMessage(ASN1Sequence seq)
         {
             super(seq);
         }
@@ -304,14 +285,9 @@ public class NodeStatusMessage
     public static class InfoMessage
         extends NodeStatusMessage
     {
-        public InfoMessage(int hash)
+        public InfoMessage(Map<String, Object> source)
         {
-            super(hash);
-        }
-
-        public InfoMessage(Map<String, Object> source, int hash)
-        {
-            super(source, hash);
+            super(source);
         }
 
         public InfoMessage(ASN1Sequence seq)

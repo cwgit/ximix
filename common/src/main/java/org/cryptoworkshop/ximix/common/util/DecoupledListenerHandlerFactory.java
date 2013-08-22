@@ -17,8 +17,9 @@ package org.cryptoworkshop.ximix.common.util;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -58,7 +59,7 @@ public class DecoupledListenerHandlerFactory
         implements ListenerHandler<T>
     {
         private final Class<T> listenerClass;
-        private final List<T> listeners = new ArrayList<>();
+        private final Set<T> listeners = new HashSet<>();
 
         public Handler(Class<T> listenerClass)
         {
@@ -87,6 +88,15 @@ public class DecoupledListenerHandlerFactory
         public T getNotifier()
         {
             return (T)Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{listenerClass}, this);
+        }
+
+        @Override
+        public Collection<T> listeners()
+        {
+            synchronized (listeners)
+            {
+                return new HashSet<>(listeners);
+            }
         }
 
         @Override

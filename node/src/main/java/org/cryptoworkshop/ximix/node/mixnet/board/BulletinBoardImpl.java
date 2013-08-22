@@ -58,7 +58,7 @@ public class BulletinBoardImpl
         this(boardName, workingFile, new DecoupledListenerHandlerFactory(executor, eventNotifier).createHandler(BulletinBoardBackupListener.class), new DecoupledListenerHandlerFactory(executor, eventNotifier).createHandler(BulletinBoardChangeListener.class));
     }
 
-    public BulletinBoardImpl(String boardName, File workingFile, ListenerHandler<BulletinBoardBackupListener> listenerHandler, ListenerHandler<BulletinBoardChangeListener> changeListenerHandler)
+    private BulletinBoardImpl(String boardName, File workingFile, ListenerHandler<BulletinBoardBackupListener> listenerHandler, ListenerHandler<BulletinBoardChangeListener> changeListenerHandler)
     {
         this.boardName = boardName;
 
@@ -174,8 +174,6 @@ public class BulletinBoardImpl
         {
             notifier.messagePosted(this, message.getIndex(), message.getMessage());
         }
-
-        changeNotifier.messagesAdded(this, messages.size());
     }
 
     @Override

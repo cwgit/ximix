@@ -42,13 +42,13 @@ public interface MonitorService
     Set<String> getConnectedNodeNames();
 
     /**
-     * Return the statistics and status for a particular node.
+     * Return the statistics data for a particular node.
      *
      * @param node name of the node of interest.
-     * @return the status and statistics for the node of interest.
+     * @return the statistics data for the node of interest.
      * @throws ServiceConnectionException in case of failure.
      */
-    NodeStatusMessage.StatisticsMessage getStatistics(String node)
+    StatisticsData getStatistics(String node)
         throws ServiceConnectionException;
 
     /**
@@ -57,7 +57,7 @@ public interface MonitorService
      * @return the status and statistics for all nodes.
      * @throws ServiceConnectionException in case of failure.
      */
-    List<NodeStatusMessage.InfoMessage> getFullInfo()
+    List<FullInfoData> getFullInfo()
         throws ServiceConnectionException;
 
     /**
