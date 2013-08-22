@@ -9,12 +9,14 @@ var MINUTES = 60;
 var HOURS = MINUTES * 60;
 var DAYS = HOURS * 24;
 var ONE_MB = 1024 * 1024;
-var MAX_PLOT_BUF = 50;
+var MAX_PLOT_BUF = 20;
 var nodes = {};
 var node_con_state = {}
 var stats = {};
 var allow_plot = {};
-var to_plot = new Array();
+var to_plot = {};
+var default_plot=new Array();
+
 var statTimer = null;
 var stats_rendered = {};
 
@@ -29,6 +31,45 @@ function hsh(e) {
 
 
 var multipleInput = {}
+
+function addToPlot(hash, id) {
+    var list = to_plot[hash];
+    if (list == null) {
+        list = new Array();
+        to_plot[hash] = list;
+    }
+    for (var k in list) {
+        if (list[k] === id) {
+            return;
+        }
+    }
+
+    list.push(id);
+}
+
+function removeFromPlot(hash, id) {
+    var list = to_plot[hash];
+    if (list == null) {
+        return;
+    }
+
+    var k = list.length;
+
+    while (--k >= 0) {
+        if (list[k] === id) {
+            list.splice(k, 1);
+        }
+    }
+
+}
+
+function hasPlot(hash, id) {
+    var list = to_plot[hash];
+    if (list == null) {
+        return false;
+    }
+    return list.indexOf(id) >=0;
+}
 
 
 function fetchConfiguredNodes(callback) {
@@ -79,6 +120,7 @@ function updateConnected(callback) {
                     } else {
                         tab.attr('src', '/images/uncon.gif');
                         detail.html("Not connected.");
+                        stats_rendered[n] = false;
                     }
                 }
                 node_con_state[n] = data[n];
@@ -187,13 +229,15 @@ function formatterForRtype(name) {
 
 function plotInfo(hash) {
     var st = stats[hash];
+    var keys = to_plot[hash];
 
-    if (st != null) {
+
+    if (st != null && keys != null) {
 
         var dataset = {};
 
-        for (var pl in to_plot) {
-            var key = to_plot[pl];
+        for (var pl in keys) {
+            var key = keys[pl];
             var issplit = isSplitKey(key);
             var n = null;
             if (issplit) {
@@ -219,13 +263,7 @@ function plotInfo(hash) {
             }
         }
 
-        //  var data_mem = new Array();
-        //  var data_gc = new Array();
-        //  for (var k in st) {
-        //      var datum = st[k];
-        //      data_mem.push([datum['zeit'], datum['vm.free-memory']])
-        //      data_gc.push([datum['zeit'], datum['vm.gc.count.delta']]);
-        //  }
+
 
         var plotds = new Array();
         var yaxis = new Array();
@@ -284,7 +322,7 @@ function addRowHeading(tab, n) {
     $("<tr><td colspan='3' class='nodetableH'>" + (lang[n]) + "</td></tr>").appendTo(tab);
 }
 
-function addRow(hash,tab, name, value, indent) {
+function addRow(hash, tab, name, value, indent) {
     var suffix = null;
     var key = name;
     var id = name;
@@ -305,16 +343,30 @@ function addRow(hash,tab, name, value, indent) {
     var plot = "-";
     var plotbt = null;
     if (allow_plot[plot_id] != null) {
-        plotbt = hsh(plot_id+hash);
-        plot = "<button id='plotbt_" + plotbt + "'  type='button' name='" + id + "' class='plot' title='" + (lang["ui.plot.tooltip"]) + "'>" + lang["ui.addplot"] + "</button>";
+        plotbt = hash + "_" + hsh(plot_id);
+        plot = "<button id='plotbt_" + plotbt + "'  type='button' name='" + hash + "_" + id + "' class='plot' title='" + (lang["ui.plot.tooltip"]) + "'>" + lang["ui.addplot"] + "</button>";
     }
 
     $("<tr><td class='" + (indent ? "nodetableLi" : "nodetableL") + "'>" + (keySet[key]) + (suffix != null ? "(" + suffix + ")" : "") + "</td>" +
-        "<td id='stval_" + hsh(id) + "' class='" + (indent ? "nodetableRi" : "nodetableR") + "'>" + (apply_rtype(name, value)) + "</td><td>" + plot + "</td></tr>").appendTo(tab);
+        "<td id='stval_" + hash + "_" + hsh(id) + "' class='" + (indent ? "nodetableRi" : "nodetableR") + "'>" + (apply_rtype(name, value)) + "</td><td>" + plot + "</td></tr>").appendTo(tab);
 
-    if (to_plot.indexOf(plot_id) > -1) {
+    if (hasPlot(hash,id)) {
         $('#plotbt_' + plotbt).addClass("plotDown");
     }
+
+    $('#plotbt_' + plotbt).click(function () {
+        var id = $(this).attr('name').split("_");
+
+        if (hasPlot(id[0], id[1])) {
+            removeFromPlot(id[0], id[1]);
+            $(this).removeClass("plotDown");
+        } else {
+            $(this).addClass("plotDown");
+            addToPlot(id[0], id[1]);
+        }
+
+        plotInfo(hash);
+    });
 
 }
 
@@ -339,8 +391,16 @@ function repaintStats(hash) {
         var tab = $("#" + hash + "_stats_tab");
 
 
-        if (stats_rendered[hash] == null) {
+        if (stats_rendered[hash] == null || !stats_rendered[hash]) {
             stats_rendered[hash] = true;
+
+            //
+            // Set up default plot.
+            //
+
+            to_plot[hash] = default_plot.slice(0);
+
+
             //
             // Add the rows to the table.
             //
@@ -368,20 +428,7 @@ function repaintStats(hash) {
                 }
 
             }
-            $(".plot").click(function () {
-                var id = $(this).attr('name');
-                var indx = to_plot.indexOf(id);
 
-                if (indx >= 0) {
-                    to_plot.splice(indx, 1);
-                    $(this).removeClass("plotDown");
-                } else {
-                    $(this).addClass("plotDown");
-                    to_plot.push(id);
-                }
-
-                plotInfo(hash);
-            });
 
         } else {
 
@@ -402,16 +449,16 @@ function repaintStats(hash) {
                             var inner = data[k];
 
                             for (var t in inner) {
-                                var tag = $('#stval_' + hsh(t));
+                                var tag = $('#stval_' + hash + "_" + hsh(t));
                                 if (tag != null) {
-                                    tag.html(apply_rtype(t, inner[k]));
+                                    tag.html(apply_rtype(t, inner[t]));
                                 }
                             }
 
                             continue;
                         }
                     } else {
-                        var tag = $('#stval_' + hsh(k));
+                        var tag = $('#stval_' + hash + "_" + hsh(k));
                         if (tag != null) {
                             tag.html(apply_rtype(k, data[k]));
                         }
@@ -514,11 +561,9 @@ function formType(index, command, parameter, ui_parent) {
 //
 
 
-
 function pollNodes() {
     updateConnected(null);
 }
-
 
 
 $(document).ready(function () {
@@ -542,7 +587,6 @@ $(document).ready(function () {
     }(jQuery));
 
 
-
     var l = languages[lang_id.toLocaleLowerCase()];
     if (l == null) {
         l = languages[default_language];
@@ -553,7 +597,6 @@ $(document).ready(function () {
             alert("Unable to find: " + l + " for language " + lang_id.toLowerCase());
         }
     });
-
 
 
     fetchConfiguredNodes(function () {

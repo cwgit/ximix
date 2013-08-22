@@ -74,5 +74,5 @@ allow_plot["vm.used-memory"]={};
 //
 // Pre load graph.
 //
-to_plot.push("vm.free-memory");
-to_plot.push("vm.gc.count.delta");
+default_plot.push("vm.free-memory");
+default_plot.push("vm.gc.count.delta");

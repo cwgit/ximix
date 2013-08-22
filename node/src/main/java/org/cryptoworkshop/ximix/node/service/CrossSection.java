@@ -53,7 +53,7 @@ public class CrossSection
                 }
                 else
                 {
-                    counter += step;
+                   counter = counter + step;
                 }
 
                 values.put(name, counter);
