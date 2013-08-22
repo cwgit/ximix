@@ -1,9 +1,9 @@
 package org.cryptoworkshop.ximix.common.util;
 
+import java.util.logging.Logger;
+
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import java.util.logging.Logger;
 
 /**
  * Default logging event notifier that prints via Java Util Logging.
@@ -73,23 +73,24 @@ public class JDKLoggingEventNotifier
     @Override
     public void notify(EventNotifier.Level level, Object detail, Throwable throwable)
     {
-        java.util.logging.Level level1 = null;
+        java.util.logging.Level jLogLevel;
+
         switch (level)
         {
-            case DEBUG:
-                level1 = java.util.logging.Level.FINE;
-                break;
-            case INFO:
-                level1 = java.util.logging.Level.INFO;
-                break;
-            case WARN:
-                level1 = java.util.logging.Level.WARNING;
-                break;
-            case ERROR:
-                level1 = java.util.logging.Level.SEVERE;
-                break;
+        case DEBUG:
+            jLogLevel = java.util.logging.Level.FINE;
+            break;
+        case INFO:
+            jLogLevel = java.util.logging.Level.INFO;
+            break;
+        case WARN:
+            jLogLevel = java.util.logging.Level.WARNING;
+            break;
+        case ERROR:
+        default:
+            jLogLevel = java.util.logging.Level.SEVERE;
         }
 
-        l.log(level1, detail.toString(), throwable);
+        l.log(jLogLevel, detail.toString(), throwable);
     }
 }
