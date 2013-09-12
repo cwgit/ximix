@@ -175,11 +175,10 @@ public class Main
         CommandService commandService = adminRegistrar.connect(CommandService.class);
 
         // board is hosted on "B" move to "A" then to "C" then back to "B"
-        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECENCKEY").build(), "A", "C", "C");
 
         final CountDownLatch shuffleLatch = new CountDownLatch(1);
 
-        shuffleOp.addListener(new ShuffleOperationListener()
+        ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
         {
             @Override
             public void completed()
@@ -200,7 +199,9 @@ public class Main
                 shuffleLatch.countDown();
                 System.err.println("failed: " + errorObject);
             }
-        });
+        };
+
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECENCKEY").build(), shuffleListener, "A", "C", "C");
 
         shuffleLatch.await();
 

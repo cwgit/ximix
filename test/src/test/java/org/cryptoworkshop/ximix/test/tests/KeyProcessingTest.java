@@ -337,18 +337,13 @@ public class KeyProcessingTest extends TestCase
         //
         // Perform shuffle.
         //
-
-        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",
-            new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECKEY").build(), "A", "C", "D", "E");
-
         final CountDownLatch shufflerLatch = new CountDownLatch(1);
 
         final AtomicBoolean shuffleCompleted = new AtomicBoolean(false);
         final AtomicBoolean shuffleFailed = new AtomicBoolean(false);
         final AtomicReference<Thread> shuffleThread = new AtomicReference<>();
 
-
-        shuffleOp.addListener(new ShuffleOperationListener()
+        ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
         {
             @Override
             public void completed()
@@ -371,7 +366,12 @@ public class KeyProcessingTest extends TestCase
                 shufflerLatch.countDown();
                 TestUtil.checkThread(shuffleThread);
             }
-        });
+        };
+
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",
+            new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECKEY").build(), shuffleListener, "A", "C", "D", "E");
+
+
 
         //
         // Fail if operation did not complete in the nominated time frame.

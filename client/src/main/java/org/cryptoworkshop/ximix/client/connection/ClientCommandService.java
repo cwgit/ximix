@@ -92,10 +92,12 @@ class ClientCommandService
     }
 
     @Override
-    public Operation<ShuffleOperationListener> doShuffleAndMove(String boardName, ShuffleOptions options, String... nodes)
+    public Operation<ShuffleOperationListener> doShuffleAndMove(String boardName, ShuffleOptions options, ShuffleOperationListener defaultListener, String... nodes)
         throws ServiceConnectionException
     {
         Operation<ShuffleOperationListener> op = new ShuffleOp(boardName, options, nodes);
+
+        op.addListener(defaultListener);
 
         executor.execute((Runnable)op);
 

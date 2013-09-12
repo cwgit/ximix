@@ -28,13 +28,14 @@ public interface ShuffleOperation
      *
      * @param boardName board to do the shuffle on.
      * @param options applicable shuffle options to use.
+     * @param defaultListener initial listener to monitor a shuffle operation.
      * @param nodes the node path to use.
      * @throws org.cryptoworkshop.ximix.client.connection.ServiceConnectionException
      */
     Operation<ShuffleOperationListener> doShuffleAndMove(
             String boardName,
             ShuffleOptions options,
+            ShuffleOperationListener defaultListener,
             String... nodes)
         throws ServiceConnectionException;
-
 }
