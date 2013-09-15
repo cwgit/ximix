@@ -13,12 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.config;
+package org.cryptoworkshop.ximix.node.mixnet.util;
 
-import org.w3c.dom.Node;
-
-public interface ConfigObjectFactory<T>
+/**
+ * General interface for the generation of streams of index numbers.
+ */
+public interface IndexNumberGenerator
 {
-    public T createObject(Node configNode)
-        throws ConfigException;
+    /**
+     * Return true if there is another index number available
+     *
+     * @return true if another index number, false otherwise.
+     */
+    boolean hasNext();
+
+    /**
+     * Return the next index number
+     *
+     * @return an index number.
+     */
+    int nextIndex();
 }

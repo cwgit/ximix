@@ -25,11 +25,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.cryptoworkshop.ximix.common.asn1.message.MessageWitness;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageWitnessBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedData;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.common.util.TranscriptType;
+import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
@@ -79,7 +83,7 @@ public class BulletinBoardImpl
 
         boardMap = boardDB.getTreeMap(boardName);
         commitmentMap = boardDB.getTreeMap("commitments");
-        witnessMap = boardDB.getTreeMap("witnesses");
+        witnessMap = boardDB.getTreeMap(WITNESSES);
 
         nextIndex.set(boardMap.size());
 
@@ -118,6 +122,31 @@ public class BulletinBoardImpl
     }
 
     @Override
+    public TranscriptBlock fetchTranscriptData(TranscriptType dataClass, IndexNumberGenerator indexGenerator, TranscriptBlock.Builder responseBuilder)
+    {
+        if (TranscriptType.WITNESSES == dataClass)
+        {
+            while (indexGenerator.hasNext() && !responseBuilder.isFull())
+            {
+                int index = indexGenerator.nextIndex();
+
+                responseBuilder.add(new PostedData(index, witnessMap.get(index)));
+            }
+        }
+        else
+        {
+            while (indexGenerator.hasNext() && !responseBuilder.isFull())
+            {
+                int index = indexGenerator.nextIndex();
+
+                responseBuilder.add(new PostedMessage(index, boardMap.get(index), commitmentMap.get(index)));
+            }
+        }
+
+        return responseBuilder.build();
+    }
+
+    @Override
     public void shutdown()
     {
         boardDB.close();
@@ -131,6 +160,18 @@ public class BulletinBoardImpl
     public int size()
     {
         return nextIndex.get();
+    }
+
+    public int transcriptSize(TranscriptType transcriptType)
+    {
+        if (TranscriptType.WITNESSES == transcriptType)
+        {
+            return witnessMap.size();
+        }
+        else
+        {
+            return boardMap.size();
+        }
     }
 
     public void postMessage(final byte[] message)
@@ -195,7 +236,7 @@ public class BulletinBoardImpl
         {
             int index = minimumIndex.getAndIncrement();
 
-            blockBuilder.add(index, boardMap.remove(index));
+            blockBuilder.add(index,  boardMap.remove(index));
         }
 
         boardDB.commit();

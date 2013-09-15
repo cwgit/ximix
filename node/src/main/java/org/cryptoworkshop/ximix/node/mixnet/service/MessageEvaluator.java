@@ -50,6 +50,9 @@ class MessageEvaluator
         alwaysHandleType.add(CommandMessage.Type.TRANSFER_TO_BACKUP_BOARD);
         alwaysHandleType.add(CommandMessage.Type.RETURN_TO_BOARD);
         alwaysHandleType.add(CommandMessage.Type.FETCH_BOARD_STATUS);
+        alwaysHandleType.add(CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT);
+        alwaysHandleType.add(CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT_STEPS);
+        alwaysHandleType.add(CommandMessage.Type.GET_BOARD_HOST);
     }
 
     private final BoardIndex boardIndex;

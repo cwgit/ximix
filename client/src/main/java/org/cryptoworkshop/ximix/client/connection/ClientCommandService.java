@@ -15,15 +15,20 @@
  */
 package org.cryptoworkshop.ximix.client.connection;
 
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.ec.ECPair;
@@ -36,6 +41,7 @@ import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
+import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
@@ -51,10 +57,15 @@ import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.TranscriptDownloadMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryResponse;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
+import org.cryptoworkshop.ximix.common.util.TranscriptType;
 
 class ClientCommandService
     implements CommandService
@@ -109,6 +120,19 @@ class ClientCommandService
         throws ServiceConnectionException
     {
         Operation<DownloadOperationListener> op = new DownloadOp(boardName, options);
+
+        op.addListener(defaultListener);
+
+        executor.execute((Runnable)op);
+
+        return op;
+    }
+
+    @Override
+    public Operation<ShuffleTranscriptsDownloadOperationListener> downloadShuffleTranscripts(String boardName, long operationNumber, TranscriptType transcriptType, ShuffleTranscriptsDownloadOperationListener defaultListener, String... nodes)
+        throws ServiceConnectionException
+    {
+        Operation<ShuffleTranscriptsDownloadOperationListener> op = new DownloadShuffleTranscriptsOp(boardName, operationNumber, transcriptType, nodes);
 
         op.addListener(defaultListener);
 
@@ -172,7 +196,7 @@ class ClientCommandService
 
                 waitForCompleteStatus(this.getOperationNumber(), nextNode, nodes.length);
 
-                connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
+                connection.sendMessage(boardHost, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
 
                 connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, nodes.length, options.getTransformName(), options.getKeyID(), boardHost));
 
@@ -365,7 +389,7 @@ class ClientCommandService
                 else
                 {
                     // assume plain text
-                    for (; ; )
+                    for (;;)
                     {
                         reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
@@ -391,6 +415,119 @@ class ClientCommandService
             {
                 e.printStackTrace();
                 notifier.failed(e.toString());
+            }
+        }
+    }
+    
+    private class DownloadShuffleTranscriptsOp
+            extends Operation<ShuffleTranscriptsDownloadOperationListener>
+        implements Runnable
+    {
+        private final String boardName;
+        private final long operationOfInterestNumber;
+        private final TranscriptType transcriptType;
+        private final String[] nodes;
+
+        public DownloadShuffleTranscriptsOp(String boardName, long operationOfInterestNumber, TranscriptType transcriptType, String... nodes)
+        {
+            super(decouple, eventNotifier, ShuffleTranscriptsDownloadOperationListener.class);
+
+            this.boardName = boardName;
+            this.operationOfInterestNumber = operationOfInterestNumber;
+            this.transcriptType = transcriptType;
+            this.nodes = nodes;
+        }
+
+        public void run()
+        {
+            try
+            {
+                for (String node : nodes)
+                {
+                    processNode(node);
+                }
+
+                //
+                // check we have included the board host
+                //
+                boolean notFound = true;
+
+                MessageReply startRep = connection.sendMessage(CommandMessage.Type.GET_BOARD_HOST, new BoardMessage(boardName));
+                String boardHost = DERUTF8String.getInstance(startRep.getPayload()).getString();
+
+                for (int i = 0; i != nodes.length; i++)
+                {
+                    if (nodes[i].equals(boardHost))
+                    {
+                        notFound = false;
+                        break;
+                    }
+                }
+
+                if (notFound)
+                {
+                    processNode(boardHost);
+                }
+
+                notifier.completed();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+                notifier.failed(e.toString());
+            }
+        }
+
+        private void processNode(String node)
+            throws ServiceConnectionException, IOException
+        {
+            MessageReply reply = connection.sendMessage(node, CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT_STEPS, new TranscriptQueryMessage(operationOfInterestNumber));
+
+            TranscriptQueryResponse response = TranscriptQueryResponse.getInstance(reply.getPayload());
+
+            String opBoardName = response.getBoardName();
+
+            if (!boardName.equals(opBoardName))
+            {
+                throw new IllegalStateException("node reports incorrect board name");
+            }
+
+            long queryID = response.getQueryID();
+
+            for (int stepNo : response.stepNos())
+            {
+                PipedOutputStream pOut = null;
+
+                for (;;)
+                {                                                                                                                                                   // TODO: make configurable
+                    reply = connection.sendMessage(node, CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT, new TranscriptDownloadMessage(queryID, operationOfInterestNumber, stepNo, transcriptType, 10));
+
+                    TranscriptBlock transcriptBlock = TranscriptBlock.getInstance(reply.getPayload());
+
+                    if (transcriptBlock.size() == 0)
+                    {
+                        break;
+                    }
+
+                    if (pOut == null)
+                    {
+
+                        pOut = new PipedOutputStream();
+                        PipedInputStream pIn = new PipedInputStream(pOut);
+
+                        notifier.shuffleTranscriptArrived(operationOfInterestNumber, transcriptBlock.getStepNo(), pIn);
+                    }
+
+                    for (Enumeration<ASN1Encodable> en = transcriptBlock.getDetails().getObjects(); en.hasMoreElements();)
+                    {
+                        pOut.write(en.nextElement().toASN1Primitive().getEncoded());
+                    }
+                }
+
+                if (pOut != null)
+                {
+                    pOut.close();
+                }
             }
         }
     }

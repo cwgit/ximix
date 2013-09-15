@@ -18,7 +18,10 @@ package org.cryptoworkshop.ximix.node.mixnet.shuffle;
 import java.security.SecureRandom;
 import java.util.BitSet;
 
-public class IndexNumberGenerator
+import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
+
+public class RandomIndexNumberGenerator
+    implements IndexNumberGenerator
 {
     private final SecureRandom random;
     private final int size;
@@ -28,7 +31,7 @@ public class IndexNumberGenerator
     private int upper;
     private int lower;
 
-    public IndexNumberGenerator(int size, SecureRandom random)
+    public RandomIndexNumberGenerator(int size, SecureRandom random)
     {
         this.size = size;
         this.random = random;
@@ -36,6 +39,11 @@ public class IndexNumberGenerator
         this.upper = size - 1;
         this.lower = 0;
         this.bitSet = new BitSet(size);
+    }
+
+    public boolean hasNext()
+    {
+        return bitSet.nextClearBit(lower) <= upper;
     }
 
     public int nextIndex()

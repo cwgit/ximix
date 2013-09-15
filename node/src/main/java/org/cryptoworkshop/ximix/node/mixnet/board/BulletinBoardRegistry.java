@@ -16,8 +16,10 @@
 package org.cryptoworkshop.ximix.node.mixnet.board;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -239,6 +241,26 @@ public class BulletinBoardRegistry
         }
     }
 
+    public BulletinBoard getTransitBoard(long operationNumber, int stepNumber)
+    {
+        synchronized (boards)
+        {
+            List<String> transitBoardNames = getTransitBoardNames(operationNumber);
+            String suffix = "." + stepNumber;
+
+            for (String name : transitBoardNames)
+            {
+;
+                if (name.endsWith(suffix))
+                {
+                    return transitBoards.get(name);
+                }
+            }
+
+            throw new IllegalStateException("unable to find board for operation " + operationNumber);
+        }
+    }
+
     public BulletinBoard getTransitBoard(long operationNumber, String boardName, int stepNumber)
     {
         synchronized (boards)
@@ -356,5 +378,21 @@ public class BulletinBoardRegistry
     private String getTransitBoardName(long operationNumber, String boardName, int stepNumber)
     {
         return operationNumber + "." + boardName + "." + stepNumber;
+    }
+
+    public List<String> getTransitBoardNames(long operationNumber)
+    {
+        String baseName = Long.toString(operationNumber);
+        List<String> names = new ArrayList<>();
+
+        for (String name : transitBoards.keySet())
+        {
+            if (name.startsWith(baseName))
+            {
+                names.add(name);
+            }
+        }
+
+        return names;
     }
 }

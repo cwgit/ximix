@@ -18,7 +18,10 @@ package org.cryptoworkshop.ximix.node.mixnet.board;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageWitnessBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
+import org.cryptoworkshop.ximix.common.util.TranscriptType;
+import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
 
 /**
  * Basic interface for a bulletin board.
@@ -26,6 +29,11 @@ import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 public interface BulletinBoard
     extends Iterable<PostedMessage>
 {
+    /**
+     * Transcript witness data set name.
+     */
+    String WITNESSES = "witnesses";
+
     /**
      * Return the name of the board.
      *
@@ -39,6 +47,14 @@ public interface BulletinBoard
      * @return current message count.
      */
     int size();
+
+    /**
+     * Return the number of messages in the board transcript. The return value
+     * of this method is only meaningful after a shuffle operation has been completed.
+     *
+     * @return size of the board transcript for the given type.
+     */
+    int transcriptSize(TranscriptType transcriptType);
 
     /**
      * Post a message to the end of the board.
@@ -77,4 +93,14 @@ public interface BulletinBoard
     <T> ListenerHandler<T> getListenerHandler(Class<T> listenerClass);
 
     void addListener(BulletinBoardChangeListener listener);
+
+    /**
+     * Fetch a block of transcript information.
+     *
+     * @param dataClass the type of transcript information.
+     * @param indexGenerator the source of index numbers to be downloaded.
+     * @param responseBuilder the builder for creating the response carrying the data.
+     * @return a block of transcript data of the appropriate type.
+     */
+    TranscriptBlock fetchTranscriptData(TranscriptType dataClass, IndexNumberGenerator indexGenerator, TranscriptBlock.Builder responseBuilder);
 }

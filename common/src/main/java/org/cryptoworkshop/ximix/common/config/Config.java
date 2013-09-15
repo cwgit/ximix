@@ -199,9 +199,7 @@ public class Config
 
     public <T> T getConfigObject(String name, ConfigObjectFactory<T> factory)
         throws ConfigException
-
     {
-
         String[] path = name.split("\\.");
 
         for (String elementName : path)

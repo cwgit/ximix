@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.config;
+package org.cryptoworkshop.ximix.client;
 
-import org.w3c.dom.Node;
+import java.io.InputStream;
 
-public interface ConfigObjectFactory<T>
+import org.cryptoworkshop.ximix.common.util.OperationListener;
+
+/**
+ * Listener for monitoring shuffle transcript download operations.
+ */
+public interface ShuffleTranscriptsDownloadOperationListener
+    extends OperationListener<String>
 {
-    public T createObject(Node configNode)
-        throws ConfigException;
+    void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript);
 }

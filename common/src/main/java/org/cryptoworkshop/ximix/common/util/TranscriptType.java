@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.common.config;
+package org.cryptoworkshop.ximix.common.util;
 
-import org.w3c.dom.Node;
-
-public interface ConfigObjectFactory<T>
+/**
+ * Class of data available for shuffle transcripts.
+ */
+public enum TranscriptType
 {
-    public T createObject(Node configNode)
-        throws ConfigException;
+    GENERAL,
+    WITNESSES
 }

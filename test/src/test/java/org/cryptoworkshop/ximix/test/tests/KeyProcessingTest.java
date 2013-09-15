@@ -15,10 +15,16 @@
  */
 package org.cryptoworkshop.ximix.test.tests;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.SocketException;
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +45,7 @@ import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
+import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
@@ -46,6 +53,7 @@ import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.Operation;
+import org.cryptoworkshop.ximix.common.util.TranscriptType;
 import org.cryptoworkshop.ximix.node.XimixNode;
 import org.cryptoworkshop.ximix.node.mixnet.transform.MultiColumnRowTransform;
 import org.cryptoworkshop.ximix.test.node.NodeTestUtil;
@@ -372,13 +380,13 @@ public class KeyProcessingTest extends TestCase
             new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECKEY").build(), shuffleListener, "A", "C", "D", "E");
 
 
+        shufflerLatch.await();
 
         //
         // Fail if operation did not complete in the nominated time frame.
         //
         //TestCase.assertTrue("Shuffle timed out.", shufflerLatch.await(20, TimeUnit.SECONDS));
 
-        shufflerLatch.await();
 
         //
         // Check that failed and completed methods are exclusive.
@@ -396,6 +404,112 @@ public class KeyProcessingTest extends TestCase
         //
         TestCase.assertFalse(shuffleFailed.get());
 
+        final CountDownLatch transcriptCompleted = new CountDownLatch(1);
+
+        final Map<String, byte[]> generalTranscripts = new HashMap<>();
+
+        ShuffleTranscriptsDownloadOperationListener transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
+        {
+            @Override
+            public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
+            {
+                try
+                {
+                    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+                    BufferedInputStream bIn = new BufferedInputStream(transcript);
+
+                    int ch;
+                    while ((ch = bIn.read()) >= 0)
+                    {
+                        bOut.write(ch);
+                    }
+                    bOut.close();
+
+                    generalTranscripts.put(Long.toHexString(operationNumber) + "." + stepNumber, bOut.toByteArray());
+                }
+                catch (IOException e)
+                {
+                     e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void completed()
+            {
+                transcriptCompleted.countDown();
+            }
+
+            @Override
+            public void status(String statusObject)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void failed(String errorObject)
+            {
+               transcriptCompleted.countDown();
+            }
+        };
+
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(), TranscriptType.GENERAL, transcriptListener,  "A", "C", "D", "E");
+
+        transcriptCompleted.await();
+
+        TestCase.assertEquals(6, generalTranscripts.size());
+
+        final Map<String, byte[]> witnessTranscripts = new HashMap<>();
+
+        final CountDownLatch witnessTranscriptCompleted = new CountDownLatch(1);
+        transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
+        {
+            @Override
+            public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
+            {
+                try
+                {
+                    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+                    BufferedInputStream bIn = new BufferedInputStream(transcript);
+
+                    int ch;
+                    while ((ch = bIn.read()) >= 0)
+                    {
+                        bOut.write(ch);
+                    }
+                    bOut.close();
+
+                    witnessTranscripts.put(Long.toHexString(operationNumber) + "." + stepNumber, bOut.toByteArray());
+                }
+                catch (IOException e)
+                {
+                     e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void completed()
+            {
+                witnessTranscriptCompleted.countDown();
+            }
+
+            @Override
+            public void status(String statusObject)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void failed(String errorObject)
+            {
+               witnessTranscriptCompleted.countDown();
+            }
+        };
+
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(), TranscriptType.WITNESSES, transcriptListener,  "A", "C", "D", "E");
+
+        witnessTranscriptCompleted.await();
+
+        TestCase.assertEquals(5, witnessTranscripts.size());
 
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];

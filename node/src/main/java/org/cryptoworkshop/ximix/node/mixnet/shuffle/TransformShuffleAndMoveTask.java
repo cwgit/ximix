@@ -69,7 +69,7 @@ public class TransformShuffleAndMoveTask
             PostedMessageBlock.Builder messageBlockBuilder = new PostedMessageBlock.Builder(20);    // TODO: make configurable
             MessageWitnessBlock.Builder messageWitnessBlockBuilder = new MessageWitnessBlock.Builder(messageBlockBuilder.capacity());
 
-            IndexNumberGenerator indexGen = new IndexNumberGenerator(board.size(), new SecureRandom());  // TODO: specify random
+            RandomIndexNumberGenerator indexGen = new RandomIndexNumberGenerator(board.size(), new SecureRandom());  // TODO: specify random
 
             int nextStepNumber = message.getStepNumber() + 1;
 
@@ -123,8 +123,6 @@ public class TransformShuffleAndMoveTask
             {
                 throw new ServiceConnectionException("message failed");
             }
-
-            board.clear();
         }
         catch (ServiceConnectionException e)
         {

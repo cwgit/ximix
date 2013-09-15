@@ -21,6 +21,9 @@
                     <implementation>org.cryptoworkshop.ximix.node.mixnet.transform.NullTransform</implementation>
                 </transform>
             </transforms>
+            <challenger>
+                <implementation>org.cryptoworkshop.ximix.node.mixnet.challenge.SerialChallenger</implementation>
+            </challenger>
         </service>
         <service>
             <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeKeyRetrievalService</implementation>
