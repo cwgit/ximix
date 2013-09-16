@@ -15,35 +15,24 @@
  */
 package org.cryptoworkshop.ximix.node.mixnet.challenge;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
 
 /**
- * A challenger that simply increments through the board contents.
+ * A base class for a challenger that swaps between odds and even ranges of messages.
  */
-public class SerialChallenger
+public abstract class OddsEvensChallenger
     implements IndexNumberGenerator
 {
-    private final int size;
+    protected final int stepNo;
+    protected final  boolean isOddStepNumber;
+    protected final int range;
+    protected final boolean isOddRange;
 
-    private AtomicInteger counter;
-
-    public SerialChallenger(Integer size, Integer stepNo)
+    public OddsEvensChallenger(Integer size, Integer stepNo)
     {
-        this.size = size;
-        this.counter = new AtomicInteger(0);
-    }
-
-    @Override
-    public boolean hasNext()
-    {
-        return counter.get() != size;
-    }
-
-    @Override
-    public int nextIndex()
-    {
-        return counter.getAndIncrement();
+        this.stepNo = stepNo;
+        this.isOddStepNumber = ((stepNo.intValue() & 0x1) == 1);
+        this.range = size / 2;
+        this.isOddRange = ((size.intValue() & 0x1) == 1);
     }
 }

@@ -15,35 +15,47 @@
  */
 package org.cryptoworkshop.ximix.node.mixnet.challenge;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
-
 /**
- * A challenger that simply increments through the board contents.
+ * A basic odd/even challenger based on the step number.
  */
-public class SerialChallenger
-    implements IndexNumberGenerator
+public class SimpleOddsEvensChallenger
+    extends OddsEvensChallenger
 {
-    private final int size;
+    private AtomicInteger counter = new AtomicInteger(0);
+    private AtomicBoolean isFirst = new AtomicBoolean(true);
 
-    private AtomicInteger counter;
-
-    public SerialChallenger(Integer size, Integer stepNo)
+    public SimpleOddsEvensChallenger(Integer size, Integer stepNo)
     {
-        this.size = size;
-        this.counter = new AtomicInteger(0);
+        super(size, stepNo);
     }
 
     @Override
     public boolean hasNext()
     {
-        return counter.get() != size;
+        return counter.get() < range;
     }
 
     @Override
     public int nextIndex()
     {
-        return counter.getAndIncrement();
+        //
+        // we guarantee the last message is always checked.
+        //
+        if (isOddRange && isFirst.getAndSet(false))
+        {
+            return range * 2;
+        }
+
+        if (isOddStepNumber)
+        {
+            return counter.getAndIncrement() * 2;
+        }
+        else
+        {
+            return (counter.getAndIncrement() * 2) + 1;
+        }
     }
 }

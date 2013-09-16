@@ -13,27 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+Basic challengers used for working out which messages/commitments to download.
+*/
 package org.cryptoworkshop.ximix.node.mixnet.challenge;
 
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
 
-public class DefaultRandomChallenger
-    implements IndexNumberGenerator
-{
-    public DefaultRandomChallenger(Integer size)
-    {
-        //To change body of created methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public boolean hasNext()
-    {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public int nextIndex()
-    {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-}

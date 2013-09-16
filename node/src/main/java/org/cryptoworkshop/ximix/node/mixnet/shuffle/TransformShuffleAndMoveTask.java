@@ -16,13 +16,11 @@
 package org.cryptoworkshop.ximix.node.mixnet.shuffle;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.Commitment;
-import org.bouncycastle.crypto.ExtendedDigest;
-import org.bouncycastle.crypto.commitments.HashCommitter;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
@@ -35,6 +33,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
+import org.cryptoworkshop.ximix.common.crypto.IndexCommitter;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.node.mixnet.transform.Transform;
@@ -75,7 +74,9 @@ public class TransformShuffleAndMoveTask
 
             if (message.getKeyID() != null)
             {
-                transform.init(PublicKeyFactory.createKey(nodeContext.getPublicKey(message.getKeyID())));
+                ECPublicKeyParameters key = (ECPublicKeyParameters)PublicKeyFactory.createKey(nodeContext.getPublicKey(message.getKeyID()));
+
+                transform.init(key);
 
                 for (PostedMessage postedMessage : board)
                 {
@@ -84,7 +85,7 @@ public class TransformShuffleAndMoveTask
                     Commitment commitment = committer.commit(newIndex);
 
                     messageBlockBuilder.add(newIndex, transformed, commitment.getCommitment());
-                    messageWitnessBlockBuilder.add(postedMessage.getIndex(), new MessageCommitment(commitment));
+                    messageWitnessBlockBuilder.add(postedMessage.getIndex(), new MessageCommitment(newIndex, commitment.getSecret(), transform.getLastDetail()));
 
                     if (messageBlockBuilder.isFull())
                     {
@@ -101,7 +102,7 @@ public class TransformShuffleAndMoveTask
                     Commitment commitment = committer.commit(newIndex);
 
                     messageBlockBuilder.add(newIndex, postedMessage.getMessage(), commitment.getCommitment());
-                    messageWitnessBlockBuilder.add(postedMessage.getIndex(), new MessageCommitment(commitment));
+                    messageWitnessBlockBuilder.add(postedMessage.getIndex(), new MessageCommitment(newIndex, commitment.getSecret()));
 
                     if (messageBlockBuilder.isFull())
                     {
@@ -158,19 +159,5 @@ public class TransformShuffleAndMoveTask
         board.postWitnessBlock(messageWitnessBlockBuilder.build());
 
         messageWitnessBlockBuilder.clear();
-    }
-
-    private class IndexCommitter
-        extends HashCommitter
-    {
-        public IndexCommitter(ExtendedDigest digest, SecureRandom random)
-        {
-            super(digest, random);
-        }
-
-        public Commitment commit(int index)
-        {
-            return super.commit(BigInteger.valueOf(index).toByteArray());
-        }
     }
 }

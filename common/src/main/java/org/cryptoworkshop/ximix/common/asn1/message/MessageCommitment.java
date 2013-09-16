@@ -16,30 +16,48 @@
 package org.cryptoworkshop.ximix.common.asn1.message;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.crypto.Commitment;
 
 public class MessageCommitment
     extends ASN1Object
 {
-    private final byte[] commitment;
+    private final byte[] detail;
+    private final int    newIndex;
     private final byte[] secret;
 
     private MessageCommitment(ASN1Sequence seq)
     {
-        this.commitment = ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets();
+        this.newIndex = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue().intValue();
         this.secret = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
+
+        if (seq.size() > 2)
+        {
+            this.detail = ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets();
+        }
+        else
+        {
+            this.detail = null;
+        }
     }
 
-    public MessageCommitment(Commitment witness)
+    public MessageCommitment(int newIndex, byte[] secret)
     {
-        this.commitment = witness.getCommitment();
-        this.secret = witness.getSecret();
+        this.detail = null;
+        this.newIndex = newIndex;
+        this.secret = secret;
+    }
+
+    public MessageCommitment(int newIndex, byte[] secret, byte[] detail)
+    {
+        this.detail = detail.clone();
+        this.newIndex = newIndex;
+        this.secret = secret;
     }
 
     public static final MessageCommitment getInstance(Object o)
@@ -61,14 +79,34 @@ public class MessageCommitment
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new DEROctetString(commitment));
+        v.add(new ASN1Integer(newIndex));
         v.add(new DEROctetString(secret));
+
+        if (detail != null)
+        {
+            v.add(new DEROctetString(detail));
+        }
 
         return new DERSequence(v);
     }
 
-    public Commitment getCommitment()
+    public byte[] getSecret()
     {
-        return new Commitment(secret, commitment);
+        return secret;
+    }
+
+    public byte[] getDetail()
+    {
+        if (detail != null)
+        {
+            return detail.clone();
+        }
+
+        return null;
+    }
+
+    public int getNewIndex()
+    {
+        return newIndex;
     }
 }

@@ -111,7 +111,7 @@ public class BoardHostingService
         {
             try
             {
-                witnessChallengerConstructor = SerialChallenger.class.getConstructor(Integer.class);
+                witnessChallengerConstructor = SerialChallenger.class.getConstructor(Integer.class, Integer.class);
             }
             catch (NoSuchMethodException e)
             {
@@ -341,13 +341,13 @@ public class BoardHostingService
                 {
                     if (TranscriptType.GENERAL == transcriptDownloadMessage.getType())
                     {
-                        challenger = new SerialChallenger(transitBoard.transcriptSize(TranscriptType.GENERAL));
+                        challenger = new SerialChallenger(transitBoard.transcriptSize(TranscriptType.GENERAL), transcriptDownloadMessage.getStepNo());
                     }
                     else
                     {
                         try
                         {
-                            challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()));
+                            challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo());
                         }
                         catch (Exception e)
                         {
@@ -462,7 +462,7 @@ public class BoardHostingService
                     {
                         Class clazz = Class.forName(xmlNode.getTextContent().trim());
 
-                        Constructor constructor = clazz.getConstructor(Integer.class);
+                        Constructor constructor = clazz.getConstructor(Integer.class, Integer.class);
 
                         return constructor;
                     }

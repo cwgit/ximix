@@ -22,4 +22,6 @@ public interface Transform
     void init(Object o);
 
     byte[] transform(byte[] message);
+
+    byte[] getLastDetail();
 }

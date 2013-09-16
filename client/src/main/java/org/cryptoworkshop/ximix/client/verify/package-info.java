@@ -13,31 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.mixnet.transform;
+/**
+Ximix transcript verification classes.
+*/
+package org.cryptoworkshop.ximix.client.verify;
 
-public class NullTransform
-    implements Transform
-{
-    public static final String NAME = "NullTransform";
 
-    public String getName()
-    {
-        return NAME;
-    }
-
-    public void init(Object o)
-    {
-        // ignore
-    }
-
-    public byte[] transform(byte[] message)
-    {
-        return message;
-    }
-
-    @Override
-    public byte[] getLastDetail()
-    {
-        return new byte[0];
-    }
-}
