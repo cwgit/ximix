@@ -16,8 +16,11 @@
 package org.cryptoworkshop.ximix.node.crypto.service;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.FetchPartialPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
@@ -40,20 +43,34 @@ public class NodeKeyRetrievalService
 
     public MessageReply handle(Message message)
     {
-        switch (((ClientMessage)message).getType())
+        if (message instanceof CommandMessage)
         {
-        case FETCH_PUBLIC_KEY:
-            FetchPublicKeyMessage fetchMessage = FetchPublicKeyMessage.getInstance(message.getPayload());
+            switch (((CommandMessage)message).getType())
+            {
+            case FETCH_PARTIAL_PUBLIC_KEY:
+                FetchPartialPublicKeyMessage fetchMessage = FetchPartialPublicKeyMessage.getInstance(message.getPayload());
 
-            return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(fetchMessage.getKeyID()));
-        default:
-            System.err.println("unknown command");
+                return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPartialPublicKey(fetchMessage.getKeyID()));
+            default:
+                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeKeyGenerationService."));
+            }
         }
-        return null;  // TODO:
+        else
+        {
+            switch (((ClientMessage)message).getType())
+            {
+            case FETCH_PUBLIC_KEY:
+                FetchPublicKeyMessage fetchMessage = FetchPublicKeyMessage.getInstance(message.getPayload());
+
+                return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(fetchMessage.getKeyID()));
+            default:
+                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown client command in NodeKeyGenerationService."));
+            }
+        }
     }
 
     public boolean isAbleToHandle(Message message)
     {
-        return message.getType() == ClientMessage.Type.FETCH_PUBLIC_KEY;
+        return message.getType() == ClientMessage.Type.FETCH_PUBLIC_KEY || message.getType() == CommandMessage.Type.FETCH_PARTIAL_PUBLIC_KEY;
     }
 }

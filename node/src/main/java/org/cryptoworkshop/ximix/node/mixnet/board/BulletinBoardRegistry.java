@@ -84,7 +84,7 @@ public class BulletinBoardRegistry
             {
                 File boardDBFile = deriveBoardFile(boardName);
 
-                board = new BulletinBoardImpl(boardName, boardDBFile, nodeContext.getScheduledExecutor(), nodeContext.getEventNotifier());
+                board = new BulletinBoardImpl(boardName, boardDBFile, nodeContext.getDecoupler(Decoupler.LISTENER), nodeContext.getEventNotifier());
                 board.addListener(changeListener);
 
                 boards.put(boardName, board);

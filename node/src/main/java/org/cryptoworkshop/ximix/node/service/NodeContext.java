@@ -28,7 +28,6 @@ import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 public interface NodeContext
-
 {
     /**
      * Return the name of the node this context represents.
@@ -41,11 +40,23 @@ public interface NodeContext
 
     CapabilityMessage[] getCapabilities();
 
+    /**
+     * Return the network public key identified by keyID.
+     *
+     * @param keyID the keyID of interest.
+     * @return a SubjectPublicKeyInfo containing the key.
+     */
     SubjectPublicKeyInfo getPublicKey(String keyID);
 
-    boolean hasPrivateKey(String keyID);
+    /**
+     * Return our part of the public key identified by keyID.
+     *
+     * @param keyID the keyID of interest.
+     * @return a SubjectPublicKeyInfo containing the key.
+     */
+    SubjectPublicKeyInfo getPartialPublicKey(String keyID);
 
-    PublicKeyOperator getPublicKeyOperator(String keyID);
+    boolean hasPrivateKey(String keyID);
 
     PrivateKeyOperator getPrivateKeyOperator(String keyID);
 

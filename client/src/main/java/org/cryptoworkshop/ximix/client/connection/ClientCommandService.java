@@ -16,13 +16,17 @@
 package org.cryptoworkshop.ximix.client.connection;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
@@ -31,14 +35,20 @@ import java.util.concurrent.Executors;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.client.CommandService;
+import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
+import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
@@ -47,9 +57,11 @@ import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardStatusMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ChallengeLogMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptDataMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.FetchPartialPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
@@ -265,6 +277,35 @@ class ClientCommandService
                 if (options.getKeyID() != null)
                 {
                     String[] nodes = toOrderedSet(options.getNodesToUse()).toArray(new String[0]);
+                    DecryptionChallengeSpec challengeSpec = options.getChallengeSpec();
+                    Map<String, AsymmetricKeyParameter> keyMap = new HashMap<>();
+                    MessageChooser proofMessageChooser = null;
+                    OutputStream proofLogStream = null;
+
+                    if (challengeSpec != null)
+                    {
+                        for (String node : nodes)
+                        {
+                            reply = connection.sendMessage(node, CommandMessage.Type.FETCH_PARTIAL_PUBLIC_KEY, new FetchPartialPublicKeyMessage(node, options.getKeyID()));
+
+                            if (reply.getType() != MessageReply.Type.OKAY)
+                            {
+                                throw new ServiceConnectionException("message failed");
+                            }
+
+                            try
+                            {
+                                keyMap.put(node, PublicKeyFactory.createKey(SubjectPublicKeyInfo.getInstance(reply.getPayload().toASN1Primitive())));
+                            }
+                            catch (Exception e)
+                            {
+                                throw new ServiceConnectionException("Malformed public key response.");
+                            }
+                        }
+
+                        proofMessageChooser = challengeSpec.getChooser();
+                        proofLogStream = challengeSpec.getLogStream();
+                    }
 
                     for (;;)
                     {
@@ -287,6 +328,7 @@ class ClientCommandService
                         PostedMessageDataBlock data = messageDataBuilder.build();
 
                         MessageReply[] partialDecryptResponses = new MessageReply[options.getThreshold()];
+                        String[] nodesUsed = new String[options.getThreshold()];
 
                         // TODO: deal with drop outs
                         int count = 0;
@@ -295,6 +337,7 @@ class ClientCommandService
                             partialDecryptResponses[count] = connection.sendMessage(nodes[count], CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), data.getMessages()));
                             if (partialDecryptResponses[count].getType() == MessageReply.Type.OKAY)
                             {
+                                nodesUsed[count] = nodes[count];
                                 count++;
                             }
                             else
@@ -382,7 +425,17 @@ class ClientCommandService
                                 fulls[i] = partials[i].getY().add(weightedDecryptions[i].negate());
                             }
 
-                            notifier.messageDownloaded(postedMessages.get(messageIndex).getIndex(), new PointSequence(fulls).getEncoded());
+                            int index = postedMessages.get(messageIndex).getIndex();
+
+                            if (proofMessageChooser != null)
+                            {
+                                if (proofMessageChooser.chooseMessage(index))
+                                {
+                                    issueChallenge(proofLogStream, index, nodesUsed, keyMap, fulls);
+                                }
+                            }
+
+                            notifier.messageDownloaded(index, new PointSequence(fulls).getEncoded());
                         }
                     }
                 }
@@ -413,8 +466,109 @@ class ClientCommandService
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                eventNotifier.notify(EventNotifier.Level.ERROR, "Exception in download: " + e.getMessage(), e);
                 notifier.failed(e.toString());
+            }
+        }
+
+        //
+        // generate and log a zero knowledge proof.
+        //
+        private void issueChallenge(OutputStream proofLogStream, int messageIndex, String[] nodes, Map<String, AsymmetricKeyParameter> keyMap, ECPoint[] sourceMessage)
+            throws IOException, ServiceConnectionException
+        {
+            SHA256Digest sha256 = new SHA256Digest();
+            Map<String, SubjectPublicKeyInfo> keyInfoMap = new HashMap<>();
+
+            //
+            // compute the multiplier m
+            //
+            for (int i = 0; i != sourceMessage.length; i++)
+            {
+                byte[] encoded = sourceMessage[i].getEncoded();
+
+                sha256.update(encoded, 0, encoded.length);
+            }
+
+            for (String node: nodes)
+            {
+                AsymmetricKeyParameter key = keyMap.get(node);
+
+                SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(key);
+
+                keyInfoMap.put(node, keyInfo);
+
+                byte[] encoded = keyInfo.getEncoded();
+
+                sha256.update(encoded, 0, encoded.length);
+            }
+
+            byte[] mEnc = new byte[sha256.getDigestSize()];
+
+            sha256.doFinal(mEnc, 0);
+
+            BigInteger m = new BigInteger(1, mEnc);
+
+            ECPoint[] challengeMessage = new ECPoint[sourceMessage.length];
+
+            for (int i = 0; i != sourceMessage.length; i++)
+            {
+                challengeMessage[i] = sourceMessage[i].multiply(m);
+            }
+
+            ECElGamalEncryptor ecEnc = new ECElGamalEncryptor();
+
+            for (String node: nodes)
+            {
+                ECPublicKeyParameters key = (ECPublicKeyParameters)keyMap.get(node);
+
+                ecEnc.init(key);
+
+                ECPair[] encChallengeMessage = new ECPair[sourceMessage.length];
+
+                for (int i = 0; i != challengeMessage.length; i++)
+                {
+                    encChallengeMessage[i] = ecEnc.encrypt(challengeMessage[i]);
+                }
+
+                List<byte[]> message = Collections.singletonList(new PairSequence(encChallengeMessage).getEncoded());
+
+                MessageReply reply = connection.sendMessage(node, CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), message));
+
+                if (reply.getType() == MessageReply.Type.OKAY)
+                {
+                    ShareMessage shareMessage = ShareMessage.getInstance(reply.getPayload());
+                    List<byte[]> dataBlock = PostedMessageDataBlock.getInstance(shareMessage.getShareData()).getMessages();
+                    PairSequence ps = PairSequence.getInstance(key.getParameters().getCurve(), dataBlock.get(0));
+
+                    ECPair[] decrypts = ps.getECPairs();
+                    ECPoint[] challengeResult = new ECPoint[decrypts.length];
+
+                    for (int i = 0; i != decrypts.length; i++)
+                    {
+                        challengeResult[i] = decrypts[i].getX();
+                    }
+
+                    for (int i = 0; i != decrypts.length; i++)
+                    {
+                        challengeResult[i] = decrypts[i].getY().add(challengeResult[i].negate());
+                    }
+
+                    if (Arrays.equals(challengeMessage, challengeResult))
+                    {
+                        proofLogStream.write(new ChallengeLogMessage(messageIndex, shareMessage.getSequenceNo(), true, m, keyInfoMap.get(node), sourceMessage, challengeResult).getEncoded());
+                        eventNotifier.notify(EventNotifier.Level.INFO, "Challenge for message "  + messageIndex + " for node " + node + " passed.");
+                    }
+                    else
+                    {
+                         proofLogStream.write(new ChallengeLogMessage(messageIndex, shareMessage.getSequenceNo(), false, m, keyInfoMap.get(node), sourceMessage, challengeResult).getEncoded());
+                         eventNotifier.notify(EventNotifier.Level.ERROR, "Challenge for message " + messageIndex + " for node " + node + " failed!");
+                    }
+                }
+                else
+                {
+                    eventNotifier.notify(EventNotifier.Level.ERROR, "Challenge message rejected");
+                }
             }
         }
     }
@@ -473,7 +627,6 @@ class ClientCommandService
             }
             catch (Exception e)
             {
-                e.printStackTrace();
                 notifier.failed(e.toString());
             }
         }

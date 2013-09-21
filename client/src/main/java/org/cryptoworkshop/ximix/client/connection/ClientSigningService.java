@@ -24,7 +24,6 @@ import org.cryptoworkshop.ximix.client.SigningService;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.FetchPartialPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
@@ -100,27 +99,6 @@ class ClientSigningService
         throws ServiceConnectionException
     {
         MessageReply reply = connection.sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, new FetchPublicKeyMessage(keyID));
-
-        if (reply.getType() != MessageReply.Type.OKAY)
-        {
-            throw new ServiceConnectionException("message failed");
-        }
-
-        try
-        {
-            return SubjectPublicKeyInfo.getInstance(reply.getPayload().toASN1Primitive()).getEncoded();
-        }
-        catch (Exception e)
-        {
-            throw new ServiceConnectionException("Malformed public key response.");
-        }
-    }
-
-    @Override
-    public byte[] fetchPublicKey(String nodeID, String keyID)
-        throws ServiceConnectionException
-    {
-        MessageReply reply = connection.sendMessage(ClientMessage.Type.FETCH_PARTIAL_PUBLIC_KEY, new FetchPartialPublicKeyMessage(nodeID, keyID));
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {

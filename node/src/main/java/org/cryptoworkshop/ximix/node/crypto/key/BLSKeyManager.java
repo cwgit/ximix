@@ -205,11 +205,26 @@ public class BLSKeyManager
         return null;
     }
 
+    @Override
+    public SubjectPublicKeyInfo fetchPartialPublicKey(String keyID)
+        throws IOException
+    {
+        if (sharedPrivateKeyMap.containsKey(keyID))
+        {
+            // TODO: fortunately this isn't required at the moment!!!
+
+            throw new IllegalStateException("operation not supported");
+        }
+
+        return null;
+    }
+
     public synchronized void buildSharedKey(String keyID, BLSCommittedSecretShareMessage message)
     {
         BLS01Parameters domainParams = paramsMap.get(keyID);
         BLSCommittedSecretShare share = new BLSCommittedSecretShare(message.getValue(), message.getWitness(), message.getCommitmentFactors());
 
+        // TODO: need to be able to do this to verify key generation.
 //        if (share.isRevealed(message.getIndex(), domainParams, hMap.get(keyID)))
 //        {
             sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(message.getIndex(), message.getValue()));

@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.test.tests;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,16 +40,19 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.client.CommandService;
+import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
+import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
@@ -570,6 +574,173 @@ public class KeyProcessingTest extends TestCase
 
         TestCase.assertEquals("Shuffle and decrypt threads different.", decryptThread.get(), shuffleThread.get());
 
+
+        //
+        // Validate result points against plainText points.
+        //
+
+        for (int t = 0; t < plainText1.length; t++)
+        {
+            plain1.remove(resultText1[t]);
+            plain2.remove(resultText2[t]);
+        }
+
+        TestCase.assertTrue(plain1.isEmpty());
+        TestCase.assertTrue(plain2.isEmpty());
+
+        NodeTestUtil.shutdownNodes();
+        client.shutdown();
+        commandService.shutdown();
+    }
+
+    @Test
+    public void testKeyGenerationEncryptionTestWithDecryptionAndZKP()
+        throws Exception
+    {
+        SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
+        handler.squelchType(SocketException.class);
+
+        //
+        // Set up nodes.
+        //
+
+        XimixNode nodeOne = getXimixNode("/conf/mixnet.xml", "/conf/node1.xml", handler);
+        NodeTestUtil.launch(nodeOne, true);
+
+        XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
+        NodeTestUtil.launch(nodeTwo, true);
+
+        XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
+        NodeTestUtil.launch(nodeThree, true);
+
+        XimixNode nodeFour = getXimixNode("/conf/mixnet.xml", "/conf/node4.xml", handler);
+        NodeTestUtil.launch(nodeFour, true);
+
+        XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
+        NodeTestUtil.launch(nodeFive, true);
+
+
+        SecureRandom random = new SecureRandom();
+
+        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
+
+        KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
+
+        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.EC_ELGAMAL, "secp256r1")
+            .withThreshold(4)
+            .withNodes("A", "B", "C", "D", "E")
+            .build();
+
+        byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
+
+        UploadService client = adminRegistrar.connect(UploadService.class);
+
+        final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
+
+        final ECElGamalEncryptor encryptor = new ECElGamalEncryptor();
+
+        encryptor.init(pubKey);
+
+
+        //
+        // Set up plain text and upload encrypted pair.
+        //
+
+        int numberOfPoints = 20; // Adjust number of points to test here.
+
+
+        final ECPoint[] plainText1 = new ECPoint[numberOfPoints];
+        final ECPoint[] plainText2 = new ECPoint[numberOfPoints];
+        Set<ECPoint> plain1 = new HashSet<>();
+        Set<ECPoint> plain2 = new HashSet<>();
+
+        //
+        // Encrypt and submit.
+        //
+        for (int i = 0; i < plainText1.length; i++)
+        {
+            plainText1[i] = generatePoint(pubKey.getParameters(), random);
+            plainText2[i] = generatePoint(pubKey.getParameters(), random);
+
+            plain1.add(plainText1[i]);
+            plain2.add(plainText2[i]);
+
+            PairSequence encrypted = new PairSequence(new ECPair[]{encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i])});
+
+            client.uploadMessage("FRED", encrypted.getEncoded());
+        }
+
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        final ECPoint[] resultText1 = new ECPoint[plainText1.length];
+        final ECPoint[] resultText2 = new ECPoint[plainText2.length];
+        final AtomicBoolean downloadBoardCompleted = new AtomicBoolean(false);
+        final AtomicBoolean downloadBoardFailed = new AtomicBoolean(false);
+        final CountDownLatch encryptLatch = new CountDownLatch(1);
+        final AtomicReference<Thread> decryptThread = new AtomicReference<>();
+
+        ByteArrayOutputStream logStream = new ByteArrayOutputStream();
+
+        Operation<DownloadOperationListener> op = commandService.downloadBoardContents(
+            "FRED",
+            new DownloadOptions.Builder()
+                .withKeyID("ECKEY")
+                .withThreshold(4)
+                .withChallengeSpec(new DecryptionChallengeSpec(new MessageChooser()
+                                    {
+                                        @Override
+                                        public boolean chooseMessage(int index)
+                                        {
+                                            return index == 1;
+                                        }
+                                    }, logStream))
+                .withNodes("A", "B", "C", "D", "E").build(),
+            new DownloadOperationListener()
+            {
+                int counter = 0;
+
+                @Override
+                public void messageDownloaded(int index, byte[] message)
+                {
+                    PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
+                    resultText1[counter] = decrypted.getECPoints()[0];
+                    resultText2[counter++] = decrypted.getECPoints()[1];
+                    TestUtil.checkThread(decryptThread);
+                }
+
+                @Override
+                public void completed()
+                {
+                    downloadBoardCompleted.set(true);
+                    TestUtil.checkThread(decryptThread);
+                    encryptLatch.countDown();
+                }
+
+                @Override
+                public void status(String statusObject)
+                {
+                    TestUtil.checkThread(decryptThread);
+                }
+
+                @Override
+                public void failed(String errorObject)
+                {
+                    TestUtil.checkThread(decryptThread);
+                    downloadBoardFailed.set(true);
+                    encryptLatch.countDown();
+                }
+            });
+
+
+        TestCase.assertTrue(encryptLatch.await(20, TimeUnit.SECONDS));
+
+        TestCase.assertNotSame("Failed and complete must be different.", downloadBoardFailed.get(), downloadBoardCompleted.get());
+        TestCase.assertTrue("Complete method not called in DownloadOperationListener", downloadBoardCompleted.get());
+        TestCase.assertFalse("Not failed.", downloadBoardFailed.get());
+
+        ECDecryptionChallengeVerifier verifier = new ECDecryptionChallengeVerifier(pubKey, new ByteArrayInputStream(logStream.toByteArray()));
+
+        verifier.verify();
 
         //
         // Validate result points against plainText points.

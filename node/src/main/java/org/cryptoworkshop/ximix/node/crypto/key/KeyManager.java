@@ -32,6 +32,9 @@ public interface KeyManager
     SubjectPublicKeyInfo fetchPublicKey(String keyID)
         throws IOException;
 
+    SubjectPublicKeyInfo fetchPartialPublicKey(String keyID)
+        throws IOException;
+
     byte[] getEncoded(char[] password)
         throws IOException, GeneralSecurityException;
 

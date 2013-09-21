@@ -38,8 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.io.Streams;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
@@ -58,14 +56,12 @@ import org.cryptoworkshop.ximix.node.crypto.key.ECKeyManager;
 import org.cryptoworkshop.ximix.node.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.KeyManager;
 import org.cryptoworkshop.ximix.node.crypto.key.KeyManagerListener;
-import org.cryptoworkshop.ximix.node.crypto.operator.bc.BcECPublicKeyOperator;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.cryptoworkshop.ximix.node.service.NodeService;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
-import org.cryptoworkshop.ximix.node.service.PublicKeyOperator;
 import org.cryptoworkshop.ximix.node.service.ServiceEvent;
 import org.cryptoworkshop.ximix.node.service.ServiceStatisticsListener;
 import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
@@ -319,28 +315,30 @@ public class XimixNodeContext
         return null;
     }
 
+    public SubjectPublicKeyInfo getPartialPublicKey(String keyID)
+    {
+        try
+        {
+            if (ecKeyManager.hasPrivateKey(keyID))
+            {
+                return ecKeyManager.fetchPartialPublicKey(keyID);
+            }
+            if (blsKeyManager.hasPrivateKey(keyID))
+            {
+                return blsKeyManager.fetchPartialPublicKey(keyID);
+            }
+        }
+        catch (IOException e)
+        {
+            getEventNotifier().notify(EventNotifier.Level.ERROR, "Public key info: " + keyID + " " + e.getMessage(), e);
+        }
+        return null;
+    }
+
     @Override
     public boolean hasPrivateKey(String keyID)
     {
         return ecKeyManager.hasPrivateKey(keyID) || blsKeyManager.hasPrivateKey(keyID);
-    }
-
-    @Override
-    public PublicKeyOperator getPublicKeyOperator(String keyID)
-    {
-        try
-        {
-            SubjectPublicKeyInfo pubInfo = ecKeyManager.fetchPublicKey(keyID);
-            ECPublicKeyParameters keyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubInfo);
-
-            return new BcECPublicKeyOperator(keyParameters.getParameters());
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        return null;
     }
 
     @Override

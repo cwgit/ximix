@@ -23,7 +23,6 @@ import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.FetchPartialPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.KeyGenParams;
 import org.cryptoworkshop.ximix.common.asn1.message.KeyGenerationMessage;
@@ -102,29 +101,6 @@ class KeyGenerationCommandService
         FetchPublicKeyMessage fetchMessage = new FetchPublicKeyMessage(keyID);
 
         MessageReply reply = connection.sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, fetchMessage);
-
-        try
-        {
-            if (reply.getPayload() != null)
-            {
-                return reply.getPayload().toASN1Primitive().getEncoded();
-            }
-
-            return null;
-        }
-        catch (IOException e)
-        {
-            throw new ServiceConnectionException("malformed public key returned: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public byte[] fetchPublicKey(String nodeID, String keyID)
-        throws ServiceConnectionException
-    {
-        FetchPartialPublicKeyMessage fetchMessage = new FetchPartialPublicKeyMessage(nodeID, keyID);
-
-        MessageReply reply = connection.sendMessage(ClientMessage.Type.FETCH_PARTIAL_PUBLIC_KEY, fetchMessage);
 
         try
         {

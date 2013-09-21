@@ -30,7 +30,6 @@ public class ClientMessage
     {
         UPLOAD_TO_BOARD,
         FETCH_PUBLIC_KEY,
-        FETCH_PARTIAL_PUBLIC_KEY,
         CREATE_SIGNATURE
     }
 

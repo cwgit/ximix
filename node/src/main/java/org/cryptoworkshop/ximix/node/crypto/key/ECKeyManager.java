@@ -189,6 +189,22 @@ public class ECKeyManager
         return null;
     }
 
+    @Override
+    public SubjectPublicKeyInfo fetchPartialPublicKey(String keyID)
+        throws IOException
+    {
+        if (sharedPrivateKeyMap.containsKey(keyID))
+        {
+            ECDomainParameters params = paramsMap.get(keyID);
+            BigInteger d = sharedPrivateKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS).getValue();
+            ECPoint Q = params.getG().multiply(d);
+
+            return SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(Q, params));
+        }
+
+        return null;
+    }
+
     public synchronized void buildSharedKey(String keyID, ECCommittedSecretShareMessage message)
     {
         ECDomainParameters domainParams = paramsMap.get(keyID);

@@ -70,7 +70,6 @@ public class NodeKeyGenerationService
         }
         catch (Exception e)
         {
-            e.printStackTrace();
             return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("NodeKeyGenerationService failure: " + e.getMessage()));
         }
 

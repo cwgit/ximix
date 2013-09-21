@@ -36,16 +36,19 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.client.CommandService;
+import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
+import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
 import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
@@ -217,7 +220,24 @@ public class Main
 
         final CountDownLatch downloadLatch = new CountDownLatch(1);
 
-        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED", new DownloadOptions.Builder().withKeyID("ECENCKEY").withThreshold(2).withNodes("A", "B").build(), new DownloadOperationListener()
+        ByteArrayOutputStream challengeLogStream = new ByteArrayOutputStream();
+
+        DecryptionChallengeSpec decryptionChallengeSpec = new DecryptionChallengeSpec(new MessageChooser()
+        {
+            @Override
+            public boolean chooseMessage(int index)
+            {
+                return index % 5 == 0;
+            }
+        },
+        challengeLogStream);
+
+        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED",
+                                                                                       new DownloadOptions.Builder()
+                                                                                              .withKeyID("ECENCKEY")
+                                                                                              .withThreshold(2)
+                                                                                              .withNodes("A", "B")
+                                                                                              .withChallengeSpec(decryptionChallengeSpec).build(), new DownloadOperationListener()
         {
             int counter = 0;
 
@@ -259,6 +279,13 @@ public class Main
         });
 
         downloadLatch.await();
+
+        //
+        // verify the decryption challenge log.
+        //
+        ECDecryptionChallengeVerifier challengeVerifier = new ECDecryptionChallengeVerifier(pubKey, new ByteArrayInputStream(challengeLogStream.toByteArray()));
+
+        challengeVerifier.verify();
 
         final CountDownLatch transcriptCompleted = new CountDownLatch(1);
 

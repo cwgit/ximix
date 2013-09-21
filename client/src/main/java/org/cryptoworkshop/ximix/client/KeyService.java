@@ -31,14 +31,4 @@ public interface KeyService
      */
     byte[] fetchPublicKey(String keyID)
         throws ServiceConnectionException;
-
-    /**
-     * Return the partial public key associated with key ID keyID for a particular node in the network.
-     *
-     * @param nodeID the node we are interested in
-     * @param keyID the id of the key we are looking for.
-     * @return a byte[] array of the SubjectPublicKeyInfo object representing the key.
-     */
-    byte[] fetchPublicKey(String nodeID, String keyID)
-        throws ServiceConnectionException;
 }

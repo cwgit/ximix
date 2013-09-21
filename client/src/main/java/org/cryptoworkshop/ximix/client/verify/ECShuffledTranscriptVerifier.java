@@ -118,7 +118,7 @@ public class ECShuffledTranscriptVerifier
     /**
      * Verify that the transcripts are valid, throwing an exception if an issue is found.
      *
-     * @throws TranscriptVerificationException
+     * @throws TranscriptVerificationException on verification failure.
      */
     public void verify()
         throws TranscriptVerificationException
