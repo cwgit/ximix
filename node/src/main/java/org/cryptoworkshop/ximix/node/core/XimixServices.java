@@ -112,7 +112,7 @@ class XimixServices
                         Message message = Message.getInstance(o);
 
                         NodeService nodeService = nodeContext.getService(message);
-                        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Received Message: " + message.getType());
+                        nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Received Message: " + message.getType());
                         MessageReply reply = nodeService.handle(message);
 
                         nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Reply Message: " + reply);
