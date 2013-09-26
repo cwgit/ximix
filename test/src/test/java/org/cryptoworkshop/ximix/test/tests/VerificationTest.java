@@ -39,6 +39,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
@@ -146,6 +147,10 @@ public class VerificationTest
 
         byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
 
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        commandService.createBoard("FRED", new BoardCreationOptions.Builder("B").build());
+
         UploadService client = adminRegistrar.connect(UploadService.class);
 
         final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
@@ -182,9 +187,6 @@ public class VerificationTest
 
             client.uploadMessage("FRED", encrypted.getEncoded());
         }
-
-        CommandService commandService = adminRegistrar.connect(CommandService.class);
-
 
         //
         // Perform shuffle.
