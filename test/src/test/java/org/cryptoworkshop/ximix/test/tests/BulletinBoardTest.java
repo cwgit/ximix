@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 import org.bouncycastle.util.Arrays;
+import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
@@ -83,6 +84,9 @@ public class BulletinBoardTest
 
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        commandService.createBoard("TED", new BoardCreationOptions.Builder("A").build());
 
         UploadService client = adminRegistrar.connect(UploadService.class);
 
@@ -91,8 +95,6 @@ public class BulletinBoardTest
             client.uploadMessage("TED", sourceMessages.get(t));
         }
 
-
-        CommandService commandService = adminRegistrar.connect(CommandService.class);
 
         final ArrayList<byte[]> msgDownloaded = new ArrayList<>();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -224,6 +226,9 @@ public class BulletinBoardTest
 
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        commandService.createBoard("TED", new BoardCreationOptions.Builder("A").build());
 
         UploadService client = adminRegistrar.connect(UploadService.class);
 
@@ -231,9 +236,6 @@ public class BulletinBoardTest
         {
             client.uploadMessage("TED", sourceMessages.get(t));
         }
-
-
-        CommandService commandService = adminRegistrar.connect(CommandService.class);
 
         final ArrayList<byte[]> msgDownloaded = new ArrayList<>();
         final CountDownLatch latch = new CountDownLatch(1);

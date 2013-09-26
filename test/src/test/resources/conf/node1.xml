@@ -8,11 +8,6 @@
     <services>
         <service>
             <implementation>org.cryptoworkshop.ximix.node.mixnet.service.BoardHostingService</implementation>
-            <boards>
-                <board>
-                    <name>TED</name>
-                </board>
-            </boards>
             <transforms>
                 <transform>
                     <implementation>org.cryptoworkshop.ximix.node.mixnet.transform.MultiColumnRowTransform</implementation>

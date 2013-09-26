@@ -29,10 +29,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -44,6 +48,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
@@ -60,6 +65,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.BoardStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ChallengeLogMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CreateBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPartialPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
@@ -151,6 +157,93 @@ class ClientCommandService
         executor.execute((Runnable)op);
 
         return op;
+    }
+
+    @Override
+    public void createBoard(final String boardName, final BoardCreationOptions creationOptions)
+        throws ServiceConnectionException
+    {
+        if (boardName.matches(".*[.:].*$"))
+        {
+            throw new IllegalArgumentException("Board name cannot include '.' or ':'");
+        }
+
+        FutureTask<MessageReply> futureTask = new FutureTask<>(new Callable<MessageReply>()
+        {
+            @Override
+            public MessageReply call()
+                throws Exception
+            {
+                String hostName = creationOptions.getBoardHost();
+                MessageReply reply;
+
+                try
+                {
+                    reply = connection.sendMessage(hostName, CommandMessage.Type.BOARD_CREATE, new CreateBoardMessage(boardName, creationOptions.getBackUpHost()));
+
+                    if (reply.getType() == MessageReply.Type.OKAY && creationOptions.getBackUpHost() != null)
+                    {
+                        reply = connection.sendMessage(creationOptions.getBackUpHost(), CommandMessage.Type.BACKUP_BOARD_CREATE, new BoardMessage(boardName));
+                    }
+                }
+                catch (ServiceConnectionException e)
+                {
+                    eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on board creation: " + e.getMessage(), e);
+                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Exception on board creation: " + e.getMessage()));
+                }
+
+                return reply;
+            }
+        });
+
+        executor.execute(futureTask);
+        // TODO: sort out return values.
+    }
+
+    @Override
+    public boolean isBoardExisting(final String boardName)
+        throws ServiceConnectionException
+    {
+        FutureTask<MessageReply> futureTask = new FutureTask<>(new Callable<MessageReply>()
+        {
+            @Override
+            public MessageReply call()
+                throws Exception
+            {
+
+                MessageReply reply;
+
+                try
+                {
+                    reply = connection.sendMessage(CommandMessage.Type.GET_BOARD_HOST, new BoardMessage(boardName));
+                }
+                catch (ServiceConnectionException e)
+                {
+                    eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on isBoardExisting: " + e.getMessage(), e);
+                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Exception on isBoardExisting: " + e.getMessage()));
+                }
+
+                return reply;
+            }
+        });
+
+        executor.execute(futureTask);
+
+        MessageReply reply = null;
+        try
+        {
+            reply = futureTask.get();
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
+        catch (ExecutionException e)
+        {
+            throw new ServiceConnectionException("Unable to do isBoardExisting query: " + e.getMessage(), e);
+        }
+
+        return !(reply.getPayload() instanceof ASN1Null);
     }
 
     private static class CaseInsensitiveComparator

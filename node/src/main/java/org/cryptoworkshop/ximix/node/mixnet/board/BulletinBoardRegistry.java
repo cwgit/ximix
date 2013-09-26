@@ -16,18 +16,30 @@
 package org.cryptoworkshop.ximix.node.mixnet.board;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.Executor;
 
+import org.bouncycastle.asn1.DERUTF8String;
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadIndexedMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.node.mixnet.transform.Transform;
+import org.cryptoworkshop.ximix.node.service.CrossSection;
 import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
 
 public class BulletinBoardRegistry
 {
@@ -35,24 +47,41 @@ public class BulletinBoardRegistry
     private final File workingDirectory;
     private final Map<String, Transform> transforms;
     private final Executor boardUpdateExecutor;
+    private final CrossSection statistics;
+    private final DB stateDB;
+    private final ConcurrentNavigableMap<String, String> stateMap;
     private final BulletinBoardChangeListener changeListener;
 
     private Map<String, BulletinBoard> boards = new HashMap<>();
     private Map<String, BulletinBoard> transitBoards = new HashMap<String, BulletinBoard>();
-    private Map<String, BulletinBoard> backupBoards = new HashMap<String, BulletinBoard>();
+    private Map<String, BulletinBoard> backupBoards = new HashMap<>();
     private Set<String> suspendedBoards = new HashSet<>();
     private Set<String> dowloadLockedBoards = new HashSet<>();
     private Set<String> shuffleLockedBoards = new HashSet<>();
     private Set<String> inTransitBoards = new HashSet<>();
     private Set<String> completedBoards = new HashSet<>();
 
-
-    public BulletinBoardRegistry(NodeContext nodeContext, Map<String, Transform> transforms, BulletinBoardChangeListener changeListener)
+    public BulletinBoardRegistry(NodeContext nodeContext, Map<String, Transform> transforms, final CrossSection statistics)
     {
         this.nodeContext = nodeContext;
         this.transforms = transforms;
         this.boardUpdateExecutor = nodeContext.getDecoupler(Decoupler.BOARD_REGISTRY);
-        this.changeListener = changeListener;
+        this.statistics = statistics;
+
+        changeListener = new BulletinBoardChangeListener()
+        {
+            @Override
+            public void messagesAdded(BulletinBoard bulletinBoard, int count)
+            {
+                statistics.increment("bhs!messages-on-board!" + bulletinBoard.getName(), count);
+            }
+
+            @Override
+            public void messagesRemoved(BulletinBoardImpl bulletinBoard, int count)
+            {
+                statistics.decrement("bhs!messages-on-board!" + bulletinBoard.getName(), count);
+            }
+        };
 
         File homeDirectory = nodeContext.getHomeDirectory();
 
@@ -63,14 +92,66 @@ public class BulletinBoardRegistry
             {
                 if (!workingDirectory.mkdir())
                 {
-                    // TODO:
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Unable to create registry working directory: " + workingDirectory.getPath());
                 }
             }
+
+            // initialise board state
+            File[] files = workingDirectory.listFiles(new FilenameFilter()
+            {
+                @Override
+                public boolean accept(File dir, String name)
+                {
+                    name = name.toLowerCase();
+
+                    if (name.endsWith(".p") || name.endsWith(".t"))
+                    {
+                        return false;
+                    }
+
+                    if (name.contains("board.state"))
+                    {
+                        return false;
+                    }
+
+                    return true;
+                }
+            });
+
+            for (int i = 0; i != files.length; i++)
+            {
+                File file = files[i];
+                String name = file.getName();
+
+                if (name.matches(".*\\.[0-9]+$"))
+                {
+                    transitBoards.put(file.getName(), new BulletinBoardImpl(name.substring(name.indexOf(".") + 1, name.lastIndexOf(".")), file, boardUpdateExecutor, nodeContext.getEventNotifier()));
+                }
+                else if (file.getName().endsWith(".backup"))
+                {
+                    backupBoards.put(name, new BulletinBoardImpl(name.substring(0, name.indexOf(".backup")), file, boardUpdateExecutor, nodeContext.getEventNotifier()));
+                }
+                else
+                {
+                    boards.put(name, new BulletinBoardImpl(name, file, boardUpdateExecutor, nodeContext.getEventNotifier()));
+                }
+            }
+
+            File stateFile = new File(workingDirectory, "board.state");
+
+            stateDB = DBMaker.newFileDB(stateFile)
+                    .closeOnJvmShutdown()
+                    .make();
         }
         else
         {
             workingDirectory = null;
+            stateDB = DBMaker.newMemoryDB()
+                .closeOnJvmShutdown()
+                .make();
         }
+
+        stateMap = stateDB.getTreeMap("state");
     }
 
     public BulletinBoard createBoard(final String boardName)
@@ -82,6 +163,8 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
+                statistics.addPlaceholderValue("bhs!messages-on-board!" + boardName, 0);
+
                 File boardDBFile = deriveBoardFile(boardName);
 
                 board = new BulletinBoardImpl(boardName, boardDBFile, nodeContext.getDecoupler(Decoupler.LISTENER), nodeContext.getEventNotifier());
@@ -92,6 +175,19 @@ public class BulletinBoardRegistry
 
             return board;
         }
+    }
+
+    public BulletinBoard createBoard(String boardName, String backUpHost)
+    {
+        BulletinBoard board = createBoard(boardName);
+
+        board.addListener(new BoardRemoteBackupListener(nodeContext, backUpHost));
+
+        stateMap.put(boardName, backUpHost);
+
+        stateDB.commit();
+
+        return board;
     }
 
     /**
@@ -223,7 +319,7 @@ public class BulletinBoardRegistry
         }
     }
 
-    public BulletinBoard getBackupBoard(String boardName)
+    public BulletinBoard createBackupBoard(String boardName)
     {
         synchronized (boards)
         {
@@ -236,6 +332,16 @@ public class BulletinBoardRegistry
 
                 backupBoards.put(boardName, board);
             }
+
+            return board;
+        }
+    }
+
+    public BulletinBoard getBackupBoard(String boardName)
+    {
+        synchronized (boards)
+        {
+            BulletinBoard board = backupBoards.get(boardName);
 
             return board;
         }
@@ -300,14 +406,12 @@ public class BulletinBoardRegistry
 
                 if (!workingFile.renameTo(transitWorkingFile))
                 {
-                    System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
-                    // TODO:
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "rename failed: " + workingFile.getPath() + " " + transitWorkingFile);
                 }
 
                 if (!dotPFile.renameTo(transitDotPFile))
                 {
-                    System.err.println("rename failed!!!! " + workingFile.getPath() + " " + transitWorkingFile);
-                    // TODO:
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "rename failed: " + dotPFile.getPath() + " " + transitDotPFile);
                 }
 
                 originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor(), nodeContext.getEventNotifier());
@@ -394,5 +498,72 @@ public class BulletinBoardRegistry
         }
 
         return names;
+    }
+
+    private class BoardRemoteBackupListener
+        implements BulletinBoardBackupListener
+    {
+        private final NodeContext nodeContext;
+        private final String backUpHost;
+
+        public BoardRemoteBackupListener(NodeContext nodeContext, String backUpHost)
+        {
+            this.nodeContext = nodeContext;
+            this.backUpHost = backUpHost;
+        }
+
+        @Override
+        public void cleared(final BulletinBoard bulletinBoard)
+        {
+            nodeContext.getScheduledExecutor().execute(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        MessageReply reply = nodeContext.getPeerMap().get(backUpHost).sendMessage(CommandMessage.Type.CLEAR_BACKUP_BOARD, new BoardMessage(bulletinBoard.getName()));
+                        checkForError(reply);
+                    }
+                    catch (ServiceConnectionException e)
+                    {
+                        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Exception on clear backup.", e);
+                    }
+                }
+            });
+
+        }
+
+        @Override
+        public void messagePosted(final BulletinBoard bulletinBoard, final int index, final byte[] message)
+        {
+            // TODO: there needs to be an initialisation phase to make sure the backup board is in sync
+            nodeContext.getScheduledExecutor().execute(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        MessageReply reply = nodeContext.getPeerMap().get(backUpHost).sendMessage(CommandMessage.Type.TRANSFER_TO_BACKUP_BOARD, new BoardUploadIndexedMessage(bulletinBoard.getName(), index, message));
+                        checkForError(reply);
+                    }
+                    catch (ServiceConnectionException e)
+                    {
+                        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Exception on post to backup.", e);
+                    }
+                }
+            });
+        }
+
+        private void checkForError(MessageReply reply)
+        {
+            if (reply.getType() != MessageReply.Type.OKAY)
+            {
+                String message = (reply.getPayload() instanceof DERUTF8String) ? DERUTF8String.getInstance(reply.getPayload()).getString() : "no detail";
+
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Error on post to backup: " + message);
+            }
+        }
     }
 }

@@ -15,10 +15,18 @@
  */
 package org.cryptoworkshop.ximix.client;
 
-/**
- * Combined interface for issuing mix network commands.
- */
-public interface CommandService
-    extends Service, ShuffleOperation, ShuffleTranscriptsDownloadOperation, DownloadOperation, BoardCreationService, QueryService
+import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
+
+public interface BoardCreationService
+    extends Service
 {
+    /**
+     * Create the board boardName using the passed in options.
+     *
+     * @param boardName the name of the board to create.
+     * @param creationOptions the options to use.
+     * @exception ServiceConnectionException in case of error.
+     */
+    void createBoard(String boardName, BoardCreationOptions creationOptions)
+        throws ServiceConnectionException;
 }

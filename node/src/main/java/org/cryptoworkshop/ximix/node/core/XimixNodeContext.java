@@ -56,6 +56,7 @@ import org.cryptoworkshop.ximix.node.crypto.key.ECKeyManager;
 import org.cryptoworkshop.ximix.node.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.KeyManager;
 import org.cryptoworkshop.ximix.node.crypto.key.KeyManagerListener;
+import org.cryptoworkshop.ximix.node.mixnet.service.BoardIndex;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
@@ -397,12 +398,30 @@ public class XimixNodeContext
     {
         String host = remoteServicesCache.findBoardHost(boardName);
 
-        if (host != null)
+        if (host == null)
         {
-            return host;
+            // first try looking locally.
+
+            for (CapabilityMessage capability : this.getCapabilities())
+            {
+                if (capability.getType().equals(CapabilityMessage.Type.BOARD_HOSTING))
+                {
+                    BoardIndex index = new BoardIndex(capability);
+
+                    if (index.hasBoard(boardName))
+                    {
+                        return this.getName();
+                    }
+                }
+            }
+
+            // try refreshing the cache
+            remoteServicesCache.clear();
+
+            host = remoteServicesCache.findBoardHost(boardName);
         }
 
-        return this.getName();
+        return host;
     }
 
     @Override

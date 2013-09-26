@@ -25,16 +25,6 @@
     <services>
         <service>
             <implementation>org.cryptoworkshop.ximix.node.mixnet.service.BoardHostingService</implementation>
-            <boards>
-                <board>
-                    <name>FRED</name>
-                    <backup-boards>
-                        <backup-board>
-                            <node>A</node>
-                        </backup-board>
-                    </backup-boards>
-                </board>
-            </boards>
             <transforms>
                 <transform>
                     <implementation>org.cryptoworkshop.ximix.node.mixnet.transform.MultiColumnRowTransform</implementation>

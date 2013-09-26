@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.client.connection;
 
+import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
@@ -44,7 +45,7 @@ class ClientUploadService
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {
-            throw new ServiceConnectionException("message failed");
+            throw new ServiceConnectionException("message failed: " + DERUTF8String.getInstance(reply.getPayload()).getString());
         }
     }
 }

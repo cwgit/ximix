@@ -39,6 +39,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
@@ -149,6 +150,8 @@ public class KeyProcessingTest extends TestCase
 
         UploadService client = adminRegistrar.connect(UploadService.class);
         CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        commandService.createBoard("FRED", new BoardCreationOptions.Builder("B").build());
 
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
 
@@ -297,6 +300,10 @@ public class KeyProcessingTest extends TestCase
 
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        commandService.createBoard("FRED", new BoardCreationOptions.Builder("B").build());
+
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
         KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.EC_ELGAMAL, "secp256r1")
@@ -342,9 +349,6 @@ public class KeyProcessingTest extends TestCase
 
             client.uploadMessage("FRED", encrypted.getEncoded());
         }
-
-        CommandService commandService = adminRegistrar.connect(CommandService.class);
-
 
         //
         // Perform shuffle.

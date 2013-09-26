@@ -65,7 +65,7 @@ public class XimixNodeBuilder
                     break;
             }
 
-            L.log(level1, detail.toString(), throwable);
+            L.log(level1, ((detail != null) ? detail.toString() : ""), throwable);
         }
     };
 

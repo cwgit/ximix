@@ -16,7 +16,6 @@
 package org.cryptoworkshop.ximix.node.mixnet.service;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +28,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
@@ -43,6 +43,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CreateBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
@@ -60,9 +61,6 @@ import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
-import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardBackupListener;
-import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardChangeListener;
-import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardImpl;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.node.mixnet.challenge.SerialChallenger;
 import org.cryptoworkshop.ximix.node.mixnet.shuffle.TransformShuffleAndMoveTask;
@@ -82,6 +80,7 @@ public class BoardHostingService
     private final AtomicLong queryCounter = new AtomicLong(0L);
     private final Constructor witnessChallengerConstructor;
     private final Map<String, IndexNumberGenerator> challengers = new HashMap<>();
+    private final BoardExecutor boardExecutor;
 
     public BoardHostingService(NodeContext nodeContext, Config config)
         throws ConfigException
@@ -89,6 +88,8 @@ public class BoardHostingService
         super(nodeContext);
 
         this.decoupler = nodeContext.getDecoupler(Decoupler.SERVICES);
+
+        this.boardExecutor = new BoardExecutor(decoupler, nodeContext.getScheduledExecutor());
 
         Map<String, Transform> transforms;
 
@@ -119,43 +120,7 @@ public class BoardHostingService
             }
         }
 
-        BulletinBoardChangeListener changeListener = new BulletinBoardChangeListener()
-        {
-            @Override
-            public void messagesAdded(BulletinBoard bulletinBoard, int count)
-            {
-                statistics.increment("bhs!messages-on-board!" + bulletinBoard.getName(), count);
-            }
-
-            @Override
-            public void messagesRemoved(BulletinBoardImpl bulletinBoard, int count)
-            {
-                statistics.decrement("bhs!messages-on-board!" + bulletinBoard.getName(), count);
-            }
-
-        };
-
-
-        this.boardRegistry = new BulletinBoardRegistry(nodeContext, transforms, changeListener);
-
-        if (config.hasConfig("boards"))
-        {
-            List<BoardConfig> boards = config.getConfigObjects("boards", new BoardConfigFactory());
-
-            for (BoardConfig boardConfig : boards)
-            {
-                BulletinBoard board = boardRegistry.createBoard(boardConfig.getName());
-
-                // Add placeholders for statistics.
-
-                statistics.addPlaceholderValue("bhs!messages-on-board!" + boardConfig.getName(), 0);
-
-                for (BackupBoardConfig backupConfig : boardConfig.getBackupBoardConfigs())
-                {
-                    board.addListener(new BoardRemoteBackupListener(nodeContext, backupConfig));
-                }
-            }
-        }
+        this.boardRegistry = new BulletinBoardRegistry(nodeContext, transforms, statistics);
 
         statistics.ensurePlaceholders();
 
@@ -184,20 +149,7 @@ public class BoardHostingService
 
     public MessageReply handle(final Message message)
     {
-        //
-        // we go single threaded here so each message effectively becomes a transaction
-        //
-        FutureTask<MessageReply> future = new FutureTask<>(new Callable<MessageReply>()
-        {
-            @Override
-            public MessageReply call()
-                throws Exception
-            {
-                return doHandle(message);
-            }
-        });
-
-        decoupler.execute(future);
+        FutureTask<MessageReply> future = submitToHandle(message);
 
         try
         {
@@ -215,189 +167,442 @@ public class BoardHostingService
         return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Future failed to evaluate on " + nodeContext.getName()));
     }
 
-    private MessageReply doHandle(Message message)
+    private FutureTask<MessageReply> submitToHandle(Message message)
     {
         if (message instanceof CommandMessage)
         {
             switch (((CommandMessage)message).getType())
             {
             case GET_BOARD_HOST:
-                BoardMessage boardMessage = BoardMessage.getInstance(message.getPayload());
+                final BoardMessage boardMessage = BoardMessage.getInstance(message.getPayload());
 
-                return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getBoardHost(boardMessage.getBoardName())));
+                return boardExecutor.submitTask(boardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        String boardHost = nodeContext.getBoardHost(boardMessage.getBoardName());
+
+                        if (boardHost != null)
+                        {
+                            return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(boardHost));
+                        }
+                        else
+                        {
+                            return new MessageReply(MessageReply.Type.OKAY, DERNull.INSTANCE);
+                        }
+                    }
+                });
             case ACTIVATE_BOARD:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                boardRegistry.activateBoard(boardMessage.getBoardName());
-                break;
+                final BoardMessage activateBoardMessage = BoardMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(activateBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        boardRegistry.activateBoard(activateBoardMessage.getBoardName());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case SUSPEND_BOARD:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                if (boardRegistry.isSuspended(boardMessage.getBoardName()))
+                final BoardMessage suspendBoardMessage = BoardMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(suspendBoardMessage.getBoardName(), new Callable<MessageReply>()
                 {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(boardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
-                }
-                boardRegistry.suspendBoard(boardMessage.getBoardName());
-                break;
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        if (boardRegistry.isSuspended(suspendBoardMessage.getBoardName()))
+                        {
+                            return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(suspendBoardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                        }
+                        boardRegistry.suspendBoard(suspendBoardMessage.getBoardName());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
+            case BOARD_CREATE:
+                final CreateBoardMessage createBoardMessage = CreateBoardMessage.getInstance(message.getPayload());
+
+                return boardExecutor.submitTask(createBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        if (boardRegistry.hasBoard(createBoardMessage.getBoardName()))
+                        {
+                            return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(createBoardMessage.getBoardName(), BoardErrorStatusMessage.Status.ALREADY_EXISTS));
+                        }
+
+                        if (createBoardMessage.getBackUpHost() != null)
+                        {
+                            boardRegistry.createBoard(createBoardMessage.getBoardName(), createBoardMessage.getBackUpHost());
+                        }
+                        else
+                        {
+                            boardRegistry.createBoard(createBoardMessage.getBoardName());
+                        }
+
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
+            case BACKUP_BOARD_CREATE:
+                final BoardMessage backupBoardCreateMessage = BoardMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(backupBoardCreateMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+
+                        boardRegistry.createBackupBoard(backupBoardCreateMessage.getBoardName());
+
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case BOARD_DOWNLOAD_LOCK:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                if (boardRegistry.isLocked(boardMessage.getBoardName()))
+                final BoardMessage downloadLockBoardMessage = BoardMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(downloadLockBoardMessage.getBoardName(), new Callable<MessageReply>()
                 {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(boardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
-                }
-                boardRegistry.downloadLock(boardMessage.getBoardName());
-                break;
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        if (boardRegistry.isLocked(downloadLockBoardMessage.getBoardName()))
+                        {
+                            return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(downloadLockBoardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                        }
+                        boardRegistry.downloadLock(downloadLockBoardMessage.getBoardName());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case BOARD_DOWNLOAD_UNLOCK:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                boardRegistry.downloadUnlock(boardMessage.getBoardName());
-                break;
+                final BoardMessage downloadUnlockBoardMessage = BoardMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(downloadUnlockBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        boardRegistry.downloadUnlock(downloadUnlockBoardMessage.getBoardName());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case FETCH_BOARD_STATUS:
-                TransitBoardMessage transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
-                if (boardRegistry.isInTransit(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber()))
+                final TransitBoardMessage transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(transitBoardMessage.getBoardName(), new Callable<MessageReply>()
                 {
-                    return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.IN_TRANSIT));
-                }
-                if (boardRegistry.isComplete(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber()))
-                {
-                    return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.COMPLETE));
-                }
-                return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.UNKNOWN));
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        if (boardRegistry.isInTransit(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber()))
+                        {
+                            return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.IN_TRANSIT));
+                        }
+                        if (boardRegistry.isComplete(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber()))
+                        {
+                            return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.COMPLETE));
+                        }
+                        return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.UNKNOWN));
+                    }
+                });
             case BOARD_SHUFFLE_LOCK:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                if (boardRegistry.isLocked(boardMessage.getBoardName()))
+                final BoardMessage shuffleLockBoardMessage = BoardMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(shuffleLockBoardMessage.getBoardName(), new Callable<MessageReply>()
                 {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(boardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
-                }
-                boardRegistry.shuffleLock(boardMessage.getBoardName());
-                break;
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        if (boardRegistry.isLocked(shuffleLockBoardMessage.getBoardName()))
+                        {
+                            return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(shuffleLockBoardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                        }
+                        boardRegistry.shuffleLock(shuffleLockBoardMessage.getBoardName());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case BOARD_SHUFFLE_UNLOCK:
-                boardMessage = BoardMessage.getInstance(message.getPayload());
-                boardRegistry.shuffleUnlock(boardMessage.getBoardName());
-                break;
+                final BoardMessage shuffleUnlockBoardMessage = BoardMessage.getInstance(message.getPayload());
+
+                return boardExecutor.submitTask(shuffleUnlockBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+
+                        boardRegistry.shuffleUnlock(shuffleUnlockBoardMessage.getBoardName());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case START_SHUFFLE_AND_MOVE_BOARD_TO_NODE:
                 final PermuteAndMoveMessage startPandMmessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                if (!boardRegistry.isShuffleLocked(startPandMmessage.getBoardName()))
+
+                return boardExecutor.submitTask(startPandMmessage.getBoardName(), new Callable<MessageReply>()
                 {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(startPandMmessage.getBoardName(), BoardErrorStatusMessage.Status.NOT_SHUFFLE_LOCKED));
-                }
-                nodeContext.execute(new StartShuffleTask(nodeContext, boardRegistry, startPandMmessage));
-                break;
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        if (!boardRegistry.isShuffleLocked(startPandMmessage.getBoardName()))
+                        {
+                            return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(startPandMmessage.getBoardName(), BoardErrorStatusMessage.Status.NOT_SHUFFLE_LOCKED));
+                        }
+
+                        new StartShuffleTask(nodeContext, boardRegistry, startPandMmessage).run();
+
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case SHUFFLE_AND_MOVE_BOARD_TO_NODE:
-                PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
-                nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, getPeerConnection(pAndmMessage.getDestinationNode()), CommandMessage.Type.TRANSFER_TO_BOARD, pAndmMessage));
-                break;
+                final PermuteAndMoveMessage pAndmMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
+
+                return boardExecutor.submitTask(pAndmMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, getPeerConnection(pAndmMessage.getDestinationNode()), CommandMessage.Type.TRANSFER_TO_BOARD, pAndmMessage));
+
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case RETURN_TO_BOARD:
-                transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
+                final TransitBoardMessage returnToBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
 
-                new ReturnToBoardTask(nodeContext, boardRegistry, transitBoardMessage).run();   // in-line for now, note possible synch issues if not.
-                break;
+                return boardExecutor.submitTask(returnToBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        new ReturnToBoardTask(nodeContext, boardRegistry, returnToBoardMessage).run();
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case INITIATE_INTRANSIT_BOARD:
-                transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
-                boardRegistry.markInTransit(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber());
-                boardRegistry.getTransitBoard(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber()).clear();
-                break;
+                final TransitBoardMessage initiateTransitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
+
+                return boardExecutor.submitTask(initiateTransitBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        boardRegistry.markInTransit(initiateTransitBoardMessage.getOperationNumber(), initiateTransitBoardMessage.getBoardName(), initiateTransitBoardMessage.getStepNumber());
+                        boardRegistry.getTransitBoard(initiateTransitBoardMessage.getOperationNumber(), initiateTransitBoardMessage.getBoardName(), initiateTransitBoardMessage.getStepNumber()).clear();
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case TRANSFER_TO_BOARD:
-                BoardUploadBlockMessage uploadMessage = BoardUploadBlockMessage.getInstance(message.getPayload());
+                final BoardUploadBlockMessage uploadMessage = BoardUploadBlockMessage.getInstance(message.getPayload());
 
-                boardRegistry.markInTransit(uploadMessage.getOperationNumber(), uploadMessage.getBoardName(), uploadMessage.getStepNumber());
-                boardRegistry.getTransitBoard(uploadMessage.getOperationNumber(), uploadMessage.getBoardName(), uploadMessage.getStepNumber()).postMessageBlock(uploadMessage.getMessageBlock());
-                break;
+                return boardExecutor.submitTask(uploadMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        boardRegistry.markInTransit(uploadMessage.getOperationNumber(), uploadMessage.getBoardName(), uploadMessage.getStepNumber());
+                        boardRegistry.getTransitBoard(uploadMessage.getOperationNumber(), uploadMessage.getBoardName(), uploadMessage.getStepNumber()).postMessageBlock(uploadMessage.getMessageBlock());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case UPLOAD_TO_BOARD:
-                uploadMessage = BoardUploadBlockMessage.getInstance(message.getPayload());
+                final BoardUploadBlockMessage uploadToBoardMessage = BoardUploadBlockMessage.getInstance(message.getPayload());
 
-                boardRegistry.markInTransit(uploadMessage.getOperationNumber(), uploadMessage.getBoardName(), uploadMessage.getStepNumber());
-                boardRegistry.getBoard(uploadMessage.getBoardName()).postMessageBlock(uploadMessage.getMessageBlock());
-                break;
+                return boardExecutor.submitTask(uploadToBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                    {
+                        boardRegistry.markInTransit(uploadToBoardMessage.getOperationNumber(), uploadToBoardMessage.getBoardName(), uploadToBoardMessage.getStepNumber());
+                        boardRegistry.getBoard(uploadToBoardMessage.getBoardName()).postMessageBlock(uploadToBoardMessage.getMessageBlock());
+
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case CLEAR_BACKUP_BOARD:
-                BoardMessage backupBoardMessage = BoardMessage.getInstance(message.getPayload());
-                // TODO: maybe backup the current backup locally?
-                boardRegistry.getBackupBoard(backupBoardMessage.getBoardName()).clear();
-                break;
+                final BoardMessage backupBoardMessage = BoardMessage.getInstance(message.getPayload());
+
+                return boardExecutor.submitTask(backupBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                    {
+                        // TODO: maybe backup the current backup locally?
+                        boardRegistry.getBackupBoard(backupBoardMessage.getBoardName()).clear();
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case TRANSFER_TO_BACKUP_BOARD:
-                BoardUploadIndexedMessage uploadIndexedMessage = BoardUploadIndexedMessage.getInstance(message.getPayload());
+                final BoardUploadIndexedMessage uploadIndexedMessage = BoardUploadIndexedMessage.getInstance(message.getPayload());
 
-                boardRegistry.getBackupBoard(uploadIndexedMessage.getBoardName()).postMessage(uploadIndexedMessage.getData());
-                break;
+                return boardExecutor.submitTask(uploadIndexedMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                    {
+                        boardRegistry.getBackupBoard(uploadIndexedMessage.getBoardName()).postMessage(uploadIndexedMessage.getData());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case TRANSFER_TO_BOARD_ENDED:
-                transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
-                boardRegistry.markCompleted(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber());
-                break;
+                final TransitBoardMessage transferToBoardEndedMessage = TransitBoardMessage.getInstance(message.getPayload());
+
+                return boardExecutor.submitTask(transferToBoardEndedMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    public MessageReply call()
+                    {
+                        boardRegistry.markCompleted(transferToBoardEndedMessage.getOperationNumber(), transferToBoardEndedMessage.getBoardName(), transferToBoardEndedMessage.getStepNumber());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case DOWNLOAD_BOARD_CONTENTS:
-                BoardDownloadMessage downloadRequest = BoardDownloadMessage.getInstance(message.getPayload());
-                if (!boardRegistry.isDownloadLocked(downloadRequest.getBoardName()))
+                final BoardDownloadMessage downloadRequest = BoardDownloadMessage.getInstance(message.getPayload());
+
+                return boardExecutor.submitTask(downloadRequest.getBoardName(), new Callable<MessageReply>()
                 {
-                    return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(downloadRequest.getBoardName(), BoardErrorStatusMessage.Status.NOT_DOWNLOAD_LOCKED));
-                }
-                BulletinBoard board = boardRegistry.getBoard(downloadRequest.getBoardName());
+                    @Override
+                    public MessageReply call()
+                    {
+                        if (!boardRegistry.isDownloadLocked(downloadRequest.getBoardName()))
+                        {
+                            return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(downloadRequest.getBoardName(), BoardErrorStatusMessage.Status.NOT_DOWNLOAD_LOCKED));
+                        }
 
-                PostedMessageBlock messages = board.removeMessages(new PostedMessageBlock.Builder(downloadRequest.getMaxNumberOfMessages()));
+                        BulletinBoard board = boardRegistry.getBoard(downloadRequest.getBoardName());
 
-                return new MessageReply(MessageReply.Type.OKAY, messages);
+                        PostedMessageBlock messages = board.removeMessages(new PostedMessageBlock.Builder(downloadRequest.getMaxNumberOfMessages()));
+
+                        return new MessageReply(MessageReply.Type.OKAY, messages);
+                    }
+                });
             case DOWNLOAD_SHUFFLE_TRANSCRIPT:
-                TranscriptDownloadMessage transcriptDownloadMessage = TranscriptDownloadMessage.getInstance(message.getPayload());
-                BulletinBoard transitBoard = boardRegistry.getTransitBoard(transcriptDownloadMessage.getOperationNumber(), transcriptDownloadMessage.getStepNo());
+                final TranscriptDownloadMessage transcriptDownloadMessage = TranscriptDownloadMessage.getInstance(message.getPayload());
+                final BulletinBoard transitBoard = boardRegistry.getTransitBoard(transcriptDownloadMessage.getOperationNumber(), transcriptDownloadMessage.getStepNo());
 
-                String challengerKey = getChallengerKey(transcriptDownloadMessage);
-                IndexNumberGenerator challenger = challengers.get(challengerKey);
-                if (challenger == null)
+                return boardExecutor.submitTask(transitBoard.getName(), new Callable<MessageReply>()
                 {
-                    if (TranscriptType.GENERAL == transcriptDownloadMessage.getType())
+                    @Override
+                    public MessageReply call()
+                        throws Exception
                     {
-                        challenger = new SerialChallenger(transitBoard.transcriptSize(TranscriptType.GENERAL), transcriptDownloadMessage.getStepNo());
-                    }
-                    else
-                    {
-                        try
+                        String challengerKey = getChallengerKey(transcriptDownloadMessage);
+                        IndexNumberGenerator challenger = challengers.get(challengerKey);
+                        if (challenger == null)
                         {
-                            challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo());
+                            if (TranscriptType.GENERAL == transcriptDownloadMessage.getType())
+                            {
+                                challenger = new SerialChallenger(transitBoard.transcriptSize(TranscriptType.GENERAL), transcriptDownloadMessage.getStepNo());
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo());
+                                }
+                                catch (Exception e)
+                                {
+                                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, e);
+                                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unable to create challenger on " + nodeContext.getName()));
+                                }
+                            }
+                            challengers.put(challengerKey, challenger);
                         }
-                        catch (Exception e)
-                        {
-                            nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, e);
-                            return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unable to create challenger on " + nodeContext.getName()));
-                        }
+
+                        TranscriptBlock transcriptBlock = transitBoard.fetchTranscriptData(transcriptDownloadMessage.getType(), challenger, new TranscriptBlock.Builder(transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getMaxNumberOfMessages()));
+
+                        return new MessageReply(MessageReply.Type.OKAY, transcriptBlock);
                     }
-                    challengers.put(challengerKey, challenger);
-                }
-
-                TranscriptBlock transcriptBlock = transitBoard.fetchTranscriptData(transcriptDownloadMessage.getType(), challenger, new TranscriptBlock.Builder(transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getMaxNumberOfMessages()));
-
-                return new MessageReply(MessageReply.Type.OKAY, transcriptBlock);
+                });
             case DOWNLOAD_SHUFFLE_TRANSCRIPT_STEPS:
-                TranscriptQueryMessage transcriptQueryMessage = TranscriptQueryMessage.getInstance(message.getPayload());
+                final TranscriptQueryMessage transcriptQueryMessage = TranscriptQueryMessage.getInstance(message.getPayload());
 
-                List<String> transitBoardNames = boardRegistry.getTransitBoardNames(transcriptQueryMessage.getOperationNumber());
-                int[]        stepNos = new int[transitBoardNames.size()];
-                String       boardName = "";
-
-                for (int i = 0; i != stepNos.length; i++)
+                FutureTask<MessageReply> dstsTask = new FutureTask(new Callable<MessageReply>()
                 {
-                    String name = transitBoardNames.get(i);
-                    boardName = name.substring(name.indexOf('.') + 1, name.lastIndexOf('.'));
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        List<String> transitBoardNames = boardRegistry.getTransitBoardNames(transcriptQueryMessage.getOperationNumber());
+                        int[] stepNos = new int[transitBoardNames.size()];
+                        String boardName = "";
 
-                    stepNos[i] = Integer.parseInt(name.substring(name.lastIndexOf('.') + 1));
-                }
+                        for (int i = 0; i != stepNos.length; i++)
+                        {
+                            String name = transitBoardNames.get(i);
+                            boardName = name.substring(name.indexOf('.') + 1, name.lastIndexOf('.'));
 
-                return new MessageReply(MessageReply.Type.OKAY, new TranscriptQueryResponse(queryCounter.incrementAndGet(), boardName, stepNos));
+                            stepNos[i] = Integer.parseInt(name.substring(name.lastIndexOf('.') + 1));
+                        }
+
+                        return new MessageReply(MessageReply.Type.OKAY, new TranscriptQueryResponse(queryCounter.incrementAndGet(), boardName, stepNos));
+                    }
+                });
+
+                nodeContext.getScheduledExecutor().submit(dstsTask);
+
+                return dstsTask;
             default:
-                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
+                FutureTask<MessageReply> eTask = new FutureTask(new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
+                    }
+                });
+
+                nodeContext.getScheduledExecutor().submit(eTask);
+
+                return eTask;
             }
         }
         else
         {
             switch (((ClientMessage)message).getType())
             {
-                case UPLOAD_TO_BOARD:
-                    BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
-                    if (boardRegistry.isLocked(uploadMessage.getBoardName()))
+            case UPLOAD_TO_BOARD:
+                final BoardUploadMessage uploadMessage = BoardUploadMessage.getInstance(message.getPayload());
+
+                return boardExecutor.submitTask(uploadMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
                     {
-                        return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(uploadMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                        if (boardRegistry.isLocked(uploadMessage.getBoardName()))
+                        {
+                            return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(uploadMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                        }
+
+                        boardRegistry.getBoard(uploadMessage.getBoardName()).postMessage(uploadMessage.getData());
+
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
                     }
-                    boardRegistry.getBoard(uploadMessage.getBoardName()).postMessage(uploadMessage.getData());
-                    break;
-                default:
-                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
+                });
+            default:
+                FutureTask<MessageReply> eTask = new FutureTask(new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
+                    }
+                });
+
+                nodeContext.getScheduledExecutor().submit(eTask);
+
+                return eTask;
             }
         }
-        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
     }
 
     private String getChallengerKey(TranscriptDownloadMessage transcriptDownloadMessage)
@@ -415,7 +620,7 @@ public class BoardHostingService
                 @Override
                 public CapabilityMessage[] getCapabilities()
                 {
-                    return new CapabilityMessage[] { BoardHostingService.this.getCapability() };
+                    return new CapabilityMessage[]{BoardHostingService.this.getCapability()};
                 }
 
                 @Override
@@ -523,168 +728,6 @@ public class BoardHostingService
         public Map<String, Transform> getTransforms()
         {
             return transforms;
-        }
-    }
-
-
-    private static class BoardConfigFactory
-        implements ConfigObjectFactory<BoardConfig>
-    {
-        public BoardConfig createObject(Node configNode)
-        {
-            return new BoardConfig(configNode);
-        }
-    }
-
-    private static class BoardConfig
-    {
-        private String name;
-        private List<BackupBoardConfig> backupBoardConfigs = new ArrayList<>();
-
-        public BoardConfig(Node configNode)
-        {
-            NodeList xmlNodes = configNode.getChildNodes();
-            BackupBoardConfigFactory fact = new BackupBoardConfigFactory();
-
-            for (int i = 0; i != xmlNodes.getLength(); i++)
-            {
-                Node xmlNode = xmlNodes.item(i);
-
-                NodeList innerNodes = xmlNode.getChildNodes();
-
-                for (int j = 0; j != innerNodes.getLength(); j++)
-                {
-                    Node innerNode = innerNodes.item(j);
-
-                    if ("backup-boards".equals(innerNode.getNodeName()))
-                    {
-                        backupBoardConfigs.add(fact.createObject(innerNode));
-                    }
-                    else if (innerNode.getNodeName().equals("name"))
-                    {
-                        this.name = innerNode.getTextContent();
-                    }
-                }
-            }
-        }
-
-        public String getName()
-        {
-            return name;
-        }
-
-        private List<BackupBoardConfig> getBackupBoardConfigs()
-        {
-            return backupBoardConfigs;
-        }
-    }
-
-
-    private static class BackupBoardConfigFactory
-        implements ConfigObjectFactory<BackupBoardConfig>
-    {
-        public BackupBoardConfig createObject(Node configNode)
-        {
-            return new BackupBoardConfig(configNode);
-        }
-    }
-
-    private static class BackupBoardConfig
-    {
-        private String nodeName;
-
-        public BackupBoardConfig(Node configNode)
-        {
-            NodeList xmlNodes = configNode.getChildNodes();
-
-            for (int i = 0; i != xmlNodes.getLength(); i++)
-            {
-                Node xmlNode = xmlNodes.item(i);
-
-                NodeList innerNodes = xmlNode.getChildNodes();
-
-                for (int j = 0; j != innerNodes.getLength(); j++)
-                {
-                    Node innerNode = innerNodes.item(j);
-
-                    if (innerNode.getNodeName().equals("node"))
-                    {
-                        this.nodeName = innerNode.getTextContent();
-                    }
-                }
-            }
-        }
-
-        public String getNodeName()
-        {
-            return nodeName;
-        }
-    }
-
-    private class BoardRemoteBackupListener
-        implements BulletinBoardBackupListener
-    {
-        private final NodeContext nodeContext;
-        private final BackupBoardConfig backupConfig;
-
-        public BoardRemoteBackupListener(NodeContext nodeContext, BackupBoardConfig backupConfig)
-        {
-            this.nodeContext = nodeContext;
-            this.backupConfig = backupConfig;
-        }
-
-        @Override
-        public void cleared(final BulletinBoard bulletinBoard)
-        {
-            nodeContext.getScheduledExecutor().execute(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    try
-                    {
-                        MessageReply reply = nodeContext.getPeerMap().get(backupConfig.getNodeName()).sendMessage(CommandMessage.Type.CLEAR_BACKUP_BOARD, new BoardMessage(bulletinBoard.getName()));
-                        checkForError(reply);
-                    }
-                    catch (ServiceConnectionException e)
-                    {
-                        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Exception on clear backup.", e);
-                    }
-                }
-            });
-
-        }
-
-        @Override
-        public void messagePosted(final BulletinBoard bulletinBoard, final int index, final byte[] message)
-        {
-            // TODO: there needs to be an initialisation phase to make sure the backup board is in sync
-            nodeContext.getScheduledExecutor().execute(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    try
-                    {
-                        MessageReply reply = nodeContext.getPeerMap().get(backupConfig.getNodeName()).sendMessage(CommandMessage.Type.TRANSFER_TO_BACKUP_BOARD, new BoardUploadIndexedMessage(bulletinBoard.getName(), index, message));
-                        checkForError(reply);
-                    }
-                    catch (ServiceConnectionException e)
-                    {
-                        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Exception on post to backup.", e);
-                    }
-                }
-            });
-        }
-
-        private void checkForError(MessageReply reply)
-        {
-            if (reply.getType() != MessageReply.Type.OKAY)
-            {
-                String message = (reply.getPayload() instanceof DERUTF8String) ? DERUTF8String.getInstance(reply.getPayload()).getString() : "no detail";
-
-                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Error on post to backup: " + message);
-            }
         }
     }
 

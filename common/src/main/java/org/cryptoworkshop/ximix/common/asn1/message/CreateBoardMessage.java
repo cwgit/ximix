@@ -16,45 +16,46 @@
 package org.cryptoworkshop.ximix.common.asn1.message;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
-public class BoardErrorStatusMessage
+public class CreateBoardMessage
     extends ASN1Object
 {
     private final String boardName;
-    private final Status status;
+    private final String backUpHost;
 
-    public enum Status
-    {
-        NOT_DOWNLOAD_LOCKED, NOT_SHUFFLE_LOCKED, SUSPENDED, ALREADY_EXISTS
-    }
-
-    public BoardErrorStatusMessage(String boardName, Status status)
+    public CreateBoardMessage(String boardName, String backUpHost)
     {
         this.boardName = boardName;
-        this.status = status;
+        this.backUpHost = backUpHost;
     }
 
-    private BoardErrorStatusMessage(ASN1Sequence seq)
+    private CreateBoardMessage(ASN1Sequence seq)
     {
         this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.status = Status.values()[ASN1Enumerated.getInstance(seq.getObjectAt(1)).getValue().intValue()];
+        if (seq.size() == 2)
+        {
+            this.backUpHost = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+        }
+        else
+        {
+            this.backUpHost = null;
+        }
     }
 
-    public static final BoardErrorStatusMessage getInstance(Object o)
+    public static final CreateBoardMessage getInstance(Object o)
     {
-        if (o instanceof BoardErrorStatusMessage)
+        if (o instanceof CreateBoardMessage)
         {
-            return (BoardErrorStatusMessage)o;
+            return (CreateBoardMessage)o;
         }
         else if (o != null)
         {
-            return new BoardErrorStatusMessage(ASN1Sequence.getInstance(o));
+            return new CreateBoardMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -66,7 +67,11 @@ public class BoardErrorStatusMessage
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new DERUTF8String(boardName));
-        v.add(new ASN1Enumerated(status.ordinal()));
+
+        if (backUpHost != null)
+        {
+            v.add(new DERUTF8String(backUpHost));
+        }
 
         return new DERSequence(v);
     }
@@ -76,8 +81,8 @@ public class BoardErrorStatusMessage
         return boardName;
     }
 
-    public Status getStatus()
+    public String getBackUpHost()
     {
-        return status;
+        return backUpHost;
     }
 }

@@ -19,7 +19,10 @@ public class TestNotifier implements EventNotifier
     @Override
     public void notify(Level level, Object detail)
     {
-        System.err.println(level + ": " + detail);
+        if (level != Level.DEBUG)
+        {
+            System.err.println(level + ": " + detail);
+        }
     }
 
     @Override

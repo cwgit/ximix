@@ -47,11 +47,11 @@ public class BulletinBoardImpl
     private final ConcurrentNavigableMap<Integer, byte[]> commitmentMap;
     private final ConcurrentNavigableMap<Integer, byte[]> witnessMap;
 
-    private final ListenerHandler<BulletinBoardBackupListener> listenerHandler;
+    private final ListenerHandler<BulletinBoardBackupListener> backupListenerHandler;
     private final ListenerHandler<BulletinBoardChangeListener> changeListenerHandler;
 
 
-    private final BulletinBoardBackupListener notifier;
+    private final BulletinBoardBackupListener backupNotifier;
     private final BulletinBoardChangeListener changeNotifier;
 
     private final AtomicInteger minimumIndex = new AtomicInteger(0);
@@ -62,7 +62,7 @@ public class BulletinBoardImpl
         this(boardName, workingFile, new DecoupledListenerHandlerFactory(executor, eventNotifier).createHandler(BulletinBoardBackupListener.class), new DecoupledListenerHandlerFactory(executor, eventNotifier).createHandler(BulletinBoardChangeListener.class));
     }
 
-    private BulletinBoardImpl(String boardName, File workingFile, ListenerHandler<BulletinBoardBackupListener> listenerHandler, ListenerHandler<BulletinBoardChangeListener> changeListenerHandler)
+    private BulletinBoardImpl(String boardName, File workingFile, ListenerHandler<BulletinBoardBackupListener> backupListenerHandler, ListenerHandler<BulletinBoardChangeListener> changeListenerHandler)
     {
         this.boardName = boardName;
 
@@ -87,17 +87,17 @@ public class BulletinBoardImpl
 
         nextIndex.set(boardMap.size());
 
-        this.listenerHandler = listenerHandler;
+        this.backupListenerHandler = backupListenerHandler;
         this.changeListenerHandler = changeListenerHandler;
 
-        this.notifier = listenerHandler.getNotifier();
+        this.backupNotifier = backupListenerHandler.getNotifier();
         this.changeNotifier = changeListenerHandler.getNotifier();
     }
 
     @Override
     public void addListener(BulletinBoardBackupListener bulletinBoardBackupListener)
     {
-        listenerHandler.addListener(bulletinBoardBackupListener);
+        backupListenerHandler.addListener(bulletinBoardBackupListener);
     }
 
     @Override
@@ -105,7 +105,7 @@ public class BulletinBoardImpl
     {
         if (BulletinBoardBackupListener.class.isAssignableFrom(listenerClass))
         {
-            return (ListenerHandler<T>)listenerHandler;
+            return (ListenerHandler<T>)backupListenerHandler;
         }
         else if (BulletinBoardChangeListener.class.isAssignableFrom(listenerClass))
         {
@@ -182,7 +182,7 @@ public class BulletinBoardImpl
 
         boardDB.commit();
 
-        notifier.messagePosted(this, index, message);
+        backupNotifier.messagePosted(this, index, message);
 
         changeNotifier.messagesAdded(this, 1);
     }
@@ -213,7 +213,7 @@ public class BulletinBoardImpl
 
         for (PostedMessage message : messages)
         {
-            notifier.messagePosted(this, message.getIndex(), message.getMessage());
+            backupNotifier.messagePosted(this, message.getIndex(), message.getMessage());
         }
     }
 
@@ -285,7 +285,7 @@ public class BulletinBoardImpl
             boardDB.compact();
         }
 
-        notifier.cleared(this);
+        backupNotifier.cleared(this);
     }
 
     public Iterator<PostedMessage> iterator()

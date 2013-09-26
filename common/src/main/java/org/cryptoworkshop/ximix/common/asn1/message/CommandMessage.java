@@ -55,7 +55,7 @@ public class CommandMessage
         RETURN_TO_BOARD,
         INITIATE_INTRANSIT_BOARD,
         NODE_INFO_UPDATE,
-        NODE_STATISTICS
+        BOARD_CREATE, BACKUP_BOARD_CREATE, NODE_STATISTICS
     }
 
     public CommandMessage(Type type, ASN1Encodable payload)

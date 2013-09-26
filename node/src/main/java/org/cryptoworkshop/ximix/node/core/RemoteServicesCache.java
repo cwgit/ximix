@@ -274,6 +274,21 @@ public class RemoteServicesCache
         Enum type = message.getType();
         Set<String> peers = new HashSet<>(nodeContext.getPeerMap().keySet());
 
+        NodeService remoteService = lookForRemoteService(peers, message);
+
+        if (remoteService == null)
+        {
+            // try a refresh
+            clear();
+
+            remoteService = lookForRemoteService(peers, message);
+        }
+
+        return remoteService;
+    }
+
+    private NodeService lookForRemoteService(Set<String> peers, Message message)
+    {
         for (String nodeName : peers)
         {
             try
@@ -321,6 +336,21 @@ public class RemoteServicesCache
     {
         Set<String> peers = new HashSet<>(nodeContext.getPeerMap().keySet());
 
+        String host = lookForBoardHost(peers, boardName);
+
+        if (host == null)
+        {
+            // try a brute force approach to renewal
+            clear();
+
+            host = lookForBoardHost(peers, boardName);
+        }
+
+        return host;
+    }
+
+    private String lookForBoardHost(Set<String> peers, String boardName)
+    {
         for (String nodeName : peers)
         {
             try

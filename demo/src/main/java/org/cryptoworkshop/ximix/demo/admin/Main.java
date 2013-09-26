@@ -35,6 +35,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
@@ -145,6 +146,12 @@ public class Main
             blsPubKey = keyGenerationService.generatePublicKey("BLSSIGKEY", keyGenOptions);
         }
 
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        if (!commandService.isBoardExisting("FRED"))
+        {
+            commandService.createBoard("FRED", new BoardCreationOptions.Builder("B").withBackUpHost("A").build());
+        }
 
         UploadService client = adminRegistrar.connect(UploadService.class);
 
@@ -185,7 +192,6 @@ public class Main
             client.uploadMessage("FRED", encrypted.getEncoded());
         }
 
-        CommandService commandService = adminRegistrar.connect(CommandService.class);
 
         // board is hosted on "B" move to "A" then to "C" then back to "B"
 
