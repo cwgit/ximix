@@ -637,6 +637,10 @@ public class KeyProcessingTest extends TestCase
 
         byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
 
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        commandService.createBoard("FRED", new BoardCreationOptions.Builder("B").build());
+
         UploadService client = adminRegistrar.connect(UploadService.class);
 
         final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
@@ -674,7 +678,6 @@ public class KeyProcessingTest extends TestCase
             client.uploadMessage("FRED", encrypted.getEncoded());
         }
 
-        CommandService commandService = adminRegistrar.connect(CommandService.class);
 
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];
@@ -807,6 +810,10 @@ public class KeyProcessingTest extends TestCase
 
         byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
 
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        commandService.createBoard("FRED", new BoardCreationOptions.Builder("B").build());
+
         UploadService client = adminRegistrar.connect(UploadService.class);
 
         final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
@@ -839,9 +846,6 @@ public class KeyProcessingTest extends TestCase
 
             client.uploadMessage("FRED", encrypted.getEncoded());
         }
-
-        CommandService commandService = adminRegistrar.connect(CommandService.class);
-
 
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];
