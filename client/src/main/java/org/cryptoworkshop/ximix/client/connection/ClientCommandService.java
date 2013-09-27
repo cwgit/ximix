@@ -197,7 +197,21 @@ class ClientCommandService
         });
 
         executor.execute(futureTask);
-        // TODO: sort out return values.
+
+         // TODO: sort out return values.
+        try
+        {
+            MessageReply reply = futureTask.get();
+        }
+        catch (InterruptedException e)
+        {
+            eventNotifier.notify(EventNotifier.Level.ERROR, "InterrruptedException on board creation: " + e.getMessage(), e);
+            Thread.currentThread().interrupt();
+        }
+        catch (Exception e)
+        {
+            eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on board creation: " + e.getMessage(), e);
+        }
     }
 
     @Override
