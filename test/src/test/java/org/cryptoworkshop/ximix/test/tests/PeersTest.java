@@ -29,6 +29,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
@@ -128,6 +129,10 @@ public class PeersTest
 
         byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
 
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        commandService.createBoard("FRED", new BoardCreationOptions.Builder("B").build());
+
         UploadService client = adminRegistrar.connect(UploadService.class);
 
         final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
@@ -160,9 +165,6 @@ public class PeersTest
 
             client.uploadMessage("FRED", encrypted.getEncoded());
         }
-
-        CommandService commandService = adminRegistrar.connect(CommandService.class);
-
 
         //
         // Here we shut down on nodes, the remainder should still pass.
@@ -274,59 +276,4 @@ public class PeersTest
     {
         return params.getG().multiply(getRandomInteger(params.getN(), rand));
     }
-
-
 }
-
-
-//
-// Perform shuffle.
-//
-
-//        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED", new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).setKeyID("ECKEY").build(), "A", "B", "C", "D", "E");
-//
-//        final CountDownLatch shufflerLatch = new CountDownLatch(1);
-//
-//        final ValueObject<Boolean> shuffleCompleted = new ValueObject<Boolean>(false);
-//        final ValueObject<Boolean> shuffleFailed = new ValueObject<Boolean>(false);
-//        final ValueObject<Thread> shuffleThread = new ValueObject<>();
-//
-//
-//        shuffleOp.addListener(new ShuffleOperationListener()
-//        {
-//            @Override
-//            public void completed()
-//            {
-//                shuffleCompleted.set(true);
-//                shuffleThread.set(Thread.currentThread());
-//                shufflerLatch.countDown();
-//            }
-//
-//            @Override
-//            public void failed(String errorObject)
-//            {
-//                shuffleFailed.set(true);
-//                shufflerLatch.countDown();
-//            }
-//        });
-
-//
-// Fail if operation did not complete in the nominated time frame.
-//
-//        TestCase.assertTrue("Shuffle timed out.", shufflerLatch.await(20, TimeUnit.SECONDS));
-
-//
-// Check that failed and completed methods are exclusive.
-//
-
-//        TestCase.assertNotSame("Failed flag and completed flag must be different.", shuffleCompleted.get(), shuffleFailed.get());
-
-//
-// Check for success of shuffle.
-//
-//        TestCase.assertTrue(shuffleCompleted.get());
-
-//
-// Check that shuffle did not fail.
-//
-//        TestCase.assertFalse(shuffleFailed.get());

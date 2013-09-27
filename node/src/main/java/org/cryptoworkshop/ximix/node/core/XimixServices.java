@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DEROutputStream;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeInfo;
@@ -113,10 +114,18 @@ class XimixServices
 
                         NodeService nodeService = nodeContext.getService(message);
                         nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Received Message: " + message.getType());
-                        MessageReply reply = nodeService.handle(message);
 
-                        nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Reply Message: " + reply);
-                        aOut.writeObject(reply);
+                        if (nodeService != null)
+                        {
+                            MessageReply reply = nodeService.handle(message);
+
+                            nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Reply Message: " + reply);
+                            aOut.writeObject(reply);
+                        }
+                        else
+                        {
+                            aOut.writeObject(new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Node " + nodeContext.getName() + ": unable to find service for " + message.getType())));
+                        }
                     }
 
                     nodeContext.getEventNotifier().notify(EventNotifier.Level.INFO, "Service connection on " + nodeContext.getName() + " shutdown, stop called = " + nodeContext.isStopCalled());

@@ -163,7 +163,7 @@ class ClientCommandService
     public void createBoard(final String boardName, final BoardCreationOptions creationOptions)
         throws ServiceConnectionException
     {
-        if (boardName.matches(".*[.:].*$"))
+        if (boardName.matches(".*[.:/].*$"))
         {
             throw new IllegalArgumentException("Board name cannot include '.' or ':'");
         }

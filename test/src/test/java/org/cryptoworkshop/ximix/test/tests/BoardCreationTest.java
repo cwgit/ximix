@@ -133,7 +133,18 @@ public class BoardCreationTest
 
         try
         {
+            boardCreationService.createBoard("BBOARD1/X", new BoardCreationOptions.Builder("B").build());
+            fail("invalid name '/' recognised");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // ignore
+        }
+
+        try
+        {
             boardCreationService.createBoard("BBOARD1.X", new BoardCreationOptions.Builder("B").build());
+            fail("invalid name '.' recognised");
         }
         catch (IllegalArgumentException e)
         {
@@ -143,6 +154,7 @@ public class BoardCreationTest
         try
         {
             boardCreationService.createBoard("BBOARD1:X", new BoardCreationOptions.Builder("B").build());
+            fail("invalid name ':' recognised");
         }
         catch (IllegalArgumentException e)
         {
