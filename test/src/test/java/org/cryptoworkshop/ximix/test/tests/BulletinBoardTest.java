@@ -274,7 +274,7 @@ public class BulletinBoardTest
                 @Override
                 public void failed(String errorObject)
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                    System.err.print(errorObject);
                 }
             });
 

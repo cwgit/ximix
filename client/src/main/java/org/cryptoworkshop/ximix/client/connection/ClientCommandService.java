@@ -553,16 +553,24 @@ class ClientCommandService
                     {
                         reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
-                        PostedMessageBlock messageBlock = PostedMessageBlock.getInstance(reply.getPayload());
-
-                        if (messageBlock.size() == 0)
+                        if (reply.getType() == MessageReply.Type.OKAY)
                         {
-                            break;
+                            PostedMessageBlock messageBlock = PostedMessageBlock.getInstance(reply.getPayload());
+
+                            if (messageBlock.size() == 0)
+                            {
+                                break;
+                            }
+
+                            for (PostedMessage posted : messageBlock.getMessages())
+                            {
+                                notifier.messageDownloaded(posted.getIndex(), posted.getMessage());
+                            }
                         }
-
-                        for (PostedMessage posted : messageBlock.getMessages())
+                        else
                         {
-                            notifier.messageDownloaded(posted.getIndex(), posted.getMessage());
+                            notifier.failed("Failed: " + reply.getPayload().toString());
+                            return;
                         }
                     }
                 }
