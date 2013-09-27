@@ -95,6 +95,9 @@ function ensureTabs() {
     var tablist = $('#tab-list');
     var tabbody = $('#tabs');
 
+    $('<li><a href="#admin_tab">Admin</a></li>').appendTo(tablist);
+    $('<div id="admin_tab"><div class="node" id="admin_tab_details" >Put Servlet here</div></div>').appendTo(tabbody);
+
     for (var k in nodes) {
         $('<li><a href="#' + (k) + '_tab">' + (nodes[k].name) + '</a><img id="' + (k) + '_tab_icon"  src=""/></li>').appendTo(tablist);
         $('<div id="' + (k) + '_tab"><div class="node" id="' + (k) + '_details" >Pending..</div></div>').appendTo(tabbody);
