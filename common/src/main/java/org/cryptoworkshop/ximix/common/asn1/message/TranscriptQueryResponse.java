@@ -23,6 +23,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Response message for a transcript query.
+ */
 public class TranscriptQueryResponse
     extends ASN1Object
 {
@@ -30,6 +33,13 @@ public class TranscriptQueryResponse
     private final String boardName;
     private final int[] stepNos;
 
+    /**
+     * Base constructor.
+     *
+     * @param queryID  a Ximix assigned ID for this transcript query.
+     * @param boardName the name of the board the operation of interest was associated with.
+     * @param stepNos  the step numbers making up the operation of interest.
+     */
     public TranscriptQueryResponse(long queryID, String boardName, int[] stepNos)
     {
         this.queryID = queryID;

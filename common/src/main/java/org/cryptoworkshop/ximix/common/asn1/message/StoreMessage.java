@@ -23,19 +23,28 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message to associate an ID with a share.
+ */
 public class StoreMessage
     extends ASN1Object
 {
     private final String id;
     private final ASN1Encodable secretShareMessage;
 
+    /**
+     * Base constructor.
+     *
+     * @param id the ID to store the share against.
+     * @param secretShareMessage the share details.
+     */
     public StoreMessage(String id, ASN1Encodable secretShareMessage)
     {
         this.id = id;
         this.secretShareMessage = secretShareMessage;
     }
 
-    public StoreMessage(ASN1Sequence sequence)
+    private StoreMessage(ASN1Sequence sequence)
     {
         this.id = DERUTF8String.getInstance(sequence.getObjectAt(0)).getString();
         this.secretShareMessage = sequence.getObjectAt(1);

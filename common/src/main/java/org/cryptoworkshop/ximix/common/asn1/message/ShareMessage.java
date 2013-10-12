@@ -23,12 +23,21 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * Carrier class for a share in a threshold operation.
+ */
 public class ShareMessage
     extends ASN1Object
 {
     private final ASN1Encodable shareData;
     private final int sequenceNo;
 
+    /**
+     * Base constructor.
+     *
+     * @param sequenceNo the share's sequence number in the threshold operation.
+     * @param shareData the data representing the share's value.
+     */
     public ShareMessage(int sequenceNo, ASN1Encodable shareData)
     {
         this.sequenceNo = sequenceNo;

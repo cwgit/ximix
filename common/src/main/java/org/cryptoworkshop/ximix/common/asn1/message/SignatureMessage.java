@@ -10,6 +10,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
+/**
+ * Carrier message for signature creation operations.
+ */
 public class SignatureMessage
     extends ASN1Object
 {
@@ -17,6 +20,13 @@ public class SignatureMessage
     private final Enum type;
     private final ASN1Encodable payload;
 
+    /**
+     * Base constructor.
+     *
+     * @param algorithm the algorithm to use.
+     * @param type the type representing the stage of signature creation.
+     * @param payload the data to be used in the execution of the stage associated with type.
+     */
     public SignatureMessage(Algorithm algorithm, Enum type, ASN1Encodable payload)
     {
         this.algorithm = algorithm;

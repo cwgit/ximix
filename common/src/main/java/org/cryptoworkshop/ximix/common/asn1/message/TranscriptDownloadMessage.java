@@ -23,6 +23,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
 
+/**
+ * Request message for a transcript download.
+ */
 public class TranscriptDownloadMessage
     extends ASN1Object
 {
@@ -32,6 +35,15 @@ public class TranscriptDownloadMessage
     private final TranscriptType type;
     private final int maxNumberOfMessages;
 
+    /**
+     * Base constructor.
+     *
+     * @param queryID  the ID of the query this transcript download is associated with.
+     * @param operationNumber the operation number the transcript download is for.
+     * @param stepNo the number of the step in the operation the transcript download is for.
+     * @param type  the type of transcript requested.
+     * @param maxNumberOfMessages the maximum number of messages that can be accepted in a response.
+     */
     public TranscriptDownloadMessage(long queryID, long operationNumber, int stepNo, TranscriptType type, int maxNumberOfMessages)
     {
         this.queryID = queryID;

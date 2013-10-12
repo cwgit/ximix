@@ -27,6 +27,9 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Command message for initiating signature creation.
+ */
 public class SignatureCreateMessage
     extends ASN1Object
 {
@@ -35,6 +38,14 @@ public class SignatureCreateMessage
     private final Set<String> nodesToUse;
     private final int threshold;
 
+    /**
+     * Base constructor.
+     *
+     * @param keyID the ID of the key to use to create the signature.
+     * @param message the message to be signed.
+     * @param threshold the threshold required to create the signature.
+     * @param nodesToUse the names of the nodes that can be used in the process.
+     */
     public SignatureCreateMessage(String keyID, byte[] message, int threshold, String... nodesToUse)
     {
         this.nodesToUse = MessageUtils.toOrderedSet(nodesToUse);

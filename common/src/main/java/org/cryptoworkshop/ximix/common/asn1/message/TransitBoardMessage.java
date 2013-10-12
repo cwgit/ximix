@@ -25,6 +25,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Creation message for setting a transit board for carrying out an operation.
+ */
 public class TransitBoardMessage
     extends ASN1Object
 {
@@ -32,6 +35,13 @@ public class TransitBoardMessage
     private final String boardName;
     private final int stepNumber;
 
+    /**
+     * Base constructor.
+     *
+     * @param operationNumber the ID of the operation the transit board will be used for.
+     * @param boardName the name of the board the transit board is associated with.
+     * @param stepNumber the number of the step in the operation the transit board is for.
+     */
     public TransitBoardMessage(long operationNumber, String boardName, int stepNumber)
     {
         this.operationNumber = operationNumber;

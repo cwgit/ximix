@@ -34,11 +34,19 @@ public class PostedMessageBlock
 {
     private final List<PostedMessage> messages;
 
+    /**
+     * Builder for constructing a message block.
+     */
     public static class Builder
     {
         private final List<PostedMessage> messages;
         private final int capacity;
 
+        /**
+         * Base constructor.
+         *
+         * @param capacity the maximum capacity for the message block we want to build.
+         */
         public Builder(int capacity)
         {
             this.capacity = capacity;

@@ -48,12 +48,24 @@ public class PostedMessage
         }
     }
 
+    /**
+     * Basic constructor for a simple message.
+     *
+     * @param index the index number of the message.
+     * @param message the message data.
+     */
     public PostedMessage(int index, byte[] message)
     {
         this(index, message, null);
     }
 
-
+    /**
+     * Constructor for a message with an associated commitment.
+     *
+     * @param index the index number of the message.
+     * @param message the message data.
+     * @param commitment the commitment data.
+     */
     public PostedMessage(int index, byte[] message, byte[] commitment)
     {
         this.index = index;

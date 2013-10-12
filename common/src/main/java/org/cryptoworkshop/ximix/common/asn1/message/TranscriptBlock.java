@@ -25,7 +25,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DLSequence;
 
 /**
- * Carrier class for a block of PostedMessage objects.
+ * Carrier class for a block of transcript messages associated with a given step.
  */
 public class TranscriptBlock
     extends ASN1Object
@@ -33,6 +33,9 @@ public class TranscriptBlock
     private int stepNo;
     private ASN1Sequence details;
 
+    /**
+     * Builder for a TranscriptBlock
+     */
     public static class Builder
     {
         private final int stepNo;
@@ -40,6 +43,12 @@ public class TranscriptBlock
 
         private ASN1EncodableVector details;
 
+        /**
+         * Base constructor.
+         *
+         * @param stepNo the step number this transcript block is associated with.
+         * @param capacity the maximum number of messages that can held in any block built.
+         */
         public Builder(int stepNo, int capacity)
         {
             this.stepNo = stepNo;

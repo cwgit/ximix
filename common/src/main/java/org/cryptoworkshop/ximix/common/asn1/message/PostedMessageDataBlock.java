@@ -28,16 +28,27 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * Carrier class for free form message data with no index numbers or commitments.
+ */
 public class PostedMessageDataBlock
     extends ASN1Object
 {
     private final List<byte[]> messages;
 
+    /**
+     * Builder for constructing a message block.
+     */
     public static class Builder
     {
         private final int capacity;
         private final List<byte[]> messages;
 
+        /**
+         * Base constructor.
+         *
+         * @param capacity the maximum capacity for the message block we want to build.
+         */
         public Builder(int capacity)
         {
             this.capacity = capacity;
