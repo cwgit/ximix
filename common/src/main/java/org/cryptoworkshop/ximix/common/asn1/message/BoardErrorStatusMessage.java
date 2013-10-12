@@ -23,6 +23,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Response message giving an error status related to a particular board's status.
+ */
 public class BoardErrorStatusMessage
     extends ASN1Object
 {
@@ -34,6 +37,12 @@ public class BoardErrorStatusMessage
         NOT_DOWNLOAD_LOCKED, NOT_SHUFFLE_LOCKED, SUSPENDED, ALREADY_EXISTS
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param boardName the name of the board this message relates to.
+     * @param status the reason for the error.
+     */
     public BoardErrorStatusMessage(String boardName, Status status)
     {
         this.boardName = boardName;

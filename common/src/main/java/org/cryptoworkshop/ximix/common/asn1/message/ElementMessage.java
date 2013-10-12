@@ -22,11 +22,19 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 
+/**
+ * General carrier for a pairing Element.
+ */
 public class ElementMessage
     extends ASN1Object
 {
     private final Element value;
 
+    /**
+     * Base constructor.
+     *
+     * @param value the element value to be carried.
+     */
     public ElementMessage(Element value)
     {
         this.value = value;
@@ -40,6 +48,13 @@ public class ElementMessage
         this.value = G.getImmutable();
     }
 
+    /**
+     * Return the ElementMessage represented by the passed in object.
+     *
+     * @param pairing the pairing the element is associated with.
+     * @param o the carrier of the Element, may be an ASN.1 primitive,or an ElementMessage.
+     * @return an instance of an ElementMessage
+     */
     public static final ElementMessage getInstance(Pairing pairing, Object o)
     {
         if (o instanceof ElementMessage)

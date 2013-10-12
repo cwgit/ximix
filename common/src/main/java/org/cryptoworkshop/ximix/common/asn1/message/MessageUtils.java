@@ -13,6 +13,9 @@ import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DLSet;
 
+/**
+ * Internal class containing common utility methods used in messages.
+ */
 class MessageUtils
 {
     static ASN1Set toASN1Set(Set<String> set)

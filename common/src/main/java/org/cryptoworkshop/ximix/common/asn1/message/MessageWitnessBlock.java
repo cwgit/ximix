@@ -26,11 +26,17 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * Carrier class for a block of MessageWitness messages.
+ */
 public class MessageWitnessBlock
     extends ASN1Object
 {
     private final List<MessageWitness> witnesses;
 
+    /**
+     * A builder for accumulating MessageWitness messages.
+     */
     public static class Builder
     {
         private final List<MessageWitness> witnesses;

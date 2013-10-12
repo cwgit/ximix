@@ -24,12 +24,21 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
+/**
+ * Wrapper structure for carrying payload messages to services devoted to specific algorithms.
+ */
 public class AlgorithmServiceMessage
     extends ASN1Object
 {
     private final Algorithm algorithm;
     private final ASN1Encodable payload;
 
+    /**
+     * Base constructor.
+     *
+     * @param algorithm the algorithm the payload is associated with.
+     * @param payload the actual message to be delivered.
+     */
     public AlgorithmServiceMessage(Algorithm algorithm, ASN1Encodable payload)
     {
         this.algorithm = algorithm;

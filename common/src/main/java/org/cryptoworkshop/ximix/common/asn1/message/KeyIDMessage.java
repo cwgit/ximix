@@ -19,12 +19,20 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message for a keyID.
+ */
 public class KeyIDMessage
     extends ASN1Object
 {
     private String keyID;
     private byte[] hash;
 
+    /**
+     * Base constructor.
+     *
+     * @param keyID the ID of the key being referred to.
+     */
     public KeyIDMessage(String keyID)
     {
         this.keyID = keyID;

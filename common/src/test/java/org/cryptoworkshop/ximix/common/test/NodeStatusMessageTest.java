@@ -30,7 +30,7 @@ public class NodeStatusMessageTest
         testList.add("rabbit");
 
 
-        NodeStatusMessage.Builder<NodeStatusMessage.InfoMessage> builder = new NodeStatusMessage.Builder(NodeStatusMessage.InfoMessage.class);
+        NodeStatusMessage.Builder<NodeStatusMessage.Info> builder = new NodeStatusMessage.Builder(NodeStatusMessage.Info.class);
 
 
         builder.put("a", "bar");
@@ -54,7 +54,7 @@ public class NodeStatusMessageTest
         System.out.println(ASN1Dump.dumpAsString(prim, true));
 
 
-        NodeStatusMessage res = NodeStatusMessage.getInstance(prim);
+        NodeStatusMessage res = NodeStatusMessage.Info.getInstance(prim);
         TestCase.assertTrue(nsm.getValues().get("a").equals(res.getValues().get("a")));
         TestCase.assertTrue(nsm.getValues().get("b").equals(res.getValues().get("b")));
 

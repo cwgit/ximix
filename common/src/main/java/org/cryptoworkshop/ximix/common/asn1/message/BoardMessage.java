@@ -22,11 +22,19 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message for a board name.
+ */
 public class BoardMessage
     extends ASN1Object
 {
     private final String boardName;
 
+    /**
+     * Base constructor.
+     *
+     * @param boardName the name of the board we want to refer to.
+     */
     public BoardMessage(String boardName)
     {
         this.boardName = boardName;

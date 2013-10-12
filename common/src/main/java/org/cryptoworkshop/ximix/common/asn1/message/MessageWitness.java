@@ -22,6 +22,9 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * Carrier message for which MessageCommitment matches which index.
+ */
 public class MessageWitness
     extends ASN1Object
 {
@@ -34,6 +37,12 @@ public class MessageWitness
         this.witness = MessageCommitment.getInstance(seq.getObjectAt(1));
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param index the index of the message prior to shuffling.
+     * @param witness the full details of the commitment's witness.
+     */
     public MessageWitness(int index, MessageCommitment witness)
     {
         this.index = index;

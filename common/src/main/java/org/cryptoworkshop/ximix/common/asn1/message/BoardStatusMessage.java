@@ -23,6 +23,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Response message giving a particular board's status.
+ */
 public class BoardStatusMessage
     extends ASN1Object
 {
@@ -34,6 +37,12 @@ public class BoardStatusMessage
         IN_TRANSIT, COMPLETE, UNKNOWN, ACTIVE
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param boardName the name of the board the status is for.
+     * @param status the board's current status.
+     */
     public BoardStatusMessage(String boardName, Status status)
     {
         this.boardName = boardName;

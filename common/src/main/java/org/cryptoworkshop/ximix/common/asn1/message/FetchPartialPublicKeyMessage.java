@@ -22,12 +22,21 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Request message to fetch a partial public key.
+ */
 public class FetchPartialPublicKeyMessage
     extends ASN1Object
 {
     private final String nodeID;
     private final String keyID;
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeID the ID of the node we want the partial public key for.
+     * @param keyID the ID of the key related to the partial public key.
+     */
     public FetchPartialPublicKeyMessage(String nodeID, String keyID)
     {
         this.nodeID = nodeID;

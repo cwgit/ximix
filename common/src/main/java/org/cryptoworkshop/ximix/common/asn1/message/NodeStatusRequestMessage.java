@@ -8,17 +8,15 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
- *
+ * Carrier class for statistics/status request and monitoring messages.
  */
 public class NodeStatusRequestMessage
     extends ASN1Object
 {
     private Type type = null;
 
-
     private NodeStatusRequestMessage(Type type)
     {
-
         this.type = type;
     }
 
@@ -29,15 +27,12 @@ public class NodeStatusRequestMessage
         return msg;
     }
 
-
     public static NodeStatusRequestMessage forStatisticsRequest()
     {
         NodeStatusRequestMessage msg = new NodeStatusRequestMessage(Type.GET_STATISTICS);
 
         return msg;
     }
-
-
 
     public static NodeStatusRequestMessage getInstance(Object o)
     {
@@ -81,13 +76,8 @@ public class NodeStatusRequestMessage
 
     public static enum Type
     {
-
-
         SET_PERIOD,
-
-
         GET_STATISTICS,
-
         GET_FULL_DETAILS
     }
 }

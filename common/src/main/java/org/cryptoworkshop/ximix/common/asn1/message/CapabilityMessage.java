@@ -25,6 +25,9 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 
+/**
+ * Carrier message for service capabilities.
+ */
 public class CapabilityMessage
     extends ASN1Object
 {
@@ -44,6 +47,12 @@ public class CapabilityMessage
     private final Type type;
     private final ASN1Encodable[] details;
 
+    /**
+     * Base constructor.
+     *
+     * @param type the capability type this message represents.
+     * @param details any details associated with the capability type.
+     */
     public CapabilityMessage(Type type, ASN1Encodable[] details)
     {
         this.type = type;

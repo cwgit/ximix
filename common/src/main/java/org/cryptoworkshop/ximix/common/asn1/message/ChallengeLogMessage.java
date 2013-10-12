@@ -45,6 +45,17 @@ public class ChallengeLogMessage
     private final ECPoint[] sourceMessage;
     private final ECPoint[] challengeResult;
 
+    /**
+     * Base constructor.
+     *
+     * @param index the index number of the message challenged.
+     * @param sequenceNo the sequenceNo in the sharing process for the node this message is based on.
+     * @param hasPassed
+     * @param m the multiplier "m" used in computing the challenge,
+     * @param keyInfo the node's partial public key.
+     * @param sourceMessage the input message for the challenge computation.
+     * @param challengeResult the result of the challenge.
+     */
     public ChallengeLogMessage(int index, int sequenceNo, boolean hasPassed, BigInteger m, SubjectPublicKeyInfo keyInfo, ECPoint[] sourceMessage, ECPoint[] challengeResult)
     {
         this.index = index;

@@ -25,13 +25,16 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.math.ec.ECCurve;
 
+/**
+ * Internal class for representing a pair of EC points.
+ */
 class Pair
     extends ASN1Object
 {
     private final ECPair ecPair;
     private ECPair pair;
 
-    public Pair(ECPair ecPair)
+    Pair(ECPair ecPair)
     {
         this.ecPair = ecPair;
     }

@@ -28,12 +28,21 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message for a block of messages to have a decryption process applied to.
+ */
 public class DecryptDataMessage
     extends ASN1Object
 {
     private final List<byte[]> messages;
     private final String keyID;
 
+    /**
+     * Base constructor.
+     *
+     * @param keyID the ID of the private key to decrypt against.
+     * @param messages a list of messages to be decrypted.
+     */
     public DecryptDataMessage(String keyID, List<byte[]> messages)
     {
         this.keyID = keyID;

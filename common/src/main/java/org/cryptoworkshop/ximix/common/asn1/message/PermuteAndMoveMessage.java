@@ -25,6 +25,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Request message for a shuffle and move operation on a bulletin board.
+ */
 public class PermuteAndMoveMessage
     extends ASN1Object
 {
@@ -35,6 +38,16 @@ public class PermuteAndMoveMessage
     private final String nodeName;
     private final String transformName;
 
+    /**
+     * Base constructor.
+     *
+     * @param operationNumber the operation number this request is associated with.
+     * @param boardName the name of the board this operation is associated with.
+     * @param stepNumber the step number in the operation this message is associated with.
+     * @param transformName the transform to be applied to the message prior to moving.
+     * @param keyID the ID of the public key the transformation involves.
+     * @param nodeName the name of the node to send the shuffled messages to.
+     */
     public PermuteAndMoveMessage(long operationNumber, String boardName, int stepNumber, String transformName, String keyID, String nodeName)
     {
         this.operationNumber = operationNumber;

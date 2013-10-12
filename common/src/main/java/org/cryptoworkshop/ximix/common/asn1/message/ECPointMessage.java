@@ -30,11 +30,23 @@ public class ECPointMessage
 {
     private final ECPoint point;
 
+    /**
+     * Base constructor.
+     *
+     * @param point the point value to carry.
+     */
     public ECPointMessage(ECPoint point)
     {
         this.point = point;
     }
 
+    /**
+     * Return the ECPointMessage represented by the passed in object.
+     *
+     * @param curve the curve the point should reside on.
+     * @param o the carrier of the ECPoint, may be an ASN.1 primitive,or an ECPointMessage.
+     * @return an instance of an ECPointMessage
+     */
     public static ECPointMessage getInstance(ECCurve curve, Object o)
     {
         if (o instanceof ECPointMessage)

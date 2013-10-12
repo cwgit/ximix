@@ -24,12 +24,21 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier class for information related to a node - its name and capabilities.
+ */
 public class NodeInfo
     extends ASN1Object
 {
     private final String name;
     private final CapabilityMessage[] capabilities;
 
+    /**
+     * Base constructor.
+     *
+     * @param name the name of the node associated with this info message.
+     * @param capabilities an array of CapabilityMessage giving the capabilities of the node.
+     */
     public NodeInfo(String name, CapabilityMessage[] capabilities)
     {
         this.name = name;

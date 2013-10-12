@@ -22,11 +22,19 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier class for key generation parameters.
+ */
 public class KeyGenParams
     extends ASN1Object
 {
     private final String domainParameters;
 
+    /**
+     * Base constructor.
+     *
+     * @param domainParameters an identifier that can be used by the key generator to find the domain parameters to use.
+     */
     public KeyGenParams(String domainParameters)
     {
         this.domainParameters = domainParameters;

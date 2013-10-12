@@ -24,6 +24,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
+/**
+ * A carrier message for different messages associated with key generation steps.
+ */
 public class KeyPairGenerateMessage
     extends ASN1Object
 {
@@ -31,6 +34,13 @@ public class KeyPairGenerateMessage
     private final Enum type;
     private final ASN1Encodable payload;
 
+    /**
+     * Base constructor.
+     *
+     * @param algorithm the algorithm this generation message is related to.
+     * @param type the type representing the step in the generation process the payload relates to.
+     * @param payload the payload containing additional data to be used by the reciever.
+     */
     public KeyPairGenerateMessage(Algorithm algorithm, Enum type, ASN1Encodable payload)
     {
         this.algorithm = algorithm;

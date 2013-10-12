@@ -23,6 +23,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message for a block of messages to be uploaded.
+ */
 public class BoardUploadBlockMessage
     extends ASN1Object
 {
@@ -31,6 +34,14 @@ public class BoardUploadBlockMessage
     private final int stepNumber;
     private final long operationNumber;
 
+    /**
+     * Base constructor.
+     *
+     * @param operationNumber the id of the operation this message is associated with.
+     * @param boardName the name of the board the message block is to uploaded to.
+     * @param stepNumber the step number in the operation being carried out.
+     * @param messageBlock the message block to be uploaded.
+     */
     public BoardUploadBlockMessage(long operationNumber, String boardName, int stepNumber, PostedMessageBlock messageBlock)
     {
         this.operationNumber = operationNumber;

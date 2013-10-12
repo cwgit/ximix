@@ -1,6 +1,5 @@
 package org.cryptoworkshop.ximix.common.asn1.message;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -19,21 +18,19 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
 /**
- *
+ * Carrier class for (name, value) pairs associated with a node's status/stats
  */
 public class NodeStatusMessage
     extends ASN1Object
 {
-    private static final Charset UTF8 = Charset.forName("UTF8");
     private final Map<String, Object> values;
 
-    public NodeStatusMessage(Map<String, Object> source)
+    protected NodeStatusMessage(Map<String, Object> source)
     {
         Map<String, Object> tmp = new HashMap<>();
         tmp.putAll(source);
         values = Collections.unmodifiableMap(tmp);
     }
-
 
     private NodeStatusMessage(ASN1Sequence seq)
     {
@@ -48,21 +45,6 @@ public class NodeStatusMessage
                 asn1TypeToObject((ASN1Sequence)pair.getObjectAt(1))
             );
         }
-    }
-
-    public static NodeStatusMessage getInstance(Object o)
-    {
-
-        if (o instanceof NodeStatusMessage)
-        {
-            return (NodeStatusMessage)o;
-        }
-        else if (o != null)
-        {
-            return new NodeStatusMessage(ASN1Sequence.getInstance(o));
-        }
-
-        return null;
     }
 
     public Map<String, Object> getValues()
@@ -249,29 +231,29 @@ public class NodeStatusMessage
     /**
      * Statistics message.
      */
-    public static class StatisticsMessage
+    public static class Statistics
         extends NodeStatusMessage
     {
-        public StatisticsMessage(Map<String, Object> source)
+        public Statistics(Map<String, Object> source)
         {
             super(source);
         }
 
-        private StatisticsMessage(ASN1Sequence seq)
+        private Statistics(ASN1Sequence seq)
         {
             super(seq);
         }
 
-        public static StatisticsMessage getInstance(Object o)
+        public static Statistics getInstance(Object o)
         {
 
-            if (o instanceof StatisticsMessage)
+            if (o instanceof Statistics)
             {
-                return (StatisticsMessage)o;
+                return (Statistics)o;
             }
             else if (o != null)
             {
-                return new StatisticsMessage(ASN1Sequence.getInstance(o));
+                return new Statistics(ASN1Sequence.getInstance(o));
             }
 
             return null;
@@ -282,29 +264,29 @@ public class NodeStatusMessage
     /**
      * Info message.
      */
-    public static class InfoMessage
+    public static class Info
         extends NodeStatusMessage
     {
-        public InfoMessage(Map<String, Object> source)
+        public Info(Map<String, Object> source)
         {
             super(source);
         }
 
-        public InfoMessage(ASN1Sequence seq)
+        public Info(ASN1Sequence seq)
         {
             super(seq);
         }
 
-        public static InfoMessage getInstance(Object o)
+        public static Info getInstance(Object o)
         {
 
-            if (o instanceof InfoMessage)
+            if (o instanceof Info)
             {
-                return (InfoMessage)o;
+                return (Info)o;
             }
             else if (o != null)
             {
-                return new InfoMessage(ASN1Sequence.getInstance(o));
+                return new Info(ASN1Sequence.getInstance(o));
             }
 
             return null;

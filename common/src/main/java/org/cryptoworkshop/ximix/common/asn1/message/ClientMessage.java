@@ -22,6 +22,9 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * General carrier for service request messages related to a non-privileged client.
+ */
 public class ClientMessage
     extends Message<ClientMessage.Type>
 {
@@ -33,6 +36,12 @@ public class ClientMessage
         CREATE_SIGNATURE
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param type the service type the message relates to.
+     * @param payload the encapsulated message data.
+     */
     public ClientMessage(Type type, ASN1Encodable payload)
     {
         super(type, payload);

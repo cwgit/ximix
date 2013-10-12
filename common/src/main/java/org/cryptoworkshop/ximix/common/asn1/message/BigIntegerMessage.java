@@ -29,6 +29,11 @@ public class BigIntegerMessage
 {
     private final BigInteger value;
 
+    /**
+     * Base constructor.
+     *
+     * @param value the value to be carried in this meesage.
+     */
     public BigIntegerMessage(BigInteger value)
     {
         this.value = value;

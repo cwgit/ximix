@@ -23,6 +23,9 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * Basic reply message.
+ */
 public class MessageReply
     extends ASN1Object
 {
@@ -39,11 +42,22 @@ public class MessageReply
         EXITING
     }
 
+    /**
+     * Basic constructor.
+     *
+     * @param type the type associated with reply.
+     */
     public MessageReply(Type type)
     {
         this(type, null);
     }
 
+    /**
+     * Payload constructor.
+     *
+     * @param type the type of the reply.
+     * @param payload some additional payload information to be interpreted by the receiver.
+     */
     public MessageReply(Type type, ASN1Encodable payload)
     {
         this.type = type;

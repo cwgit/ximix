@@ -22,6 +22,9 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * General carrier for service request messages related to a privileged client.
+ */
 public class CommandMessage
     extends Message<CommandMessage.Type>
 {
@@ -58,6 +61,12 @@ public class CommandMessage
         BOARD_CREATE, BACKUP_BOARD_CREATE, NODE_STATISTICS
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param type the service type the message relates to.
+     * @param payload the encapsulated message data.
+     */
     public CommandMessage(Type type, ASN1Encodable payload)
     {
         super(type, payload);

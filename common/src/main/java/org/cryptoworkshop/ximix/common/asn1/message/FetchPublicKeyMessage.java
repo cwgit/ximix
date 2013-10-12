@@ -19,11 +19,19 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Request message to fetch a public key.
+ */
 public class FetchPublicKeyMessage
     extends ASN1Object
 {
     private final String keyID;
 
+    /**
+     * Base constructor.
+     *
+     * @param keyID the ID of the public key being requested.
+     */
     public FetchPublicKeyMessage(String keyID)
     {
         this.keyID = keyID;

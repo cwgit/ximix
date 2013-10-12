@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.common.asn1.message;
 
+/**
+ * Marker interface for enums providing message types.
+ */
 public interface MessageType
 {
 }

@@ -41,7 +41,7 @@ class ClientNodeHealthMonitor
     public StatisticsData getStatistics(String name)
         throws ServiceConnectionException
     {
-        NodeStatusMessage.StatisticsMessage out = null;
+        NodeStatusMessage.Statistics out = null;
 
         MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forStatisticsRequest());
         if (reply.getType() == MessageReply.Type.ERROR)
@@ -50,7 +50,7 @@ class ClientNodeHealthMonitor
         }
         else
         {
-            out = NodeStatusMessage.StatisticsMessage.getInstance(reply.getPayload());
+            out = NodeStatusMessage.Statistics.getInstance(reply.getPayload());
         }
 
 
@@ -72,7 +72,7 @@ class ClientNodeHealthMonitor
             }
             else
             {
-                out.add(new FullInfoData(NodeStatusMessage.InfoMessage.getInstance(reply.getPayload()).getValues()));
+                out.add(new FullInfoData(NodeStatusMessage.Info.getInstance(reply.getPayload()).getValues()));
             }
         }
 
@@ -86,7 +86,7 @@ class ClientNodeHealthMonitor
     }
 
     @Override
-    public NodeStatusMessage.InfoMessage getFullInfo(String name)
+    public NodeStatusMessage.Info getFullInfo(String name)
         throws ServiceConnectionException
     {
         MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forFullDetails());
@@ -96,6 +96,6 @@ class ClientNodeHealthMonitor
             return null;
         }
 
-        return NodeStatusMessage.InfoMessage.getInstance(reply.getPayload());
+        return NodeStatusMessage.Info.getInstance(reply.getPayload());
     }
 }

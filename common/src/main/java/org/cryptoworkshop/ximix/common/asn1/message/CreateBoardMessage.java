@@ -22,12 +22,21 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message for a board creation request.
+ */
 public class CreateBoardMessage
     extends ASN1Object
 {
     private final String boardName;
     private final String backUpHost;
 
+    /**
+     * Base constructor.
+     *
+     * @param boardName the name of the board to create.
+     * @param backUpHost the backup host for the board, null if not required.
+     */
     public CreateBoardMessage(String boardName, String backUpHost)
     {
         this.boardName = boardName;

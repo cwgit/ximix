@@ -32,6 +32,9 @@ import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
+/**
+ * Request message to generate a key.
+ */
 public class KeyGenerationMessage
     extends ASN1Object
 {
@@ -41,6 +44,15 @@ public class KeyGenerationMessage
     private final int threshold;
     private final KeyGenParams keyGenParameters;
 
+    /**
+     * Base constructor.
+     *
+     * @param algorithm the algorithm the generated key is for.
+     * @param keyID the ID to be associated with the key.
+     * @param keyGenParameters the parameters to be used to create the key.
+     * @param threshold the minimum number of peers required to perform simple private key operations.
+     * @param nodesToUse the IDs of the nodes to take part in the process.
+     */
     public KeyGenerationMessage(Algorithm algorithm, String keyID, KeyGenParams keyGenParameters, int threshold, String... nodesToUse)
     {
         this(algorithm, keyID, keyGenParameters, threshold, Arrays.asList((String[])nodesToUse));

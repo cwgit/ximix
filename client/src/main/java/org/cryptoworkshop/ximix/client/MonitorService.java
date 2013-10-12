@@ -67,6 +67,6 @@ public interface MonitorService
      * @return the status and statistics for the node of interest.
      * @throws ServiceConnectionException in case of failure.
      */
-    NodeStatusMessage.InfoMessage getFullInfo(String node)
+    NodeStatusMessage.Info getFullInfo(String node)
         throws ServiceConnectionException;
 }

@@ -24,12 +24,21 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message for the upload of single message to the end of a board.
+ */
 public class BoardUploadMessage
     extends ASN1Object
 {
     private final String boardName;
     private final byte[] data;
 
+    /**
+     * Base constructor.
+     *
+     * @param boardName the name of board the message is destined for.
+     * @param data the message data.
+     */
     public BoardUploadMessage(String boardName, byte[] data)
     {
         this.boardName = boardName;

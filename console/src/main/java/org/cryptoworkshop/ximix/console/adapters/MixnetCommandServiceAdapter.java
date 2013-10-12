@@ -175,9 +175,9 @@ public class MixnetCommandServiceAdapter
     }
 
     @Override
-    public NodeStatusMessage.InfoMessage getNodeDetails(String name)
+    public NodeStatusMessage.Info getNodeDetails(String name)
     {
-        NodeStatusMessage.InfoMessage details = null;
+        NodeStatusMessage.Info details = null;
         try
         {
             MonitorService nhm = registrar.connect(MonitorService.class);
@@ -191,15 +191,15 @@ public class MixnetCommandServiceAdapter
     }
 
     @Override
-    public List<NodeStatusMessage.InfoMessage> getNodeDetails()
+    public List<NodeStatusMessage.Info> getNodeDetails()
     {
-        List<NodeStatusMessage.InfoMessage> details = new ArrayList<>();
+        List<NodeStatusMessage.Info> details = new ArrayList<>();
         try
         {
             MonitorService nhm = registrar.connect(MonitorService.class);
             for (FullInfoData data : nhm.getFullInfo())
             {
-                details.add(new NodeStatusMessage.InfoMessage(data.getDataMap()));
+                details.add(new NodeStatusMessage.Info(data.getDataMap()));
             }
         }
         catch (Exception e)
@@ -212,13 +212,13 @@ public class MixnetCommandServiceAdapter
     }
 
     @Override
-    public NodeStatusMessage getNodeStatistics(String node)
+    public NodeStatusMessage.Statistics getNodeStatistics(String node)
     {
-        NodeStatusMessage details = null;
+        NodeStatusMessage.Statistics details = null;
         try
         {
             MonitorService nhm = registrar.connect(MonitorService.class);
-            details = new NodeStatusMessage(nhm.getStatistics(node).getDataMap());
+            details = new NodeStatusMessage.Statistics(nhm.getStatistics(node).getDataMap());
         }
         catch (Exception e)
         {

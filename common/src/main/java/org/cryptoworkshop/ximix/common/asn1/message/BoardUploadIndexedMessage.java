@@ -25,6 +25,9 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message for the upload of single message at a particular index.
+ */
 public class BoardUploadIndexedMessage
     extends ASN1Object
 {
@@ -32,6 +35,13 @@ public class BoardUploadIndexedMessage
     private final int index;
     private final byte[] data;
 
+    /**
+     * Base constructor.
+     *
+     * @param boardName the name of board the message is destined for.
+     * @param indexNumbder the index number the message is to reside out.
+     * @param data the message data.
+     */
     public BoardUploadIndexedMessage(String boardName, int indexNumbder, byte[] data)
     {
         this.boardName = boardName;

@@ -28,12 +28,21 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message for details of transforms associated with a particular bulletin board.
+ */
 public class BoardDetails
     extends ASN1Object
 {
     private final String boardName;
     private final Set<String> transformNames;
 
+    /**
+     * Base constructor.
+     *
+     * @param boardName the name of the board this message relates to.
+     * @param transformNames a set of transforms that the board handler can perform.
+     */
     public BoardDetails(String boardName, Set<String> transformNames)
     {
         this.boardName = boardName;

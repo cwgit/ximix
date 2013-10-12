@@ -121,7 +121,7 @@ public interface NodeAdapter
      *
      * @return The details of each node.
      */
-    List<NodeStatusMessage.InfoMessage> getNodeDetails();
+    List<NodeStatusMessage.Info> getNodeDetails();
 
     /**
      * Return the statistics for a node.
@@ -129,7 +129,7 @@ public interface NodeAdapter
      * @param node The node.
      * @return The statistics object.
      */
-    NodeStatusMessage getNodeStatistics(String node);
+    NodeStatusMessage.Statistics getNodeStatistics(String node);
 
     /**
      * Return the details of each configured node.
@@ -146,10 +146,10 @@ public interface NodeAdapter
     List<NodeDetail> getConnectedNodes();
 
     /**
-     * Return the detauls of each node.
+     * Return the details of each node.
      *
      * @param name
      * @return
      */
-    NodeStatusMessage.InfoMessage getNodeDetails(String name);
+    NodeStatusMessage.Info getNodeDetails(String name);
 }

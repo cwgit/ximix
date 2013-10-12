@@ -24,11 +24,14 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * Carrier message for a message commitment secrets and transformation details.
+ */
 public class MessageCommitment
     extends ASN1Object
 {
     private final byte[] detail;
-    private final int    newIndex;
+    private final int newIndex;
     private final byte[] secret;
 
     private MessageCommitment(ASN1Sequence seq)
@@ -46,6 +49,12 @@ public class MessageCommitment
         }
     }
 
+    /**
+     * Constructor for a secret only commitment message.
+     *
+     * @param newIndex the index of the shuffled message the secret relates to.
+     * @param secret the secret related to the commitment.
+     */
     public MessageCommitment(int newIndex, byte[] secret)
     {
         this.detail = null;
@@ -53,6 +62,14 @@ public class MessageCommitment
         this.secret = secret;
     }
 
+    /**
+     * Constructor for a commitment message containing both the commitment message and the detail associated with transformation
+     * of the message the commitment is based on.
+     *
+     * @param newIndex the index of the shuffled message the secret and detail relate to.
+     * @param secret the secret related to the commitment.
+     * @param detail data related to the committed message - usually the random value mixed in.
+     */
     public MessageCommitment(int newIndex, byte[] secret, byte[] detail)
     {
         this.detail = detail.clone();

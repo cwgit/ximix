@@ -20,6 +20,11 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Sequence;
 
+/**
+ * Base class for top level message carriers.
+ *
+ * @param <T> the enumeration related to the types of messages that can be carried.
+ */
 public abstract class Message<T extends Enum<T>>
     extends ASN1Object
 {
@@ -29,6 +34,12 @@ public abstract class Message<T extends Enum<T>>
     protected final T type;
     protected final ASN1Encodable payload;
 
+    /**
+     * Base constructor.
+     *
+     * @param type the type of payload.
+     * @param payload the payload data.
+     */
     public Message(T type, ASN1Encodable payload)
     {
         this.type = type;

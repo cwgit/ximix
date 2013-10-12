@@ -23,12 +23,21 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Carrier message for a node's sequence number in the threshold scheme and the node's name.
+ */
 public class ParticipantMessage
     extends ASN1Object
 {
     private final String name;
     private final int sequenceNo;
 
+    /**
+     * Base constructor.
+     *
+     * @param sequenceNo the sequence number associated with this participant.
+     * @param name the name of the node that identifies this participant.
+     */
     public ParticipantMessage(int sequenceNo, String name)
     {
         this.sequenceNo = sequenceNo;

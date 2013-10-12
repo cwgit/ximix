@@ -23,12 +23,21 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * Request message to download up to a specified number of messages from a given board.
+ */
 public class BoardDownloadMessage
     extends ASN1Object
 {
     private final String boardName;
     private final int maxNumberOfMessages;
 
+    /**
+     * Base constructor.
+     *
+     * @param boardName the name of the board to download from.
+     * @param maxNumberOfMessages the maximum number of messages to be sent back in any response.
+     */
     public BoardDownloadMessage(String boardName, int maxNumberOfMessages)
     {
         this.boardName = boardName;
