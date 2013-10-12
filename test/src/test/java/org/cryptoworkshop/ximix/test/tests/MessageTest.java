@@ -12,7 +12,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardErrorStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.PermuteMessage;
 import org.junit.Test;
 
 /**
@@ -87,27 +86,6 @@ public class MessageTest extends TestCase
         TestCase.assertEquals(msg.getDestinationNode(), res.getDestinationNode());
         TestCase.assertEquals(msg.getKeyID(), res.getKeyID());
         TestCase.assertEquals(msg.getTransformName(), res.getTransformName());
-
-    }
-
-    @Test
-    public void testPermuteMessage_1()
-        throws Exception
-    {
-        PermuteMessage msg = new PermuteMessage("foo", "bar");
-
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        DEROutputStream derOut = new DEROutputStream(bos);
-
-        derOut.writeObject(msg.toASN1Primitive());
-
-        ByteArrayInputStream bin = new ByteArrayInputStream(bos.toByteArray());
-        ASN1InputStream din = new ASN1InputStream(bin);
-
-        PermuteMessage res = PermuteMessage.getInstance(din.readObject());
-
-        TestCase.assertEquals(msg.getBoardName(), res.getBoardName());
-        TestCase.assertEquals(msg.getKeyID(), res.getKeyID());
 
     }
 

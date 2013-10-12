@@ -39,6 +39,12 @@ public class PostedData
         this.data = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param index index of the message on the bulletin board.
+     * @param data the message data.
+     */
     public PostedData(int index, byte[] data)
     {
         this.index = index;
