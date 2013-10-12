@@ -85,6 +85,10 @@ import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
 
+/**
+ * Internal implementation of the CommandService interface. This class creates the messages which are then sent down
+ * the ServicesConnection.
+ */
 class ClientCommandService
     implements CommandService
 {

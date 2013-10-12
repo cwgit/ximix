@@ -31,6 +31,10 @@ import org.cryptoworkshop.ximix.common.asn1.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
+/**
+ * Internal implementation of the SigningService interface. This class creates the messages which are then sent down
+ * the ServicesConnection.
+ */
 class ClientSigningService
     implements SigningService
 {

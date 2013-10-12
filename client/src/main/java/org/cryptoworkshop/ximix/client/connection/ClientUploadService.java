@@ -21,6 +21,10 @@ import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 
+/**
+ * Internal implementation of the UploadService interface. This class creates the messages which are then sent down
+ * the ServicesConnection.
+ */
 class ClientUploadService
     implements UploadService
 {

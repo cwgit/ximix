@@ -15,14 +15,18 @@
  */
 package org.cryptoworkshop.ximix.client.verify;
 
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.math.BigInteger;
 import java.util.Arrays;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.asn1.message.ChallengeLogMessage;
+import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
 
 /**
  * Verifier for a decryption challenge log stream
@@ -30,9 +34,18 @@ import org.cryptoworkshop.ximix.common.asn1.message.ChallengeLogMessage;
 public class ECDecryptionChallengeVerifier
 {
     private final ECPublicKeyParameters pubKey;
-    private final ByteArrayInputStream logStream;
+    private final InputStream logStream;
 
-    public ECDecryptionChallengeVerifier(ECPublicKeyParameters pubKey, ByteArrayInputStream logStream)
+    private ECPublicKeyParameters[] activePeers = new ECPublicKeyParameters[0];
+    private int maxSequenceNo = 0;
+
+    /**
+     * Base constructor.
+     *
+     * @param pubKey the public key that we are verifying against.
+     * @param logStream InputStream representing the decryption challenge transcript.
+     */
+    public ECDecryptionChallengeVerifier(ECPublicKeyParameters pubKey, InputStream logStream)
     {
         this.pubKey = pubKey;
         this.logStream = logStream;
@@ -50,6 +63,8 @@ public class ECDecryptionChallengeVerifier
 
         try
         {
+            int messageIndex = -1;
+
             ASN1Object obj;
             while ((obj = aIn.readObject()) != null)
             {
@@ -57,6 +72,53 @@ public class ECDecryptionChallengeVerifier
 
                 ECPoint[] sourceMessage = logMessage.getSourceMessage();
                 ECPoint[] challengeResults = logMessage.getChallengeResult();
+
+                ECPublicKeyParameters currentPubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(logMessage.getKeyInfo());
+                if (!isSameParameters(pubKey.getParameters(), currentPubKey.getParameters()))
+                {
+                    throw new TranscriptVerificationException("Log message indicates inconsistent public key parameters.");
+                }
+
+                if (messageIndex != logMessage.getIndex())
+                {
+                    // verify the partial public keys represent the one we have.
+                    if (activePeers.length != 0)
+                    {
+                        LagrangeWeightCalculator weightCalculator = new LagrangeWeightCalculator(maxSequenceNo + 1, pubKey.getParameters().getN());
+
+                        ECPoint accumulatedQ = null;
+
+                        BigInteger[] weights = weightCalculator.computeWeights(activePeers);
+
+                        for (int i = 0; i != weights.length; i++)
+                        {
+                             if (weights[i] != null)
+                             {
+                                 if (accumulatedQ == null)
+                                 {
+                                     accumulatedQ = activePeers[i].getQ().multiply(weights[i]);
+                                 }
+                                 else
+                                 {
+                                     accumulatedQ = accumulatedQ.add(activePeers[i].getQ().multiply(weights[i]));
+                                 }
+                             }
+                        }
+                        if (!pubKey.getQ().equals(accumulatedQ))
+                        {
+                            throw new TranscriptVerificationException("Log message indicates inconsistent public key.");
+                        }
+                        // reset the peers array.
+                        for (int i = 0; i != activePeers.length; i++)
+                        {
+                            activePeers[i] = null;
+                        }
+                    }
+
+                    messageIndex = logMessage.getIndex();
+                }
+
+                addPeer(logMessage.getSequenceNo(), currentPubKey);
 
                 if (!logMessage.hasPassed())
                 {
@@ -82,5 +144,23 @@ public class ECDecryptionChallengeVerifier
         {
             throw new TranscriptVerificationException("Exception validating decryption challenge transcript: " + e.getMessage(), e);
         }
+    }
+
+    private boolean isSameParameters(ECDomainParameters a, ECDomainParameters b)
+    {
+        return a.getCurve().equals(b.getCurve()) && a.getG().equals(b.getG()) && a.getH().equals(b.getH()) && a.getN().equals(b.getN());
+    }
+
+    private void addPeer(int sequenceNo, ECPublicKeyParameters peerKey)
+    {
+        if ((sequenceNo + 1) > activePeers.length)
+        {
+            ECPublicKeyParameters[] tmp = new ECPublicKeyParameters[sequenceNo + 1];
+            System.arraycopy(activePeers, 0, tmp, 0, activePeers.length);
+            activePeers = tmp;
+            maxSequenceNo = sequenceNo;
+        }
+
+        activePeers[sequenceNo] = peerKey;
     }
 }

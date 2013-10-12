@@ -13,19 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.client.connection;
-
-import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
-import org.w3c.dom.Node;
-
 /**
- * Internal factory class to produce NodeConfig objects for interpreting configuration details.
- */
-class NodeConfigFactory
-    implements ConfigObjectFactory<NodeConfig>
-{
-    public NodeConfig createObject(Node configNode)
-    {
-        return new NodeConfig(configNode);
-    }
-}
+General utility classes and interfaces connected with bulletin boards and shuffling methods.
+*/
+package org.cryptoworkshop.ximix.node.mixnet.util;
+
+

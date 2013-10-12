@@ -32,7 +32,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 
 /**
- * Class used for define the fields in a log message.
+ * Class used to define the fields in a decryption challenge log message.
  */
 public class ChallengeLogMessage
     extends ASN1Object
@@ -132,5 +132,20 @@ public class ChallengeLogMessage
     public BigInteger getM()
     {
         return m;
+    }
+
+    public SubjectPublicKeyInfo getKeyInfo()
+    {
+        return keyInfo;
+    }
+
+    public int getIndex()
+    {
+        return index;
+    }
+
+    public int getSequenceNo()
+    {
+        return sequenceNo;
     }
 }

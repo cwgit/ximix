@@ -17,6 +17,9 @@ package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 
+/**
+ * Interface containing the methods associated with board creation.
+ */
 public interface BoardCreationService
     extends Service
 {

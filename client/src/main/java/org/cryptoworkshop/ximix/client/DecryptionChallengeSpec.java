@@ -26,6 +26,12 @@ public class DecryptionChallengeSpec
     private final MessageChooser chooser;
     private final OutputStream logStream;
 
+    /**
+     * Base constructor.
+     *
+     * @param chooser a message chooser to select which messages will be challenged.
+     * @param logStream an OutputStream to log the challenge results to.
+     */
     public DecryptionChallengeSpec(MessageChooser chooser, OutputStream logStream)
     {
         this.chooser = chooser;

@@ -29,6 +29,9 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeInfo;
 
+/**
+ * Internal implementation of a named ServicesConnection. This class ties a connection back to a specific node.
+ */
 class NodeServicesConnection
     implements SpecificServicesConnection
 {

@@ -21,6 +21,9 @@ import java.net.UnknownHostException;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+ * Internal interpreter for the XML in the &lt;node&gt;&lt;/node&gt; block in the node configuration.
+ */
 class NodeConfig
 {
     private InetAddress address;

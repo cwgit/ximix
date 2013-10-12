@@ -16,7 +16,8 @@ import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusRequestMessage;
 
 /**
- *
+ * Internal implementation of the MonitorService interface. This class creates the messages which are then sent down
+ * the ServicesConnection.
  */
 class ClientNodeHealthMonitor
     implements MonitorService
@@ -97,6 +98,4 @@ class ClientNodeHealthMonitor
 
         return NodeStatusMessage.InfoMessage.getInstance(reply.getPayload());
     }
-
-
 }

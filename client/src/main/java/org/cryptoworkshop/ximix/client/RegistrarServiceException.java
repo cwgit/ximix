@@ -21,6 +21,11 @@ package org.cryptoworkshop.ximix.client;
 public class RegistrarServiceException
     extends Exception
 {
+    /**
+     * Construct an exception with the specified message.
+     *
+     * @param message the message to pass.
+     */
     public RegistrarServiceException(String message)
     {
         super(message);

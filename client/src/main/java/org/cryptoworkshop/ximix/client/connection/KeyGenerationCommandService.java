@@ -31,7 +31,10 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
-
+/**
+ * Internal implementation of the KeyGenerationService interface. This class creates the messages which are then sent down
+ * the ServicesConnection.
+ */
 class KeyGenerationCommandService
     implements KeyGenerationService
 {

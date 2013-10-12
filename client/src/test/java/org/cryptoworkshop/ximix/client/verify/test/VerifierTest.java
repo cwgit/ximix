@@ -31,6 +31,9 @@ import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
 import org.cryptoworkshop.ximix.client.verify.TranscriptVerificationException;
 import org.junit.Test;
 
+/**
+ * Transcript verifier test.
+ */
 public class VerifierTest
 {
     private static final int NUM_ENTRIES = 20;

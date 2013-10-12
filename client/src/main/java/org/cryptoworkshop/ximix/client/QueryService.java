@@ -17,6 +17,9 @@ package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 
+/**
+ * Carrier service interface for methods associated with board related queries.
+ */
 public interface QueryService
     extends Service
 {

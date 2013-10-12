@@ -56,6 +56,15 @@ public class ECShuffledTranscriptVerifier
     private final ECPublicKeyParameters pubKey;
     private ECCurve ecCurve;
 
+    /**
+     * Base Constructor.
+     *
+     * @param pubKey the public key we are verifying against.
+     * @param witnessTranscript transcript of witness values.
+     * @param initialTranscript transcript of shuffle input.
+     * @param finalTranscript transcript of shuffle output.
+     * @throws IOException if any of the transcripts cannot be successfully parsed.
+     */
     public ECShuffledTranscriptVerifier(ECPublicKeyParameters pubKey, InputStream witnessTranscript, InputStream initialTranscript, InputStream finalTranscript)
         throws IOException
     {

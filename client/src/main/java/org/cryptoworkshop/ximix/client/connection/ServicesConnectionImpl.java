@@ -23,6 +23,10 @@ import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 
+/**
+ * Internal implementation of a general ServicesConnection. Unlike a NodeServicesConnection this class addresses the
+ * Ximix network as a whole and will choose the first available suitable node for processing a message.
+ */
 class ServicesConnectionImpl
     implements ServicesConnection
 {
@@ -45,10 +49,18 @@ class ServicesConnectionImpl
 
             if (nodeConf.getThrowable() == null)
             {
-                if (getConnection() == null)
+                try
+                {
+                    if (getConnection() == null)
+                    {
+                        continue;
+                    }
+                }
+                catch (IOException e)
                 {
                     continue;
                 }
+                break;
             }
         }
     }
@@ -65,22 +77,22 @@ class ServicesConnectionImpl
         // TODO: need to look into possible connection leakage here. 2 threads may end up trying to reset at the same time.
         connection = null;
 
-        return getConnection();
+        try
+        {
+            return getConnection();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
     }
 
     private synchronized NodeServicesConnection getConnection()
+        throws IOException
     {
         if (connection == null)
         {
-            try
-            {
-                connection = new NodeServicesConnection(nodeConf);
-            }
-            catch (IOException e)
-            {
-                //   System.out.print(e.getMessage());
-                // TODO:
-            }
+            connection = new NodeServicesConnection(nodeConf);
         }
 
         return connection;
@@ -88,7 +100,14 @@ class ServicesConnectionImpl
 
     public CapabilityMessage[] getCapabilities()
     {
-        return getConnection().getCapabilities();
+        try
+        {
+            return getConnection().getCapabilities();
+        }
+        catch (IOException e)
+        {
+            return new CapabilityMessage[0];
+        }
     }
 
     public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
