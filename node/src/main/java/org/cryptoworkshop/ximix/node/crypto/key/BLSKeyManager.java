@@ -334,7 +334,7 @@ public class BLSKeyManager
                     BLS01PublicKeyParameters publicKeyParameters = BLSPublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
 
                     paramsMap.put(keyID, publicKeyParameters.getParameters());
-                    sharedPublicKeyMap.init(keyID, 0);
+                    sharedPublicKeyMap.init(keyID, 1);
                     sharedPublicKeyMap.addValue(keyID, new ElementShare(
                         ASN1Integer.getInstance(cert.getExtension(XimixObjectIdentifiers.ximixShareIdExtension).getParsedValue()).getValue().intValue(),
                         publicKeyParameters.getPk()));
@@ -354,7 +354,7 @@ public class BLSKeyManager
                     PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
                     PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
 
-                    sharedPrivateKeyMap.init(keyID, 0);
+                    sharedPrivateKeyMap.init(keyID, 1);
                     sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(sharedPublicKeyMap.getShare(keyID).getSequenceNo(), ASN1Integer.getInstance(info.parsePrivateKey()).getValue()));
                 }
             }

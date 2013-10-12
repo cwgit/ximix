@@ -307,7 +307,7 @@ public class ECKeyManager
                     ECPublicKeyParameters publicKeyParameters = (ECPublicKeyParameters)PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
 
                     paramsMap.put(keyID, publicKeyParameters.getParameters());
-                    sharedPublicKeyMap.init(keyID, 0);
+                    sharedPublicKeyMap.init(keyID, 1);
                     sharedPublicKeyMap.addValue(keyID, new ECPointShare(
                         ASN1Integer.getInstance(cert.getExtension(XimixObjectIdentifiers.ximixShareIdExtension).getParsedValue()).getValue().intValue(),
                         publicKeyParameters.getQ()));
@@ -327,7 +327,7 @@ public class ECKeyManager
                     PKCS8EncryptedPrivateKeyInfo encInfo = (PKCS8EncryptedPrivateKeyInfo)bags[0].getBagValue();
                     PrivateKeyInfo info = encInfo.decryptPrivateKeyInfo(inputDecryptorProvider);
 
-                    sharedPrivateKeyMap.init(keyID, 0);
+                    sharedPrivateKeyMap.init(keyID, 1);
                     sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(sharedPublicKeyMap.getShare(keyID).getSequenceNo(), ECPrivateKey.getInstance(info.parsePrivateKey()).getKey()));
                 }
             }
