@@ -31,12 +31,22 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 
+/**
+ * A basic configuration object.
+ */
 public class Config
 {
     private final File homeDirectory;
 
     private Element xmlNode;
 
+    /**
+     * Construct a config object from a XML file.
+     *
+     * @param configFile the name of the file.
+     * @throws ConfigException if the file cannot be parsed.
+     * @throws FileNotFoundException if the file cannot be found.
+     */
     public Config(File configFile)
         throws ConfigException, FileNotFoundException
     {
@@ -52,7 +62,11 @@ public class Config
         }
     }
 
-
+    /**
+     * Construct a config object from a XML stream.
+     *
+     * @throws ConfigException if the stream cannot be parsed.
+     */
     public Config(InputStream stream)
         throws ConfigException
     {
@@ -61,7 +75,11 @@ public class Config
         init(stream);
     }
 
-
+    /**
+     * Construct a config object from a XML node.
+     *
+     * @throws ConfigException if the node cannot be parsed.
+     */
     public Config(Node xmlNode)
         throws ConfigException
     {
@@ -99,6 +117,13 @@ public class Config
         return homeDirectory;
     }
 
+    /**
+     * Return the value of an integer property.
+     *
+     * @param name the name of the property of interest.
+     * @return the property's value.
+     * @throws ConfigException if the config object cannot be parsed, or if the property cannot be found.
+     */
     public int getIntegerProperty(String name)
         throws ConfigException
     {
@@ -116,6 +141,14 @@ public class Config
         throw new ConfigException("property " + name + " not found");
     }
 
+    /**
+     * Return the value of an integer property, returning def if the property is not set..
+     *
+     * @param name the name of the property of interest.
+     * @param def the default value if the property is not set.
+     * @return the property's value, or def if the property is not defined.
+     * @throws ConfigException if the config object cannot be parsed.
+     */
     public int getIntegerProperty(String name, int def)
         throws ConfigException
     {
@@ -139,6 +172,13 @@ public class Config
         return def;
     }
 
+    /**
+     * Return the value of a String property.
+     *
+     * @param name the name of the property of interest.
+     * @return the property's value.
+     * @throws ConfigException if the config object cannot be parsed, or if the property cannot be found.
+     */
     public String getStringProperty(String name)
         throws ConfigException
     {
@@ -157,6 +197,14 @@ public class Config
         throw new ConfigException("property " + name + " not found");
     }
 
+    /**
+     * Return the value of a String property, returning def if the property is not set..
+     *
+     * @param name the name of the property of interest.
+     * @param def the default value if the property is not set.
+     * @return the property's value, or def if the property is not defined.
+     * @throws ConfigException if the config object cannot be parsed.
+     */
     public String getStringProperty(String name, String def)
         throws ConfigException
     {

@@ -17,6 +17,11 @@ package org.cryptoworkshop.ximix.common.config;
 
 import org.w3c.dom.Node;
 
+/**
+ * Factory interface for configuration object producers.
+ *
+ * @param <T> the type of object resulting from parsing a specific configuration element.
+ */
 public interface ConfigObjectFactory<T>
 {
     public T createObject(Node configNode)

@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.common.config;
 
+/**
+ * Base configuration exception.
+ */
 public class ConfigException
     extends Exception
 {
