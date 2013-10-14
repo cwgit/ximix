@@ -21,11 +21,22 @@ package org.cryptoworkshop.ximix.common.config;
 public class ConfigException
     extends Exception
 {
-    public ConfigException(String message, Exception cause)
+    /**
+     * Constructor for an exception with an underlying cause.
+     *
+     * @param message the message associated with the exception.
+     * @param cause the throwable causing this exception..
+     */
+    public ConfigException(String message, Throwable cause)
     {
         super(message, cause);
     }
 
+    /**
+     * Basic constructor - a simple message,
+     *
+     * @param message
+     */
     public ConfigException(String message)
     {
         super(message);

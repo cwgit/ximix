@@ -15,11 +15,10 @@
  */
 package org.cryptoworkshop.ximix.console.config;
 
-import org.cryptoworkshop.ximix.common.util.EventNotifier;
-import org.cryptoworkshop.ximix.common.util.JDKLoggingEventNotifier;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  *

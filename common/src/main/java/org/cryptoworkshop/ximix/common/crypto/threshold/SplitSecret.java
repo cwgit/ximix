@@ -17,11 +17,20 @@ package org.cryptoworkshop.ximix.common.crypto.threshold;
 
 import java.math.BigInteger;
 
+/**
+ * A basic split secret for a BigInteger value.
+ */
 public class SplitSecret
 {
     private final BigInteger[] coefficients;
     private final BigInteger[] shares;
 
+    /**
+     * Base constructor.
+     *
+     * @param shares the shares the initial secret has been split into.
+     * @param coefficients the coefficients associated with the shares.
+     */
     public SplitSecret(BigInteger[] shares, BigInteger[] coefficients)
     {
         this.shares = shares;

@@ -19,12 +19,23 @@ import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECPoint;
 
+/**
+ * Holding class for a split secret for an Elliptic Curve algorithm,
+ */
 public class ECCommittedSplitSecret
     extends SplitSecret
 {
     private final ECPoint[] commitments;
     private final BigInteger[] witnesses;
 
+    /**
+     * Base constructor.
+     *
+     * @param shares the component shares making up the split secret.
+     * @param coefficients the coefficients associated with the shares.
+     * @param witnesses the witnesses associated with the shares.
+     * @param commitments the commitments associated with the shares.
+     */
     public ECCommittedSplitSecret(BigInteger[] shares, BigInteger[] coefficients, BigInteger[] witnesses, ECPoint[] commitments)
     {
         super(shares, coefficients);

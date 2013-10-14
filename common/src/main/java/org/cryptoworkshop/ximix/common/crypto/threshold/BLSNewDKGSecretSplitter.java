@@ -23,7 +23,7 @@ import it.unisa.dia.gas.jpbc.Element;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 
 /**
- * A secret splitter based on the New-DKG Algorithm in "Secure Distributed Key Generation" by R. Gennaro, S. Jarecki, H. Krawczyk, and T. Rabin
+ * A BLS secret splitter based on the New-DKG Algorithm in "Secure Distributed Key Generation" by R. Gennaro, S. Jarecki, H. Krawczyk, and T. Rabin
  */
 public class BLSNewDKGSecretSplitter
 {

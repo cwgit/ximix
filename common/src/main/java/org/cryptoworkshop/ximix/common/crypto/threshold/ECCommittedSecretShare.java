@@ -20,12 +20,22 @@ import java.math.BigInteger;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECPoint;
 
+/**
+ * Holding class representing a committed share for a key in an Elliptic Curve algorithm.
+ */
 public class ECCommittedSecretShare
 {
     private final BigInteger share;
     private final BigInteger witness;
     private final ECPoint[]  commitmentFactors;
 
+    /**
+     * Base constructor.
+     *
+     * @param share the share value.
+     * @param witness an associated witness value.
+     * @param commitmentFactors the commitment factors associated with the witness value.
+     */
     public ECCommittedSecretShare(BigInteger share, BigInteger witness, ECPoint[] commitmentFactors)
     {
         this.share = share;

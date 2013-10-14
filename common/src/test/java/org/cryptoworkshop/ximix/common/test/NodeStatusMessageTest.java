@@ -12,7 +12,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.junit.Test;
 
 /**
- *
+ * Test for a node status message.
  */
 public class NodeStatusMessageTest
     extends TestCase

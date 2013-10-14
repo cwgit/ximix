@@ -20,7 +20,16 @@ package org.cryptoworkshop.ximix.common.crypto;
  */
 public enum Algorithm
 {
+    /**
+     * Elliptic Curve ElGamal
+     */
     EC_ELGAMAL,
+    /**
+     * Elliptc Curve DSA
+     */
     ECDSA,
+    /**
+     * BLS
+     */
     BLS
 }

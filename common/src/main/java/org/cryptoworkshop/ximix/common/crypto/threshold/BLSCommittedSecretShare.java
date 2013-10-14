@@ -20,12 +20,22 @@ import java.math.BigInteger;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01Parameters;
 import it.unisa.dia.gas.jpbc.Element;
 
+/**
+ * Holding class representing a committed share for a key in the BLS algorithm.
+ */
 public class BLSCommittedSecretShare
 {
     private final BigInteger share;
     private final BigInteger witness;
     private final Element[]  commitmentFactors;
 
+    /**
+     * Base constructor.
+     *
+     * @param share the share value.
+     * @param witness an associated witness value.
+     * @param commitmentFactors the commitment factors associated with the witness value.
+     */
     public BLSCommittedSecretShare(BigInteger share, BigInteger witness, Element[] commitmentFactors)
     {
         this.share = share;

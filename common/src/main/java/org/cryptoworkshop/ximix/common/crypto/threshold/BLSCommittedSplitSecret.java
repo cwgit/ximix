@@ -19,12 +19,23 @@ import java.math.BigInteger;
 
 import it.unisa.dia.gas.jpbc.Element;
 
+/**
+ * Holding class for a split secret for the BLS algorithm,
+ */
 public class BLSCommittedSplitSecret
     extends SplitSecret
 {
     private final Element[] commitments;
     private final BigInteger[] witnesses;
 
+    /**
+     * Base constructor.
+     *
+     * @param shares the component shares making up the split secret.
+     * @param coefficients the coefficients associated with the shares.
+     * @param witnesses the witnesses associated with the shares.
+     * @param commitments the commitments associated with the shares.
+     */
     public BLSCommittedSplitSecret(BigInteger[] shares, BigInteger[] coefficients, BigInteger[] witnesses, Element[] commitments)
     {
         super(shares, coefficients);

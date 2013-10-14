@@ -20,6 +20,12 @@ package org.cryptoworkshop.ximix.common.util;
  */
 public enum TranscriptType
 {
+    /**
+     * Transcript including commitments and commitment values.
+     */
     GENERAL,
+    /**
+     * Transcript of witness values.
+     */
     WITNESSES
 }

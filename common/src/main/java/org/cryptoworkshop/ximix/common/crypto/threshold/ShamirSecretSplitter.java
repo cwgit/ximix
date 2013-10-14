@@ -18,7 +18,9 @@ package org.cryptoworkshop.ximix.common.crypto.threshold;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-
+/**
+ * A secret splitter based on Shamir's method.
+ */
 public class ShamirSecretSplitter
 {
     private final int numberOfPeers;
