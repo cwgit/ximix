@@ -18,6 +18,9 @@ package org.cryptoworkshop.ximix.node.service;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
+/**
+ * Base class for a node service.
+ */
 public abstract class BasicNodeService
     implements NodeService
 {
@@ -27,16 +30,18 @@ public abstract class BasicNodeService
     protected final NodeContext nodeContext;
     protected final CrossSection statistics;
 
-
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context of the node we are in.
+     */
     public BasicNodeService(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
         this.statistics = new CrossSection(nodeContext.getDecoupler(Decoupler.MONITOR), nodeContext.getEventNotifier());
         listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.SERVICES), nodeContext.getEventNotifier()).createHandler(ServiceStatisticsListener.class);
         statisticsNotifier = listenerHandler.getNotifier();
-
     }
-
 
     public void trigger(ServiceEvent event)
     {

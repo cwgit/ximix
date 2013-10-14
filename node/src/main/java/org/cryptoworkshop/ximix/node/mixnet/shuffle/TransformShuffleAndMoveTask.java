@@ -39,21 +39,30 @@ import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.node.mixnet.transform.Transform;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
+/**
+ * The basic shuffle and move task.
+ */
 public class TransformShuffleAndMoveTask
     implements Runnable
 {
     private final NodeContext nodeContext;
     private final PermuteAndMoveMessage message;
     private final BulletinBoardRegistry boardRegistry;
-    private final CommandMessage.Type type;
     private final ServicesConnection peerConnection;
 
-    public TransformShuffleAndMoveTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, ServicesConnection peerConnection, CommandMessage.Type type, PermuteAndMoveMessage message)
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context of the node this task is running in.
+     * @param boardRegistry the registry for the boards on this node.
+     * @param peerConnection a ServicesConnection to the node the board is to be moved to.
+     * @param message the message carrying the instructions for the permute and move.
+     */
+    public TransformShuffleAndMoveTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, ServicesConnection peerConnection, PermuteAndMoveMessage message)
     {
         this.nodeContext = nodeContext;
         this.boardRegistry = boardRegistry;
         this.peerConnection = peerConnection;
-        this.type = type;
         this.message = message;
     }
 
@@ -143,7 +152,7 @@ public class TransformShuffleAndMoveTask
     private void processMessageBlock(PostedMessageBlock.Builder messageBlockBuilder, int nextStepNumber)
         throws ServiceConnectionException
     {
-        MessageReply reply = peerConnection.sendMessage(type, new BoardUploadBlockMessage(message.getOperationNumber(), message.getBoardName(), nextStepNumber, messageBlockBuilder.build()));
+        MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD, new BoardUploadBlockMessage(message.getOperationNumber(), message.getBoardName(), nextStepNumber, messageBlockBuilder.build()));
 
         messageBlockBuilder.clear();
 

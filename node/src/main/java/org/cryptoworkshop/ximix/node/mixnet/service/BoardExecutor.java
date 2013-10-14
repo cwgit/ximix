@@ -37,6 +37,12 @@ public class BoardExecutor
     private final Set<String> executing = new HashSet();
     private final List<BoardTask> pending = new LinkedList<>();
 
+    /**
+     * Base constructor.
+     *
+     * @param decoupler a single threaded decoupler.
+     * @param scheduledExecutor a multi-threaded task executor.
+     */
     public BoardExecutor(Executor decoupler, ScheduledExecutorService scheduledExecutor)
     {
         this.decoupler = decoupler;

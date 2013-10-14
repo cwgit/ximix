@@ -16,8 +16,8 @@
 package org.cryptoworkshop.ximix.node.service;
 
 /**
-*
-*/
+ * A socket based identity class for linking nodes with sockets.
+ */
 public class ListeningSocketInfo
 {
     private final int port;
@@ -25,6 +25,14 @@ public class ListeningSocketInfo
     private final String bindAddress;
     private final String name;
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeName the node the contained socket details are for.
+     * @param port the port number to communicate on.
+     * @param backlog the maximum queue length for connections in the final socket.
+     * @param bindAddress the address of the node represented by nodeName.
+     */
     public ListeningSocketInfo(String nodeName, int port, int backlog, String bindAddress)
     {
         this.port = port;

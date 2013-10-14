@@ -24,12 +24,22 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
+/**
+ * A proxy for a board hosting service on another machine.
+ */
 public class RemoteBoardHostingService
     extends BasicNodeService
 {
     private final String nodeName;
     private final CapabilityMessage capabilityMessage;
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context we are associated with.
+     * @param nodeName the name of the node this proxy service represents.
+     * @param capabilityMessage the board hosting capability of the node.
+     */
     public RemoteBoardHostingService(NodeContext nodeContext, String nodeName, CapabilityMessage capabilityMessage)
     {
         super(nodeContext);

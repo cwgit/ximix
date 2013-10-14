@@ -23,6 +23,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.node.core.XimixNodeBuilder;
 
+/**
+ * Main class for starting up a node.
+ */
 public class Main
 {
     public static void main(String[] args)

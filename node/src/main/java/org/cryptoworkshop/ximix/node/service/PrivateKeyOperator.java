@@ -15,7 +15,15 @@
  */
 package org.cryptoworkshop.ximix.node.service;
 
+/**
+ * Base interface for a private key operator.
+ */
 public interface PrivateKeyOperator
 {
+    /**
+     * Return this operator's private secret position in the sharing sequence calculation.
+     *
+     * @return the sequence position of the private secret.
+     */
     int getSequenceNo();
 }

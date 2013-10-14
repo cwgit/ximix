@@ -15,10 +15,14 @@
  */
 package org.cryptoworkshop.ximix.node.service;
 
+/**
+ * An enum representing the available single threaded decouplers in a node.
+ */
 public enum Decoupler
 {
     LISTENER,
     SHARING,
     SERVICES,
-    MONITOR, BOARD_REGISTRY
+    MONITOR,
+    BOARD_REGISTRY
 }

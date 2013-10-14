@@ -17,7 +17,16 @@ package org.cryptoworkshop.ximix.node.service;
 
 import java.util.Map;
 
+/**
+ * General interface that a listener of service statistics conforms to.
+ */
 public interface ServiceStatisticsListener
 {
+    /**
+     * Notify of an update in some service related statistics.
+     *
+     * @param nodeService the service causing the update.
+     * @param details the details of the statistics updated.
+     */
     void statisticsUpdate(NodeService nodeService, Map<String, Object> details);
 }

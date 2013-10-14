@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.node.service;
 
+/**
+ * Carrier class to link service event types with parameters.
+ */
 public class ServiceEvent
 {
     public static enum Type
@@ -25,6 +28,12 @@ public class ServiceEvent
     private final Type type;
     private final Object parameter;
 
+    /**
+     * Base constructor.
+     *
+     * @param type the type of the service event.
+     * @param parameter the parameters required to handle the event.
+     */
     public ServiceEvent(Type type, Object parameter)
     {
         this.type = type;

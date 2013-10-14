@@ -21,14 +21,12 @@ public class CrossSection
     private final Executor decoupler;
     private final EventNotifier eventNotifier;
 
-
     public CrossSection(Executor decoupler, EventNotifier eventNotifier)
     {
         super();
         this.decoupler = decoupler;
         this.eventNotifier = eventNotifier;
     }
-
 
     public Object get(String name, Object def)
     {
@@ -61,7 +59,6 @@ public class CrossSection
         });
 
     }
-
 
     public void increment(String name)
     {

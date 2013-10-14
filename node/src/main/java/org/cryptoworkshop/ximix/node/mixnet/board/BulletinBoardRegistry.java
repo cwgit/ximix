@@ -41,6 +41,9 @@ import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
+/**
+ * Registry for bulletin boards.
+ */
 public class BulletinBoardRegistry
 {
     private final NodeContext nodeContext;
@@ -61,6 +64,13 @@ public class BulletinBoardRegistry
     private Set<String> inTransitBoards = new HashSet<>();
     private Set<String> completedBoards = new HashSet<>();
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context of the node we are associated with.
+     * @param transforms a Map of transforms this node supports.
+     * @param statistics the statistics sampling object to notify of changes.
+     */
     public BulletinBoardRegistry(NodeContext nodeContext, Map<String, Transform> transforms, final CrossSection statistics)
     {
         this.nodeContext = nodeContext;

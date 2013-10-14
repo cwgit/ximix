@@ -29,6 +29,12 @@ public class SerialChallenger
 
     private AtomicInteger counter;
 
+    /**
+     * Base constructor.
+     *
+     * @param size the number of messages on the board we are issuing challenges on.
+     * @param stepNo the number of the step in the shuffling process.
+     */
     public SerialChallenger(Integer size, Integer stepNo)
     {
         this.size = size;

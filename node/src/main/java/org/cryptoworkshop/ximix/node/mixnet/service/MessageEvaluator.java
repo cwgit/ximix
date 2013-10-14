@@ -27,6 +27,9 @@ import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
 
+/**
+ * Utility class for determining whether or not a board related messages can be handled.
+ */
 class MessageEvaluator
 {
     private static final Set<CommandMessage.Type> needToBeHostingType = new HashSet<>();
@@ -59,6 +62,11 @@ class MessageEvaluator
 
     private final BoardIndex boardIndex;
 
+    /**
+     * The capability message representing the board capabilities we wish to evaluate.
+     *
+     * @param capabilityMessage a capability message describing a node's board handling capabilities.
+     */
     MessageEvaluator(CapabilityMessage capabilityMessage)
     {
         this.boardIndex = new BoardIndex(capabilityMessage);

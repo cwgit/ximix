@@ -17,10 +17,24 @@ package org.cryptoworkshop.ximix.node;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The basic Ximix node interface.
+ */
 public interface XimixNode
 {
+    /**
+     * Start the node.
+     */
     void start();
 
+    /**
+     * Shutdown the node, waiting no longer than timeout units.
+     *
+     * @param timeout the amount of units of time to wait.
+     * @param unit the magnitude of a time unit.
+     * @return true if shutdown successfully, false otherwise.
+     * @throws InterruptedException if interrupted while waiting.
+     */
     boolean shutdown(int timeout, TimeUnit unit)
         throws InterruptedException;
 }

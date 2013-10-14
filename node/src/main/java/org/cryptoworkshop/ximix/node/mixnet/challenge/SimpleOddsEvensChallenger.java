@@ -27,6 +27,12 @@ public class SimpleOddsEvensChallenger
     private AtomicInteger counter = new AtomicInteger(0);
     private AtomicBoolean isFirst = new AtomicBoolean(true);
 
+    /**
+     * Base constructor.
+     *
+     * @param size
+     * @param stepNo
+     */
     public SimpleOddsEvensChallenger(Integer size, Integer stepNo)
     {
         super(size, stepNo);

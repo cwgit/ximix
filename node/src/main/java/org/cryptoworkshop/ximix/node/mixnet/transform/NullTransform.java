@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.node.mixnet.transform;
 
+/**
+ * A "do nothing" transform.
+ */
 public class NullTransform
     implements Transform
 {

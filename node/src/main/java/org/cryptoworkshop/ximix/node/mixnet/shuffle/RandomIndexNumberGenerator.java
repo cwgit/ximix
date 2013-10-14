@@ -20,6 +20,10 @@ import java.util.BitSet;
 
 import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
 
+/**
+ * A generator of index numbers that covers a range of 0 to (size - 1). The generator uses an
+ * underlying BitSet to make sure no number is generated twice.
+ */
 public class RandomIndexNumberGenerator
     implements IndexNumberGenerator
 {
@@ -31,6 +35,12 @@ public class RandomIndexNumberGenerator
     private int upper;
     private int lower;
 
+    /**
+     * Base constructor.
+     *
+     * @param size the number of messages on the board we are trying to generate indexes for.
+     * @param random a source of randomness.
+     */
     public RandomIndexNumberGenerator(int size, SecureRandom random)
     {
         this.size = size;

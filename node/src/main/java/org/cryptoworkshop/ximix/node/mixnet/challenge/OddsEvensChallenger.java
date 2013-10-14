@@ -28,6 +28,12 @@ public abstract class OddsEvensChallenger
     protected final int range;
     protected final boolean isOddRange;
 
+    /**
+     * Base constructor.
+     *
+     * @param size the number of messages on the board we are issuing challenges on.
+     * @param stepNo the stepNo in the challenging process.
+     */
     public OddsEvensChallenger(Integer size, Integer stepNo)
     {
         this.stepNo = stepNo;

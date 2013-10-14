@@ -26,6 +26,9 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECConstants;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 
+/**
+ * A transform that can handle multiple columns of EC points in a single row.
+ */
 public class MultiColumnRowTransform
     implements Transform
 {

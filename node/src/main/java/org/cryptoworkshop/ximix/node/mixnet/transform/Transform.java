@@ -15,13 +15,37 @@
  */
 package org.cryptoworkshop.ximix.node.mixnet.transform;
 
+/**
+ * Base interface a transform should conform to.
+ */
 public interface Transform
 {
+    /**
+     * Return the name of the transform.
+     *
+     * @return the transform's name.
+     */
     String getName();
 
+    /**
+     * Initialise the transform.
+     *
+     * @param o an appropriate initialisation object.
+     */
     void init(Object o);
 
+    /**
+     * Transform a message.
+     *
+     * @param message the data representing the message to be transformed.
+     * @return the transformed message as a byte array.
+     */
     byte[] transform(byte[] message);
 
+    /**
+     * Return any data generated during the last transform that could be used to verify the transform later.
+     *
+     * @return data related to the last transform carried out as a byte array.
+     */
     byte[] getLastDetail();
 }

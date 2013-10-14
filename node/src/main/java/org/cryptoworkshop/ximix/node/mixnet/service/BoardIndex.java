@@ -19,6 +19,9 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDetails;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 
+/**
+ * Simple class for providing lookup of board presence based on caoability messages.
+ */
 public class BoardIndex
 {
     private final CapabilityMessage capabilityMessage;

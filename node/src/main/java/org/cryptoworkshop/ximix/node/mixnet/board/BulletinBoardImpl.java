@@ -37,6 +37,9 @@ import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
+/**
+ * Default implementation of a bulletin board.
+ */
 public class BulletinBoardImpl
     implements BulletinBoard
 {

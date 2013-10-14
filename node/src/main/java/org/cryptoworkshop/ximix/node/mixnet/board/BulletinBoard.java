@@ -79,6 +79,11 @@ public interface BulletinBoard
      */
     PostedMessageBlock removeMessages(PostedMessageBlock.Builder blockBuilder);
 
+    /**
+     * Post a block of witnesses to the board's private data.
+     *
+     * @param witnessBlock the witnesses to be posted.
+     */
     void postWitnessBlock(final MessageWitnessBlock witnessBlock);
 
     /**
@@ -86,12 +91,33 @@ public interface BulletinBoard
      */
     void clear();
 
+    /**
+     * Add a backup listener to the board.
+     *
+     * @param bulletinBoardBackupListener the backup listener to add.
+     */
     void addListener(BulletinBoardBackupListener bulletinBoardBackupListener);
 
+    /**
+     * Shutdown the board.
+     */
     void shutdown();
 
+    /**
+     * Return the handler for the passed in listener class.
+     *
+     * @param listenerClass the interface class of listeners of the handler of interest.
+     * @param <T> the type of the interface.
+     * @return the associated ListenerHandler.
+     * @exception IllegalStateException if the listener is not valid.
+     */
     <T> ListenerHandler<T> getListenerHandler(Class<T> listenerClass);
 
+    /**
+     * Add a change listener to the board.
+     *
+     * @param listener the change listener to add.
+     */
     void addListener(BulletinBoardChangeListener listener);
 
     /**

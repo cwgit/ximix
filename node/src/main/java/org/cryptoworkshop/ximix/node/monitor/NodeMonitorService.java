@@ -38,7 +38,7 @@ import org.cryptoworkshop.ximix.node.service.NodeService;
 import org.w3c.dom.Node;
 
 /**
- *
+ * Service class for providing node monitoring data.
  */
 public class NodeMonitorService
     extends BasicNodeService

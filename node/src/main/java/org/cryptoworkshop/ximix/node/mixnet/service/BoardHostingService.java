@@ -72,6 +72,9 @@ import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+ * Service class for hosting bulletin boards.
+ */
 public class BoardHostingService
     extends BasicNodeService
 {
@@ -82,6 +85,12 @@ public class BoardHostingService
     private final Map<String, IndexNumberGenerator> challengers = new HashMap<>();
     private final BoardExecutor boardExecutor;
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context for the node we are in.
+     * @param config source of config information if required.
+     */
     public BoardHostingService(NodeContext nodeContext, Config config)
         throws ConfigException
     {
@@ -367,7 +376,7 @@ public class BoardHostingService
                     public MessageReply call()
                         throws Exception
                     {
-                        nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, getPeerConnection(pAndmMessage.getDestinationNode()), CommandMessage.Type.TRANSFER_TO_BOARD, pAndmMessage));
+                        nodeContext.execute(new TransformShuffleAndMoveTask(nodeContext, boardRegistry, getPeerConnection(pAndmMessage.getDestinationNode()), pAndmMessage));
 
                         return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
                     }
@@ -752,7 +761,7 @@ public class BoardHostingService
             {
                 boardRegistry.moveToTransit(startPandMmessage.getOperationNumber(), startPandMmessage.getBoardName(), startPandMmessage.getStepNumber());
 
-                new TransformShuffleAndMoveTask(nodeContext, boardRegistry, getPeerConnection(startPandMmessage.getDestinationNode()), CommandMessage.Type.TRANSFER_TO_BOARD, startPandMmessage).run();
+                new TransformShuffleAndMoveTask(nodeContext, boardRegistry, getPeerConnection(startPandMmessage.getDestinationNode()), startPandMmessage).run();
             }
             catch (Exception e)
             {
