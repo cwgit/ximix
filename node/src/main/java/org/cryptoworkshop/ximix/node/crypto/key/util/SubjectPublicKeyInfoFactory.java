@@ -26,8 +26,18 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
 
+/**
+ * Factory to create SubjectPublicKeyInfo objects from public keys.
+ */
 public class SubjectPublicKeyInfoFactory
 {
+    /**
+     * Return a SubjectPublicKeyInfo object containing an encoding of BLS public key.
+     *
+     * @param keyParameters the public key to be encoded.
+     * @return a SubjectPublicKeyInfo object containing the public key.
+     * @throws IOException if the public key cannot be encoded.
+     */
     public static SubjectPublicKeyInfo createSubjectPublicKeyInfo(BLS01PublicKeyParameters keyParameters)
         throws IOException
     {

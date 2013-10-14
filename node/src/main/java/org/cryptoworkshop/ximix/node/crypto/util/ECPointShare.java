@@ -23,6 +23,12 @@ import org.bouncycastle.math.ec.ECPoint;
 public class ECPointShare
     extends Share<ECPoint>
 {
+    /**
+     * Base constructor.
+     *
+     * @param sequenceNo the share's sequence number in the sharing process,
+     * @param value the share's value.
+     */
     public ECPointShare(int sequenceNo, ECPoint value)
     {
         super(sequenceNo, value);

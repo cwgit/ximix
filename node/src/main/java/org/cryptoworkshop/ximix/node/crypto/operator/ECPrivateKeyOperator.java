@@ -18,6 +18,9 @@ package org.cryptoworkshop.ximix.node.crypto.operator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
+/**
+ * Base interface for an Elliptic Curve operator.
+ */
 public interface ECPrivateKeyOperator
     extends PrivateKeyOperator
 {

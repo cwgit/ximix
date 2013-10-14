@@ -31,12 +31,21 @@ import org.cryptoworkshop.ximix.node.crypto.signature.ECDSASignerEngine;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
+/**
+ * Service class for perform signing operations in a node.
+ */
 public class NodeSigningService
     extends BasicNodeService
 {
     private final ECDSASignerEngine ecdsaSignerEngine;
     private final BLSSignerEngine blsSignerEngine;
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context for the node we are in.
+     * @param config source of config information if required.
+     */
     public NodeSigningService(NodeContext nodeContext, Config config)
     {
         super(nodeContext);

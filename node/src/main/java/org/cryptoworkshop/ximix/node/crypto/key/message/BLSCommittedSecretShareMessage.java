@@ -29,6 +29,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * Carrier class for a BLS secret share with a commitment.
+ */
 public class BLSCommittedSecretShareMessage
     extends ASN1Object
 {
@@ -38,6 +41,15 @@ public class BLSCommittedSecretShareMessage
     private final Element pK;
     private final Element[] commitmentFactors;
 
+    /**
+     * Base constructor.
+     *
+     * @param index sequence number of the share.
+     * @param value share value.
+     * @param witness witness value associated with share.
+     * @param commitmentFactors commitment factors associated with share.
+     * @param pK the public value associated with the secret.
+     */
     public BLSCommittedSecretShareMessage(int index, BigInteger value, BigInteger witness, Element[] commitmentFactors, Element pK)
     {
         this.index = index;

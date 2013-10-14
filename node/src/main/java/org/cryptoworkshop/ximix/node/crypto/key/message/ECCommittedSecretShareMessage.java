@@ -28,6 +28,9 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
+/**
+ * Carrier class for a BLS secret share with a commitment.
+ */
 public class ECCommittedSecretShareMessage
     extends ASN1Object
 {
@@ -38,6 +41,16 @@ public class ECCommittedSecretShareMessage
     private final ECPoint q;
     private final ECPoint[] qCommitmentFactors;
 
+
+    /**
+     * Base constructor.
+     *
+     * @param index sequence number of the share.
+     * @param value share value.
+     * @param witness witness value associated with share.
+     * @param commitmentFactors commitment factors associated with share.
+     * @param q the public value associated with the secret.
+     */
     public ECCommittedSecretShareMessage(int index, BigInteger value, BigInteger witness, ECPoint[] commitmentFactors, ECPoint q, ECPoint[] qCommitmentFactors)
     {
         this.index = index;

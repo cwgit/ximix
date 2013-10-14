@@ -26,6 +26,9 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.node.crypto.util.Participant;
 
+/**
+ * Message carrier for instructions to create an ECDSA partial signature.
+ */
 public class ECDSAPartialCreateMessage
     extends ASN1Object
 {
@@ -34,7 +37,7 @@ public class ECDSAPartialCreateMessage
     private final Participant[] nodesToUse;
     private final BigInteger e;
 
-    public ECDSAPartialCreateMessage(String sigID, String keyID, BigInteger e, BigInteger n, Participant[] nodesToUse)
+    public ECDSAPartialCreateMessage(String sigID, String keyID, BigInteger e, Participant[] nodesToUse)
     {
         this.sigID = sigID;
         this.keyID = keyID;

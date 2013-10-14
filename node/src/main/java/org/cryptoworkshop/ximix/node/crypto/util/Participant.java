@@ -15,11 +15,20 @@
  */
 package org.cryptoworkshop.ximix.node.crypto.util;
 
+/**
+ * Identifier class for a participant in a threshold sharing process.
+ */
 public class Participant
 {
     private final int sequenceNo;
     private final String name;
 
+    /**
+     * Base constructor.
+     *
+     * @param sequenceNo the participant's sequence number in the sharing process,
+     * @param name the name of the participant.
+     */
     public Participant(int sequenceNo, String name)
     {
         this.sequenceNo = sequenceNo;

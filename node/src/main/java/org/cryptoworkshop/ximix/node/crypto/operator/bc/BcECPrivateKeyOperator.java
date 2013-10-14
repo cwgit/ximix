@@ -21,6 +21,9 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.node.crypto.operator.ECPrivateKeyOperator;
 
+/**
+ * An Elliptic Curve private key operator
+ */
 public class BcECPrivateKeyOperator
     implements ECPrivateKeyOperator
 {
@@ -28,6 +31,13 @@ public class BcECPrivateKeyOperator
     private final ECDomainParameters domainParameters;
     private final BigInteger privateKeyValue;
 
+    /**
+     * Base constructor.
+     *
+     * @param sequenceNo the step in the threshold sequence this private value is associated with.
+     * @param domainParameters the domain parameters associated with this operator.
+     * @param privateKeyValue the private key value for this sequence step.
+     */
     public BcECPrivateKeyOperator(int sequenceNo, ECDomainParameters domainParameters, BigInteger privateKeyValue)
     {
         this.sequenceNo = sequenceNo;

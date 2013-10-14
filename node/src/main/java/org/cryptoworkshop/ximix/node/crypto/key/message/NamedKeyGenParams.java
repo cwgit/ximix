@@ -42,6 +42,16 @@ public class NamedKeyGenParams
     private final List<String> nodesToUse;
     private final Algorithm algorithm;
 
+    /**
+     * Base constructor.
+     *
+     * @param keyID ID of the key to be generated.
+     * @param algorithm algorithm the key is to be generated for.
+     * @param h the h value for the splitting algorithm.
+     * @param domainParameters identifier for the domain parameters to use.
+     * @param threshold the minimum threshold for simple private key operations.
+     * @param nodesToUse the names of the nodes to take part in the sharing process.
+     */
     public NamedKeyGenParams(String keyID, Algorithm algorithm, BigInteger h, String domainParameters, int threshold, List<String> nodesToUse)
     {
         super(NAMED_PARAMETER_SET);

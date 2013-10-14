@@ -36,6 +36,9 @@ import org.cryptoworkshop.ximix.node.crypto.key.message.BLSCommittedSecretShareM
 import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
+/**
+ * A generator for BLS keys.
+ */
 public class BLSKeyPairGenerator
 {
     public static enum Type
@@ -48,6 +51,11 @@ public class BLSKeyPairGenerator
 
     private final NodeContext nodeContext;
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the node context this generator is associated with.
+     */
     public BLSKeyPairGenerator(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;

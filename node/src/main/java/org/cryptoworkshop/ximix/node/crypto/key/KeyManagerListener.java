@@ -15,7 +15,16 @@
  */
 package org.cryptoworkshop.ximix.node.crypto.key;
 
+/**
+ * Basic interface describing a listener for a KeyManager
+ */
 public interface KeyManagerListener
 {
+    /**
+     * Signal a key has been added.
+     *
+     * @param keyManager the key manager causing this event.
+     * @param keyID the ID of the key that was added.
+     */
     void keyAdded(KeyManager keyManager, String keyID);
 }

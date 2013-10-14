@@ -22,6 +22,9 @@ import it.unisa.dia.gas.jpbc.Element;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import org.cryptoworkshop.ximix.node.crypto.operator.BLSPrivateKeyOperator;
 
+/**
+ * A BLS private key operator.
+ */
 public class JpbcPrivateKeyOperator
     implements BLSPrivateKeyOperator
 {
@@ -29,6 +32,13 @@ public class JpbcPrivateKeyOperator
     private final BLS01Parameters domainParameters;
     private final Element privateKeyValue;
 
+    /**
+     * Base constructor.
+     *
+     * @param sequenceNo the step in the threshold sequence this private value is associated with.
+     * @param domainParameters the domain parameters associated with this operator.
+     * @param privateKeyValue the private key value for this sequence step.
+     */
     public JpbcPrivateKeyOperator(int sequenceNo, BLS01Parameters domainParameters, BigInteger privateKeyValue)
     {
         this.sequenceNo = sequenceNo;

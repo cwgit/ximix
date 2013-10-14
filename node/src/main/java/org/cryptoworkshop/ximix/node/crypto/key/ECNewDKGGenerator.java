@@ -31,16 +31,25 @@ import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMe
 import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
 
+/**
+ * A New-DKG threshold key pair generator for Elliptic Curve keys.
+ */
 public class ECNewDKGGenerator
     implements ThresholdKeyPairGenerator
 {
     private final Algorithm algorithm;
     private final ECKeyManager keyManager;
 
-    public ECNewDKGGenerator(Algorithm algorithm, ECKeyManager keyManaged)
+    /**
+     * Base constructor.
+     *
+     * @param algorithm the algorithm the BLS keys generated are for.
+     * @param keyManager the keyManager to manage the generated key pair.
+     */
+    public ECNewDKGGenerator(Algorithm algorithm, ECKeyManager keyManager)
     {
         this.algorithm = algorithm;
-        keyManager = keyManaged;
+        this.keyManager = keyManager;
     }
 
     public ECDomainParameters getParameters(String keyID)

@@ -23,6 +23,12 @@ import it.unisa.dia.gas.jpbc.Element;
 public class ElementShare
     extends Share<Element>
 {
+    /**
+     * Base constructor.
+     *
+     * @param sequenceNo the share's sequence number in the sharing process,
+     * @param value the share's value.
+     */
     public ElementShare(int sequenceNo, Element value)
     {
         super(sequenceNo, value);

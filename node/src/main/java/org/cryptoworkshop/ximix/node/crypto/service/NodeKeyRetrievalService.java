@@ -28,9 +28,18 @@ import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
+/**
+ * Service class for perform key retrieval operations in a node.
+ */
 public class NodeKeyRetrievalService
     extends BasicNodeService
 {
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context for the node we are in.
+     * @param config source of config information if required.
+     */
     public NodeKeyRetrievalService(NodeContext nodeContext, Config config)
     {
         super(nodeContext);

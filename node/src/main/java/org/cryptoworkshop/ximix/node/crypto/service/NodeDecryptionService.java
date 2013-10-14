@@ -36,9 +36,18 @@ import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
+/**
+ * Service class for perform decryption operations in a node.
+ */
 public class NodeDecryptionService
     extends BasicNodeService
 {
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context for the node we are in.
+     * @param config source of config information if required.
+     */
     public NodeDecryptionService(NodeContext nodeContext, Config config)
     {
         super(nodeContext);

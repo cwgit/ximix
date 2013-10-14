@@ -15,12 +15,23 @@
  */
 package org.cryptoworkshop.ximix.node.crypto.util;
 
+/**
+ * Base class for a share.
+ *
+ * @param <T> the value type the share is associated with.
+ */
 public abstract class Share<T>
 {
     private final int sequenceNo;
     private final T value;
 
-    public Share(int sequenceNo, T value)
+    /**
+     * Base constructor.
+     *
+     * @param sequenceNo the share's sequence number in the sharing process,
+     * @param value the share's value.
+     */
+    protected Share(int sequenceNo, T value)
     {
         this.sequenceNo = sequenceNo;
         this.value = value;

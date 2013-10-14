@@ -1,9 +1,17 @@
 package org.cryptoworkshop.ximix.node.crypto.signature;
 
+/**
+ * Object based key to identify particular signing operations.
+ */
 public class SigID
 {
     private final String id;
 
+    /**
+     * Base constructor.
+     *
+     * @param id  an ID associated with a signing operation.
+     */
     public SigID(String id)
     {
         this.id = id;

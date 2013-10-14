@@ -27,6 +27,9 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.node.crypto.util.Participant;
 
+/**
+ * Message carrier for instructions to create a BLS partial signature.
+ */
 public class BLSPartialCreateMessage
     extends ASN1Object
 {

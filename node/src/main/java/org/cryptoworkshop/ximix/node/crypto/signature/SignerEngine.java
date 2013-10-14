@@ -22,11 +22,20 @@ import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator
 import org.cryptoworkshop.ximix.node.crypto.util.Participant;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
+/**
+ * Base class for engine classes that generate threshold signatures.
+ */
 public abstract class SignerEngine
 {
     protected final Algorithm algorithm;
     protected final NodeContext nodeContext;
 
+    /**
+     * Base constrcutor.
+     *
+     * @param algorithm the algorithm this engine is associated with.
+     * @param nodeContext the context for the node this engine is associated with.
+     */
     protected SignerEngine(Algorithm algorithm, NodeContext nodeContext)
     {
         this.algorithm = algorithm;

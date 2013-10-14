@@ -15,7 +15,19 @@
  */
 package org.cryptoworkshop.ximix.node.crypto.util;
 
+/**
+ * Listener interface for events in a share map.
+ *
+ * @param <K> the type of the key used to index the map.
+ * @param <V> the value type associated with the shares in the map.
+ */
 public interface ShareMapListener<K, V>
 {
+    /**
+     * Notify that a share is fully built.
+     *
+     * @param shareMap the map containing the share.
+     * @param id the share's key in the map.
+     */
     public void shareCompleted(ShareMap<K, V> shareMap, K id);
 }

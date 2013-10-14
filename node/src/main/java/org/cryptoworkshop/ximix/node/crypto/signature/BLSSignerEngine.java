@@ -26,6 +26,9 @@ import org.cryptoworkshop.ximix.node.crypto.util.Participant;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
+/**
+ * Engine class for generating threshold BLS signatures.
+ */
 public class BLSSignerEngine
     extends SignerEngine
 {
@@ -39,6 +42,11 @@ public class BLSSignerEngine
 
     private final AtomicLong idCounter = new AtomicLong(1);
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context for the node we are associated with.
+     */
     public BLSSignerEngine(NodeContext nodeContext)
     {
         super(Algorithm.BLS, nodeContext);

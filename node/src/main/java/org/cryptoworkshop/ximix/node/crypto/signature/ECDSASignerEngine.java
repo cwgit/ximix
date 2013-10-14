@@ -61,7 +61,7 @@ import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
 /**
- * Threshold ECDSA signer based on "A Robust Threshold Elliptic Curve Digital Signature Providing a New Verifiable Secret Sharing Scheme" by Ibrahim, Ali, Ibrahim, and El-sawi.
+ * Engine class providing threshold ECDSA signer based on "A Robust Threshold Elliptic Curve Digital Signature Providing a New Verifiable Secret Sharing Scheme" by Ibrahim, Ali, Ibrahim, and El-sawi.
  * See also "Theory and Practice of Verifiable Secret Sharing" by Rosario Gennaro, Chapter 4.
  */
 public class ECDSASignerEngine
@@ -101,6 +101,11 @@ public class ECDSASignerEngine
         STORE_P
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context for the node we are associated with.
+     */
     public ECDSASignerEngine(NodeContext nodeContext)
     {
         super(Algorithm.ECDSA, nodeContext);
@@ -166,7 +171,7 @@ public class ECDSASignerEngine
 
                     r = rMap.get(sigID);
 
-                    s = accumulateBigInteger(participants, ECDSASignerEngine.Type.PRIVATE_KEY_SIGN, new ECDSAPartialCreateMessage(sigID.getID(), ecdsaCreate.getKeyID(), e, n, participants), n);
+                    s = accumulateBigInteger(participants, ECDSASignerEngine.Type.PRIVATE_KEY_SIGN, new ECDSAPartialCreateMessage(sigID.getID(), ecdsaCreate.getKeyID(), e, participants), n);
                 }
                 while (s.equals(BigInteger.ZERO));
 

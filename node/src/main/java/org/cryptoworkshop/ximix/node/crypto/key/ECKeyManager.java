@@ -90,6 +90,9 @@ import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
+/**
+ * A manager for Elliptic Curve keys stored in a node.
+ */
 public class ECKeyManager
     implements KeyManager
 {
@@ -104,6 +107,11 @@ public class ECKeyManager
     private final ListenerHandler<KeyManagerListener> listenerHandler;
     private final KeyManagerListener notifier;
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the node context this manager is associated with.
+     */
     public ECKeyManager(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;

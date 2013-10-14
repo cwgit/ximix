@@ -27,6 +27,12 @@ import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
+/**
+ * Latched map for tracking and accumulating share values.
+ *
+ * @param <K> the type of the key used to index the map.
+ * @param <V> the value type associated with the shares in the map.
+ */
 public class ShareMap<K, V>
 {
     private final Map<K, CountDownLatch> latchMap = new HashMap<>();

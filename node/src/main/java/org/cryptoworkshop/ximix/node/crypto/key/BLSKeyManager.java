@@ -96,6 +96,9 @@ import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
+/**
+ * A manager for BLS keys stored in a node.
+ */
 public class BLSKeyManager
     implements KeyManager
 {
@@ -110,6 +113,11 @@ public class BLSKeyManager
     private final ListenerHandler<KeyManagerListener> listenerHandler;
     private final KeyManagerListener notifier;
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the node context this manager is associated with.
+     */
     public BLSKeyManager(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;

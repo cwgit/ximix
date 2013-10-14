@@ -35,6 +35,9 @@ import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMe
 import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
+/**
+ * A generator for Elliptic Curve keys.
+ */
 public class ECKeyPairGenerator
     extends KeyPairGenerator
 {
@@ -48,6 +51,11 @@ public class ECKeyPairGenerator
         STORE
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the node context this generator is associated with.
+     */
     public ECKeyPairGenerator(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;

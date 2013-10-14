@@ -30,9 +30,18 @@ import org.cryptoworkshop.ximix.node.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
+/**
+ * Service class for perform key generation operations in a node.
+ */
 public class NodeKeyGenerationService
     extends BasicNodeService
 {
+    /**
+     * Base constructor.
+     *
+     * @param nodeContext the context for the node we are in.
+     * @param config source of config information if required.
+     */
     public NodeKeyGenerationService(NodeContext nodeContext, Config config)
     {
         super(nodeContext);

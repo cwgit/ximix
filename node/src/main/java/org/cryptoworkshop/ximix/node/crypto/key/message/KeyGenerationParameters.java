@@ -19,6 +19,9 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Sequence;
 
+/**
+ * Base class for carriers of key generation parameters.
+ */
 public abstract class KeyGenerationParameters
     extends ASN1Object
 {
@@ -26,6 +29,11 @@ public abstract class KeyGenerationParameters
 
     private final int type;
 
+    /**
+     * Base constructor.
+     *
+     * @param type the key generation parameter type.
+     */
     protected KeyGenerationParameters(int type)
     {
         this.type = type;

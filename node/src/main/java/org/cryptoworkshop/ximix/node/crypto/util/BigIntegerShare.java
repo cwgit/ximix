@@ -23,6 +23,12 @@ import java.math.BigInteger;
 public class BigIntegerShare
     extends Share<BigInteger>
 {
+    /**
+     * Base constructor.
+     *
+     * @param sequenceNo the share's sequence number in the sharing process,
+     * @param value the share's value.
+     */
     public BigIntegerShare(int sequenceNo, BigInteger value)
     {
         super(sequenceNo, value);

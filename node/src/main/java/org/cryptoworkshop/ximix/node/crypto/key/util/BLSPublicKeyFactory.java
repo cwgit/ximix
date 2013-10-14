@@ -31,13 +31,28 @@ import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
+/**
+ * Factor for producing BLS keys from SubjectPublicKeyInfo objects.
+ */
 public class BLSPublicKeyFactory
 {
+    /**
+     * Create BLS01PublicKeyParameters from an ASN.1 encoding of a SubjectPublicKeyInfo object.
+     *
+     * @param encoding the byte array representing the ASN.1 encoding.
+     * @return a BLS public key.
+     */
     public static BLS01PublicKeyParameters createKey(byte[] encoding)
     {
         return createKey(SubjectPublicKeyInfo.getInstance(encoding));
     }
 
+    /**
+     * Create BLS01PublicKeyParameters from an ASN.1 encoding of a SubjectPublicKeyInfo object.
+     *
+     * @param publicKeyInfo the info structure containing the BLS public key.
+     * @return a BLS public key.
+     */
     public static BLS01PublicKeyParameters createKey(SubjectPublicKeyInfo publicKeyInfo)
     {
         AlgorithmIdentifier   algId = publicKeyInfo.getAlgorithm();

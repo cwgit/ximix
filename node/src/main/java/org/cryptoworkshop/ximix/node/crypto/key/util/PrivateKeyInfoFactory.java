@@ -13,8 +13,19 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
 
+/**
+ * Factory to create PrivateKeyInfo objects from private keys.
+ */
 public class PrivateKeyInfoFactory
 {
+    /**
+     * Return a PrivateKeyInfo object containing an encoding of BLS private key.
+     *
+     * @param value the private value associated with the private key.
+     * @param parameters the parameters associated with the private key.
+     * @return a PrivateKeyInfo object containing the value and parameters.
+     * @throws IOException if the private key cannot be encoded.
+     */
     public static PrivateKeyInfo createPrivateKeyInfo(BigInteger value, BLS01Parameters parameters)
         throws IOException
     {

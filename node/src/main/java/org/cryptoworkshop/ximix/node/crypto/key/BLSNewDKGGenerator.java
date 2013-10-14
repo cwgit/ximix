@@ -31,16 +31,25 @@ import org.cryptoworkshop.ximix.node.crypto.key.message.BLSCommittedSecretShareM
 import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
 
+/**
+ * A New-DKG threshold key pair generator for BLS keys.
+ */
 public class BLSNewDKGGenerator
     implements ThresholdKeyPairGenerator
 {
     private final Algorithm algorithm;
     private final BLSKeyManager keyManager;
 
-    public BLSNewDKGGenerator(Algorithm algorithm, BLSKeyManager keyManaged)
+    /**
+     * Base constructor.
+     *
+     * @param algorithm the algorithm the BLS keys generated are for.
+     * @param keyManager the keyManager to manage the generated key pair.
+     */
+    public BLSNewDKGGenerator(Algorithm algorithm, BLSKeyManager keyManager)
     {
         this.algorithm = algorithm;
-        keyManager = keyManaged;
+        this.keyManager = keyManager;
     }
 
     public BLS01Parameters getParameters(String keyID)
