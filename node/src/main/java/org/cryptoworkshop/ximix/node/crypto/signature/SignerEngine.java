@@ -122,7 +122,7 @@ public abstract class SignerEngine
             }
         }
 
-        return value;
+        return value.normalize();
     }
 
     protected Element accumulateElement(Participant[] nodes, Enum fetchOperatorType, ASN1Encodable request, Pairing pairing, BigInteger fieldSize)

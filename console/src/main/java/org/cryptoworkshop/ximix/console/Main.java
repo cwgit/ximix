@@ -31,7 +31,7 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 
 /**
- *
+ *  Main driver for starting up the browser based console.
  */
 public class Main
 {

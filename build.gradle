@@ -22,8 +22,8 @@ configurations {
 }
 
 dependencies {
-    jacoco 'org.jacoco:org.jacoco.agent:0.6.2.201302030002'
-    jacocoant 'org.jacoco:org.jacoco.ant:0.6.2.201302030002'
+    jacoco 'org.jacoco:org.jacoco.agent:0.6.2.+'
+    jacocoant 'org.jacoco:org.jacoco.ant:0.6.2.+'
     antjunit 'org.apache.ant:ant-junit:1.8.4'
 }
 
@@ -44,7 +44,7 @@ allprojects {
     dependencies {
         compile fileTree(dir: new File(rootDir, 'libs'), include: '*.jar')
         compile 'org.jacoco:org.jacoco.agent:0.6.2.201302030002'
-        codeCoverage group: 'org.jacoco', name: 'org.jacoco.agent', version: '0.6.2.201302030002', classifier: 'runtime'
+        codeCoverage group: 'org.jacoco', name: 'org.jacoco.agent', version: '0.6.2.+', classifier: 'runtime'
     }
 
     test {
@@ -109,10 +109,10 @@ project(':console') {
     dependencies {
         compile project(':common')
         compile project(':node')
-        compile 'org.eclipse.jetty:jetty-server:9.0.3.v20130506'
-        compile 'com.fasterxml.jackson.core:jackson-core:2.2.0'
-        compile 'com.fasterxml.jackson.core:jackson-databind:2.2.0'
-        compile 'com.fasterxml.jackson.core:jackson-annotations:2.2.0'
+        compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '9.0.4.+'
+        compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.2.0'
+        compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.2.0'
+        compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.2.0'
     }
     jar {
         baseName= rootProject.name+"-console";
@@ -201,11 +201,11 @@ task fetch_libs << {
     ['jackson-annotations-2.2.0.jar',
             'jackson-core-2.2.0.jar',
             'jackson-databind-2.2.0.jar',
-            'jetty-http-9.0.4.v20130625.jar',
-            'jetty-io-9.0.4.v20130625.jar',
-            'jetty-server-9.0.4.v20130625.jar',
-            'jetty-util-9.0.4.v20130625.jar',
-            'javax.servlet-3.0.0.v201112011016.jar'
+            'jetty-http-9.0.4.jar',
+            'jetty-io-9.0.4.jar',
+            'jetty-server-9.0.4.jar',
+            'jetty-util-9.0.4.jar',
+            'javax.servlet-3.0.0.jar'
     ].each { i ->
         fetchFile(cryptoWorkshopLibsPrefix + "/" + i, root);
     }

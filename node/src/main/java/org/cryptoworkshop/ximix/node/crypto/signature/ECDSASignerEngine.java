@@ -335,10 +335,10 @@ public class ECDSASignerEngine
             }
             while (k.equals(BigInteger.ZERO) || k.compareTo(n) >= 0);
 
-            ECPoint p = domainParams.getG().multiply(k);
+            ECPoint p = domainParams.getG().multiply(k).normalize();
 
             // 5.3.3
-            BigInteger x = p.getX().toBigInteger();
+            BigInteger x = p.getAffineXCoord().toBigInteger();
 
             r = x.mod(n);
         }
@@ -407,7 +407,7 @@ public class ECDSASignerEngine
 
         ECPoint p = accumulateECPoint(ecdsaCreate.getNodesToUse(), Type.FETCH_P, new ECDSAFetchMessage(ecdsaCreate.getSigID(), ecdsaCreate.getKeyID(), ecdsaCreate.getNodesToUse()), domainParams.getCurve(), domainParams.getN());
         // 5.3.3
-        BigInteger x = p.getX().toBigInteger();
+        BigInteger x = p.getAffineXCoord().toBigInteger();
         BigInteger r = x.mod(domainParams.getN());
 
         rMap.put(sigID, r);
