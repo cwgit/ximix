@@ -43,7 +43,7 @@ allprojects {
 
     dependencies {
         compile fileTree(dir: new File(rootDir, 'libs'), include: '*.jar')
-        compile 'org.jacoco:org.jacoco.agent:0.6.2.201302030002'
+        compile 'org.jacoco:org.jacoco.agent:0.6.2.+'
         codeCoverage group: 'org.jacoco', name: 'org.jacoco.agent', version: '0.6.2.+', classifier: 'runtime'
     }
 
