@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.client.connection;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -120,6 +121,22 @@ public class XimixRegistrarFactory
         throws ConfigException, FileNotFoundException
     {
         return createAdminServiceRegistrar(new Config(configFile), eventNotifier);
+    }
+
+    /**
+     * Create a privileged registrar that can create privileged services using the configuration in configStream. A privileged user
+     * can perform any operations on the Ximix including download, decryption and shuffling.
+     *
+     * @param configStream an input stream containing the Ximix configuration to use.
+     * @param eventNotifier notifier to be used in case of error messages or warnings.
+     * @return a XimixRegistrar that can be used to discover services.
+     * @throws ConfigException if there is an error in the configuration.
+     * @throws FileNotFoundException if the File object configFile is a reference to file that does not exist.
+     */
+    public static XimixRegistrar createAdminServiceRegistrar(InputStream configStream, EventNotifier eventNotifier)
+        throws ConfigException, FileNotFoundException
+    {
+        return createAdminServiceRegistrar(new Config(configStream), eventNotifier);
     }
 
     /**

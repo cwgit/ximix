@@ -25,13 +25,13 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
 /**
- * Carrier message for the upload of single message to the end of a board.
+ * Carrier message client upload of one or more messages to the end of a board.
  */
 public class BoardUploadMessage
     extends ASN1Object
 {
     private final String boardName;
-    private final byte[] data;
+    private final byte[][] data;
 
     /**
      * Base constructor.
@@ -41,6 +41,17 @@ public class BoardUploadMessage
      */
     public BoardUploadMessage(String boardName, byte[] data)
     {
+        this(boardName, new byte[][] { data });
+    }
+
+    /**
+     * Block constructor.
+     *
+     * @param boardName the name of board the messages are destined for.
+     * @param data an array of the message data.
+     */
+    public BoardUploadMessage(String boardName, byte[][] data)
+    {
         this.boardName = boardName;
         this.data = data.clone();
     }
@@ -48,7 +59,15 @@ public class BoardUploadMessage
     private BoardUploadMessage(ASN1Sequence seq)
     {
         this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.data = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
+
+        ASN1Sequence dataBlock = ASN1Sequence.getInstance(seq.getObjectAt(1));
+
+        this.data = new byte[dataBlock.size()][];
+
+        for (int i = 0; i != dataBlock.size(); i++)
+        {
+            data[i] = ASN1OctetString.getInstance(dataBlock.getObjectAt(i)).getOctets();
+        }
     }
 
     public static final BoardUploadMessage getInstance(Object o)
@@ -71,7 +90,15 @@ public class BoardUploadMessage
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(new DERUTF8String(boardName));
-        v.add(new DEROctetString(data));
+
+        ASN1EncodableVector dataV = new ASN1EncodableVector();
+
+        for (int i = 0; i != data.length; i++)
+        {
+            dataV.add(new DEROctetString(data[i]));
+        }
+
+        v.add(new DERSequence(dataV));
 
         return new DERSequence(v);
     }
@@ -81,7 +108,7 @@ public class BoardUploadMessage
         return boardName;
     }
 
-    public byte[] getData()
+    public byte[][] getData()
     {
         return data;
     }

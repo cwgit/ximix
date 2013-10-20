@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -216,6 +217,12 @@ class ClientCommandService
         {
             eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on board creation: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public Set<String> getNodeNames()
+    {
+        return Collections.unmodifiableSet(new HashSet<String>(connection.getActiveNodeNames()));
     }
 
     @Override

@@ -27,9 +27,19 @@ public interface UploadService
      * Upload the passed in message to the board boardName.
      *
      * @param boardName the name of the board to upload to.
-     * @param message a byte[] representing an encoding of the message.
+     * @param message a byte[] representing an encoding of the message to be uploaded.
      * @throws ServiceConnectionException
      */
     void uploadMessage(String boardName, byte[] message)
+        throws ServiceConnectionException;
+
+    /**
+     * Upload a batch of messages to the board boardName.
+     *
+     * @param boardName the name of the board to upload to.
+     * @param messages a array of byte[] representing encodings of the messages to be uploaded.
+     * @throws ServiceConnectionException
+     */
+    void uploadMessages(String boardName, byte[][] messages)
         throws ServiceConnectionException;
 }

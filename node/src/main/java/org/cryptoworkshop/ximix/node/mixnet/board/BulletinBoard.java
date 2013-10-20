@@ -64,6 +64,13 @@ public interface BulletinBoard
     void postMessage(final byte[] message);
 
     /**
+     * Post messages to the end of the board.
+     *
+     * @param messages messages to be posted.
+     */
+    void postMessages(final byte[][] messages);
+
+    /**
      * Replace or add a block of messages by index.
      *
      * @param messageBlock the block of messages to be added/replaced.

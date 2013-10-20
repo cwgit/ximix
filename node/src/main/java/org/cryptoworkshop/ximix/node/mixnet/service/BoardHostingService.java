@@ -457,7 +457,7 @@ public class BoardHostingService
                     @Override
                     public MessageReply call()
                     {
-                        boardRegistry.getBackupBoard(uploadIndexedMessage.getBoardName()).postMessage(uploadIndexedMessage.getData());
+                        boardRegistry.getBackupBoard(uploadIndexedMessage.getBoardName()).postMessages(uploadIndexedMessage.getData());
                         return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
                     }
                 });
@@ -591,7 +591,16 @@ public class BoardHostingService
                             return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(uploadMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
                         }
 
-                        boardRegistry.getBoard(uploadMessage.getBoardName()).postMessage(uploadMessage.getData());
+                        byte[][] messages = uploadMessage.getData();
+
+                        if (messages.length == 1)
+                        {
+                            boardRegistry.getBoard(uploadMessage.getBoardName()).postMessage(messages[0]);
+                        }
+                        else
+                        {
+                            boardRegistry.getBoard(uploadMessage.getBoardName()).postMessages(messages);
+                        }
 
                         return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
                     }

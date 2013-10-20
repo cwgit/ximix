@@ -52,4 +52,16 @@ class ClientUploadService
             throw new ServiceConnectionException("message failed: " + DERUTF8String.getInstance(reply.getPayload()).getString());
         }
     }
+
+    @Override
+    public void uploadMessages(String boardName, byte[][] messages)
+        throws ServiceConnectionException
+    {
+        MessageReply reply = connection.sendMessage(ClientMessage.Type.UPLOAD_TO_BOARD, new BoardUploadMessage(boardName, messages));
+
+        if (reply.getType() != MessageReply.Type.OKAY)
+        {
+            throw new ServiceConnectionException("message failed: " + DERUTF8String.getInstance(reply.getPayload()).getString());
+        }
+    }
 }

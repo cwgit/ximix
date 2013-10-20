@@ -190,6 +190,27 @@ public class BulletinBoardImpl
         changeNotifier.messagesAdded(this, 1);
     }
 
+    public void postMessages(final byte[][] messages)
+    {
+
+        int baseIndex = nextIndex.getAndIncrement();
+
+        boardMap.put(baseIndex, messages[0]);
+
+        for (int i = 1; i != messages.length; i++)
+        {
+            int index = nextIndex.getAndIncrement();
+
+            boardMap.put(index, messages[i]);
+        }
+
+        boardDB.commit();
+
+        backupNotifier.messagesPosted(this, baseIndex, messages);
+
+        changeNotifier.messagesAdded(this, messages.length);
+    }
+
     @Override
     public void postMessageBlock(PostedMessageBlock messageBlock)
     {

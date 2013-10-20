@@ -566,6 +566,29 @@ public class BulletinBoardRegistry
             });
         }
 
+        @Override
+        public void messagesPosted(final BulletinBoard bulletinBoard, final int startIndex, final byte[][] messages)
+        {
+                        // TODO: there needs to be an initialisation phase to make sure the backup board is in sync
+            nodeContext.getScheduledExecutor().execute(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+
+                        MessageReply reply = nodeContext.getPeerMap().get(backUpHost).sendMessage(CommandMessage.Type.TRANSFER_TO_BACKUP_BOARD, new BoardUploadIndexedMessage(bulletinBoard.getName(), startIndex, messages));
+                        checkForError(reply);
+                    }
+                    catch (ServiceConnectionException e)
+                    {
+                        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Exception on post to backup.", e);
+                    }
+                }
+            });
+        }
+
         private void checkForError(MessageReply reply)
         {
             if (reply.getType() != MessageReply.Type.OKAY)

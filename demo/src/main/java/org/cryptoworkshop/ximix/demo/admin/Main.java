@@ -81,8 +81,6 @@ public class Main
     public static void main(String[] args)
         throws Exception
     {
-        SecureRandom random = new SecureRandom();
-
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(new File(args[0]), new EventNotifier()
         {
             @Override

@@ -15,6 +15,8 @@
  */
 package org.cryptoworkshop.ximix.client;
 
+import java.util.Set;
+
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 
 /**
@@ -23,6 +25,15 @@ import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 public interface QueryService
     extends Service
 {
+    /**
+     * Return a list of the currently available nodes.
+     *
+     * @return a list of active node names.
+     * @exception org.cryptoworkshop.ximix.client.connection.ServiceConnectionException in case of error.
+     */
+    Set<String> getNodeNames()
+        throws ServiceConnectionException;
+
     /**
      * Return true if the board with boardName exists in the network, false otherwise.
      *

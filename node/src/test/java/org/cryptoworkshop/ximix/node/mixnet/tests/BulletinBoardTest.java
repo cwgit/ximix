@@ -50,6 +50,16 @@ public class BulletinBoardTest
                 TestCase.assertTrue(Arrays.equals(message, messages.get(t++)));
                 uploadLatch.countDown();
             }
+
+            @Override
+            public void messagesPosted(BulletinBoard bulletinBoard, int startIndex, byte[][] messageBatch)
+            {
+                for (int i = 0; i != messageBatch.length; i++)
+                {
+                    TestCase.assertTrue(Arrays.equals(messageBatch[i], messages.get(t++)));
+                    uploadLatch.countDown();
+                }
+            }
         });
 
         board.clear();

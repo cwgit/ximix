@@ -33,19 +33,31 @@ public class BoardUploadIndexedMessage
 {
     private final String boardName;
     private final int index;
-    private final byte[] data;
+    private final byte[][] data;
 
     /**
      * Base constructor.
      *
      * @param boardName the name of board the message is destined for.
-     * @param indexNumbder the index number the message is to reside out.
+     * @param index the index number of the message.
      * @param data the message data.
      */
-    public BoardUploadIndexedMessage(String boardName, int indexNumbder, byte[] data)
+    public BoardUploadIndexedMessage(String boardName, int index, byte[] data)
+    {
+        this(boardName, index, new byte[][] { data });
+    }
+
+    /**
+     * Block constructor.
+     *
+     * @param boardName the name of board the messages are destined for.
+     * @param startIndex the start index for the message block.
+     * @param data an array of the message data.
+     */
+    public BoardUploadIndexedMessage(String boardName, int startIndex, byte[][] data)
     {
         this.boardName = boardName;
-        this.index = indexNumbder;
+        this.index = startIndex;
         this.data = data.clone();
     }
 
@@ -53,12 +65,20 @@ public class BoardUploadIndexedMessage
     {
         this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
         this.index = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue().intValue();
-        this.data = ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets();
+
+        ASN1Sequence dataBlock = ASN1Sequence.getInstance(seq.getObjectAt(2));
+
+        this.data = new byte[dataBlock.size()][];
+
+        for (int i = 0; i != dataBlock.size(); i++)
+        {
+            data[i] = ASN1OctetString.getInstance(dataBlock.getObjectAt(i)).getOctets();
+        }
     }
 
     public static final BoardUploadIndexedMessage getInstance(Object o)
     {
-        if (o instanceof BoardUploadIndexedMessage)
+        if (o instanceof BoardUploadMessage)
         {
             return (BoardUploadIndexedMessage)o;
         }
@@ -77,7 +97,15 @@ public class BoardUploadIndexedMessage
 
         v.add(new DERUTF8String(boardName));
         v.add(new ASN1Integer(index));
-        v.add(new DEROctetString(data));
+
+        ASN1EncodableVector dataV = new ASN1EncodableVector();
+
+        for (int i = 0; i != data.length; i++)
+        {
+            dataV.add(new DEROctetString(data[i]));
+        }
+
+        v.add(new DERSequence(dataV));
 
         return new DERSequence(v);
     }
@@ -87,13 +115,18 @@ public class BoardUploadIndexedMessage
         return boardName;
     }
 
-    public byte[] getData()
-    {
-        return data;
-    }
-
+    /**
+     * Return the index of the first message in the data block.
+     *
+     * @return a message index value for the first message.
+     */
     public int getIndex()
     {
         return index;
+    }
+
+    public byte[][] getData()
+    {
+        return data;
     }
 }
