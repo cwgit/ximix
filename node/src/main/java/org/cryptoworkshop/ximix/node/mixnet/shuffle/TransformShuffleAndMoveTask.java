@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.node.mixnet.shuffle;
 import java.io.IOException;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.Commitment;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -25,7 +26,9 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadBlockMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageCommitment;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageWitnessBlock;
@@ -34,6 +37,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.crypto.IndexCommitter;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.node.mixnet.transform.Transform;
@@ -83,7 +87,30 @@ public class TransformShuffleAndMoveTask
 
             if (message.getKeyID() != null)
             {
-                ECPublicKeyParameters key = (ECPublicKeyParameters)PublicKeyFactory.createKey(nodeContext.getPublicKey(message.getKeyID()));
+                SubjectPublicKeyInfo keyInfo = nodeContext.getPublicKey(message.getKeyID());
+                ECPublicKeyParameters key;
+
+                if (keyInfo != null)
+                {
+                    key = (ECPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+                }
+                else
+                {
+                    // see if the key exists elsewhere on the MIXNET.
+                    FetchPublicKeyMessage fetchMessage = new FetchPublicKeyMessage(message.getKeyID());
+
+                    MessageReply reply = nodeContext.getPeerMap().values().iterator().next().sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, fetchMessage);
+
+                    if (reply.getPayload() != null)
+                    {
+                        key = (ECPublicKeyParameters)PublicKeyFactory.createKey(reply.getPayload().toASN1Primitive().getEncoded());
+                    }
+                    else
+                    {
+                        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Unable to find public key " + message.getKeyID());
+                        return;
+                    }
+                }
 
                 transform.init(key);
 
