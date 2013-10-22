@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -63,6 +64,7 @@ import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardStatusMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ChallengeLogMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
@@ -96,8 +98,10 @@ class ClientCommandService
     private final EventNotifier eventNotifier;
 
     private ExecutorService decouple = Executors.newSingleThreadExecutor();
-    private ExecutorService executor = Executors.newScheduledThreadPool(4);
+    private ExecutorService executor = Executors.newCachedThreadPool();
     private AdminServicesConnection connection;
+
+    private ConcurrentHashMap<String, FutureTask<String>> boardHostCache = new ConcurrentHashMap<>(); // TODO: maybe expire?
 
     public ClientCommandService(AdminServicesConnection connection, EventNotifier eventNotifier)
     {
@@ -271,6 +275,83 @@ class ClientCommandService
         return !(reply.getPayload() instanceof ASN1Null);
     }
 
+    private String getHostName(final String boardName)
+        throws ServiceConnectionException
+    {
+        if (!boardHostCache.containsKey(boardName))
+        {
+            FutureTask<String> futureTask = new FutureTask<>(new Callable<String>()
+            {
+                @Override
+                public String call()
+                    throws Exception
+                {
+
+                    MessageReply reply;
+
+                    try
+                    {
+                        reply = connection.sendMessage(CommandMessage.Type.GET_BOARD_HOST, new BoardMessage(boardName));
+                    }
+                    catch (ServiceConnectionException e)
+                    {
+                        eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on upload: " + e.getMessage(), e);
+                        return "Exception on isBoardExisting: " + e.getMessage();
+                    }
+
+                    return DERUTF8String.getInstance(reply.getPayload()).getString();
+                }
+            });
+
+            if (boardHostCache.putIfAbsent(boardName, futureTask) == null)
+            {
+                executor.submit(futureTask);
+            }
+        }
+
+        try
+        {
+            return boardHostCache.get(boardName).get();
+        }
+        catch (InterruptedException e)
+        {
+            boardHostCache.remove(boardName);
+            eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on upload: " + e.getMessage(), e);
+            throw new ServiceConnectionException(e.getMessage(), e);
+        }
+        catch (ExecutionException e)
+        {
+            boardHostCache.remove(boardName);
+            eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on upload: " + e.getMessage(), e);
+            throw new ServiceConnectionException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void uploadMessage(String boardName, byte[] message)
+        throws ServiceConnectionException
+    {
+        MessageReply reply = connection.sendMessage(getHostName(boardName), ClientMessage.Type.UPLOAD_TO_BOARD, new BoardUploadMessage(boardName, message));
+
+        if (reply.getType() != MessageReply.Type.OKAY)
+        {
+            throw new ServiceConnectionException("message failed: " + DERUTF8String.getInstance(reply.getPayload()).getString());
+        }
+    }
+
+    @Override
+    public void uploadMessages(String boardName, byte[][] messages)
+        throws ServiceConnectionException
+    {
+        MessageReply reply = connection.sendMessage(getHostName(boardName), ClientMessage.Type.UPLOAD_TO_BOARD, new BoardUploadMessage(boardName, messages));
+
+
+        if (reply.getType() != MessageReply.Type.OKAY)
+        {
+            throw new ServiceConnectionException("message failed: " + DERUTF8String.getInstance(reply.getPayload()).getString());
+        }
+    }
+
     private static class CaseInsensitiveComparator
         implements Comparator<String>
     {
@@ -310,6 +391,12 @@ class ClientCommandService
                 connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, 1));
 
                 MessageReply startRep = connection.sendMessage(CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, 0, options.getTransformName(), options.getKeyID(), nextNode));
+                if (startRep.getType() == MessageReply.Type.ERROR)
+                {
+                    notifier.failed(DERUTF8String.getInstance(startRep.getPayload()).getString());
+                    return;
+                }
+
                 String boardHost = DERUTF8String.getInstance(startRep.getPayload()).getString();
 
                 for (int i = 1; i < nodes.length; i++)
@@ -321,7 +408,12 @@ class ClientCommandService
                     nextNode = nodes[i];
                     connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, i + 1));
 
-                    connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, i, options.getTransformName(), options.getKeyID(), nextNode));
+                    MessageReply reply = connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, i, options.getTransformName(), options.getKeyID(), nextNode));
+                    if (reply.getType() == MessageReply.Type.ERROR)
+                    {
+                        notifier.failed(DERUTF8String.getInstance(reply.getPayload()).getString());
+                        return;
+                    }
                 }
 
                 waitForCompleteStatus(this.getOperationNumber(), nextNode, nodes.length);
@@ -334,7 +426,7 @@ class ClientCommandService
 
                 connection.sendMessage(boardHost, CommandMessage.Type.RETURN_TO_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
 
-                connection.sendMessage(CommandMessage.Type.BOARD_SHUFFLE_UNLOCK, new BoardMessage(boardName));
+                waitForUnlockStatus(boardHost, boardName);
 
                 notifier.completed();
             }
@@ -363,6 +455,27 @@ class ClientCommandService
             }
             while (tReply.getType() == MessageReply.Type.OKAY && BoardStatusMessage.getInstance(tReply.getPayload()).getStatus() != BoardStatusMessage.Status.COMPLETE);
         }
+
+        private void waitForUnlockStatus(String boardHost, String boardName)
+            throws ServiceConnectionException
+        {
+            MessageReply tReply;
+            do
+            {
+                try
+                {
+                    Thread.sleep(5000);  // TODO: configure?
+                }
+                catch (InterruptedException ex)
+                {
+                    Thread.currentThread().interrupt();
+                }
+
+                tReply = connection.sendMessage(boardHost, CommandMessage.Type.FETCH_BOARD_COMPLETION_STATUS, new BoardMessage(boardName));
+            }
+            while (tReply.getType() == MessageReply.Type.OKAY && BoardStatusMessage.getInstance(tReply.getPayload()).getStatus() != BoardStatusMessage.Status.COMPLETE);
+        }
+
     }
 
     private class DownloadOp
@@ -700,7 +813,7 @@ class ClientCommandService
     }
     
     private class DownloadShuffleTranscriptsOp
-            extends Operation<ShuffleTranscriptsDownloadOperationListener>
+        extends Operation<ShuffleTranscriptsDownloadOperationListener>
         implements Runnable
     {
         private final String boardName;

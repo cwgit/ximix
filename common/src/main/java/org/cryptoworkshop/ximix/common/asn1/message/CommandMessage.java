@@ -48,6 +48,7 @@ public class CommandMessage
         UPLOAD_TO_BOARD,
         TRANSFER_TO_BACKUP_BOARD,
         FETCH_BOARD_STATUS,
+        FETCH_BOARD_COMPLETION_STATUS,
         SUSPEND_BOARD,
         GENERATE_KEY_PAIR,
         STORE_SHARE,

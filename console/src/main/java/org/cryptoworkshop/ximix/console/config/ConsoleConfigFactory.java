@@ -15,7 +15,6 @@
  */
 package org.cryptoworkshop.ximix.console.config;
 
-import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.w3c.dom.Node;

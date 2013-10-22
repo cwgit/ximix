@@ -78,7 +78,7 @@ class XimixServices
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
 
-    private int maxInputSize = 32 * 1024;  //TODO should be config item.
+    private int maxInputSize = 128 * 1024;  //TODO should be config item.
 
     private XimixServices(XimixNodeContext nodeContext, Socket s, EventNotifier throwableHandler)
     {

@@ -318,6 +318,21 @@ public class BoardHostingService
                         return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(transitBoardMessage.getBoardName(), BoardStatusMessage.Status.UNKNOWN));
                     }
                 });
+            case FETCH_BOARD_COMPLETION_STATUS:
+                final BoardMessage compStatusBoardMessage = BoardMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(compStatusBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        if (boardRegistry.isLocked(compStatusBoardMessage.getBoardName()))
+                        {
+                            return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(compStatusBoardMessage.getBoardName(), BoardStatusMessage.Status.IN_TRANSIT));
+                        }
+                        return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(compStatusBoardMessage.getBoardName(), BoardStatusMessage.Status.COMPLETE));
+                    }
+                });
             case BOARD_SHUFFLE_LOCK:
                 final BoardMessage shuffleLockBoardMessage = BoardMessage.getInstance(message.getPayload());
                 return boardExecutor.submitTask(shuffleLockBoardMessage.getBoardName(), new Callable<MessageReply>()
@@ -362,7 +377,7 @@ public class BoardHostingService
                             return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(startPandMmessage.getBoardName(), BoardErrorStatusMessage.Status.NOT_SHUFFLE_LOCKED));
                         }
 
-                        new StartShuffleTask(nodeContext, boardRegistry, startPandMmessage).run();
+                        nodeContext.execute(new StartShuffleTask(nodeContext, boardRegistry, startPandMmessage));
 
                         return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
                     }
@@ -390,7 +405,7 @@ public class BoardHostingService
                     public MessageReply call()
                         throws Exception
                     {
-                        new ReturnToBoardTask(nodeContext, boardRegistry, returnToBoardMessage).run();
+                        nodeContext.execute(new ReturnToBoardTask(nodeContext, boardRegistry, returnToBoardMessage));
                         return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
                     }
                 });
@@ -803,6 +818,8 @@ public class BoardHostingService
                 BulletinBoard homeBoard = boardRegistry.getBoard(transitBoardMessage.getBoardName());
                 PostedMessageBlock.Builder messageFetcher = new PostedMessageBlock.Builder(100);
 
+                homeBoard.clear();
+
                 int index = 0;
                 for (PostedMessage postedMessage : transitBoard)
                 {
@@ -819,6 +836,9 @@ public class BoardHostingService
                 {
                     homeBoard.postMessageBlock(messageFetcher.build());
                 }
+
+                boardRegistry.shuffleUnlock(transitBoardMessage.getBoardName());
+
             }
             catch (Exception e)
             {

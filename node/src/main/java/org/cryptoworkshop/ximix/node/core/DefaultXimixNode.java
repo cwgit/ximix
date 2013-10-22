@@ -45,7 +45,8 @@ class DefaultXimixNode
         try
         {
             ListeningSocketInfo socketInfo = nodeContext.getListeningSocketInfo();
-            System.out.println("Starting node '" + nodeContext.getName() + "Listening Config: " + socketInfo);
+            System.out.println("Starting node '" + nodeContext.getName() + "'");
+            System.out.println("Listening Config: " + socketInfo);
 
             ss = new ServerSocket(socketInfo.getPort(), socketInfo.getBacklog(), InetAddress.getByName(socketInfo.getBindAddress())); // TODO: should also be able to specify ip address to listen to.
 

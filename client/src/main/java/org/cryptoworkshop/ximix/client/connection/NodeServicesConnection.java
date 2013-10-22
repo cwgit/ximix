@@ -51,7 +51,7 @@ class NodeServicesConnection
             cIn = connection.getInputStream();
         }
 
-        ASN1InputStream aIn = new ASN1InputStream(cIn, 30000); // TODO:
+        ASN1InputStream aIn = new ASN1InputStream(cIn, 300000); // TODO:
         synchronized (this)
         {
             nodeInfo = NodeInfo.getInstance(aIn.readObject());

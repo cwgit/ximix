@@ -19,6 +19,6 @@ package org.cryptoworkshop.ximix.client;
  * Combined interface for issuing mix network commands.
  */
 public interface CommandService
-    extends Service, ShuffleOperation, ShuffleTranscriptsDownloadOperation, DownloadOperation, BoardCreationService, QueryService
+    extends Service, UploadService, ShuffleOperation, ShuffleTranscriptsDownloadOperation, DownloadOperation, BoardCreationService, QueryService
 {
 }
