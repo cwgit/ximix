@@ -123,19 +123,19 @@ public class KeyProcessingTest extends TestCase
         //
 
         XimixNode nodeOne = getXimixNode("/conf/mixnet.xml", "/conf/node1.xml", handler);
-        NodeTestUtil.launch(nodeOne, true);
+        NodeTestUtil.launch(nodeOne);
 
         XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
-        NodeTestUtil.launch(nodeTwo, true);
+        NodeTestUtil.launch(nodeTwo);
 
         XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
-        NodeTestUtil.launch(nodeThree, true);
+        NodeTestUtil.launch(nodeThree);
 
         XimixNode nodeFour = getXimixNode("/conf/mixnet.xml", "/conf/node4.xml", handler);
-        NodeTestUtil.launch(nodeFour, true);
+        NodeTestUtil.launch(nodeFour);
 
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
-        NodeTestUtil.launch(nodeFive, true);
+        NodeTestUtil.launch(nodeFive);
 
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
 
@@ -281,19 +281,19 @@ public class KeyProcessingTest extends TestCase
         //
 
         XimixNode nodeOne = getXimixNode("/conf/mixnet.xml", "/conf/node1.xml", handler);
-        NodeTestUtil.launch(nodeOne, true);
+        NodeTestUtil.launch(nodeOne);
 
         XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
-        NodeTestUtil.launch(nodeTwo, true);
+        NodeTestUtil.launch(nodeTwo);
 
         XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
-        NodeTestUtil.launch(nodeThree, true);
+        NodeTestUtil.launch(nodeThree);
 
         XimixNode nodeFour = getXimixNode("/conf/mixnet.xml", "/conf/node4.xml", handler);
-        NodeTestUtil.launch(nodeFour, true);
+        NodeTestUtil.launch(nodeFour);
 
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
-        NodeTestUtil.launch(nodeFive, true);
+        NodeTestUtil.launch(nodeFive);
 
 
         SecureRandom random = new SecureRandom();
@@ -609,19 +609,19 @@ public class KeyProcessingTest extends TestCase
         //
 
         XimixNode nodeOne = getXimixNode("/conf/mixnet.xml", "/conf/node1.xml", handler);
-        NodeTestUtil.launch(nodeOne, true);
+        NodeTestUtil.launch(nodeOne);
 
         XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
-        NodeTestUtil.launch(nodeTwo, true);
+        NodeTestUtil.launch(nodeTwo);
 
         XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
-        NodeTestUtil.launch(nodeThree, true);
+        NodeTestUtil.launch(nodeThree);
 
         XimixNode nodeFour = getXimixNode("/conf/mixnet.xml", "/conf/node4.xml", handler);
-        NodeTestUtil.launch(nodeFour, true);
+        NodeTestUtil.launch(nodeFour);
 
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
-        NodeTestUtil.launch(nodeFive, true);
+        NodeTestUtil.launch(nodeFive);
 
 
         SecureRandom random = new SecureRandom();
@@ -782,19 +782,19 @@ public class KeyProcessingTest extends TestCase
         //
 
         XimixNode nodeOne = getXimixNode("/conf/mixnet.xml", "/conf/node1.xml", handler);
-        NodeTestUtil.launch(nodeOne, true);
+        NodeTestUtil.launch(nodeOne);
 
         XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
-        NodeTestUtil.launch(nodeTwo, true);
+        NodeTestUtil.launch(nodeTwo);
 
         XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
-        NodeTestUtil.launch(nodeThree, true);
+        NodeTestUtil.launch(nodeThree);
 
         XimixNode nodeFour = getXimixNode("/conf/mixnet.xml", "/conf/node4.xml", handler);
-        NodeTestUtil.launch(nodeFour, true);
+        NodeTestUtil.launch(nodeFour);
 
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
-        NodeTestUtil.launch(nodeFive, true);
+        NodeTestUtil.launch(nodeFive);
 
 
         SecureRandom random = new SecureRandom();

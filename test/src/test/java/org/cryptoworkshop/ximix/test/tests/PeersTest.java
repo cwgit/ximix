@@ -35,7 +35,6 @@ import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
-import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
@@ -68,7 +67,7 @@ public class PeersTest
     public void testInsufficientPeers_5_Thresh_3_Fail_2_Dec()
         throws Exception
     {
-        // doTestInsufficientPeers(5, 3, 2);     TODO: clean up doesn't appear to be happening yet.
+        doTestInsufficientPeers(5, 3, 2);
     }
 
     private String[] getPeerList(int peerCount)
@@ -82,6 +81,7 @@ public class PeersTest
 
         return peers;
     }
+
     /**
      * Test a network failure where 5 nodes are used for encryption but one fails before decryption.
      * Decryption should be successful.
@@ -101,19 +101,19 @@ public class PeersTest
         //
 
         XimixNode nodeOne = getXimixNode("/conf/mixnet.xml", "/conf/node1.xml", handler);
-        NodeTestUtil.launch(nodeOne, true);
+        NodeTestUtil.launch(nodeOne);
 
         XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
-        NodeTestUtil.launch(nodeTwo, false);
+        NodeTestUtil.launch(nodeTwo);
 
         XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
-        NodeTestUtil.launch(nodeThree, false);
+        NodeTestUtil.launch(nodeThree);
 
         XimixNode nodeFour = getXimixNode("/conf/mixnet.xml", "/conf/node4.xml", handler);
-        NodeTestUtil.launch(nodeFour, false);
+        NodeTestUtil.launch(nodeFour);
 
         XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
-        NodeTestUtil.launch(nodeFive, false);
+        NodeTestUtil.launch(nodeFive);
 
 
         SecureRandom random = new SecureRandom();
@@ -129,11 +129,11 @@ public class PeersTest
 
         byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
 
+        keyGenerationService.shutdown();
+
         CommandService commandService = adminRegistrar.connect(CommandService.class);
 
         commandService.createBoard("FRED", new BoardCreationOptions.Builder("B").build());
-
-        UploadService client = adminRegistrar.connect(UploadService.class);
 
         final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
 
@@ -163,20 +163,24 @@ public class PeersTest
 
             PairSequence encrypted = new PairSequence(new ECPair[]{encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i])});
 
-            client.uploadMessage("FRED", encrypted.getEncoded());
+            commandService.uploadMessage("FRED", encrypted.getEncoded());
         }
+
+        // we're going to shutdown some nodes - make sure we disconnect and
+        // reconnect in case we're talking to the one we shutdown
+        commandService.shutdown();
 
         //
         // Here we shut down on nodes, the remainder should still pass.
         //
         if (fail == 1)
         {
-            TestCase.assertTrue("Node 5, failed to shutdown.",nodeFive.shutdown(10,TimeUnit.SECONDS));
+            TestCase.assertTrue("Node 5, failed to shutdown.",nodeFive.shutdown(10, TimeUnit.SECONDS));
         }
         else if (fail == 2)
         {
-            TestCase.assertTrue("Node 5, failed to shutdown.",nodeFive.shutdown(10,TimeUnit.SECONDS));
-            TestCase.assertTrue("Node 4, failed to shutdown.",nodeFour.shutdown(10, TimeUnit.SECONDS));
+            TestCase.assertTrue("Node 5, failed to shutdown.",nodeFive.shutdown(30, TimeUnit.SECONDS));
+            nodeFour.shutdown(30, TimeUnit.SECONDS);
         }
         else
         {
@@ -189,6 +193,8 @@ public class PeersTest
         final ValueObject<Boolean> downloadBoardFailed = new ValueObject<Boolean>(false);
         final CountDownLatch encryptLatch = new CountDownLatch(1);
         final AtomicReference<Thread> decryptThread = new AtomicReference<>();
+
+        commandService = adminRegistrar.connect(CommandService.class);
 
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents(
             "FRED",
@@ -243,6 +249,8 @@ public class PeersTest
         TestCase.assertFalse("Not failed.", downloadBoardFailed.get());
 
 
+        encryptLatch.await();
+
         //
         // Validate result points against plainText points.
         //
@@ -255,7 +263,6 @@ public class PeersTest
 
 
         NodeTestUtil.shutdownNodes();
-        client.shutdown();
         commandService.shutdown();
     }
 

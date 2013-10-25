@@ -188,10 +188,15 @@ public class ECKeyManager
     {
         if (sharedPublicKeyMap.containsKey(keyID))
         {
-            ECPoint q = sharedPublicKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS).getValue();
-            ECDomainParameters params = paramsMap.get(keyID);
+            Share<ECPoint> share = sharedPublicKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS);
 
-            return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q, params)).getEncoded());
+            if (share != null)
+            {
+                ECPoint q = share.getValue();
+                ECDomainParameters params = paramsMap.get(keyID);
+
+                return SubjectPublicKeyInfo.getInstance(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(q, params)).getEncoded());
+            }
         }
 
         return null;

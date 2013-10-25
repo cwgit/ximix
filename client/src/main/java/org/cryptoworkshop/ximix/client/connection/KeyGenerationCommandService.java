@@ -55,7 +55,7 @@ class KeyGenerationCommandService
     public void shutdown()
         throws ServiceConnectionException
     {
-        // nothing to do here
+        connection.close();
     }
 
     @Override
@@ -89,7 +89,12 @@ class KeyGenerationCommandService
 
         try
         {
-            return reply.getPayload().toASN1Primitive().getEncoded();
+            if (reply.getPayload() != null)
+            {
+                return reply.getPayload().toASN1Primitive().getEncoded();
+            }
+
+            throw new ServiceConnectionException("Key generation returned null.");
         }
         catch (IOException e)
         {

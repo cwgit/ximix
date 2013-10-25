@@ -204,10 +204,15 @@ public class BLSKeyManager
     {
         if (sharedPublicKeyMap.containsKey(keyID))
         {
-            Element pK = sharedPublicKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS).getValue();
-            BLS01Parameters params = paramsMap.get(keyID);
+            Share<Element> share = sharedPublicKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS);
 
-            return SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new BLS01PublicKeyParameters(params, pK));
+            if (share != null)
+            {
+                Element pK = share.getValue();
+                BLS01Parameters params = paramsMap.get(keyID);
+
+                return SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new BLS01PublicKeyParameters(params, pK));
+            }
         }
 
         return null;

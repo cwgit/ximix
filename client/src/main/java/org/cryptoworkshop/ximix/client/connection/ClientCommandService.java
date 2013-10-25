@@ -127,6 +127,7 @@ class ClientCommandService
     {
         decouple.shutdown();
         executor.shutdown();
+        connection.close();
     }
 
     @Override

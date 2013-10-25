@@ -443,11 +443,19 @@ public class XimixNodeContext
             connection.stop();
         }
 
-        // TODO need to deal with the decoupled executors.
-
         multiTaskExecutor.shutdown();
 
-        return multiTaskExecutor.awaitTermination(time, timeUnit);
+        if (multiTaskExecutor.awaitTermination(time, timeUnit))
+        {
+            for (Decoupler decoupler : decouplers.keySet())
+            {
+                decouplers.get(decoupler).shutdown();
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

@@ -3,6 +3,7 @@ package org.cryptoworkshop.ximix.test.node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.util.encoders.Hex;
@@ -17,7 +18,7 @@ import org.cryptoworkshop.ximix.node.core.XimixNodeBuilder;
 public class NodeTestUtil
 {
 
-    private static HashMap<Thread, List<XimixNode>> nodesPerThread = new HashMap<>();
+    private static Map<Thread, List<XimixNode>> nodesPerThread = new HashMap<>();
 
     public static void registerNode(XimixNode node)
     {
@@ -30,13 +31,10 @@ public class NodeTestUtil
         nodesPerThread.get(th).add(node);
     }
 
-    public static void launch(final XimixNode node, boolean register)
+    public static void launch(final XimixNode node)
         throws Exception
     {
-        if (register)
-        {
-            registerNode(node);
-        }
+        registerNode(node);
 
         Thread th = new Thread(new Runnable()
         {
@@ -65,9 +63,7 @@ public class NodeTestUtil
     public static XimixNode getXimixNode(String networkConfig, String nodeConfigPath)
         throws ConfigException
     {
-
        return getXimixNode(networkConfig,nodeConfigPath,new TestNotifier());
-
     }
 
     public static void shutdownNodes()

@@ -20,6 +20,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -75,6 +77,7 @@ class XimixServices
     private final Socket s;
     private final XimixNodeContext nodeContext;
     private final EventNotifier throwableHandler;
+    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     private final AtomicBoolean stopped = new AtomicBoolean(false);
 
@@ -91,7 +94,7 @@ class XimixServices
     {
         try
         {
-            s.setSoTimeout(15000);    // TODO: should be a config item
+            s.setSoTimeout(5000);    // TODO: should be a config item
 
             InputStream sIn = s.getInputStream();
             OutputStream sOut = s.getOutputStream();
@@ -113,6 +116,7 @@ class XimixServices
                         Message message = Message.getInstance(o);
 
                         NodeService nodeService = nodeContext.getService(message);
+
                         nodeContext.getEventNotifier().notify(EventNotifier.Level.DEBUG, "Received Message: " + message.getType());
 
                         if (nodeService != null)
@@ -136,6 +140,9 @@ class XimixServices
                     continue;
                 }
             }
+
+            shutdownLatch.countDown();
+            s.close();
         }
         catch (IOException e)
         {
@@ -146,5 +153,13 @@ class XimixServices
     public void stop()
     {
         stopped.set(true);
+        try
+        {
+            shutdownLatch.await(30, TimeUnit.SECONDS); // TODO: make configurable
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
     }
 }
