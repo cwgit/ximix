@@ -70,6 +70,7 @@ import org.cryptoworkshop.ximix.client.KeyService;
 import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
+import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
@@ -960,7 +961,7 @@ public class CommandApplet
                     }
                 };
 
-                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(), TranscriptType.GENERAL, transcriptListener, shufflePlan);
+                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(), new ShuffleTranscriptOptions.Builder(TranscriptType.GENERAL).build(), transcriptListener, shufflePlan);
 
                 transcriptCompleted.await();
 
@@ -1009,7 +1010,7 @@ public class CommandApplet
                     }
                 };
 
-                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(), TranscriptType.WITNESSES, transcriptListener, shufflePlan);
+                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).build(), transcriptListener, shufflePlan);
 
                 witnessTranscriptCompleted.await();
 

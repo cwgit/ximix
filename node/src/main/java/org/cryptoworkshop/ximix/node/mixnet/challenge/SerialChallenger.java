@@ -34,8 +34,9 @@ public class SerialChallenger
      *
      * @param size the number of messages on the board we are issuing challenges on.
      * @param stepNo the number of the step in the shuffling process.
+     * @param seed a random seed for creating index numbers to challenge on.
      */
-    public SerialChallenger(Integer size, Integer stepNo)
+    public SerialChallenger(Integer size, Integer stepNo, byte[] seed)
     {
         this.size = size;
         this.counter = new AtomicInteger(0);

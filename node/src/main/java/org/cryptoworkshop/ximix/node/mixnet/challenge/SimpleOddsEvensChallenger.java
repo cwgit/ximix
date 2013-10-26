@@ -30,12 +30,13 @@ public class SimpleOddsEvensChallenger
     /**
      * Base constructor.
      *
-     * @param size
-     * @param stepNo
+     * @param size the number of messages on the board we are issuing challenges on.
+     * @param stepNo the number of the step in the shuffling process.
+     * @param seed a random seed for creating index numbers to challenge on.
      */
-    public SimpleOddsEvensChallenger(Integer size, Integer stepNo)
+    public SimpleOddsEvensChallenger(Integer size, Integer stepNo, byte[] seed)
     {
-        super(size, stepNo);
+        super(size, stepNo, seed);
     }
 
     @Override

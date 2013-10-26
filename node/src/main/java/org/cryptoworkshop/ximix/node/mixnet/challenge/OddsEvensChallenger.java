@@ -32,9 +32,10 @@ public abstract class OddsEvensChallenger
      * Base constructor.
      *
      * @param size the number of messages on the board we are issuing challenges on.
-     * @param stepNo the stepNo in the challenging process.
+     * @param stepNo the number of the step in the shuffling process.
+     * @param seed a random seed for creating index numbers to challenge on.
      */
-    public OddsEvensChallenger(Integer size, Integer stepNo)
+    public OddsEvensChallenger(Integer size, Integer stepNo, byte[] seed)
     {
         this.stepNo = stepNo;
         this.isOddStepNumber = ((stepNo.intValue() & 0x1) == 1);

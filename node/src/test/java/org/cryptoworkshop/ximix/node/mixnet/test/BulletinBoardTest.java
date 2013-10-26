@@ -1,4 +1,4 @@
-package org.cryptoworkshop.ximix.node.mixnet.tests;
+package org.cryptoworkshop.ximix.node.mixnet.test;
 
 import java.util.ArrayList;
 import java.util.Arrays;

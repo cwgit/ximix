@@ -121,7 +121,7 @@ public class BoardHostingService
         {
             try
             {
-                witnessChallengerConstructor = SerialChallenger.class.getConstructor(Integer.class, Integer.class);
+                witnessChallengerConstructor = SerialChallenger.class.getConstructor(Integer.class, Integer.class, byte[].class);
             }
             catch (NoSuchMethodException e)
             {
@@ -523,13 +523,13 @@ public class BoardHostingService
                         {
                             if (TranscriptType.GENERAL == transcriptDownloadMessage.getType())
                             {
-                                challenger = new SerialChallenger(transitBoard.transcriptSize(TranscriptType.GENERAL), transcriptDownloadMessage.getStepNo());
+                                challenger = new SerialChallenger(transitBoard.transcriptSize(TranscriptType.GENERAL), transcriptDownloadMessage.getStepNo(), null);
                             }
                             else
                             {
                                 try
                                 {
-                                    challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo());
+                                    challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), null);
                                 }
                                 catch (Exception e)
                                 {
@@ -700,7 +700,7 @@ public class BoardHostingService
                     {
                         Class clazz = Class.forName(xmlNode.getTextContent().trim());
 
-                        Constructor constructor = clazz.getConstructor(Integer.class, Integer.class);
+                        Constructor constructor = clazz.getConstructor(Integer.class, Integer.class, byte[].class);
 
                         return constructor;
                     }

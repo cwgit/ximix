@@ -58,6 +58,7 @@ import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
+import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
@@ -157,10 +158,10 @@ class ClientCommandService
     }
 
     @Override
-    public Operation<ShuffleTranscriptsDownloadOperationListener> downloadShuffleTranscripts(String boardName, long operationNumber, TranscriptType transcriptType, ShuffleTranscriptsDownloadOperationListener defaultListener, String... nodes)
+    public Operation<ShuffleTranscriptsDownloadOperationListener> downloadShuffleTranscripts(String boardName, long operationNumber, ShuffleTranscriptOptions transcriptOptions, ShuffleTranscriptsDownloadOperationListener defaultListener, String... nodes)
         throws ServiceConnectionException
     {
-        Operation<ShuffleTranscriptsDownloadOperationListener> op = new DownloadShuffleTranscriptsOp(boardName, operationNumber, transcriptType, nodes);
+        Operation<ShuffleTranscriptsDownloadOperationListener> op = new DownloadShuffleTranscriptsOp(boardName, operationNumber, transcriptOptions.getTranscriptType(), nodes);
 
         op.addListener(defaultListener);
 

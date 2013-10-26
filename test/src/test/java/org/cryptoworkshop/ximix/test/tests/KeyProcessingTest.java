@@ -49,6 +49,7 @@ import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
+import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
@@ -460,7 +461,7 @@ public class KeyProcessingTest extends TestCase
             }
         };
 
-        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(), TranscriptType.GENERAL, transcriptListener,  "A", "C", "D", "E");
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.GENERAL).build(), transcriptListener,  "A", "C", "D", "E");
 
         transcriptCompleted.await();
 
@@ -513,7 +514,7 @@ public class KeyProcessingTest extends TestCase
             }
         };
 
-        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(), TranscriptType.WITNESSES, transcriptListener,  "A", "C", "D", "E");
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).build(), transcriptListener,  "A", "C", "D", "E");
 
         witnessTranscriptCompleted.await();
 

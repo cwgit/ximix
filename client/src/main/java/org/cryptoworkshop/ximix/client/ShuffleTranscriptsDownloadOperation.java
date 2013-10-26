@@ -17,7 +17,6 @@ package org.cryptoworkshop.ximix.client;
 
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.util.Operation;
-import org.cryptoworkshop.ximix.common.util.TranscriptType;
 
 /**
  * Support interface for requesting a shuffle transcript.
@@ -30,7 +29,7 @@ public interface ShuffleTranscriptsDownloadOperation
       *
       * @param boardName the board the operationNumber should match with.
       * @param operationNumber the number of operation of interest.
-      * @param transcriptType the type of the transcript requested.
+      * @param options the type of the transcript requested and any other settings required.
       * @param defaultListener the listener to notify as each transcript stream arrives.
       * @param nodes the node path of interest.
       * @throws org.cryptoworkshop.ximix.client.connection.ServiceConnectionException
@@ -38,7 +37,7 @@ public interface ShuffleTranscriptsDownloadOperation
      Operation<ShuffleTranscriptsDownloadOperationListener> downloadShuffleTranscripts(
          String boardName,
          long operationNumber,
-         TranscriptType transcriptType,
+         ShuffleTranscriptOptions options,
          ShuffleTranscriptsDownloadOperationListener defaultListener,
          String... nodes)
          throws ServiceConnectionException;
