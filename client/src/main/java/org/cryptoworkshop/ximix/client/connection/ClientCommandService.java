@@ -87,7 +87,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
-import org.cryptoworkshop.ximix.common.util.TranscriptType;
 
 /**
  * Internal implementation of the CommandService interface. This class creates the messages which are then sent down
@@ -161,7 +160,7 @@ class ClientCommandService
     public Operation<ShuffleTranscriptsDownloadOperationListener> downloadShuffleTranscripts(String boardName, long operationNumber, ShuffleTranscriptOptions transcriptOptions, ShuffleTranscriptsDownloadOperationListener defaultListener, String... nodes)
         throws ServiceConnectionException
     {
-        Operation<ShuffleTranscriptsDownloadOperationListener> op = new DownloadShuffleTranscriptsOp(boardName, operationNumber, transcriptOptions.getTranscriptType(), nodes);
+        Operation<ShuffleTranscriptsDownloadOperationListener> op = new DownloadShuffleTranscriptsOp(boardName, operationNumber, transcriptOptions, nodes);
 
         op.addListener(defaultListener);
 
@@ -820,16 +819,16 @@ class ClientCommandService
     {
         private final String boardName;
         private final long operationOfInterestNumber;
-        private final TranscriptType transcriptType;
+        private final ShuffleTranscriptOptions transcriptOptions;
         private final String[] nodes;
 
-        public DownloadShuffleTranscriptsOp(String boardName, long operationOfInterestNumber, TranscriptType transcriptType, String... nodes)
+        public DownloadShuffleTranscriptsOp(String boardName, long operationOfInterestNumber, ShuffleTranscriptOptions transcriptOptions, String... nodes)
         {
             super(decouple, eventNotifier, ShuffleTranscriptsDownloadOperationListener.class);
 
             this.boardName = boardName;
             this.operationOfInterestNumber = operationOfInterestNumber;
-            this.transcriptType = transcriptType;
+            this.transcriptOptions = transcriptOptions;
             this.nodes = nodes;
         }
 
@@ -893,8 +892,8 @@ class ClientCommandService
                 PipedOutputStream pOut = null;
 
                 for (;;)
-                {                                                                                                                                                   // TODO: make configurable
-                    reply = connection.sendMessage(node, CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT, new TranscriptDownloadMessage(queryID, operationOfInterestNumber, stepNo, transcriptType, 10));
+                {
+                    reply = connection.sendMessage(node, CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT, new TranscriptDownloadMessage(queryID, operationOfInterestNumber, stepNo, transcriptOptions.getTranscriptType(), transcriptOptions.getChunkSize(), transcriptOptions.getSeedValue()));
 
                     TranscriptBlock transcriptBlock = TranscriptBlock.getInstance(reply.getPayload());
 
@@ -905,7 +904,6 @@ class ClientCommandService
 
                     if (pOut == null)
                     {
-
                         pOut = new PipedOutputStream();
                         PipedInputStream pIn = new PipedInputStream(pOut);
 

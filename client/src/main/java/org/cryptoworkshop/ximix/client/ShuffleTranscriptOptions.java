@@ -15,6 +15,7 @@ public class ShuffleTranscriptOptions
         private final TranscriptType transcriptType;
 
         private byte[] seedValue;
+        private int chunkSize;
 
         /**
          * Base constructor
@@ -24,6 +25,8 @@ public class ShuffleTranscriptOptions
         public Builder(TranscriptType transcriptType)
         {
             this.transcriptType = transcriptType;
+
+            this.chunkSize = 10;
         }
 
         /**
@@ -35,6 +38,19 @@ public class ShuffleTranscriptOptions
         public Builder withChallengeSeed(byte[] seedValue)
         {
             this.seedValue = seedValue.clone();
+
+            return this;
+        }
+
+        /**
+         * Specify a chunk size for the records to arrive in - the default is currently 10.
+         *
+         * @param chunkSize the seed to use for the witness collection.
+         * @return the current builder instance.
+         */
+        public Builder withChunkSize(int chunkSize)
+        {
+            this.chunkSize = chunkSize;
 
             return this;
         }
@@ -52,11 +68,13 @@ public class ShuffleTranscriptOptions
 
     private final TranscriptType transcriptType;
     private final byte[] seedValue;
+    private final int chunkSize;
 
     private ShuffleTranscriptOptions(Builder builder)
     {
         this.transcriptType = builder.transcriptType;
         this.seedValue = builder.seedValue;
+        this.chunkSize = builder.chunkSize;
     }
 
     /**
@@ -82,5 +100,15 @@ public class ShuffleTranscriptOptions
         }
 
         return null;
+    }
+
+    /**
+     * Return the number of transcript records to be downloaded by a listener in a batch.
+     *
+     * @return number of transcript records in each download.
+     */
+    public int getChunkSize()
+    {
+        return chunkSize;
     }
 }

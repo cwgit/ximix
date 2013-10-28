@@ -72,7 +72,7 @@ public class ECShuffledTranscriptVerifier
         this.ecCurve = pubKey.getParameters().getCurve();
 
         ASN1Primitive obj;
-
+       // TODO: we should incorporate the challenge seed for the witness transcript into this.
         try
         {
             //

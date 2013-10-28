@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDetails;
@@ -62,6 +63,7 @@ import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardRegistry;
+import org.cryptoworkshop.ximix.node.mixnet.challenge.SeededChallenger;
 import org.cryptoworkshop.ximix.node.mixnet.challenge.SerialChallenger;
 import org.cryptoworkshop.ximix.node.mixnet.shuffle.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.node.mixnet.transform.Transform;
@@ -121,7 +123,7 @@ public class BoardHostingService
         {
             try
             {
-                witnessChallengerConstructor = SerialChallenger.class.getConstructor(Integer.class, Integer.class, byte[].class);
+                witnessChallengerConstructor = SeededChallenger.class.getConstructor(Integer.class, Integer.class, byte[].class);
             }
             catch (NoSuchMethodException e)
             {
@@ -523,13 +525,17 @@ public class BoardHostingService
                         {
                             if (TranscriptType.GENERAL == transcriptDownloadMessage.getType())
                             {
-                                challenger = new SerialChallenger(transitBoard.transcriptSize(TranscriptType.GENERAL), transcriptDownloadMessage.getStepNo(), null);
+                                challenger = new SerialChallenger(transitBoard.transcriptSize(TranscriptType.GENERAL), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed());
                             }
                             else
                             {
+                                if (transcriptDownloadMessage.getSeed() != null)
+                                {
+                                    nodeContext.getEventNotifier().notify(EventNotifier.Level.INFO, "Challenge seed: " + new String(Hex.encode(transcriptDownloadMessage.getSeed())));
+                                }
                                 try
                                 {
-                                    challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), null);
+                                    challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed());
                                 }
                                 catch (Exception e)
                                 {

@@ -391,7 +391,8 @@ public class Main
             }
         };
 
-        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).build(), transcriptListener, "A", "C", "C");
+        // it should be noted the challenge seed should be random data!
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).build(), transcriptListener, "A", "C", "C");
 
         witnessTranscriptCompleted.await();
 

@@ -18,8 +18,10 @@ package org.cryptoworkshop.ximix.common.asn1.message;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
 
@@ -34,6 +36,7 @@ public class TranscriptDownloadMessage
     private final int stepNo;
     private final TranscriptType type;
     private final int maxNumberOfMessages;
+    private final byte[] seed;
 
     /**
      * Base constructor.
@@ -43,14 +46,16 @@ public class TranscriptDownloadMessage
      * @param stepNo the number of the step in the operation the transcript download is for.
      * @param type  the type of transcript requested.
      * @param maxNumberOfMessages the maximum number of messages that can be accepted in a response.
+     * @param seed an optional seed value to use in the server for calculating the indexes of interest.
      */
-    public TranscriptDownloadMessage(long queryID, long operationNumber, int stepNo, TranscriptType type, int maxNumberOfMessages)
+    public TranscriptDownloadMessage(long queryID, long operationNumber, int stepNo, TranscriptType type, int maxNumberOfMessages, byte[] seed)
     {
         this.queryID = queryID;
         this.operationNumber = operationNumber;
         this.stepNo = stepNo;
         this.type = type;
         this.maxNumberOfMessages = maxNumberOfMessages;
+        this.seed = (seed != null) ? seed.clone() : null;
     }
 
     private TranscriptDownloadMessage(ASN1Sequence seq)
@@ -60,6 +65,15 @@ public class TranscriptDownloadMessage
         this.stepNo = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue();
         this.type = TranscriptType.values()[ASN1Integer.getInstance(seq.getObjectAt(3)).getValue().intValue()];
         this.maxNumberOfMessages = ASN1Integer.getInstance(seq.getObjectAt(4)).getValue().intValue();
+
+        if (seq.size() > 5)
+        {
+            this.seed = ASN1OctetString.getInstance(seq.getObjectAt(5)).getOctets();
+        }
+        else
+        {
+            this.seed = null;
+        }
     }
 
     public static final TranscriptDownloadMessage getInstance(Object o)
@@ -87,6 +101,11 @@ public class TranscriptDownloadMessage
         v.add(new ASN1Integer(type.ordinal()));
         v.add(new ASN1Integer(maxNumberOfMessages));
 
+        if (seed != null)
+        {
+            v.add(new DEROctetString(seed));
+        }
+
         return new DERSequence(v);
     }
 
@@ -98,6 +117,11 @@ public class TranscriptDownloadMessage
     public int getMaxNumberOfMessages()
     {
         return maxNumberOfMessages;
+    }
+
+    public byte[] getSeed()
+    {
+        return (seed != null) ? seed.clone() : null;
     }
 
     public int getStepNo()

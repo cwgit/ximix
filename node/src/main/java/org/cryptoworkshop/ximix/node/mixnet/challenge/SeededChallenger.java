@@ -47,7 +47,7 @@ public class SeededChallenger
      *
      * @param size the number of messages on the board we are issuing challenges on.
      * @param stepNo the number of the step in the shuffling process.
-     * @param seed a random seed for creating index numbers to challenge on.
+     * @param seed a random seed for creating index numbers to challenge on - must be at least 55 bytes.
      */
     public SeededChallenger(Integer size, Integer stepNo, byte[] seed)
     {
@@ -168,6 +168,11 @@ public class SeededChallenger
                 public byte[] getEntropy()
                 {
                     byte[] rv = new byte[bitsRequired / 8];
+
+                    if (data.length < (index + rv.length))
+                    {
+                        throw new IllegalStateException("Insufficient entropy - need " + rv.length + " bytes for challenge seed.");
+                    }
 
                     System.arraycopy(data, index, rv, 0, rv.length);
 

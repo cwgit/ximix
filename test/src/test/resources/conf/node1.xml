@@ -17,7 +17,7 @@
                 </transform>
             </transforms>
             <challenger>
-                <implementation>org.cryptoworkshop.ximix.node.mixnet.challenge.SerialChallenger</implementation>
+                <implementation>org.cryptoworkshop.ximix.node.mixnet.challenge.SeededChallenger</implementation>
             </challenger>
         </service>
         <service>
