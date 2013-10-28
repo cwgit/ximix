@@ -514,7 +514,7 @@ public class KeyProcessingTest extends TestCase
             }
         };
 
-        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).build(), transcriptListener,  "A", "C", "D", "E");
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).build(), transcriptListener,  "A", "C", "D", "E");
 
         witnessTranscriptCompleted.await();
 

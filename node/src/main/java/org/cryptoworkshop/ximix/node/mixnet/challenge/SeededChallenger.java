@@ -151,6 +151,11 @@ public class SeededChallenger
 
         protected SingleEntropySourceProvider(byte[] data)
         {
+            if (data == null)
+            {
+                throw new IllegalArgumentException("No challenge seed available to seeded challenger.");
+            }
+
             this.data = data;
         }
 
