@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.crypto.signature.message;
+package org.cryptoworkshop.ximix.client.connection.signing.message;
 
 import java.math.BigInteger;
 
@@ -24,44 +24,44 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.cryptoworkshop.ximix.node.crypto.util.Participant;
+import org.cryptoworkshop.ximix.client.connection.signing.Participant;
 
-public class ECDSAInitialiseMessage
+/**
+ * Message carrier for instructions to create an ECDSA partial signature.
+ */
+public class ECDSAPartialCreateMessage
     extends ASN1Object
 {
+    private final String sigID;
     private final String keyID;
     private final Participant[] nodesToUse;
-    private final int threshold;
-    private final BigInteger n;
-    private final String sigID;
+    private final BigInteger e;
 
-    public ECDSAInitialiseMessage(String sigID, String keyID, int threshold, BigInteger n, Participant[] nodesToUse)
+    public ECDSAPartialCreateMessage(String sigID, String keyID, BigInteger e, Participant[] nodesToUse)
     {
         this.sigID = sigID;
-        this.nodesToUse = nodesToUse;
-        this.threshold = threshold;
-        this.n = n;
         this.keyID = keyID;
+        this.e = e;
+        this.nodesToUse = nodesToUse;
     }
 
-    private ECDSAInitialiseMessage(ASN1Sequence seq)
+    private ECDSAPartialCreateMessage(ASN1Sequence seq)
     {
         this.sigID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
-        this.threshold = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue();
-        this.n = ASN1Integer.getInstance(seq.getObjectAt(3)).getValue();
-        this.nodesToUse = MessageUtils.toArray(ASN1Sequence.getInstance(seq.getObjectAt(4)));
+        this.e = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue();
+        this.nodesToUse = MessageUtils.toArray(ASN1Sequence.getInstance(seq.getObjectAt(3)));
     }
 
-    public static final ECDSAInitialiseMessage getInstance(Object o)
+    public static final ECDSAPartialCreateMessage getInstance(Object o)
     {
-        if (o instanceof ECDSAInitialiseMessage)
+        if (o instanceof ECDSAPartialCreateMessage)
         {
-            return (ECDSAInitialiseMessage)o;
+            return (ECDSAPartialCreateMessage)o;
         }
         else if (o != null)
         {
-            return new ECDSAInitialiseMessage(ASN1Sequence.getInstance(o));
+            return new ECDSAPartialCreateMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -74,11 +74,15 @@ public class ECDSAInitialiseMessage
 
         v.add(new DERUTF8String(sigID));
         v.add(new DERUTF8String(keyID));
-        v.add(new ASN1Integer(threshold));
-        v.add(new ASN1Integer(n));
+        v.add(new ASN1Integer(e));
         v.add(MessageUtils.toASN1Sequence(nodesToUse));
 
         return new DERSequence(v);
+    }
+
+    public String getSigID()
+    {
+        return sigID;
     }
 
     public String getKeyID()
@@ -86,23 +90,14 @@ public class ECDSAInitialiseMessage
         return keyID;
     }
 
+    public BigInteger getE()
+    {
+        return e;
+    }
+
     public Participant[] getNodesToUse()
     {
         return nodesToUse;
     }
 
-    public int getThreshold()
-    {
-        return threshold;
-    }
-
-    public BigInteger getN()
-    {
-        return n;
-    }
-
-    public String getSigID()
-    {
-        return sigID;
-    }
 }

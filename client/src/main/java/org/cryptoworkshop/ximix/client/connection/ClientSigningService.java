@@ -21,14 +21,13 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.cryptoworkshop.ximix.client.SignatureGenerationOptions;
 import org.cryptoworkshop.ximix.client.SigningService;
-import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
+import org.cryptoworkshop.ximix.client.connection.signing.BLSSigningService;
+import org.cryptoworkshop.ximix.client.connection.signing.ECDSASigningService;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.SignatureCreateMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
 /**
@@ -44,13 +43,15 @@ class ClientSigningService
         GENERATE
     }
 
-    private ServicesConnection connection;
+    private final AdminServicesConnection connection;
+    private final ECDSASigningService ecdsaSigningService;
+    private final BLSSigningService blsSigningService;
 
-
-
-    public ClientSigningService(ServicesConnection connection)
+    public ClientSigningService(AdminServicesConnection connection)
     {
         this.connection = connection;
+        this.ecdsaSigningService = new ECDSASigningService(connection);
+        this.blsSigningService = new BLSSigningService(connection);
     }
 
     @Override
@@ -68,11 +69,12 @@ class ClientSigningService
 
             if (sigGenOptions.getAlgorithm() == Algorithm.ECDSA)
             {
-                reply = connection.sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new AlgorithmServiceMessage(sigGenOptions.getAlgorithm(), new SignatureMessage(Algorithm.ECDSA, Type.GENERATE, new SignatureCreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse()))));
+
+                reply = ecdsaSigningService.generateSig(new SignatureCreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse()));
             }
             else
             {
-                reply = connection.sendMessage(CommandMessage.Type.SIGNATURE_MESSAGE, new AlgorithmServiceMessage(sigGenOptions.getAlgorithm(), new SignatureMessage(Algorithm.BLS, Type.GENERATE, new SignatureCreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse()))));
+                reply = blsSigningService.generateSig(new SignatureCreateMessage(keyID, message, sigGenOptions.getThreshold(), sigGenOptions.getNodesToUse()));
             }
 
             if (reply.getType() == MessageReply.Type.OKAY)

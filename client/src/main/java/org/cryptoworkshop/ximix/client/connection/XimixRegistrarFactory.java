@@ -94,11 +94,11 @@ public class XimixRegistrarFactory
                 }
                 if (serviceClass.isAssignableFrom(KeyService.class))
                 {
-                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
+                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes));
                 }
                 if (serviceClass.isAssignableFrom(SigningService.class))
                 {
-                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
+                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes));
                 }
 
                 throw new RegistrarServiceException("Unable to identify service");
@@ -172,7 +172,7 @@ public class XimixRegistrarFactory
                 }
                 if (serviceClass.isAssignableFrom(SigningService.class))
                 {
-                    return (T)new ClientSigningService(new ServicesConnectionImpl(nodes));
+                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes));
                 }
                 if (serviceClass.isAssignableFrom(MonitorService.class))
                 {

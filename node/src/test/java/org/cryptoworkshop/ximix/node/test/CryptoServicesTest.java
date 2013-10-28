@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -31,8 +32,10 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.client.connection.AdminServicesConnection;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
+import org.cryptoworkshop.ximix.client.connection.signing.BLSSigningService;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
@@ -48,7 +51,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.SignatureCreateMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
@@ -61,7 +63,6 @@ import org.cryptoworkshop.ximix.node.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
-import org.cryptoworkshop.ximix.node.crypto.signature.BLSSignerEngine;
 import org.cryptoworkshop.ximix.node.crypto.test.TestNotifier;
 import org.cryptoworkshop.ximix.node.service.NodeService;
 import org.junit.Assert;
@@ -268,14 +269,54 @@ public class CryptoServicesTest
         MessageDigest mdv = MessageDigest.getInstance("SHA1");
         byte[] hashv = mdv.digest("this is a test message".getBytes());
 
-        Map<String, ServicesConnection> fullMap = new HashMap<>();
+        final Map<String, ServicesConnection> fullMap = new HashMap<>();
 
         fullMap.put("A", contextMap.get("B").getPeerMap().get("A"));
+        fullMap.put("B", contextMap.get("A").getPeerMap().get("B"));
+        fullMap.put("C", contextMap.get("A").getPeerMap().get("C"));
+        fullMap.put("D", contextMap.get("A").getPeerMap().get("D"));
+        fullMap.put("E", contextMap.get("A").getPeerMap().get("E"));
 
         MessageReply decReply = null;
         try
         {
-            decReply = fullMap.get("A").sendMessage(ClientMessage.Type.CREATE_SIGNATURE, new AlgorithmServiceMessage(Algorithm.BLS, new SignatureMessage(Algorithm.BLS, BLSSignerEngine.Type.GENERATE, new SignatureCreateMessage("BLSKEY", hashv, 3, "A", "B", "C", "D"))));
+            BLSSigningService blsSigningService = new BLSSigningService(new AdminServicesConnection()
+            {
+                @Override
+                public Set<String> getActiveNodeNames()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                @Override
+                public MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)
+                    throws ServiceConnectionException
+                {
+                    return fullMap.get(nodeName).sendMessage(type, messagePayload);
+                }
+
+                @Override
+                public CapabilityMessage[] getCapabilities()
+                {
+                    return new CapabilityMessage[0];  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                @Override
+                public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
+                    throws ServiceConnectionException
+                {
+                    return fullMap.get("A").sendMessage(type, messagePayload);
+                }
+
+                @Override
+                public void close()
+                    throws ServiceConnectionException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+            });
+
+            decReply = blsSigningService.generateSig(new SignatureCreateMessage("BLSKEY", hashv, 3, "A", "B", "C", "D"));
         }
         catch (ServiceConnectionException e)
         {

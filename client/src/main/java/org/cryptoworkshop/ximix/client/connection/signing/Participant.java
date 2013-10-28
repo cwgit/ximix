@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.crypto.util;
+package org.cryptoworkshop.ximix.client.connection.signing;
 
 /**
  * Identifier class for a participant in a threshold sharing process.

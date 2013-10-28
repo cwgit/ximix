@@ -1,15 +1,13 @@
-package org.cryptoworkshop.ximix.node.crypto.signature.message;
+package org.cryptoworkshop.ximix.client.connection.signing.message;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DLSequence;
+import org.cryptoworkshop.ximix.client.connection.signing.Participant;
 import org.cryptoworkshop.ximix.common.asn1.message.ParticipantMessage;
-import org.cryptoworkshop.ximix.node.crypto.util.Participant;
 
 class MessageUtils
 {
-
-
     static ASN1Sequence toASN1Sequence(Participant[] participants)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();

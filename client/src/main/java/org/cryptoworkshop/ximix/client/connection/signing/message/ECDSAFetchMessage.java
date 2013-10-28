@@ -13,56 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.crypto.signature.message;
+package org.cryptoworkshop.ximix.client.connection.signing.message;
 
-import it.unisa.dia.gas.jpbc.Element;
-import it.unisa.dia.gas.jpbc.Pairing;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.cryptoworkshop.ximix.node.crypto.util.Participant;
+import org.cryptoworkshop.ximix.client.connection.signing.Participant;
 
-/**
- * Message carrier for instructions to create a BLS partial signature.
- */
-public class BLSPartialCreateMessage
+public class ECDSAFetchMessage
     extends ASN1Object
 {
     private final String sigID;
     private final String keyID;
     private final Participant[] nodesToUse;
-    private final ASN1OctetString h;
 
-    public BLSPartialCreateMessage(String sigID, String keyID, Element h, Participant[] nodesToUse)
+    public ECDSAFetchMessage(String sigID, String keyID, Participant[] nodesToUse)
     {
         this.sigID = sigID;
         this.keyID = keyID;
-        this.h = new DEROctetString(h.toBytes());
         this.nodesToUse = nodesToUse;
     }
 
-    private BLSPartialCreateMessage(ASN1Sequence seq)
+    private ECDSAFetchMessage(ASN1Sequence seq)
     {
         this.sigID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
-        this.h = ASN1OctetString.getInstance(seq.getObjectAt(2));
-        this.nodesToUse = MessageUtils.toArray(ASN1Sequence.getInstance(seq.getObjectAt(3)));
+        this.nodesToUse = MessageUtils.toArray(ASN1Sequence.getInstance(seq.getObjectAt(2)));
     }
 
-    public static final BLSPartialCreateMessage getInstance(Object o)
+    public static final ECDSAFetchMessage getInstance(Object o)
     {
-        if (o instanceof BLSPartialCreateMessage)
+        if (o instanceof ECDSAFetchMessage)
         {
-            return (BLSPartialCreateMessage)o;
+            return (ECDSAFetchMessage)o;
         }
         else if (o != null)
         {
-            return new BLSPartialCreateMessage(ASN1Sequence.getInstance(o));
+            return new ECDSAFetchMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -75,7 +65,6 @@ public class BLSPartialCreateMessage
 
         v.add(new DERUTF8String(sigID));
         v.add(new DERUTF8String(keyID));
-        v.add(h);
         v.add(MessageUtils.toASN1Sequence(nodesToUse));
 
         return new DERSequence(v);
@@ -86,22 +75,13 @@ public class BLSPartialCreateMessage
         return sigID;
     }
 
-    public String getKeyID()
-    {
-        return keyID;
-    }
-
-    public Element getH(Pairing pairing)
-    {
-        Element G = pairing.getG1().newElement();
-        G.setFromBytes(h.getOctets());
-
-        return G;
-    }
-
     public Participant[] getNodesToUse()
     {
         return nodesToUse;
     }
 
+    public String getKeyID()
+    {
+        return keyID;
+    }
 }

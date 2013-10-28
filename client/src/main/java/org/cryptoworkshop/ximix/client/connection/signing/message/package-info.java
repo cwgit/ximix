@@ -16,6 +16,6 @@
 /**
 Internal messages for supporting signature generation...
 */
-package org.cryptoworkshop.ximix.node.crypto.signature.message;
+package org.cryptoworkshop.ximix.client.connection.signing.message;
 
 

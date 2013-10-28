@@ -13,46 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.crypto.signature.message;
+package org.cryptoworkshop.ximix.client.connection.signing.message;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.cryptoworkshop.ximix.node.crypto.util.Participant;
+import org.bouncycastle.math.ec.ECPoint;
 
-public class ECDSAFetchMessage
+public class ECDSAPointMessage
     extends ASN1Object
 {
-    private final String sigID;
     private final String keyID;
-    private final Participant[] nodesToUse;
+    private final byte[] point;
 
-    public ECDSAFetchMessage(String sigID, String keyID, Participant[] nodesToUse)
+    public ECDSAPointMessage(String keyID, ECPoint point)
     {
-        this.sigID = sigID;
         this.keyID = keyID;
-        this.nodesToUse = nodesToUse;
+        this.point = point.getEncoded();
     }
 
-    private ECDSAFetchMessage(ASN1Sequence seq)
+    private ECDSAPointMessage(ASN1Sequence seq)
     {
-        this.sigID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
-        this.nodesToUse = MessageUtils.toArray(ASN1Sequence.getInstance(seq.getObjectAt(2)));
+        this.keyID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
+        this.point = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
     }
 
-    public static final ECDSAFetchMessage getInstance(Object o)
+    public static ECDSAPointMessage getInstance(Object o)
     {
-        if (o instanceof ECDSAFetchMessage)
+        if (o instanceof ECDSAPointMessage)
         {
-            return (ECDSAFetchMessage)o;
+            return (ECDSAPointMessage)o;
         }
-        else if (o != null)
+        if (o != null)
         {
-            return new ECDSAFetchMessage(ASN1Sequence.getInstance(o));
+            return new ECDSAPointMessage(ASN1Sequence.getInstance(o));
         }
 
         return null;
@@ -63,25 +62,19 @@ public class ECDSAFetchMessage
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        v.add(new DERUTF8String(sigID));
         v.add(new DERUTF8String(keyID));
-        v.add(MessageUtils.toASN1Sequence(nodesToUse));
+        v.add(new DEROctetString(point));
 
         return new DERSequence(v);
-    }
-
-    public String getSigID()
-    {
-        return sigID;
-    }
-
-    public Participant[] getNodesToUse()
-    {
-        return nodesToUse;
     }
 
     public String getKeyID()
     {
         return keyID;
+    }
+
+    public byte[] getPoint()
+    {
+        return point;
     }
 }

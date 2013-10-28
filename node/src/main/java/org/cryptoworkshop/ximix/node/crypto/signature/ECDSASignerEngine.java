@@ -24,9 +24,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -34,26 +31,27 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
+import org.cryptoworkshop.ximix.client.connection.signing.ECDSASigningService.Type;
+import org.cryptoworkshop.ximix.client.connection.signing.Participant;
+import org.cryptoworkshop.ximix.client.connection.signing.SigID;
+import org.cryptoworkshop.ximix.client.connection.signing.message.ECDSAFetchMessage;
+import org.cryptoworkshop.ximix.client.connection.signing.message.ECDSAInitialiseMessage;
+import org.cryptoworkshop.ximix.client.connection.signing.message.ECDSAPartialCreateMessage;
+import org.cryptoworkshop.ximix.client.connection.signing.message.ECDSAPointMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ECPointMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.IDMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.KeyIDMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
-import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.StoreMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ShamirSecretSplitter;
 import org.cryptoworkshop.ximix.common.crypto.threshold.SplitSecret;
 import org.cryptoworkshop.ximix.node.crypto.operator.ECPrivateKeyOperator;
-import org.cryptoworkshop.ximix.node.crypto.signature.message.ECDSAFetchMessage;
-import org.cryptoworkshop.ximix.node.crypto.signature.message.ECDSAInitialiseMessage;
-import org.cryptoworkshop.ximix.node.crypto.signature.message.ECDSAPartialCreateMessage;
-import org.cryptoworkshop.ximix.node.crypto.signature.message.ECDSAPointMessage;
 import org.cryptoworkshop.ximix.node.crypto.util.BigIntegerShare;
 import org.cryptoworkshop.ximix.node.crypto.util.ECPointShare;
-import org.cryptoworkshop.ximix.node.crypto.util.Participant;
 import org.cryptoworkshop.ximix.node.crypto.util.Share;
 import org.cryptoworkshop.ximix.node.crypto.util.ShareMap;
 import org.cryptoworkshop.ximix.node.service.Decoupler;
@@ -80,27 +78,6 @@ public class ECDSASignerEngine
 
     private final AtomicLong             idCounter = new AtomicLong(1);
 
-    public static enum Type
-        implements MessageType
-    {
-        GENERATE,
-        INIT_K_AND_P,
-        INIT_A,
-        INIT_B,
-        INIT_C,
-        INIT_R,
-        INIT_MU,
-        FETCH_P,
-        FETCH_MU,
-        FETCH_SEQUENCE_NO,
-        PRIVATE_KEY_SIGN,
-        STORE_K,
-        STORE_A,
-        STORE_B,
-        STORE_C,
-        STORE_P
-    }
-
     /**
      * Base constructor.
      *
@@ -123,68 +100,18 @@ public class ECDSASignerEngine
         {
             switch ((Type)message.getType())
             {
-            case GENERATE:
-                final SignatureCreateMessage ecdsaCreate = SignatureCreateMessage.getInstance(message.getPayload());
-
-                //
-                // if we're not one of the nominated nodes, pass it on to someone who is and send back
-                // the first success response we get.
-                //
-                if (!ecdsaCreate.getNodesToUse().contains(nodeContext.getName()))
-                {
-                    for (String name : ecdsaCreate.getNodesToUse())
-                    {
-                        // TODO: check response status
-                        return sendMessage(name, Type.GENERATE, ecdsaCreate);
-                    }
-                }
-
-                Participant[] participants = new Participant[ecdsaCreate.getNodesToUse().size()];
-                int index = 0;
-
-                for (String name : ecdsaCreate.getNodesToUse())
-                {
-                    MessageReply seqRep = sendMessage(name, Type.FETCH_SEQUENCE_NO, new KeyIDMessage(ecdsaCreate.getKeyID()));
-                    // TODO: need to drop out people who don't reply.
-                    participants[index] = new Participant(BigIntegerMessage.getInstance(seqRep.getPayload()).getValue().intValue(), name);
-                    index++;
-                }
-
-                SigID sigID = new SigID(nodeContext.getName() + ".ECDSA." + idCounter.getAndIncrement());
-
-                SubjectPublicKeyInfo pubKeyInfo = nodeContext.getPublicKey(ecdsaCreate.getKeyID());
-                ECDomainParameters domainParams = ((ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo)).getParameters();
-                BigInteger n = domainParams.getN();
-                BigInteger e = calculateE(n, ecdsaCreate.getMessage());
-                // TODO: need to take into account node failure during startup.
-                BigInteger r, s;
-                do // generate s
-                {
-                    ECDSAInitialiseMessage initialiseMessage = new ECDSAInitialiseMessage(sigID.getID(), ecdsaCreate.getKeyID(), ecdsaCreate.getThreshold(), domainParams.getN(), participants);
-
-                    sendInitialiseMessage(Type.INIT_K_AND_P, initialiseMessage);
-                    sendInitialiseMessage(Type.INIT_A, initialiseMessage);
-                    sendInitialiseMessage(Type.INIT_B, initialiseMessage);
-                    sendInitialiseMessage(Type.INIT_C, initialiseMessage);
-                    sendInitialiseMessage(Type.INIT_R, initialiseMessage);
-                    sendInitialiseMessage(Type.INIT_MU, initialiseMessage);
-
-                    r = rMap.get(sigID);
-
-                    s = accumulateBigInteger(participants, ECDSASignerEngine.Type.PRIVATE_KEY_SIGN, new ECDSAPartialCreateMessage(sigID.getID(), ecdsaCreate.getKeyID(), e, participants), n);
-                }
-                while (s.equals(BigInteger.ZERO));
-
-                ASN1EncodableVector v = new ASN1EncodableVector();
-
-                v.add(new ASN1Integer(r));
-                v.add(new ASN1Integer(s));
-
-                return new MessageReply(MessageReply.Type.OKAY, new DERSequence(v));
             case FETCH_SEQUENCE_NO:
                 KeyIDMessage keyIDMessage = KeyIDMessage.getInstance(message.getPayload());
 
                 return new MessageReply(MessageReply.Type.OKAY, new BigIntegerMessage(BigInteger.valueOf(nodeContext.getPrivateKeyOperator(keyIDMessage.getKeyID()).getSequenceNo())));
+            case FETCH_SIG_ID:
+                SigID newID = new SigID(nodeContext.getName() + ".ECDSA." + idCounter.getAndIncrement());
+
+                return new MessageReply(MessageReply.Type.OKAY, new IDMessage(newID.getID()));
+            case FETCH_R:
+                IDMessage idMessage = IDMessage.getInstance(message.getPayload());
+
+                return new MessageReply(MessageReply.Type.OKAY, new BigIntegerMessage(rMap.get(new SigID(idMessage.getID()))));
             case INIT_K_AND_P:
                 generateAndSendKAndP(message);
 
@@ -226,12 +153,12 @@ public class ECDSASignerEngine
 
                 return new MessageReply(MessageReply.Type.OKAY);
             case STORE_P:
-                StoreMessage storeMessage = StoreMessage.getInstance(message.getPayload());
+                StoreMessage            storeMessage = StoreMessage.getInstance(message.getPayload());
                 ShareMessage            shareMessage = ShareMessage.getInstance(storeMessage.getSecretShareMessage());
                 ECDSAPointMessage       pointMessage = ECDSAPointMessage.getInstance(shareMessage.getShareData());
 
-                sigID = new SigID(storeMessage.getID());
-                domainParams = paramsMap.get(pointMessage.getKeyID());
+                SigID sigID = new SigID(storeMessage.getID());
+                ECDomainParameters domainParams = paramsMap.get(pointMessage.getKeyID());
 
                 sharedPMap.addValue(sigID, new ECPointShare(shareMessage.getSequenceNo(), domainParams.getCurve().decodePoint(pointMessage.getPoint())));
 
