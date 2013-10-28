@@ -63,16 +63,7 @@ public class ECNewDKGGenerator
         AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams);
 
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)keyPair.getPrivate();
-        ECNewDKGSecretSplitter secretSplitter;
-
-        if (algorithm == Algorithm.ECDSA)
-        {
-            secretSplitter = new ECNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size() * 2, ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
-        }
-        else
-        {
-            secretSplitter = new ECNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
-        }
+        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
 
         ECCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getD());
         ECCommittedSecretShare[] shares = splitSecret.getCommittedShares();

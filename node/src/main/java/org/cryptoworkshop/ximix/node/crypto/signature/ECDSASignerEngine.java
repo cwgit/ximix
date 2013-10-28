@@ -183,7 +183,7 @@ public class ECDSASignerEngine
                 return new MessageReply(MessageReply.Type.OKAY, new DERSequence(v));
             case FETCH_SEQUENCE_NO:
                 KeyIDMessage keyIDMessage = KeyIDMessage.getInstance(message.getPayload());
-                 System.err.println("returning sequence number for " + nodeContext.getName() + " " + nodeContext.getPrivateKeyOperator(keyIDMessage.getKeyID()).getSequenceNo());
+
                 return new MessageReply(MessageReply.Type.OKAY, new BigIntegerMessage(BigInteger.valueOf(nodeContext.getPrivateKeyOperator(keyIDMessage.getKeyID()).getSequenceNo())));
             case INIT_K_AND_P:
                 generateAndSendKAndP(message);
