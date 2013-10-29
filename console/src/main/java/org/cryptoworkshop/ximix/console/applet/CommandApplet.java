@@ -78,7 +78,6 @@ import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
-import org.cryptoworkshop.ximix.node.mixnet.transform.MultiColumnRowTransform;
 
 public class CommandApplet
     extends JApplet
@@ -844,7 +843,7 @@ public class CommandApplet
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.0);
 
-                Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove(boardEntry.getName(), new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID(keyID).build(), shuffleListener, shufflePlan);
+                Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove(boardEntry.getName(), new ShuffleOptions.Builder("MultiColumnRowTransform").withKeyID(keyID).build(), shuffleListener, shufflePlan);
 
                 myLatch.await();
 
