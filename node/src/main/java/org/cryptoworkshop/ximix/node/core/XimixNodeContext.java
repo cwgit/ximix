@@ -113,7 +113,8 @@ public class XimixNodeContext
 
         if (homeDirectory != null)
         {
-            setupKeyManager(homeDirectory, ecKeyManager);
+                            // TODO: password!!!! Looks like this will be read on start up.
+            setupKeyManager(homeDirectory, "Hello".toCharArray(), ecKeyManager);
         }
 
         remoteServicesCache = new RemoteServicesCache(this);
@@ -464,7 +465,7 @@ public class XimixNodeContext
      * @param homeDirectory root of the node's config
      * @param keyManager    the key manager to be reloaded.
      */
-    private void setupKeyManager(final File homeDirectory, KeyManager keyManager)
+    private void setupKeyManager(final File homeDirectory, final char[] passwd, KeyManager keyManager)
     {
         final File keyDir = new File(homeDirectory, "keys");
         final File store = new File(keyDir, keyManager.getID() + ".p12");
@@ -473,8 +474,7 @@ public class XimixNodeContext
         {
             try
             {
-                // TODO: password!!!!
-                keyManager.load("Hello".toCharArray(), Streams.readAll(new FileInputStream(store)));
+                keyManager.load(passwd, Streams.readAll(new FileInputStream(store)));
             }
             catch (Exception e)
             {
@@ -493,7 +493,7 @@ public class XimixNodeContext
                 {
                     try
                     {
-                        byte[] enc = keyManager.getEncoded("Hello".toCharArray());
+                        byte[] enc = keyManager.getEncoded(passwd);
 
                         if (!keyDir.exists())
                         {
