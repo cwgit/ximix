@@ -50,12 +50,22 @@ public class ShamirSecretSplitter
         alphas = new BigInteger[numberOfPeers];
         alphasPow = new BigInteger[numberOfPeers][k];
 
-        for (int i = 0; i < numberOfPeers; i++)
+        if (k > 1)
         {
-            alphas[i] = alphasPow[i][1] = BigInteger.valueOf(i + 1);
-            for (int degree = 2; degree < k; degree++)
+            for (int i = 0; i < numberOfPeers; i++)
             {
-                alphasPow[i][degree] = alphasPow[i][degree - 1].multiply(alphas[i]);
+                alphas[i] = alphasPow[i][1] = BigInteger.valueOf(i + 1);
+                for (int degree = 2; degree < k; degree++)
+                {
+                    alphasPow[i][degree] = alphasPow[i][degree - 1].multiply(alphas[i]);
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < numberOfPeers; i++)
+            {
+                alphas[i] = BigInteger.valueOf(i + 1);
             }
         }
     }
