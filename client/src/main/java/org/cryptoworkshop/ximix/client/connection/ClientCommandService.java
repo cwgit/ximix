@@ -714,6 +714,10 @@ class ClientCommandService
         //
         // generate and log a zero knowledge proof.
         //
+        // "A Secure and Optimally Efficient Multi-Authority Election Scheme"
+        // R. Cramer, R. Gennaro, B. Schoenmakers, CGS Journal, October, 1997.
+        // Section 2.6
+        //
         private void issueChallenge(OutputStream proofLogStream, int messageIndex, String[] nodes, Map<String, AsymmetricKeyParameter> keyMap, ECPoint[] sourceMessage)
             throws IOException, ServiceConnectionException
         {
