@@ -41,7 +41,8 @@ public class CapabilityMessage
         KEY_GENERATION,
         SIGNING,
         NODE_INFO,
-        NODE_HEALTH
+        NODE_HEALTH,
+        EXTERNAL
     }
 
     private final Type type;
