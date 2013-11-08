@@ -113,8 +113,10 @@ public class XimixNodeContext
 
         if (homeDirectory != null)
         {
-                            // TODO: password!!!! Looks like this will be read on start up.
-            setupKeyManager(homeDirectory, "Hello".toCharArray(), ecKeyManager);
+            char[] keyManagerPasswd = nodeConfig.getStringProperty("keyManagerPassword").toCharArray();
+
+            setupKeyManager(homeDirectory, keyManagerPasswd, ecKeyManager);
+            setupKeyManager(homeDirectory, keyManagerPasswd, blsKeyManager);
         }
 
         remoteServicesCache = new RemoteServicesCache(this);
@@ -481,7 +483,6 @@ public class XimixNodeContext
                 getEventNotifier().notify(EventNotifier.Level.ERROR, "Loading Store: " + store, e);
                 return;
             }
-
         }
 
         keyManager.addListener(new KeyManagerListener()
