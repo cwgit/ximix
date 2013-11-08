@@ -32,7 +32,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -75,6 +77,8 @@ import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListen
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
+import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
+import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
@@ -849,9 +853,138 @@ public class CommandApplet
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.25);
 
+                final CountDownLatch transcriptCompleted = new CountDownLatch(1);
+                final Map<Integer, File> generalTranscripts = new HashMap<>();
+
+                ShuffleTranscriptsDownloadOperationListener transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
+                {
+                    @Override
+                    public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
+                    {
+                        try
+                        {
+                            File transcriptFile            = new File(destDir, boardEntry.getName() + "." + stepNumber + ".gtr");
+                            OutputStream generalTranscript = new BufferedOutputStream(new FileOutputStream(transcriptFile));
+                            BufferedInputStream bIn        = new BufferedInputStream(transcript);
+
+                            int ch;
+                            while ((ch = bIn.read()) >= 0)
+                            {
+                                generalTranscript.write(ch);
+                            }
+                            generalTranscript.close();
+
+                            generalTranscripts.put(stepNumber, transcriptFile);
+                        }
+                        catch (IOException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void completed()
+                    {
+                        transcriptCompleted.countDown();
+                    }
+
+                    @Override
+                    public void status(String statusObject)
+                    {
+                        //To change body of implemented methods use File | Settings | File Templates.
+                    }
+
+                    @Override
+                    public void failed(String errorObject)
+                    {
+                        transcriptCompleted.countDown();
+                    }
+                };
+
+                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(), new ShuffleTranscriptOptions.Builder(TranscriptType.GENERAL).build(), transcriptListener, shufflePlan);
+
+                transcriptCompleted.await();
+
+                boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.50);
+
+                final CountDownLatch witnessTranscriptCompleted = new CountDownLatch(1);
+                final Map<Integer, File> witnessTranscripts = new HashMap<>();
+
+                transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
+                {
+                    @Override
+                    public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
+                    {
+                        try
+                        {
+                            File transcriptFile            = new File(destDir, boardEntry.getName() + "." + stepNumber + ".wtr");
+                            OutputStream witnessTranscript = new BufferedOutputStream(new FileOutputStream(transcriptFile));
+                            BufferedInputStream bIn        = new BufferedInputStream(transcript);
+
+                            int ch;
+                            while ((ch = bIn.read()) >= 0)
+                            {
+                                witnessTranscript.write(ch);
+                            }
+                            witnessTranscript.close();
+
+                            witnessTranscripts.put(stepNumber, transcriptFile);
+                        }
+                        catch (IOException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void completed()
+                    {
+                        witnessTranscriptCompleted.countDown();
+
+                    }
+
+                    @Override
+                    public void status(String statusObject)
+                    {
+                        //To change body of implemented methods use File | Settings | File Templates.
+                    }
+
+                    @Override
+                    public void failed(String errorObject)
+                    {
+                        witnessTranscriptCompleted.countDown();
+                    }
+                };
+
+                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).build(), transcriptListener, shufflePlan);
+
+                witnessTranscriptCompleted.await();
+
+                boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.70);
+
+                for (Integer key : witnessTranscripts.keySet())
+                {
+                    File transcriptFile = witnessTranscripts.get(key);
+                    File initialTranscript = generalTranscripts.get(key);
+                    File nextTranscript = generalTranscripts.get(key + 1);
+
+                    InputStream witnessTranscriptStream = new BufferedInputStream(new FileInputStream(transcriptFile));
+                    InputStream initialTranscriptStream = new BufferedInputStream(new FileInputStream(initialTranscript));
+                    InputStream nextTranscriptStream = new BufferedInputStream(new FileInputStream(nextTranscript));
+
+                    ECShuffledTranscriptVerifier verifier = new ECShuffledTranscriptVerifier(pubKey, witnessTranscriptStream, initialTranscriptStream, nextTranscriptStream);
+
+                    verifier.verify();
+
+                    witnessTranscriptStream.close();
+                }
+
+                boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.75);
+
                 final CountDownLatch downloadLatch = new CountDownLatch(1);
 
-                OutputStream challengeLogStream = new BufferedOutputStream(new FileOutputStream(new File(destDir, boardEntry.getName() + ".clg")));
+                File challengeLog = new File(destDir, boardEntry.getName() + ".clg");
+                OutputStream challengeLogStream = new BufferedOutputStream(new FileOutputStream(challengeLog));
 
                 DecryptionChallengeSpec decryptionChallengeSpec = new DecryptionChallengeSpec(new MessageChooser()
                 {
@@ -914,104 +1047,13 @@ public class CommandApplet
                 downloadStream.close();
                 challengeLogStream.close();
 
-                boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.50);
+                InputStream challengeStream = new BufferedInputStream(new FileInputStream(challengeLog));
 
-                final CountDownLatch transcriptCompleted = new CountDownLatch(1);
+                ECDecryptionChallengeVerifier verifier = new ECDecryptionChallengeVerifier(pubKey, challengeStream);
 
-                ShuffleTranscriptsDownloadOperationListener transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
-                {
-                    @Override
-                    public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
-                    {
-                        try
-                        {
-                            OutputStream generalTranscript = new BufferedOutputStream(new FileOutputStream(new File(destDir, boardEntry.getName() + "." + stepNumber + ".gtr")));
-                            BufferedInputStream bIn = new BufferedInputStream(transcript);
+                verifier.verify();
 
-                            int ch;
-                            while ((ch = bIn.read()) >= 0)
-                            {
-                                generalTranscript.write(ch);
-                            }
-                            generalTranscript.close();
-                        }
-                        catch (IOException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void completed()
-                    {
-                        transcriptCompleted.countDown();
-                    }
-
-                    @Override
-                    public void status(String statusObject)
-                    {
-                        //To change body of implemented methods use File | Settings | File Templates.
-                    }
-
-                    @Override
-                    public void failed(String errorObject)
-                    {
-                        transcriptCompleted.countDown();
-                    }
-                };
-
-                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(), new ShuffleTranscriptOptions.Builder(TranscriptType.GENERAL).build(), transcriptListener, shufflePlan);
-
-                transcriptCompleted.await();
-
-                boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.75);
-
-                final CountDownLatch witnessTranscriptCompleted = new CountDownLatch(1);
-                transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
-                {
-                    @Override
-                    public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
-                    {
-                        try
-                        {
-                            OutputStream witnessTranscript = new BufferedOutputStream(new FileOutputStream(new File(destDir, boardEntry.getName() + "." + stepNumber + ".wtr")));
-                            BufferedInputStream bIn = new BufferedInputStream(transcript);
-
-                            int ch;
-                            while ((ch = bIn.read()) >= 0)
-                            {
-                                witnessTranscript.write(ch);
-                            }
-                            witnessTranscript.close();
-                        }
-                        catch (IOException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void completed()
-                    {
-                        witnessTranscriptCompleted.countDown();
-                    }
-
-                    @Override
-                    public void status(String statusObject)
-                    {
-                        //To change body of implemented methods use File | Settings | File Templates.
-                    }
-
-                    @Override
-                    public void failed(String errorObject)
-                    {
-                        witnessTranscriptCompleted.countDown();
-                    }
-                };
-
-                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).build(), transcriptListener, shufflePlan);
-
-                witnessTranscriptCompleted.await();
+                challengeStream.close();
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 1.0);
 
