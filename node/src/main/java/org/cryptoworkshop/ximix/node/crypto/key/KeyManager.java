@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
 
 /**
@@ -66,7 +67,7 @@ public interface KeyManager
      * @return a SubjectPublicKeyInfo representing this KeyManager's part of the public key associated with keyID.
      * @throws IOException if the key cannot be extracted from the manager as an encoding.
      */
-    SubjectPublicKeyInfo fetchPartialPublicKey(String keyID)
+    PartialPublicKeyInfo fetchPartialPublicKey(String keyID)
         throws IOException;
 
     /**

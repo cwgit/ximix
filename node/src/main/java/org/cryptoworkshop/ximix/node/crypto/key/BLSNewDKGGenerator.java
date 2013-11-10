@@ -57,13 +57,13 @@ public class BLSNewDKGGenerator
         return keyManager.getParams(keyID);
     }
 
-    public BLSCommittedSecretShareMessage[] generateThresholdKey(String keyID, NamedKeyGenParams ecKeyGenParams)
+    public BLSCommittedSecretShareMessage[] generateThresholdKey(String keyID, NamedKeyGenParams blsKeyGenParams)
     {
         // TODO: should have a source of randomness.
-        AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams);
+        AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, blsKeyGenParams.getNodesToUse().size(), blsKeyGenParams);
 
         BLS01PrivateKeyParameters privKey = (BLS01PrivateKeyParameters)keyPair.getPrivate();
-        BLSNewDKGSecretSplitter secretSplitter = new BLSNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
+        BLSNewDKGSecretSplitter secretSplitter = new BLSNewDKGSecretSplitter(blsKeyGenParams.getNodesToUse().size(), blsKeyGenParams.getThreshold(), blsKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
 
         BLSCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getSk().toBigInteger());
         BLSCommittedSecretShare[] shares = splitSecret.getCommittedShares();

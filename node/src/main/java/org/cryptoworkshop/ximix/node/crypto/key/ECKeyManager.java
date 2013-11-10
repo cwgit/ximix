@@ -73,6 +73,7 @@ import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
+import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSecretShare;
@@ -203,16 +204,17 @@ public class ECKeyManager
     }
 
     @Override
-    public SubjectPublicKeyInfo fetchPartialPublicKey(String keyID)
+    public PartialPublicKeyInfo fetchPartialPublicKey(String keyID)
         throws IOException
     {
         if (sharedPrivateKeyMap.containsKey(keyID))
         {
             ECDomainParameters params = paramsMap.get(keyID);
-            BigInteger d = sharedPrivateKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS).getValue();
+            Share<BigInteger> share = sharedPrivateKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS);
+            BigInteger d = share.getValue();
             ECPoint Q = params.getG().multiply(d);
 
-            return SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(Q, params));
+            return new PartialPublicKeyInfo(share.getSequenceNo(), SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new ECPublicKeyParameters(Q, params)));
         }
 
         return null;
@@ -347,7 +349,7 @@ public class ECKeyManager
         }
         catch (PKCSException e)
         {
-            throw new GeneralSecurityException("Unable to create key store: " + e.getMessage(), e);
+            throw new GeneralSecurityException("Unable to load key store: " + e.getMessage(), e);
         }
     }
 

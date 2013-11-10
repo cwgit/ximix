@@ -35,6 +35,7 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
+import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
@@ -229,7 +230,7 @@ public class ECKeyManagerTest
         }
 
         @Override
-        public SubjectPublicKeyInfo getPartialPublicKey(String keyID)
+        public PartialPublicKeyInfo getPartialPublicKey(String keyID)
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }

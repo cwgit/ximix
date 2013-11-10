@@ -60,6 +60,7 @@ import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
+import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
@@ -527,7 +528,9 @@ class ClientCommandService
 
                             try
                             {
-                                keyMap.put(node, PublicKeyFactory.createKey(SubjectPublicKeyInfo.getInstance(reply.getPayload().toASN1Primitive())));
+                                PartialPublicKeyInfo partialPublicKeyInfo = PartialPublicKeyInfo.getInstance(reply.getPayload());
+
+                                keyMap.put(node, PublicKeyFactory.createKey(partialPublicKeyInfo.getPartialKeyInfo()));
                             }
                             catch (Exception e)
                             {

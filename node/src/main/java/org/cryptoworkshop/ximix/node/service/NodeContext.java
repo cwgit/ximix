@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
+import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
@@ -62,7 +63,7 @@ public interface NodeContext
      * @param keyID the key ID of interest.
      * @return a SubjectPublicKeyInfo containing the key.
      */
-    SubjectPublicKeyInfo getPartialPublicKey(String keyID);
+    PartialPublicKeyInfo getPartialPublicKey(String keyID);
 
     /**
      * Return true if this node contains a share in the private key identified by keyID.

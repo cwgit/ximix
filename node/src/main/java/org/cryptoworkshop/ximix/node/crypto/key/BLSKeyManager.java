@@ -76,6 +76,7 @@ import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
+import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.BLSCommittedSecretShare;
@@ -219,14 +220,21 @@ public class BLSKeyManager
     }
 
     @Override
-    public SubjectPublicKeyInfo fetchPartialPublicKey(String keyID)
+    public PartialPublicKeyInfo fetchPartialPublicKey(String keyID)
         throws IOException
     {
         if (sharedPrivateKeyMap.containsKey(keyID))
         {
-            // TODO: fortunately this isn't required at the moment!!!
+            BLS01Parameters params = paramsMap.get(keyID);
+            Share<BigInteger> share = sharedPrivateKeyMap.getShare(keyID, TIME_OUT, TimeUnit.SECONDS);
+            Pairing pairing = PairingFactory.getPairing(params.getCurveParameters());
+            Element g = params.getG();
 
-            throw new IllegalStateException("operation not supported");
+            // calculate the public key
+            Element sk = pairing.getZr().newElement(share.getValue());
+            Element pk = g.powZn(sk);
+
+            return new PartialPublicKeyInfo(share.getSequenceNo(), SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new BLS01PublicKeyParameters(params, pk.getImmutable())));
         }
 
         return null;
@@ -374,7 +382,7 @@ public class BLSKeyManager
         }
         catch (PKCSException e)
         {
-            throw new GeneralSecurityException("Unable to create key store: " + e.getMessage(), e);
+            throw new GeneralSecurityException("Unable to load key store: " + e.getMessage(), e);
         }
     }
 

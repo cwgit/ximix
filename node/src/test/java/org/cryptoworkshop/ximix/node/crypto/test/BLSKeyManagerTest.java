@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
+import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
@@ -203,7 +204,7 @@ public class BLSKeyManagerTest
         }
 
         @Override
-        public SubjectPublicKeyInfo getPartialPublicKey(String keyID)
+        public PartialPublicKeyInfo getPartialPublicKey(String keyID)
         {
             return null;
         }

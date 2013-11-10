@@ -40,6 +40,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.util.io.Streams;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
+import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
@@ -319,7 +320,7 @@ public class XimixNodeContext
         return null;
     }
 
-    public SubjectPublicKeyInfo getPartialPublicKey(String keyID)
+    public PartialPublicKeyInfo getPartialPublicKey(String keyID)
     {
         try
         {
