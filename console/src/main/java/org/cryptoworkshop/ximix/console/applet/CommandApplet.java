@@ -810,13 +810,26 @@ public class CommandApplet
 
                 List<BoardEntry> selected = boardModel.getSelectedEntries();
 
+                if (selected.isEmpty())
+                {
+                    JOptionPane.showMessageDialog(SwingUtilities.windowForComponent(CommandApplet.this),
+                        "Please select some boards to shuffle.",
+                        "No Selection Error",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 CountDownLatch shuffleLatch = new CountDownLatch(selected.size());
 
                 final ProgressDialog dialog = getProgressDialog("Shuffle and Download Progress", selected.size());
 
                 for (int i = 0; i != selected.size(); i++)
                 {
-                    threadPool.submit(new ShuffleAndDownloadTask(destDir, selected.get(i), commandService, keyID, pubKey, shuffleLatch, shuffflePlan, dialog, eventNotifier));
+                    BoardEntry entry = selected.get(i);
+
+                    entry.setShuffleProgress("Pending");
+
+                    threadPool.submit(new ShuffleAndDownloadTask(destDir, entry, commandService, keyID, pubKey, shuffleLatch, shuffflePlan, dialog, eventNotifier));
                 }
 
                 shuffleLatch.await();
