@@ -32,7 +32,6 @@ class Pair
     extends ASN1Object
 {
     private final ECPair ecPair;
-    private ECPair pair;
 
     Pair(ECPair ecPair)
     {
