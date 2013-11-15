@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledExecutorService;
 
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 
@@ -33,7 +33,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 public class BoardExecutor
 {
     private final Executor decoupler;
-    private final ScheduledExecutorService scheduledExecutor;
+    private final ExecutorService scheduledExecutor;
     private final Set<String> executing = new HashSet();
     private final List<BoardTask> pending = new LinkedList<>();
 
@@ -43,7 +43,7 @@ public class BoardExecutor
      * @param decoupler a single threaded decoupler.
      * @param scheduledExecutor a multi-threaded task executor.
      */
-    public BoardExecutor(Executor decoupler, ScheduledExecutorService scheduledExecutor)
+    public BoardExecutor(Executor decoupler, ExecutorService scheduledExecutor)
     {
         this.decoupler = decoupler;
         this.scheduledExecutor = scheduledExecutor;
@@ -85,6 +85,11 @@ public class BoardExecutor
         });
 
         return boardTask;
+    }
+
+    public FutureTask<MessageReply> submitBackupTask(final String boardName, final Callable<MessageReply> task)
+    {
+        return submitTask(boardName + ".backup", task);
     }
 
     private void moveToExecuteQueue(BoardTask boardTask)

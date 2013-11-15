@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.math.BigInteger;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -399,8 +400,9 @@ class ClientCommandService
                     return;
                 }
 
+                DecimalFormat fmt = new DecimalFormat("0.00");
                 String boardHost = DERUTF8String.getInstance(startRep.getPayload()).getString();
-
+                notifier.status("Starting  (" + nextNode + "/0.00)");
                 for (int i = 1; i < nodes.length; i++)
                 {
                     String curNode = nextNode;
@@ -416,6 +418,8 @@ class ClientCommandService
                         notifier.failed(DERUTF8String.getInstance(reply.getPayload()).getString());
                         return;
                     }
+
+                    notifier.status("Shuffling (" + nextNode + "/" + fmt.format(i / (double)nodes.length) + ")");
                 }
 
                 waitForCompleteStatus(this.getOperationNumber(), nextNode, nodes.length);
@@ -425,6 +429,8 @@ class ClientCommandService
                 connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, nodes.length, options.getTransformName(), options.getKeyID(), boardHost));
 
                 waitForCompleteStatus(this.getOperationNumber(), boardHost, nodes.length + 1);
+
+                notifier.status("Returning (" + nextNode + "/1.00)");
 
                 connection.sendMessage(boardHost, CommandMessage.Type.RETURN_TO_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
 

@@ -100,7 +100,7 @@ public class BoardHostingService
 
         this.decoupler = nodeContext.getDecoupler(Decoupler.SERVICES);
 
-        this.boardExecutor = new BoardExecutor(decoupler, nodeContext.getScheduledExecutor());
+        this.boardExecutor = new BoardExecutor(decoupler, nodeContext.getExecutorService());
 
         Map<String, Transform> transforms;
 
@@ -456,7 +456,7 @@ public class BoardHostingService
             case CLEAR_BACKUP_BOARD:
                 final BoardMessage backupBoardMessage = BoardMessage.getInstance(message.getPayload());
 
-                return boardExecutor.submitTask(backupBoardMessage.getBoardName(), new Callable<MessageReply>()
+                return boardExecutor.submitBackupTask(backupBoardMessage.getBoardName(), new Callable<MessageReply>()
                 {
                     @Override
                     public MessageReply call()
@@ -469,7 +469,7 @@ public class BoardHostingService
             case TRANSFER_TO_BACKUP_BOARD:
                 final BoardUploadIndexedMessage uploadIndexedMessage = BoardUploadIndexedMessage.getInstance(message.getPayload());
 
-                return boardExecutor.submitTask(uploadIndexedMessage.getBoardName(), new Callable<MessageReply>()
+                return boardExecutor.submitBackupTask(uploadIndexedMessage.getBoardName(), new Callable<MessageReply>()
                 {
                     @Override
                     public MessageReply call()
@@ -576,7 +576,7 @@ public class BoardHostingService
                     }
                 });
 
-                nodeContext.getScheduledExecutor().submit(dstsTask);
+                nodeContext.getExecutorService().submit(dstsTask);
 
                 return dstsTask;
             default:
@@ -590,7 +590,7 @@ public class BoardHostingService
                     }
                 });
 
-                nodeContext.getScheduledExecutor().submit(eTask);
+                nodeContext.getExecutorService().submit(eTask);
 
                 return eTask;
             }
@@ -637,7 +637,7 @@ public class BoardHostingService
                     }
                 });
 
-                nodeContext.getScheduledExecutor().submit(eTask);
+                nodeContext.getExecutorService().submit(eTask);
 
                 return eTask;
             }

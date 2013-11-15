@@ -19,6 +19,7 @@ package org.cryptoworkshop.ximix.node.mixnet.transform;
  * Base interface a transform should conform to.
  */
 public interface Transform
+    extends Cloneable
 {
     /**
      * Return the name of the transform.
@@ -48,4 +49,11 @@ public interface Transform
      * @return data related to the last transform carried out as a byte array.
      */
     byte[] getLastDetail();
+
+    /**
+     * Return a deep copy of the transform object suitable for use by an individual thread.
+     *
+     * @return transform deep copy.
+     */
+    public Transform clone();
 }

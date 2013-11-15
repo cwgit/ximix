@@ -60,7 +60,7 @@ public class RemoteServicesCache
     public RemoteServicesCache(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
-        this.scheduler = nodeContext.getScheduledExecutor();
+        this.scheduler = nodeContext.getScheduledExecutorService();
         this.listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(null), nodeContext.getEventNotifier()).createHandler(RemoteServicesListener.class);
         this.notifier = listenerHandler.getNotifier();
     }
@@ -151,7 +151,7 @@ public class RemoteServicesCache
         {
             Callable<NodeInfo> task = makeCallable(nodeName);
 
-            future = nodeContext.getScheduledExecutor().submit(task);
+            future = nodeContext.getExecutorService().submit(task);
 
             cache.put(entry, future);
 
@@ -322,7 +322,7 @@ public class RemoteServicesCache
         Callable<NodeInfo> task = makeCallable(nodeInfo);
         NodeEntry entry = new NodeEntry(nodeInfo.getName());
 
-        Future<NodeInfo> future = nodeContext.getScheduledExecutor().submit(task);
+        Future<NodeInfo> future = nodeContext.getScheduledExecutorService().submit(task);
 
         synchronized (RemoteServicesCache.this)
         {

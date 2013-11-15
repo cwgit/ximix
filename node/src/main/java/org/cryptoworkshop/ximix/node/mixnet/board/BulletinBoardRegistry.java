@@ -241,7 +241,7 @@ public class BulletinBoardRegistry
 
     public Transform getTransform(String transformName)
     {
-        return transforms.get(transformName);
+        return transforms.get(transformName).clone();
     }
 
     public boolean isSuspended(String boardName)
@@ -366,7 +366,6 @@ public class BulletinBoardRegistry
 
             for (String name : transitBoardNames)
             {
-;
                 if (name.endsWith(suffix))
                 {
                     return transitBoards.get(name);
@@ -424,12 +423,12 @@ public class BulletinBoardRegistry
                     nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "rename failed: " + dotPFile.getPath() + " " + transitDotPFile);
                 }
 
-                originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getScheduledExecutor(), nodeContext.getEventNotifier());
+                originalBoard = new BulletinBoardImpl(originalBoard.getName(), transitWorkingFile, nodeContext.getExecutorService(), nodeContext.getEventNotifier());
             }
 
             transitBoards.put(getTransitBoardName(operationNumber, boardName, stepNumber), originalBoard);
 
-            BulletinBoard board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName), nodeContext.getScheduledExecutor(), nodeContext.getEventNotifier());
+            BulletinBoard board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName), nodeContext.getExecutorService(), nodeContext.getEventNotifier());
 
             for (BulletinBoardBackupListener listener : listenerHandler.listeners())
             {
@@ -525,7 +524,7 @@ public class BulletinBoardRegistry
         @Override
         public void cleared(final BulletinBoard bulletinBoard)
         {
-            nodeContext.getScheduledExecutor().execute(new Runnable()
+            nodeContext.getExecutorService().execute(new Runnable()
             {
                 @Override
                 public void run()
@@ -548,7 +547,7 @@ public class BulletinBoardRegistry
         public void messagePosted(final BulletinBoard bulletinBoard, final int index, final byte[] message)
         {
             // TODO: there needs to be an initialisation phase to make sure the backup board is in sync
-            nodeContext.getScheduledExecutor().execute(new Runnable()
+            nodeContext.getExecutorService().execute(new Runnable()
             {
                 @Override
                 public void run()
@@ -570,7 +569,7 @@ public class BulletinBoardRegistry
         public void messagesPosted(final BulletinBoard bulletinBoard, final int startIndex, final byte[][] messages)
         {
                         // TODO: there needs to be an initialisation phase to make sure the backup board is in sync
-            nodeContext.getScheduledExecutor().execute(new Runnable()
+            nodeContext.getExecutorService().execute(new Runnable()
             {
                 @Override
                 public void run()

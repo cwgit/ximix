@@ -231,7 +231,16 @@ public class CommandApplet
 
         topTablePanel.add(new JLabel("Shuffle Plan:"));
         topTablePanel.add(shufflePlan);
+
+        JTextField keyID = new JTextField(15);
+        JTextField threshold = new JTextField(3);
+
+        keyID.setText("ECENCKEY");
+        threshold.setText("4");
+
         JButton shuffleButton = new JButton("Shuffle and Download Selected");
+
+        JButton downloadButton = new JButton("Download Selected");
 
         shuffleButton.addActionListener(new ActionListener()
         {
@@ -283,7 +292,26 @@ public class CommandApplet
             }
         });
 
-        topTablePanel.add(shuffleButton);
+        JPanel downloadControlPanel = new JPanel();
+        downloadControlPanel.setLayout(new BoxLayout(downloadControlPanel, BoxLayout.Y_AXIS));
+
+        JPanel downloadKeyPanel = new JPanel();
+
+        downloadKeyPanel.add(new JLabel("Key ID: "));
+        downloadKeyPanel.add(keyID);
+        downloadKeyPanel.add(new JLabel("Threshold"));
+        downloadKeyPanel.add(threshold);
+
+        JPanel downloadButtonPanel = new JPanel();
+        downloadButtonPanel.setLayout(new BoxLayout(downloadButtonPanel, BoxLayout.X_AXIS));
+
+        downloadButtonPanel.add(downloadButton);
+        downloadButtonPanel.add(shuffleButton);
+
+        downloadControlPanel.add(downloadKeyPanel);
+        downloadControlPanel.add(downloadButtonPanel);
+
+        topTablePanel.add(downloadControlPanel);
         topTablePanel.add(Box.createHorizontalGlue());
 
         boardTable.getTableHeader().setPreferredSize(new Dimension(boardTable.getColumnModel().getTotalColumnWidth(), boardTable.getRowHeight(0) * 2));
@@ -430,6 +458,7 @@ public class CommandApplet
         private volatile State state = State.LOADING;
         private volatile int totalMesages = 0;
         private volatile double pCentProgress = 0.0;
+        private volatile String progressMessage;
 
         public BoardEntry(BoardTableModel parent, String name, String primary, String secondary)
         {
@@ -454,6 +483,10 @@ public class CommandApplet
             case 4:
                 return totalMesages;
             case 5:
+                if (progressMessage != null)
+                {
+                    return progressMessage;
+                }
                 if (pCentProgress != 1.0)
                 {
                     if (state == State.LOADING)
@@ -476,9 +509,16 @@ public class CommandApplet
 
         public void markProgress(State state, int numMessages, double pCentDone)
         {
+            this.progressMessage = null;
             this.state = state;
             this.totalMesages += numMessages;
             this.pCentProgress = pCentDone;
+            this.parent.fireTableDataChanged();
+        }
+
+        public void setShuffleProgress(String progress)
+        {
+            this.progressMessage = progress;
             this.parent.fireTableDataChanged();
         }
 
@@ -834,6 +874,8 @@ public class CommandApplet
                     @Override
                     public void status(String statusObject)
                     {
+                        boardEntry.setShuffleProgress(statusObject);
+
                         System.err.println("status: " + statusObject);
                     }
 
@@ -897,6 +939,7 @@ public class CommandApplet
                     @Override
                     public void failed(String errorObject)
                     {
+                        System.err.println(errorObject);
                         transcriptCompleted.countDown();
                     }
                 };
@@ -952,11 +995,12 @@ public class CommandApplet
                     @Override
                     public void failed(String errorObject)
                     {
+                        System.err.println(errorObject);
                         witnessTranscriptCompleted.countDown();
                     }
                 };
 
-                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).build(), transcriptListener, shufflePlan);
+                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).build(), transcriptListener, shufflePlan);
 
                 witnessTranscriptCompleted.await();
 
@@ -1001,8 +1045,8 @@ public class CommandApplet
                 Operation<DownloadOperationListener> op = commandService.downloadBoardContents(boardEntry.getName(),
                                                                        new DownloadOptions.Builder()
                                                                               .withKeyID(keyID)
-                                                                              .withThreshold(2)
-                                                                              .withNodes("A", "B")
+                                                                              .withThreshold(4)
+                                                                              .withNodes("A", "B", "C", "D")
                                                                               .withChallengeSpec(decryptionChallengeSpec).build(), new DownloadOperationListener()
                 {
                     int counter = 0;
@@ -1061,7 +1105,7 @@ public class CommandApplet
             }
             catch (Exception e)
             {
-                eventNotifier.notify(EventNotifier.Level.ERROR, "Cannot perform upload: " + e.getMessage(), e);
+                eventNotifier.notify(EventNotifier.Level.ERROR, "Cannot perform download: " + e.getMessage(), e);
             }
             finally
             {

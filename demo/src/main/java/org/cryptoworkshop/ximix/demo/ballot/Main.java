@@ -61,7 +61,7 @@ public class Main
         return r;
     }
 
-    private static ECPair[][] generateBallots(Random rand, ECElGamalEncryptor encryptor, ECDomainParameters ecParams, SecureRandom pointRandom)
+    private static ECPair[][] generateBallots(Random rand, int ballotSize, ECElGamalEncryptor encryptor, ECDomainParameters ecParams, SecureRandom pointRandom)
     {
         int numberOfCandidates = 4 + rand.nextInt(10);
 
@@ -72,7 +72,7 @@ public class Main
             candidateNumbers.add(generatePoint(ecParams, pointRandom));
         }
 
-        int numberOfBallots = 100 + rand.nextInt(200);
+        int numberOfBallots = ballotSize + rand.nextInt(ballotSize / 10);
 
         ECPair[][] ballots = new ECPair[numberOfBallots][];
 
@@ -96,9 +96,9 @@ public class Main
     public static void main(String[] args)
         throws Exception
     {
-        if (args.length != 2)
+        if (args.length != 3)
         {
-            System.err.println("Usage: Generate mixnet.xml number_of_regions");
+            System.err.println("Usage: Generate mixnet.xml number_of_regions avg_number_of_ballots");
             System.exit(1);
         }
 
@@ -138,12 +138,13 @@ public class Main
         DecimalFormat fmt = new DecimalFormat("000");
 
         int count = Integer.parseInt(args[1]);
+        int ballotSize = Integer.parseInt(args[2]);
 
         for (int i = 0; i != count; i++)
         {
             File f = new File("REGION-" + fmt.format(i));
 
-            ECPair[][] ballots = generateBallots(new Random(i), encryptor, pubKey.getParameters(), new SecureRandom());
+            ECPair[][] ballots = generateBallots(new Random(i), ballotSize, encryptor, pubKey.getParameters(), new SecureRandom());
 
             OutputStream fOut = new BufferedOutputStream(new FileOutputStream(f));
 

@@ -90,4 +90,9 @@ public class MultiColumnRowTransform
 
         return k;
     }
+
+    public Transform clone()
+    {
+        return new MultiColumnRowTransform();
+    }
 }

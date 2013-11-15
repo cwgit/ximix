@@ -74,7 +74,8 @@ public class XimixNodeContext
     implements NodeContext
 {
     private final ExecutorService connectionExecutor = Executors.newCachedThreadPool();   // TODO configurable or linked to threshold
-    private final ScheduledExecutorService multiTaskExecutor = Executors.newScheduledThreadPool(5);   // TODO configurable or linked to threshold
+    private final ScheduledExecutorService scheduledMultiTaskExecutor = Executors.newScheduledThreadPool(10);   // TODO configurable or linked to threshold
+    private final ExecutorService multiTaskExecutor = Executors.newCachedThreadPool(); // TODO configurable?
     private final Map<Decoupler, ExecutorService> decouplers = new HashMap<>();
     private final List<NodeService> nodeServices = new ArrayList<>();
     private final String name;
@@ -285,13 +286,13 @@ public class XimixNodeContext
 
     public void execute(Runnable task)
     {
-        multiTaskExecutor.execute(task);
+        scheduledMultiTaskExecutor.execute(task);
     }
 
     @Override
     public void schedule(Runnable task, long time, TimeUnit timeUnit)
     {
-        multiTaskExecutor.schedule(task, time, timeUnit);
+        scheduledMultiTaskExecutor.schedule(task, time, timeUnit);
     }
 
     @Override
@@ -377,13 +378,13 @@ public class XimixNodeContext
     @Override
     public boolean isStopCalled()
     {
-        return multiTaskExecutor.isShutdown() || multiTaskExecutor.isTerminated();
+        return scheduledMultiTaskExecutor.isShutdown() || scheduledMultiTaskExecutor.isTerminated();
     }
 
     @Override
-    public ScheduledExecutorService getScheduledExecutor()
+    public ScheduledExecutorService getScheduledExecutorService()
     {
-        return multiTaskExecutor;
+        return scheduledMultiTaskExecutor;
     }
 
     @Override
@@ -447,14 +448,16 @@ public class XimixNodeContext
             connection.stop();
         }
 
-        multiTaskExecutor.shutdown();
+        scheduledMultiTaskExecutor.shutdown();
 
-        if (multiTaskExecutor.awaitTermination(time, timeUnit))
+        if (scheduledMultiTaskExecutor.awaitTermination(time, timeUnit))
         {
             for (Decoupler decoupler : decouplers.keySet())
             {
                 decouplers.get(decoupler).shutdown();
             }
+
+            multiTaskExecutor.shutdown();
 
             return true;
         }
@@ -535,6 +538,12 @@ public class XimixNodeContext
     public EventNotifier getEventNotifier()
     {
         return eventNotifier;
+    }
+
+    @Override
+    public ExecutorService getExecutorService()
+    {
+        return multiTaskExecutor;
     }
 
     private class NodeInfoService

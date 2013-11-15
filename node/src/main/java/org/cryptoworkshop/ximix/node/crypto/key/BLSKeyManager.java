@@ -125,8 +125,8 @@ public class BLSKeyManager
         this.listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.LISTENER), nodeContext.getEventNotifier()).createHandler(KeyManagerListener.class);
         this.notifier = listenerHandler.getNotifier();
 
-        sharedPublicKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING), nodeContext.getEventNotifier());
-        sharedPrivateKeyMap = new ShareMap<>(nodeContext.getScheduledExecutor(), nodeContext.getDecoupler(Decoupler.SHARING), nodeContext.getEventNotifier());
+        sharedPublicKeyMap = new ShareMap<>(nodeContext.getScheduledExecutorService(), nodeContext.getDecoupler(Decoupler.SHARING), nodeContext.getEventNotifier());
+        sharedPrivateKeyMap = new ShareMap<>(nodeContext.getScheduledExecutorService(), nodeContext.getDecoupler(Decoupler.SHARING), nodeContext.getEventNotifier());
 
         sharedPrivateKeyMap.addListener(new ShareMapListener<String, BigInteger>()
         {

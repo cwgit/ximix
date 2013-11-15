@@ -112,8 +112,8 @@ public class Main
         if (encPubKey == null)
         {
             KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.EC_ELGAMAL, "secp256r1")
-                .withThreshold(2)
-                .withNodes("A", "B", "C", "D")
+                .withThreshold(4)
+                .withNodes("A", "B", "C", "D", "E")
                 .build();
 
             encPubKey = keyGenerationService.generatePublicKey("ECENCKEY", keyGenOptions);
@@ -240,8 +240,8 @@ public class Main
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED",
                                                                                        new DownloadOptions.Builder()
                                                                                               .withKeyID("ECENCKEY")
-                                                                                              .withThreshold(2)
-                                                                                              .withNodes("A", "B")
+                                                                                              .withThreshold(4)
+                                                                                              .withNodes("A", "B", "C", "D")
                                                                                               .withChallengeSpec(decryptionChallengeSpec).build(), new DownloadOperationListener()
         {
             int counter = 0;

@@ -43,4 +43,10 @@ public class NullTransform
     {
         return new byte[0];
     }
+
+    @Override
+    public Transform clone()
+    {
+        return new NullTransform();
+    }
 }

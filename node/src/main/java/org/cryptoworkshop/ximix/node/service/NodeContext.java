@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.node.service;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -128,7 +129,14 @@ public interface NodeContext
      *
      * @return the multi-threaded scheduler associated with this node context.
      */
-    ScheduledExecutorService getScheduledExecutor();
+    ScheduledExecutorService getScheduledExecutorService();
+
+    /**
+     * Return the executor service associated with this node.
+     *
+     * @return an ExecutorService.
+     */
+    ExecutorService getExecutorService();
 
     /**
      * Return the threshold key pair generator for the requested algorithm,
