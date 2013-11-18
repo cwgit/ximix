@@ -46,7 +46,7 @@ public class BLSSignerEngine
         {
             switch ((Type)message.getType())
             {
-            case FETCH_SEQUENCE_NO:
+            case FETCH_SEQUENCE_NO:     // TODO: for BLS this may not actually be required.
                 KeyIDMessage keyIDMessage = KeyIDMessage.getInstance(message.getPayload());
 
                 return new MessageReply(MessageReply.Type.OKAY, new BigIntegerMessage(BigInteger.valueOf(nodeContext.getPrivateKeyOperator(keyIDMessage.getKeyID()).getSequenceNo())));
