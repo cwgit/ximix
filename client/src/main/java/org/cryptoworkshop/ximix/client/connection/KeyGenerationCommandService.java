@@ -16,19 +16,19 @@
 package org.cryptoworkshop.ximix.client.connection;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Arrays;
 
-import org.bouncycastle.asn1.ASN1String;
 import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.KeyGenParams;
-import org.cryptoworkshop.ximix.common.asn1.message.KeyGenerationMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
+import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
 /**
@@ -41,7 +41,7 @@ class KeyGenerationCommandService
     private enum Type
         implements MessageType
     {
-        INITIATE
+        GENERATE
     }
 
     private AdminServicesConnection connection;
@@ -61,44 +61,28 @@ class KeyGenerationCommandService
     @Override
     public byte[] generatePublicKey(String keyID, KeyGenerationOptions keyGenOptions)
         throws ServiceConnectionException
-    {
-        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(keyGenOptions.getAlgorithm(), keyID, new KeyGenParams(keyGenOptions.getParameters()[0]), keyGenOptions.getThreshold(), keyGenOptions.getNodesToUse());
-
-        MessageReply reply;
-
+    {                            // TODO: may not need the if after all.
         if (keyGenOptions.getAlgorithm() == Algorithm.BLS)
         {
-            reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.INITIATE, genKeyPairMessage)));
+            NamedKeyGenParams blsKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), BigInteger.valueOf(1000001), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
+
+            for (String node : keyGenOptions.getNodesToUse())
+            {
+                connection.sendMessage(node, CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.GENERATE, blsKeyGenParams)));
+            }
+
+            return fetchPublicKey(keyID);
         }
         else
-        {
-            reply = connection.sendMessage(keyGenOptions.getNodesToUse()[0], CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.INITIATE, genKeyPairMessage)));
-        }
+        {                                                          // TODO: generate H
+            NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), BigInteger.valueOf(1000001), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
 
-        if (reply.getType() != MessageReply.Type.OKAY)
-        {
-            if (reply.getPayload() instanceof ASN1String)
+            for (String node : keyGenOptions.getNodesToUse())
             {
-                throw new ServiceConnectionException(((ASN1String)reply.getPayload()).getString());
-            }
-            else
-            {
-                throw new ServiceConnectionException("Unknown connection failure.");
-            }
-        }
-
-        try
-        {
-            if (reply.getPayload() != null)
-            {
-                return reply.getPayload().toASN1Primitive().getEncoded();
+                connection.sendMessage(node, CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.GENERATE, ecKeyGenParams)));
             }
 
-            throw new ServiceConnectionException("Key generation returned null.");
-        }
-        catch (IOException e)
-        {
-            throw new ServiceConnectionException("Malformed public key returned: " + e.getMessage());
+            return fetchPublicKey(keyID);
         }
     }
 

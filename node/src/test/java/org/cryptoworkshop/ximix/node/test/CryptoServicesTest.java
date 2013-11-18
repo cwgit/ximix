@@ -42,12 +42,11 @@ import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptDataMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.KeyGenParams;
-import org.cryptoworkshop.ximix.common.asn1.message.KeyGenerationMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
+import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.SignatureCreateMessage;
@@ -61,7 +60,6 @@ import org.cryptoworkshop.ximix.node.crypto.key.BLSKeyPairGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.ECKeyPairGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.ECNewDKGGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.node.crypto.test.TestNotifier;
 import org.cryptoworkshop.ximix.node.service.NodeService;
@@ -129,14 +127,24 @@ public class CryptoServicesTest
 
         XimixNodeContext context = contextMap.get("A");
 
-        final ServicesConnection connection = context.getPeerMap().get("B");
         final String[] peers = new String[] { "A", "B", "C", "D", "E" };
-        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(Algorithm.EC_ELGAMAL, "ECKEY", new KeyGenParams("secp256r1"), 3, peers);
 
-        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.EC_ELGAMAL,
-                                                          new KeyPairGenerateMessage(Algorithm.EC_ELGAMAL, ECKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
+        NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams("ECKEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 3, Arrays.asList(peers));
 
-        Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
+        Map<String, ServicesConnection> peerMap = new HashMap<>();
+
+        peerMap.put("A", contextMap.get("B").getPeerMap().get("A"));
+        peerMap.put("B", contextMap.get("A").getPeerMap().get("B"));
+        peerMap.put("C", contextMap.get("B").getPeerMap().get("C"));
+        peerMap.put("D", contextMap.get("B").getPeerMap().get("D"));
+        peerMap.put("E", contextMap.get("B").getPeerMap().get("E"));
+
+        for (String nodeName : peers)
+        {
+            MessageReply reply = peerMap.get(nodeName).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.EC_ELGAMAL, new KeyPairGenerateMessage(Algorithm.EC_ELGAMAL, ECKeyPairGenerator.Type.GENERATE, ecKeyGenParams)));
+
+            Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
+        }
 
         SubjectPublicKeyInfo pubKeyInfo1 = context.getPublicKey("ECKEY");
         final ECPublicKeyParameters pubKey1 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo1);
@@ -188,7 +196,7 @@ public class CryptoServicesTest
                 fullMap.put("D", contextMap.get("A").getPeerMap().get("D"));
                 fullMap.put("E", contextMap.get("A").getPeerMap().get("E"));
 
-                for (String nodeName : genKeyPairMessage.getNodesToUse())
+                for (String nodeName : peers)
                 {
                     MessageReply decReply = null;
                     try
@@ -239,14 +247,24 @@ public class CryptoServicesTest
 
         XimixNodeContext context = contextMap.get("A");
 
-        final ServicesConnection connection = context.getPeerMap().get("B");
         final List<String> peers = Arrays.asList("A", "B", "C", "D", "E");
-        final KeyGenerationMessage genKeyPairMessage = new KeyGenerationMessage(Algorithm.BLS, "BLSKEY", new KeyGenParams("d62003-159-158.param"), 3, peers);
 
-        MessageReply reply = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.BLS,
-                                                            new KeyPairGenerateMessage(Algorithm.BLS, BLSKeyPairGenerator.Type.INITIATE, genKeyPairMessage)));
+        NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams("BLSKEY", Algorithm.BLS, BigInteger.valueOf(1000001), "d62003-159-158.param", 3, peers);
 
-        Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
+        Map<String, ServicesConnection> peerMap = new HashMap<>();
+
+        peerMap.put("A", contextMap.get("B").getPeerMap().get("A"));
+        peerMap.put("B", contextMap.get("A").getPeerMap().get("B"));
+        peerMap.put("C", contextMap.get("B").getPeerMap().get("C"));
+        peerMap.put("D", contextMap.get("B").getPeerMap().get("D"));
+        peerMap.put("E", contextMap.get("B").getPeerMap().get("E"));
+
+        for (String nodeName : peers)
+        {
+            MessageReply reply = peerMap.get(nodeName).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.BLS, new KeyPairGenerateMessage(Algorithm.BLS, BLSKeyPairGenerator.Type.GENERATE, ecKeyGenParams)));
+
+            Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
+        }
 
         SubjectPublicKeyInfo pubKeyInfo1 = context.getPublicKey("BLSKEY");
         final BLS01PublicKeyParameters pubKey1 = BLSPublicKeyFactory.createKey(pubKeyInfo1);

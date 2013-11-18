@@ -23,12 +23,12 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSplitSecret;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECNewDKGSecretSplitter;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
 
 /**

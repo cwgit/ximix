@@ -15,7 +15,6 @@
  */
 package org.cryptoworkshop.ximix.node.crypto.key;
 
-import java.math.BigInteger;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -24,16 +23,14 @@ import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.KeyGenParams;
-import org.cryptoworkshop.ximix.common.asn1.message.KeyGenerationMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
+import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.asn1.message.StoreMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.node.crypto.key.message.BLSCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.node.crypto.key.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 /**
@@ -44,8 +41,7 @@ public class BLSKeyPairGenerator
     public static enum Type
         implements MessageType
     {
-        INITIATE, // must always be first
-        GENERATE,
+        GENERATE,   // must always be first.
         STORE
     }
 
@@ -73,32 +69,6 @@ public class BLSKeyPairGenerator
         {
             switch (((Type)message.getType()))
             {
-            case INITIATE:
-                final KeyGenerationMessage initiateMessage = KeyGenerationMessage.getInstance(message.getPayload());
-
-                if (initiateMessage.getNodesToUse().contains(nodeContext.getName()))
-                {
-                    KeyGenParams ecGenParams = KeyGenParams.getInstance(initiateMessage.getKeyGenParameters());
-
-                    //
-                    // Generate H, start everyone else      TODO generate H
-                    //
-                    BLSNewDKGGenerator generator = (BLSNewDKGGenerator)nodeContext.getKeyPairGenerator(initiateMessage.getAlgorithm());
-                    NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams(initiateMessage.getKeyID(), message.getAlgorithm(), BigInteger.valueOf(1000001), ecGenParams.getDomainParameters(), initiateMessage.getThreshold(), initiateMessage.getNodesToUse());
-                    BLSCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
-
-                    nodeContext.execute(new SendShareTask(generator, message.getAlgorithm(), ecKeyGenParams.getKeyID(), ecKeyGenParams.getNodesToUse(), messages));
-                    nodeContext.execute(new InitiateKeyGenTask(message.getAlgorithm(), ecKeyGenParams));
-                }
-                else
-                {
-                    for (String node : initiateMessage.getNodesToUse())
-                    {         // find first available
-                        return nodeContext.getPeerMap().get(node).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new KeyPairGenerateMessage(message.getAlgorithm(), Type.GENERATE, initiateMessage));
-                    }
-                }
-
-                return new MessageReply(MessageReply.Type.OKAY, nodeContext.getPublicKey(initiateMessage.getKeyID()));
             case GENERATE:
                 final NamedKeyGenParams ecKeyGenParams = (NamedKeyGenParams)NamedKeyGenParams.getInstance(message.getPayload());
                 final List<String> involvedPeers = ecKeyGenParams.getNodesToUse();
@@ -141,40 +111,6 @@ public class BLSKeyPairGenerator
 
         return type == CommandMessage.Type.GENERATE_KEY_PAIR
             || type == CommandMessage.Type.STORE_SHARE;
-    }
-
-    private class InitiateKeyGenTask
-        implements Runnable
-    {
-        private final NamedKeyGenParams initiateMessage;
-        private final List<String> peersToInitiate;
-        private final Algorithm algorithm;
-
-        InitiateKeyGenTask( Algorithm algorithm, NamedKeyGenParams initiateMessage)
-        {
-            this.algorithm = algorithm;
-            this.initiateMessage = initiateMessage;
-            this.peersToInitiate = initiateMessage.getNodesToUse();
-        }
-
-        @Override
-        public void run()
-        {
-            for (String name : peersToInitiate)
-            {
-                if (!name.equals(nodeContext.getName()))
-                {
-                    try
-                    {
-                        MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(algorithm, new KeyPairGenerateMessage(algorithm, Type.GENERATE, initiateMessage)));
-                    }
-                    catch (ServiceConnectionException e)
-                    {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
-                }
-            }
-        }
     }
 
     private class SendShareTask
