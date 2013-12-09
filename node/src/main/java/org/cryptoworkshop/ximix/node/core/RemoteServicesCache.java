@@ -39,6 +39,7 @@ import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.node.mixnet.service.BoardIndex;
 import org.cryptoworkshop.ximix.node.mixnet.service.RemoteBoardHostingService;
+import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 import org.cryptoworkshop.ximix.node.service.NodeService;
 
@@ -61,7 +62,7 @@ public class RemoteServicesCache
     {
         this.nodeContext = nodeContext;
         this.scheduler = nodeContext.getScheduledExecutorService();
-        this.listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(null), nodeContext.getEventNotifier()).createHandler(RemoteServicesListener.class);
+        this.listenerHandler = new DecoupledListenerHandlerFactory(nodeContext.getDecoupler(Decoupler.SERVICES), nodeContext.getEventNotifier()).createHandler(RemoteServicesListener.class);
         this.notifier = listenerHandler.getNotifier();
     }
 

@@ -177,7 +177,7 @@ public class BulletinBoardRegistry
 
                 File boardDBFile = deriveBoardFile(boardName);
 
-                board = new BulletinBoardImpl(boardName, boardDBFile, nodeContext.getDecoupler(Decoupler.LISTENER), nodeContext.getEventNotifier());
+                board = new BulletinBoardImpl(boardName, boardDBFile, nodeContext.getDecoupler(Decoupler.BOARD_LISTENER), nodeContext.getEventNotifier());
                 board.addListener(changeListener);
 
                 boards.put(boardName, board);
@@ -338,7 +338,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName + ".backup"), nodeContext.getDecoupler(Decoupler.LISTENER), nodeContext.getEventNotifier());
+                board = new BulletinBoardImpl(boardName, deriveBoardFile(boardName + ".backup"), nodeContext.getDecoupler(Decoupler.BOARD_LISTENER), nodeContext.getEventNotifier());
 
                 backupBoards.put(boardName, board);
             }
@@ -386,7 +386,7 @@ public class BulletinBoardRegistry
             // TODO: need to detect twice!
             if (board == null)
             {
-                board = new BulletinBoardImpl(boardName, deriveBoardFile(transitBoardName), nodeContext.getDecoupler(Decoupler.LISTENER), nodeContext.getEventNotifier());
+                board = new BulletinBoardImpl(boardName, deriveBoardFile(transitBoardName), nodeContext.getDecoupler(Decoupler.BOARD_LISTENER), nodeContext.getEventNotifier());
 
                 transitBoards.put(transitBoardName, board);
             }

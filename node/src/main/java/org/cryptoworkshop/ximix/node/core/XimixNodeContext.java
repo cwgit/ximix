@@ -97,6 +97,7 @@ public class XimixNodeContext
 
         this.peerMap = Collections.synchronizedMap(new HashMap<>(peerMap));
 
+        this.decouplers.put(Decoupler.BOARD_LISTENER, Executors.newSingleThreadExecutor());
         this.decouplers.put(Decoupler.BOARD_REGISTRY, Executors.newSingleThreadExecutor());
         this.decouplers.put(Decoupler.LISTENER, Executors.newSingleThreadExecutor());
         this.decouplers.put(Decoupler.SERVICES, Executors.newSingleThreadExecutor());
@@ -286,7 +287,7 @@ public class XimixNodeContext
 
     public void execute(Runnable task)
     {
-        scheduledMultiTaskExecutor.execute(task);
+        multiTaskExecutor.execute(task);
     }
 
     @Override
@@ -298,6 +299,11 @@ public class XimixNodeContext
     @Override
     public Executor getDecoupler(Decoupler task)
     {
+        if (task == null)
+        {
+            throw new NullPointerException("null Decoupler value passed to getDecoupler()");
+        }
+
         return decouplers.get(task);
     }
 

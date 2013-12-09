@@ -426,9 +426,6 @@ public class VerificationTest
         TestCase.assertTrue("Complete method called in DownloadOperationListener", downloadBoardCompleted.get());
         TestCase.assertFalse("Not failed.", downloadBoardFailed.get());
 
-        TestCase.assertEquals("Shuffle and decrypt threads different.", decryptThread.get(), shuffleThread.get());
-
-
         //
         // Validate result points against plainText points.
         //

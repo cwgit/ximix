@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.Semaphore;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -87,7 +88,10 @@ public class CommandApplet
     extends JApplet
 {
     private static final int BATCH_SIZE = 10;
-    private ExecutorService  threadPool = Executors.newFixedThreadPool(5);   // TODO: maybe configure?
+    private ExecutorService  threadPool = Executors.newCachedThreadPool();   // TODO: maybe configure?
+    private static final int ncores = 3;
+
+    private Semaphore processSemaphore = new Semaphore(ncores);
 
     public void init()
     {
@@ -641,6 +645,8 @@ public class CommandApplet
                 String[]       nodes = commandService.getNodeNames().toArray(new String[0]);
                 CountDownLatch uploadLatch = new CountDownLatch(files.length);
 
+                processSemaphore = new Semaphore(nodes.length);
+
                 final ProgressDialog dialog = getProgressDialog("Upload Progress", files.length);
 
                 for (int i = 0; i != files.length; i++)
@@ -652,6 +658,8 @@ public class CommandApplet
                 }
 
                 uploadLatch.await();
+
+                processSemaphore = new Semaphore(ncores);     // TODO: use field in UI.
 
                 commandService.shutdown();
             }
@@ -691,13 +699,14 @@ public class CommandApplet
             {
                 try
                 {
+                    processSemaphore.acquire();
+
                     String boardName = file.getName();
 
                     BoardEntry entry = boardModel.getEntry(file.getName(), primary, secondary);
 
                     if (!commandService.isBoardExisting(boardName))
                     {
-
                         commandService.createBoard(boardName, new BoardCreationOptions.Builder(primary).withBackUpHost(secondary).build());
                     }
 
@@ -729,6 +738,8 @@ public class CommandApplet
                     {
                         uploadService.uploadMessages(boardName, messages.toArray(new byte[messages.size()][]));
                     }
+
+                    processSemaphore.release();
 
                     entry.markProgress(BoardEntry.State.LOADING, messages.size(), 1.0);
 
@@ -873,7 +884,29 @@ public class CommandApplet
         {
             try
             {
+                processSemaphore.acquire();
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
+
+            try
+            {
                 final CountDownLatch myLatch = new CountDownLatch(1);
+
+                String nodeAndStep = null;
+
+                for (int i = 0; i < shufflePlan.length - 1; i++)
+                {
+                    if (!shufflePlan[i].equals(shufflePlan[i + 1]))
+                    {
+                        nodeAndStep = shufflePlan[i] + "/" + i;
+                        break;
+                    }
+                }
+
+                final String nextStatus = nodeAndStep;
 
                 ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
                 {
@@ -888,7 +921,10 @@ public class CommandApplet
                     public void status(String statusObject)
                     {
                         boardEntry.setShuffleProgress(statusObject);
-
+                        if (nextStatus == null || statusObject.contains("Shuffling (" + nextStatus))
+                        {
+                            processSemaphore.release();
+                        }
                         System.err.println("status: " + statusObject);
                     }
 
@@ -914,7 +950,7 @@ public class CommandApplet
                 ShuffleTranscriptsDownloadOperationListener transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
                 {
                     @Override
-                    public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
+                    public void shuffleTranscriptArrived(long operationNumber, final int stepNumber, final InputStream transcript)
                     {
                         try
                         {
@@ -969,7 +1005,7 @@ public class CommandApplet
                 transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
                 {
                     @Override
-                    public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
+                    public void shuffleTranscriptArrived(long operationNumber, final int stepNumber, final InputStream transcript)
                     {
                         try
                         {
@@ -996,7 +1032,6 @@ public class CommandApplet
                     public void completed()
                     {
                         witnessTranscriptCompleted.countDown();
-
                     }
 
                     @Override

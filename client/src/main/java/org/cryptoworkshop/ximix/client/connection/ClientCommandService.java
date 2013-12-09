@@ -20,7 +20,6 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.math.BigInteger;
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -149,7 +148,7 @@ class ClientCommandService
     public Operation<DownloadOperationListener> downloadBoardContents(String boardName, DownloadOptions options, DownloadOperationListener defaultListener)
         throws ServiceConnectionException
     {
-        Operation<DownloadOperationListener> op = new DownloadOp(boardName, options);
+        Operation<DownloadOperationListener> op = new DownloadOp(Executors.newSingleThreadExecutor(), boardName, options);
 
         op.addListener(defaultListener);
 
@@ -162,7 +161,8 @@ class ClientCommandService
     public Operation<ShuffleTranscriptsDownloadOperationListener> downloadShuffleTranscripts(String boardName, long operationNumber, ShuffleTranscriptOptions transcriptOptions, ShuffleTranscriptsDownloadOperationListener defaultListener, String... nodes)
         throws ServiceConnectionException
     {
-        Operation<ShuffleTranscriptsDownloadOperationListener> op = new DownloadShuffleTranscriptsOp(boardName, operationNumber, transcriptOptions, nodes);
+        // As downloading a shuffle transcript is a streaming operation it requires it's own decoupler otherwise everything blocks.
+        Operation<ShuffleTranscriptsDownloadOperationListener> op = new DownloadShuffleTranscriptsOp(Executors.newSingleThreadExecutor(), boardName, operationNumber, transcriptOptions, nodes);
 
         op.addListener(defaultListener);
 
@@ -400,9 +400,8 @@ class ClientCommandService
                     return;
                 }
 
-                DecimalFormat fmt = new DecimalFormat("0.00");
                 String boardHost = DERUTF8String.getInstance(startRep.getPayload()).getString();
-                notifier.status("Starting  (" + nextNode + "/0.00)");
+                notifier.status("Starting  (" + nextNode + "/0)");
                 for (int i = 1; i < nodes.length; i++)
                 {
                     String curNode = nextNode;
@@ -419,7 +418,7 @@ class ClientCommandService
                         return;
                     }
 
-                    notifier.status("Shuffling (" + nextNode + "/" + fmt.format(i / (double)nodes.length) + ")");
+                    notifier.status("Shuffling (" + nextNode + "/" + i + ")");
                 }
 
                 waitForCompleteStatus(this.getOperationNumber(), nextNode, nodes.length);
@@ -430,7 +429,7 @@ class ClientCommandService
 
                 waitForCompleteStatus(this.getOperationNumber(), boardHost, nodes.length + 1);
 
-                notifier.status("Returning (" + nextNode + "/1.00)");
+                notifier.status("Returning (" + nextNode + "/" + nodes.length + ")");
 
                 connection.sendMessage(boardHost, CommandMessage.Type.RETURN_TO_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
 
@@ -490,13 +489,15 @@ class ClientCommandService
         extends Operation<DownloadOperationListener>
         implements Runnable
     {
+        private final ExecutorService decoupler;
         private final String boardName;
         private final DownloadOptions options;
 
-        public DownloadOp(String boardName, DownloadOptions options)
+        public DownloadOp(ExecutorService decoupler, String boardName, DownloadOptions options)
         {
-            super(decouple, eventNotifier, DownloadOperationListener.class);
+            super(decoupler, eventNotifier, DownloadOperationListener.class);
 
+            this.decoupler = decoupler;
             this.boardName = boardName;
             this.options = options;
         }
@@ -512,6 +513,8 @@ class ClientCommandService
                     notifier.failed(reply.getPayload().toString());
                     return;
                 }
+
+                String boardHost = DERUTF8String.getInstance(reply.getPayload()).getString();
 
                 if (options.getKeyID() != null)
                 {
@@ -550,7 +553,7 @@ class ClientCommandService
 
                     for (;;)
                     {
-                        reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
+                        reply = connection.sendMessage(boardHost, CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
                         PostedMessageBlock messageBlock = PostedMessageBlock.getInstance(reply.getPayload());
 
@@ -718,6 +721,10 @@ class ClientCommandService
                 eventNotifier.notify(EventNotifier.Level.ERROR, "Exception in download: " + e.getMessage(), e);
                 notifier.failed(e.toString());
             }
+            finally
+            {
+                decoupler.shutdown();
+            }
         }
 
         //
@@ -834,11 +841,13 @@ class ClientCommandService
         private final long operationOfInterestNumber;
         private final ShuffleTranscriptOptions transcriptOptions;
         private final String[] nodes;
+        private final ExecutorService decoupler;
 
-        public DownloadShuffleTranscriptsOp(String boardName, long operationOfInterestNumber, ShuffleTranscriptOptions transcriptOptions, String... nodes)
+        public DownloadShuffleTranscriptsOp(ExecutorService decoupler, String boardName, long operationOfInterestNumber, ShuffleTranscriptOptions transcriptOptions, String... nodes)
         {
-            super(decouple, eventNotifier, ShuffleTranscriptsDownloadOperationListener.class);
+            super(decoupler, eventNotifier, ShuffleTranscriptsDownloadOperationListener.class);
 
+            this.decoupler = decoupler;
             this.boardName = boardName;
             this.operationOfInterestNumber = operationOfInterestNumber;
             this.transcriptOptions = transcriptOptions;
@@ -882,6 +891,8 @@ class ClientCommandService
             {
                 notifier.failed(e.toString());
             }
+
+            decoupler.shutdown();
         }
 
         private void processNode(String node)
