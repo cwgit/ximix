@@ -96,7 +96,7 @@ function ensureTabs() {
     var tabbody = $('#tabs');
 
     $('<li><a href="#admin_tab">Admin</a></li>').appendTo(tablist);
-    $('<div id="admin_tab"><div class="node" id="admin_tab_details" >Put Servlet here</div></div>').appendTo(tabbody);
+    $('<div id="admin_tab"><div class="node" id="admin_tab_details" ><object type="application/x-java-applet" height="768" width="768"><param name="codebase" value="/libs" /><param name="code" value="org.cryptoworkshop.ximix.console.applet.CommandApplet" /><param name="mixnetConf" value="http://localhost:1887/libs/mixnet.xml"><param name="archive" value="ximix-console-0.9.jar,bcprov-jdk15on-151b03.jar,bcpkix-jdk15on-151b03.jar,jackson-annotations-2.2.0.jar,ximix-client-0.9.jar,ximix-common-0.9.jar" />CommandApplet failed to run.  No Java plug-in was found.</object></div></div>').appendTo(tabbody);
 
     for (var k in nodes) {
         $('<li><a href="#' + (k) + '_tab">' + (nodes[k].name) + '</a><img id="' + (k) + '_tab_icon"  src=""/></li>').appendTo(tablist);

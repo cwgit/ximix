@@ -55,7 +55,6 @@ allprojects {
                 '-XX:MaxPermSize=128m'
     }
 
-
 }
 
 subprojects {
@@ -113,6 +112,8 @@ project(':console') {
         compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.2.0'
         compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.2.0'
         compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.2.0'
+        // compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.50'
+        // compile group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.50'
     }
     jar {
         baseName= rootProject.name+"-console";

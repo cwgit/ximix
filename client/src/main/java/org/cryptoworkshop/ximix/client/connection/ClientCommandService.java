@@ -451,7 +451,7 @@ class ClientCommandService
             {
                 try
                 {
-                    Thread.sleep(5000);  // TODO: configure?
+                    Thread.sleep(2000);  // TODO: configure?
                 }
                 catch (InterruptedException ex)
                 {
@@ -471,7 +471,7 @@ class ClientCommandService
             {
                 try
                 {
-                    Thread.sleep(5000);  // TODO: configure?
+                    Thread.sleep(2000);  // TODO: configure?
                 }
                 catch (InterruptedException ex)
                 {
@@ -553,7 +553,7 @@ class ClientCommandService
 
                     for (;;)
                     {
-                        reply = connection.sendMessage(boardHost, CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
+                        reply = connection.sendMessage(boardHost, CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 20)); // TODO: configure
 
                         PostedMessageBlock messageBlock = PostedMessageBlock.getInstance(reply.getPayload());
 

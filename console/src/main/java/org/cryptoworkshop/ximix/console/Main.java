@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.console;
 
 import java.io.File;
+import java.net.URL;
 import java.security.SecureRandom;
 import java.util.List;
 
@@ -134,8 +135,12 @@ public class Main
         ResourceHandler staticHandler = new ResourceHandler();
         staticHandler.setResourceBase(ConsoleHandler.class.getResource("/html").toURI().toString());
 
+        ResourceHandler libsHandler = new ResourceHandler();
+        URL url = ConsoleHandler.class.getProtectionDomain().getCodeSource().getLocation();
+        libsHandler.setResourceBase(new File(url.toURI().toString()).getParentFile().getParent());
+
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[]{rpcHandler, staticHandler});
+        handlers.setHandlers(new Handler[]{rpcHandler, staticHandler, libsHandler});
         server.setHandler(handlers);
 
         server.start();

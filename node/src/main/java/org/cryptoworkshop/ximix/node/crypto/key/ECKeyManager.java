@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Attribute;
@@ -52,6 +53,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
@@ -156,11 +158,17 @@ public class ECKeyManager
 
         if (domainParameters == null)
         {
+            ASN1ObjectIdentifier curveID = ECNamedCurveTable.getOID(keyGenParams.getDomainParameters());
             X9ECParameters params = ECNamedCurveTable.getByName(keyGenParams.getDomainParameters());
+
+            if (params == null)
+            {
+                params = ECNamedCurveTable.getByName(keyGenParams.getDomainParameters());
+            }
 
             ECKeyPairGenerator kpGen = new ECKeyPairGenerator();
 
-            kpGen.init(new ECKeyGenerationParameters(new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()), new SecureRandom()));
+            kpGen.init(new ECKeyGenerationParameters(new ECNamedDomainParameters(curveID, params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()), new SecureRandom()));
 
             AsymmetricCipherKeyPair kp =  kpGen.generateKeyPair();
 
