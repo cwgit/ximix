@@ -306,12 +306,40 @@ public class CommandApplet
         downloadKeyPanel.add(new JLabel("Threshold"));
         downloadKeyPanel.add(threshold);
 
+        JPanel candidateMapPanel = new JPanel();
+        candidateMapPanel.add(new JLabel("Candidate Map: "));
+        JButton candidateMapBrowseButton = new JButton("...");
+
+        final JTextField candidateMapField = new JTextField(20);
+
+        candidateMapBrowseButton.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent)
+            {
+                JFileChooser chooser = new JFileChooser();
+
+                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+                int result = chooser.showDialog(CommandApplet.this, "Select");
+
+                if (result == JFileChooser.APPROVE_OPTION)
+                {
+                    candidateMapField.setText(chooser.getSelectedFile().getAbsolutePath());
+                }
+            }
+        });
+
+        candidateMapPanel.add(candidateMapField);
+        candidateMapPanel.add(candidateMapBrowseButton);
+
         JPanel downloadButtonPanel = new JPanel();
         downloadButtonPanel.setLayout(new BoxLayout(downloadButtonPanel, BoxLayout.X_AXIS));
 
         downloadButtonPanel.add(downloadButton);
         downloadButtonPanel.add(shuffleButton);
 
+        downloadControlPanel.add(candidateMapPanel);
         downloadControlPanel.add(downloadKeyPanel);
         downloadControlPanel.add(downloadButtonPanel);
 
@@ -319,6 +347,7 @@ public class CommandApplet
         topTablePanel.add(Box.createHorizontalGlue());
 
         boardTable.getTableHeader().setPreferredSize(new Dimension(boardTable.getColumnModel().getTotalColumnWidth(), boardTable.getRowHeight(0) * 2));
+
 
         tablePanel.add(topTablePanel);
         tablePanel.add(new JScrollPane(boardTable));
@@ -1048,7 +1077,7 @@ public class CommandApplet
                     }
                 };
 
-                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).build(), transcriptListener, shufflePlan);
+                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).withPairingEnabled(true).build(), transcriptListener, shufflePlan);
 
                 witnessTranscriptCompleted.await();
 

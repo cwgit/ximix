@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.common.asn1.message;
 
+import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -37,6 +38,7 @@ public class TranscriptDownloadMessage
     private final TranscriptType type;
     private final int maxNumberOfMessages;
     private final byte[] seed;
+    private final boolean withPairing;
 
     /**
      * Base constructor.
@@ -46,15 +48,17 @@ public class TranscriptDownloadMessage
      * @param stepNo the number of the step in the operation the transcript download is for.
      * @param type  the type of transcript requested.
      * @param maxNumberOfMessages the maximum number of messages that can be accepted in a response.
+     * @param withPairing true if the transcript is to be downloaded assuming pairing across two shuffles on the same node.
      * @param seed an optional seed value to use in the server for calculating the indexes of interest.
      */
-    public TranscriptDownloadMessage(long queryID, long operationNumber, int stepNo, TranscriptType type, int maxNumberOfMessages, byte[] seed)
+    public TranscriptDownloadMessage(long queryID, long operationNumber, int stepNo, TranscriptType type, int maxNumberOfMessages, boolean withPairing, byte[] seed)
     {
         this.queryID = queryID;
         this.operationNumber = operationNumber;
         this.stepNo = stepNo;
         this.type = type;
         this.maxNumberOfMessages = maxNumberOfMessages;
+        this.withPairing = withPairing;
         this.seed = (seed != null) ? seed.clone() : null;
     }
 
@@ -65,10 +69,11 @@ public class TranscriptDownloadMessage
         this.stepNo = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue().intValue();
         this.type = TranscriptType.values()[ASN1Integer.getInstance(seq.getObjectAt(3)).getValue().intValue()];
         this.maxNumberOfMessages = ASN1Integer.getInstance(seq.getObjectAt(4)).getValue().intValue();
+        this.withPairing = ASN1Boolean.getInstance(seq.getObjectAt(5)).isTrue();
 
-        if (seq.size() > 5)
+        if (seq.size() > 6)
         {
-            this.seed = ASN1OctetString.getInstance(seq.getObjectAt(5)).getOctets();
+            this.seed = ASN1OctetString.getInstance(seq.getObjectAt(6)).getOctets();
         }
         else
         {
@@ -100,6 +105,7 @@ public class TranscriptDownloadMessage
         v.add(new ASN1Integer(stepNo));
         v.add(new ASN1Integer(type.ordinal()));
         v.add(new ASN1Integer(maxNumberOfMessages));
+        v.add(ASN1Boolean.getInstance(withPairing));
 
         if (seed != null)
         {
@@ -137,5 +143,10 @@ public class TranscriptDownloadMessage
     public long getQueryID()
     {
         return queryID;
+    }
+
+    public boolean isWithPairing()
+    {
+        return withPairing;
     }
 }

@@ -917,7 +917,7 @@ class ClientCommandService
 
                 for (;;)
                 {
-                    reply = connection.sendMessage(node, CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT, new TranscriptDownloadMessage(queryID, operationOfInterestNumber, stepNo, transcriptOptions.getTranscriptType(), transcriptOptions.getChunkSize(), transcriptOptions.getSeedValue()));
+                    reply = connection.sendMessage(node, CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT, new TranscriptDownloadMessage(queryID, operationOfInterestNumber, stepNo, transcriptOptions.getTranscriptType(), transcriptOptions.getChunkSize(), transcriptOptions.isPairingEnabled(), transcriptOptions.getSeedValue()));
 
                     TranscriptBlock transcriptBlock = TranscriptBlock.getInstance(reply.getPayload());
 

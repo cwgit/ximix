@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.node.mixnet.service;
 
 import java.lang.reflect.Constructor;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,9 +47,11 @@ import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CreateBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
+import org.cryptoworkshop.ximix.common.asn1.message.MessageCommitment;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedData;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
@@ -63,6 +66,7 @@ import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardRegistry;
+import org.cryptoworkshop.ximix.node.mixnet.challenge.PairedChallenger;
 import org.cryptoworkshop.ximix.node.mixnet.challenge.SeededChallenger;
 import org.cryptoworkshop.ximix.node.mixnet.challenge.SerialChallenger;
 import org.cryptoworkshop.ximix.node.mixnet.shuffle.TransformShuffleAndMoveTask;
@@ -519,7 +523,9 @@ public class BoardHostingService
                     public MessageReply call()
                         throws Exception
                     {
-                        String challengerKey = getChallengerKey(transcriptDownloadMessage);
+                        boolean isCopyBoard = isCopyBoard(transitBoard);
+                        String challengerKey = getChallengerKey(transcriptDownloadMessage, isCopyBoard);
+
                         IndexNumberGenerator challenger = challengers.get(challengerKey);
                         if (challenger == null)
                         {
@@ -535,7 +541,19 @@ public class BoardHostingService
                                 }
                                 try
                                 {
-                                    challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed());
+                                    // step 0 is a copy step, download all witness values, same with any other copy board.
+                                    if (isCopyBoard)
+                                    {
+                                        challenger = new SerialChallenger(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed());
+                                    }
+                                    else if (transcriptDownloadMessage.isWithPairing())
+                                    {
+                                        challenger = new PairedChallenger(transitBoard, transcriptDownloadMessage.getStepNo(), (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed()));
+                                    }
+                                    else
+                                    {
+                                        challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed());
+                                    }
                                 }
                                 catch (Exception e)
                                 {
@@ -544,6 +562,11 @@ public class BoardHostingService
                                 }
                             }
                             challengers.put(challengerKey, challenger);
+                        }
+
+                        if (challenger instanceof PairedChallenger)
+                        {
+                            ((PairedChallenger)challenger).setStepNo(transcriptDownloadMessage.getStepNo());
                         }
 
                         TranscriptBlock transcriptBlock = transitBoard.fetchTranscriptData(transcriptDownloadMessage.getType(), challenger, new TranscriptBlock.Builder(transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getMaxNumberOfMessages()));
@@ -644,11 +667,33 @@ public class BoardHostingService
         }
     }
 
-    private String getChallengerKey(TranscriptDownloadMessage transcriptDownloadMessage)
+    private String getChallengerKey(TranscriptDownloadMessage transcriptDownloadMessage, boolean isCopyBoard)
     {
+        if (transcriptDownloadMessage.isWithPairing() && !isCopyBoard)
+        {
+            return Long.toString(transcriptDownloadMessage.getQueryID());
+        }
+
         return transcriptDownloadMessage.getQueryID() + "." + transcriptDownloadMessage.getStepNo();
     }
 
+    private boolean isCopyBoard(BulletinBoard transitBoard)
+    {
+        IndexNumberGenerator sourceGenerator = new SerialChallenger(1, 0, null);
+        while (sourceGenerator.hasNext())
+        {
+            TranscriptBlock transcript = transitBoard.fetchTranscriptData(TranscriptType.WITNESSES, sourceGenerator, new TranscriptBlock.Builder(0, 1));
+
+            for (Enumeration en = transcript.getDetails().getObjects(); en.hasMoreElements();)
+            {
+                PostedData msg = PostedData.getInstance(en.nextElement());
+
+                return MessageCommitment.getInstance(msg.getData()) == null;
+            }
+        }
+
+        throw new IllegalStateException("sourceGenerator failed on copy step");
+    }
     private ServicesConnection getPeerConnection(String destinationNode)
     {
         // return a proxy for ourselves.

@@ -16,6 +16,7 @@ public class ShuffleTranscriptOptions
 
         private byte[] seedValue;
         private int chunkSize;
+        private boolean pairingEnabled;
 
         /**
          * Base constructor
@@ -38,6 +39,19 @@ public class ShuffleTranscriptOptions
         public Builder withChallengeSeed(byte[] seedValue)
         {
             this.seedValue = seedValue.clone();
+
+            return this;
+        }
+
+        /**
+         * Specify whether or not two shuffles across the same node should be treated as paired.
+         *
+         * @param isEnabled true if enabled, false otherwise.
+         * @return the current builder instance.
+         */
+        public Builder withPairingEnabled(boolean isEnabled)
+        {
+            this.pairingEnabled = isEnabled;
 
             return this;
         }
@@ -68,12 +82,14 @@ public class ShuffleTranscriptOptions
 
     private final TranscriptType transcriptType;
     private final byte[] seedValue;
+    private final boolean pairingEnabled;
     private final int chunkSize;
 
     private ShuffleTranscriptOptions(Builder builder)
     {
         this.transcriptType = builder.transcriptType;
         this.seedValue = builder.seedValue;
+        this.pairingEnabled = builder.pairingEnabled;
         this.chunkSize = builder.chunkSize;
     }
 
@@ -110,5 +126,15 @@ public class ShuffleTranscriptOptions
     public int getChunkSize()
     {
         return chunkSize;
+    }
+
+    /**
+     * Return whether two shuffles on a node should be treated as paired.
+     *
+     * @return true if pairing is the case, false otherwise.
+     */
+    public boolean isPairingEnabled()
+    {
+        return pairingEnabled;
     }
 }

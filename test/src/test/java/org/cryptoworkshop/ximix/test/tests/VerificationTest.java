@@ -443,4 +443,340 @@ public class VerificationTest
         client.shutdown();
         commandService.shutdown();
     }
+
+    @Test
+    public void testShuffleVerificationWithPairing()
+        throws Exception
+    {
+        SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
+        handler.squelchType(SocketException.class);
+
+        //
+        // Set up nodes.
+        //
+
+        XimixNode nodeOne = getXimixNode("/conf/mixnet.xml", "/conf/node1.xml", handler);
+        NodeTestUtil.launch(nodeOne);
+
+        XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
+        NodeTestUtil.launch(nodeTwo);
+
+        XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
+        NodeTestUtil.launch(nodeThree);
+
+        XimixNode nodeFour = getXimixNode("/conf/mixnet.xml", "/conf/node4.xml", handler);
+        NodeTestUtil.launch(nodeFour);
+
+        XimixNode nodeFive = getXimixNode("/conf/mixnet.xml", "/conf/node5.xml", handler);
+        NodeTestUtil.launch(nodeFive);
+
+
+        SecureRandom random = new SecureRandom();
+
+        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(ResourceAnchor.load("/conf/mixnet.xml"), new TestNotifier());
+
+        KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
+
+        KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.EC_ELGAMAL, "secp256r1")
+            .withThreshold(4)
+            .withNodes("A", "B", "C", "D", "E")
+            .build();
+
+        byte[] encPubKey = keyGenerationService.generatePublicKey("ECKEY", keyGenOptions);
+
+        CommandService commandService = adminRegistrar.connect(CommandService.class);
+
+        commandService.createBoard("FRED", new BoardCreationOptions.Builder("B").build());
+
+        UploadService client = adminRegistrar.connect(UploadService.class);
+
+        final ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(encPubKey);
+
+        final ECElGamalEncryptor encryptor = new ECElGamalEncryptor();
+
+        encryptor.init(pubKey);
+
+
+        //
+        // Set up plain text and upload encrypted pair.
+        //
+
+        int numberOfPoints = 20; // Adjust number of points to test here.
+
+
+        final ECPoint[] plainText1 = new ECPoint[numberOfPoints];
+        final ECPoint[] plainText2 = new ECPoint[numberOfPoints];
+        Set<ECPoint> plain1 = new HashSet<>();
+        Set<ECPoint> plain2 = new HashSet<>();
+
+        //
+        // Encrypt and submit.
+        //
+        for (int i = 0; i < plainText1.length; i++)
+        {
+            plainText1[i] = generatePoint(pubKey.getParameters(), random);
+            plainText2[i] = generatePoint(pubKey.getParameters(), random);
+
+            plain1.add(plainText1[i]);
+            plain2.add(plainText2[i]);
+
+            PairSequence encrypted = new PairSequence(new ECPair[]{encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i])});
+
+            client.uploadMessage("FRED", encrypted.getEncoded());
+        }
+
+        //
+        // Perform shuffle.
+        //
+        final CountDownLatch shufflerLatch = new CountDownLatch(1);
+
+        final AtomicBoolean shuffleCompleted = new AtomicBoolean(false);
+        final AtomicBoolean shuffleFailed = new AtomicBoolean(false);
+        final AtomicReference<Thread> shuffleThread = new AtomicReference<>();
+
+        ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
+        {
+            @Override
+            public void completed()
+            {
+                shuffleCompleted.set(true);
+                TestUtil.checkThread(shuffleThread);
+                shufflerLatch.countDown();
+            }
+
+            @Override
+            public void status(String statusObject)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void failed(String errorObject)
+            {
+                shuffleFailed.set(true);
+                shufflerLatch.countDown();
+                TestUtil.checkThread(shuffleThread);
+            }
+        };
+
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",
+            new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECKEY").build(), shuffleListener, "A", "A", "C", "C", "D", "E");
+
+
+        shufflerLatch.await();
+
+        //
+        // Fail if operation did not complete in the nominated time frame.
+        //
+        //TestCase.assertTrue("Shuffle timed out.", shufflerLatch.await(20, TimeUnit.SECONDS));
+
+
+        //
+        // Check that failed and completed methods are exclusive.
+        //
+
+        TestCase.assertNotSame("Failed flag and completed flag must be different.", shuffleCompleted.get(), shuffleFailed.get());
+
+        //
+        // Check for success of shuffle.
+        //
+        TestCase.assertTrue(shuffleCompleted.get());
+
+        //
+        // Check that shuffle did not fail.
+        //
+        TestCase.assertFalse(shuffleFailed.get());
+
+        final CountDownLatch transcriptCompleted = new CountDownLatch(1);
+
+        final Map<Integer, byte[]> generalTranscripts = new HashMap<>();
+
+        ShuffleTranscriptsDownloadOperationListener transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
+        {
+            @Override
+            public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
+            {
+                try
+                {
+                    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+                    BufferedInputStream bIn = new BufferedInputStream(transcript);
+
+                    int ch;
+                    while ((ch = bIn.read()) >= 0)
+                    {
+                        bOut.write(ch);
+                    }
+                    bOut.close();
+
+                    generalTranscripts.put(stepNumber, bOut.toByteArray());
+                }
+                catch (IOException e)
+                {
+                     e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void completed()
+            {
+                transcriptCompleted.countDown();
+            }
+
+            @Override
+            public void status(String statusObject)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void failed(String errorObject)
+            {
+               transcriptCompleted.countDown();
+            }
+        };
+
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.GENERAL).build(), transcriptListener,  "A", "C", "D", "E");
+
+        transcriptCompleted.await();
+
+        TestCase.assertEquals(8, generalTranscripts.size());
+
+        final Map<Integer, byte[]> witnessTranscripts = new HashMap<>();
+
+        final CountDownLatch witnessTranscriptCompleted = new CountDownLatch(1);
+        transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
+        {
+            @Override
+            public void shuffleTranscriptArrived(long operationNumber, int stepNumber, InputStream transcript)
+            {
+                try
+                {
+                    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+                    BufferedInputStream bIn = new BufferedInputStream(transcript);
+
+                    int ch;
+                    while ((ch = bIn.read()) >= 0)
+                    {
+                        bOut.write(ch);
+                    }
+                    bOut.close();
+
+                    witnessTranscripts.put(stepNumber, bOut.toByteArray());
+                }
+                catch (IOException e)
+                {
+                     e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void completed()
+            {
+                witnessTranscriptCompleted.countDown();
+            }
+
+            @Override
+            public void status(String statusObject)
+            {
+                //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public void failed(String errorObject)
+            {
+               witnessTranscriptCompleted.countDown();
+            }
+        };
+
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).withPairingEnabled(true).build(), transcriptListener,  "A", "C", "D", "E");
+
+        witnessTranscriptCompleted.await();
+
+        TestCase.assertEquals(7, witnessTranscripts.size());
+
+        for (Integer key : witnessTranscripts.keySet())
+        {
+            byte[] transcript = witnessTranscripts.get(key);
+            byte[] initialTranscript = generalTranscripts.get(key);
+            byte[] nextTranscript = generalTranscripts.get(key + 1);
+
+            ECShuffledTranscriptVerifier verifier = new ECShuffledTranscriptVerifier(pubKey, new ByteArrayInputStream(transcript), new ByteArrayInputStream(initialTranscript), new ByteArrayInputStream(nextTranscript));
+
+            verifier.verify();
+        }
+
+        final ECPoint[] resultText1 = new ECPoint[plainText1.length];
+        final ECPoint[] resultText2 = new ECPoint[plainText2.length];
+        final AtomicBoolean downloadBoardCompleted = new AtomicBoolean(false);
+        final AtomicBoolean downloadBoardFailed = new AtomicBoolean(false);
+        final CountDownLatch encryptLatch = new CountDownLatch(1);
+        final AtomicReference<Thread> decryptThread = new AtomicReference<>();
+
+        Operation<DownloadOperationListener> op = commandService.downloadBoardContents(
+            "FRED",
+            new DownloadOptions.Builder()
+                .withKeyID("ECKEY")
+                .withThreshold(4)
+                .withNodes("A", "B", "C", "D", "E").build(),
+            new DownloadOperationListener()
+            {
+                int counter = 0;
+
+                @Override
+                public void messageDownloaded(int index, byte[] message)
+                {
+                    PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
+                    resultText1[counter] = decrypted.getECPoints()[0];
+                    resultText2[counter++] = decrypted.getECPoints()[1];
+                    TestUtil.checkThread(decryptThread);
+                }
+
+                @Override
+                public void completed()
+                {
+                    downloadBoardCompleted.set(true);
+                    TestUtil.checkThread(decryptThread);
+                    encryptLatch.countDown();
+                }
+
+                @Override
+                public void status(String statusObject)
+                {
+                    TestUtil.checkThread(decryptThread);
+                }
+
+                @Override
+                public void failed(String errorObject)
+                {
+                    TestUtil.checkThread(decryptThread);
+                    downloadBoardFailed.set(true);
+                    encryptLatch.countDown();
+                }
+            });
+
+
+        TestCase.assertTrue(encryptLatch.await(20, TimeUnit.SECONDS));
+
+
+        TestCase.assertNotSame("Failed and complete must be different.", downloadBoardFailed.get(), downloadBoardCompleted.get());
+        TestCase.assertTrue("Complete method called in DownloadOperationListener", downloadBoardCompleted.get());
+        TestCase.assertFalse("Not failed.", downloadBoardFailed.get());
+
+        //
+        // Validate result points against plainText points.
+        //
+
+        for (int t = 0; t < plainText1.length; t++)
+        {
+            plain1.remove(resultText1[t]);
+            plain2.remove(resultText2[t]);
+        }
+
+        TestCase.assertTrue(plain1.isEmpty());
+        TestCase.assertTrue(plain2.isEmpty());
+
+        NodeTestUtil.shutdownNodes();
+        client.shutdown();
+        commandService.shutdown();
+    }
 }
