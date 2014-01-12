@@ -206,9 +206,12 @@ task fetch_libs << {
     }
 
     root = new File(projectDir, "console/libs/");
-    if (!root.exists()) {
-        root.mkdirs();
+    if (root.exists())
+    {
+        org.apache.commons.io.FileUtils.deleteDirectory(root);
     }
+ 
+    root.mkdirs();
 
     ['jackson-annotations-2.2.0.jar',
             'jackson-core-2.2.0.jar',
@@ -223,6 +226,7 @@ task fetch_libs << {
     }
 
     fetchFile(providerRemoteUrl, root);
+    fetchFile(pkixRemoteUrl, root);
 
     // Surrey dependencies for Vote Unpacking
     ['commons-codec-1.7.jar',
