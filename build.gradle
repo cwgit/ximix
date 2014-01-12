@@ -195,6 +195,16 @@ task fetch_libs << {
     fetchFile(mapdbRemoteUrl, root);
 
 
+    // Surrey dependencies for Vote Unpacking
+    ['commons-codec-1.7.jar',
+     'json-20090211.jar',
+     'slf4j-api-1.7.2.jar',
+     'vVoteLibrary-20131217011536.jar',
+     'vVoteTableBuilding.jar'
+    ].each { i ->
+        fetchFile("http://www.cryptoworkshop.com/libs/" + i, root);
+    }
+
     root = new File(projectDir, "console/libs/");
     if (!root.exists()) {
         root.mkdirs();
@@ -214,6 +224,15 @@ task fetch_libs << {
 
     fetchFile(providerRemoteUrl, root);
 
+    // Surrey dependencies for Vote Unpacking
+    ['commons-codec-1.7.jar',
+     'json-20090211.jar',
+     'slf4j-api-1.7.2.jar',
+     'vVoteLibrary-20131217011536.jar',
+     'vVoteTableBuilding.jar'
+    ].each { i ->
+        org.apache.commons.io.FileUtils.copyFileToDirectory(new File("libs/" + i), root);
+    }
 }
 
 task test_foo << {

@@ -4,6 +4,7 @@
     <portBacklog>10</portBacklog>
     <portAddress>0.0.0.0</portAddress> <!-- Completely promiscuous -->
     <name>E</name>
+    <keyManagerStore>nodeCaStore</keyManagerStore>
     <keyManagerPassword>Hello</keyManagerPassword>
     <description>
         <detail>

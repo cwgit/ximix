@@ -286,6 +286,12 @@ public class ECKeyManagerTest
         }
 
         @Override
+        public KeyStore getNodeCAStore()
+        {
+            return TestUtils.genCAKeyStore("ecTest");
+        }
+
+        @Override
         public String getBoardHost(String boardName)
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.

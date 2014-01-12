@@ -258,7 +258,6 @@ public class ECKeyManager
         {
             OutputEncryptor encOut = new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes256_CBC).setProvider("BC").build(password);
 
-
             JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
             PKCS12PfxPduBuilder builder = new PKCS12PfxPduBuilder();
 
@@ -271,8 +270,9 @@ public class ECKeyManager
                                     new ECPrivateKeyParameters(sharedPrivateKeyMap.getShare(keyID).getValue(), domainParams)).getEncoded()));
                 SubjectPublicKeyInfo pubKey = this.fetchPublicKey(keyID);
 
+                // TODO: perhaps add CA cert and trust anchor to key store if available
                 PKCS12SafeBagBuilder eeCertBagBuilder = new PKCS12SafeBagBuilder(createCertificate(
-                                                                 keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), privKey));
+                                                                 keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), (PrivateKey)nodeContext.getNodeCAStore().getKey("nodeCA", new char[0])));
 
                 eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
 
@@ -384,7 +384,6 @@ public class ECKeyManager
         return new BcECPrivateKeyOperator(privateKeyShare.getSequenceNo(), paramsMap.get(keyID), privateKeyShare.getValue());
     }
 
-    // TODO: in this case we should get the private key from somewhere else - probably node config
     private X509CertificateHolder createCertificate(
         String keyID,
         int sequenceNo,
@@ -417,7 +416,7 @@ public class ECKeyManager
 
         v3CertBuilder.addExtension(XimixObjectIdentifiers.ximixShareIdExtension, true, new ASN1Integer(sequenceNo));
 
-        return v3CertBuilder.build(new JcaContentSignerBuilder("SHA1withECDSA").setProvider("BC").build(privKey));
+        return v3CertBuilder.build(new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(privKey));
     }
 
     private String getKeyID(Attribute[] attributes)

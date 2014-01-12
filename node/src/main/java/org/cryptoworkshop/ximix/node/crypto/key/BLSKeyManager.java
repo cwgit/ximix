@@ -18,13 +18,8 @@ package org.cryptoworkshop.ximix.node.crypto.key;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
-import java.security.spec.ECFieldFp;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPrivateKeySpec;
-import java.security.spec.EllipticCurve;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,7 +54,6 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
@@ -75,7 +69,6 @@ import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
 import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
@@ -266,24 +259,6 @@ public class BLSKeyManager
     public synchronized byte[] getEncoded(char[] password)
         throws IOException, GeneralSecurityException
     {
-        KeyFactory fact = KeyFactory.getInstance("ECDSA", "BC");
-
-        EllipticCurve curve = new EllipticCurve(
-            new ECFieldFp(new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839")), // q
-            new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-            new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
-
-        ECParameterSpec spec = new ECParameterSpec(
-            curve,
-            ECPointUtil.decodePoint(curve, Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-            new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307"), // n
-            1); // h
-
-       // TODO: neeed an EC key for the node
-        ECPrivateKeySpec priKeySpec = new ECPrivateKeySpec(
-            new BigInteger("876300101507107567501066130761671078357010671067781776716671676178726717"), // d
-            spec);
-
         try
         {
             OutputEncryptor encOut = new JcePKCSPBEOutputEncryptorBuilder(NISTObjectIdentifiers.id_aes256_CBC).setProvider("BC").build(password);
@@ -293,11 +268,11 @@ public class BLSKeyManager
 
             for (String keyID : sharedPrivateKeyMap.getIDs())
             {
-                PrivateKey sigKey = fact.generatePrivate(priKeySpec);
                 SubjectPublicKeyInfo pubKey = this.fetchPublicKey(keyID);
 
+                // TODO: perhaps add CA cert and trust anchor to key store if available
                 PKCS12SafeBagBuilder eeCertBagBuilder = new PKCS12SafeBagBuilder(createCertificate(
-                                                                 keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), sigKey));
+                                                                 keyID, sharedPrivateKeyMap.getShare(keyID).getSequenceNo(), (PrivateKey)nodeContext.getNodeCAStore().getKey("nodeCA", new char[0])));
 
                 eeCertBagBuilder.addBagAttribute(PKCS12SafeBag.friendlyNameAttribute, new DERBMPString(keyID));
 
@@ -404,7 +379,6 @@ public class BLSKeyManager
         return new JpbcPrivateKeyOperator(privateKeyShare.getSequenceNo(), paramsMap.get(keyID), privateKeyShare.getValue());
     }
 
-    // TODO: in this case we should get the private key from somewhere else - probably node config
     private X509CertificateHolder createCertificate(
         String keyID,
         int sequenceNo,
@@ -437,7 +411,7 @@ public class BLSKeyManager
 
         v3CertBuilder.addExtension(XimixObjectIdentifiers.ximixShareIdExtension, true, new ASN1Integer(sequenceNo));
 
-        return v3CertBuilder.build(new JcaContentSignerBuilder("SHA1withECDSA").setProvider("BC").build(privKey));
+        return v3CertBuilder.build(new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(privKey));
     }
 
     private String getKeyID(Attribute[] attributes)

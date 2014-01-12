@@ -2,6 +2,7 @@ package org.cryptoworkshop.ximix.node.crypto.test;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.security.KeyStore;
 import java.security.Security;
 import java.util.Collections;
 import java.util.Map;
@@ -257,6 +258,12 @@ public class BLSKeyManagerTest
         public ThresholdKeyPairGenerator getKeyPairGenerator(Algorithm algorithm)
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public KeyStore getNodeCAStore()
+        {
+            return TestUtils.genCAKeyStore("blsTest");
         }
 
         @Override

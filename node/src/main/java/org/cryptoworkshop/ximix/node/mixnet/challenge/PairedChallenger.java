@@ -38,7 +38,7 @@ public class PairedChallenger
         // TODO: maybe configure chunksize
         int chunkSize = 100;
         IndexNumberGenerator sourceGenerator = new SerialChallenger(initialBoard.size(), 0, null);
-        System.err.println(stepNo);
+
         indexes = new int[initialBoard.size()];
         int count = 0;
         while (sourceGenerator.hasNext())

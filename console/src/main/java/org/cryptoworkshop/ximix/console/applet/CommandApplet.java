@@ -24,6 +24,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,8 +63,11 @@ import javax.swing.table.AbstractTableModel;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.openssl.MiscPEMGenerator;
+import org.bouncycastle.openssl.PEMWriter;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
@@ -95,16 +99,7 @@ public class CommandApplet
 
     public void init()
     {
-        URL mixnetConf;
-        try
-        {
-            mixnetConf = new URL(getParameter("mixnetConf"));
-        }
-        catch (MalformedURLException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            mixnetConf = null; // TODO:
-        }
+        final URL mixnetConf = getConfURL();
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
@@ -236,7 +231,7 @@ public class CommandApplet
         topTablePanel.add(new JLabel("Shuffle Plan:"));
         topTablePanel.add(shufflePlan);
 
-        JTextField keyID = new JTextField(15);
+        final JTextField keyID = new JTextField(15);
         JTextField threshold = new JTextField(3);
 
         keyID.setText("ECENCKEY");
@@ -300,11 +295,74 @@ public class CommandApplet
         downloadControlPanel.setLayout(new BoxLayout(downloadControlPanel, BoxLayout.Y_AXIS));
 
         JPanel downloadKeyPanel = new JPanel();
+        downloadKeyPanel.setLayout(new BoxLayout(downloadKeyPanel, BoxLayout.X_AXIS));
 
+        JButton exportButton = new JButton("Export Key");
+
+        exportButton.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent event)
+            {
+                JFileChooser chooser = new JFileChooser();
+
+                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+                int result = chooser.showDialog(CommandApplet.this, "Save");
+
+                if (result == JFileChooser.APPROVE_OPTION)
+                {
+                    try
+                    {
+                        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(mixnetConf.openStream(), new EventNotifier()
+                        {
+                            @Override
+                            public void notify(Level level, Throwable throwable)
+                            {
+                                System.err.print(level + " " + throwable.getMessage());
+                                throwable.printStackTrace(System.err);
+                            }
+
+                            @Override
+                            public void notify(Level level, Object detail)
+                            {
+                                System.err.println(level + " " + detail.toString());
+                            }
+
+                            @Override
+                            public void notify(Level level, Object detail, Throwable throwable)
+                            {
+                                System.err.println(level + " " + detail.toString());
+                                throwable.printStackTrace(System.err);
+                            }
+                        });
+
+                        KeyService keyService = adminRegistrar.connect(KeyService.class);
+
+                        byte[] encPubKey = keyService.fetchPublicKey(keyID.getText().trim());
+
+                        PEMWriter pWrt = new PEMWriter(new FileWriter(chooser.getSelectedFile().getAbsolutePath()));
+
+                        pWrt.writeObject(new MiscPEMGenerator(SubjectPublicKeyInfo.getInstance(encPubKey)));
+
+                        pWrt.close();
+
+                        keyService.shutdown();
+                    }
+                    catch (Exception e)
+                    {
+                        // TODO:
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+        });
         downloadKeyPanel.add(new JLabel("Key ID: "));
         downloadKeyPanel.add(keyID);
         downloadKeyPanel.add(new JLabel("Threshold"));
         downloadKeyPanel.add(threshold);
+        downloadKeyPanel.add(exportButton);
 
         JPanel candidateMapPanel = new JPanel();
         candidateMapPanel.add(new JLabel("Candidate Map: "));
@@ -339,8 +397,8 @@ public class CommandApplet
         downloadButtonPanel.add(downloadButton);
         downloadButtonPanel.add(shuffleButton);
 
-        downloadControlPanel.add(candidateMapPanel);
         downloadControlPanel.add(downloadKeyPanel);
+        downloadControlPanel.add(candidateMapPanel);
         downloadControlPanel.add(downloadButtonPanel);
 
         topTablePanel.add(downloadControlPanel);
@@ -364,6 +422,21 @@ public class CommandApplet
         basePanel.add(tablePanel);
 
         this.getContentPane().add(basePanel);
+    }
+
+    private URL getConfURL()
+    {
+        URL mixnetConf;
+        try
+        {
+            mixnetConf = new URL(getParameter("mixnetConf"));
+        }
+        catch (MalformedURLException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            mixnetConf = null; // TODO:
+        }
+        return mixnetConf;
     }
 
     public void start()

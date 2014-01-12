@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.node.service;
 
 import java.io.File;
+import java.security.KeyStore;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -145,6 +146,13 @@ public interface NodeContext
      * @return a ThresholdKeyPairGenerator.
      */
     ThresholdKeyPairGenerator getKeyPairGenerator(Algorithm algorithm);
+
+    /**
+     * Return the key store containing the CA for this node.
+     *
+     * @return a key store with the CA details for this node.
+     */
+    KeyStore getNodeCAStore();
 
     /**
      * Return the name of the node hosting the specified board.

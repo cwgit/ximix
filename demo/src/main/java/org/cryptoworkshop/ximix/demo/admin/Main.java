@@ -219,7 +219,7 @@ public class Main
             }
         };
 
-        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECENCKEY").build(), shuffleListener, "A", "C", "C");
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECENCKEY").build(), shuffleListener, "A", "A", "C", "C", "D");
 
         shuffleLatch.await();
 
@@ -340,7 +340,7 @@ public class Main
             }
         };
 
-        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.GENERAL).build(), transcriptListener, "A", "C", "C");
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.GENERAL).build(), transcriptListener, "A", "C", "D");
 
         transcriptCompleted.await();
 
@@ -392,7 +392,7 @@ public class Main
         };
 
         // it should be noted the challenge seed should be random data!
-        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).build(), transcriptListener, "A", "C", "C");
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).withPairingEnabled(true).build(), transcriptListener, "A", "C", "D");
 
         witnessTranscriptCompleted.await();
 

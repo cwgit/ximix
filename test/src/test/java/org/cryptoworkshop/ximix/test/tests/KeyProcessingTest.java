@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.SocketException;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -38,6 +39,7 @@ import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
@@ -76,7 +78,13 @@ import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
  */
 public class KeyProcessingTest extends TestCase
 {
-
+    static
+    {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
 
     private static ECPoint generatePoint(ECDomainParameters params, SecureRandom rand)
     {

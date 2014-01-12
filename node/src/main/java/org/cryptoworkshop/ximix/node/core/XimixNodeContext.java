@@ -21,6 +21,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -88,6 +90,7 @@ public class XimixNodeContext
     private final Map<String, String> description;
     private final ListeningSocketInfo listeningSocketInfo;
     private final EventNotifier eventNotifier;
+    private final KeyStore keyManagerCaStore;
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig, EventNotifier eventNotifier)
         throws ConfigException
@@ -113,13 +116,36 @@ public class XimixNodeContext
 
         this.ecKeyManager = new ECKeyManager(this);
         this.blsKeyManager = new BLSKeyManager(this);
+        try
+        {
+            this.keyManagerCaStore = KeyStore.getInstance("PKCS12", "BC");
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new ConfigException("unable to create key store object: " + e.getMessage(), e);
+        }
 
         if (homeDirectory != null)
         {
-            char[] keyManagerPasswd = nodeConfig.getStringProperty("keyManagerPassword").toCharArray();
+            try
+            {
+                File keyManagerCaStoreFile = new File(nodeConfig.getStringProperty("keyManagerStore") + ".p12");
 
-            setupKeyManager(homeDirectory, keyManagerPasswd, ecKeyManager);
-            setupKeyManager(homeDirectory, keyManagerPasswd, blsKeyManager);
+                char[] keyManagerPasswd = nodeConfig.getStringProperty("keyManagerPassword").toCharArray();
+
+                keyManagerCaStore.load(new FileInputStream(keyManagerCaStoreFile), keyManagerPasswd);
+
+                setupKeyManager(homeDirectory, keyManagerPasswd, ecKeyManager);
+                setupKeyManager(homeDirectory, keyManagerPasswd, blsKeyManager);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new ConfigException("unable to create node key store: " + e.getMessage(), e);
+            }
+            catch (IOException e)
+            {
+                throw new ConfigException("unable to read node key store: " + e.getMessage(), e);
+            }
         }
 
         remoteServicesCache = new RemoteServicesCache(this);
@@ -405,6 +431,12 @@ public class XimixNodeContext
     }
 
     @Override
+    public KeyStore getNodeCAStore()
+    {
+        return keyManagerCaStore;
+    }
+
+    @Override
     public String getBoardHost(String boardName)
     {
         String host = remoteServicesCache.findBoardHost(boardName);
@@ -475,6 +507,7 @@ public class XimixNodeContext
      * Reload our previous state and register listener's if required.
      *
      * @param homeDirectory root of the node's config
+     * @param passwd the password to be used to open the key file.
      * @param keyManager    the key manager to be reloaded.
      */
     private void setupKeyManager(final File homeDirectory, final char[] passwd, KeyManager keyManager)

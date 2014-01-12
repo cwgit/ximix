@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.client.connection.AdminServicesConnection;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
@@ -70,6 +72,14 @@ import org.w3c.dom.Element;
 
 public class CryptoServicesTest
 {
+    static
+    {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
+
     @Test
     public void testBasicGenerationNoPeers()
         throws Exception
