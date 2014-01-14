@@ -228,8 +228,12 @@ public class CommandApplet
 
         topTablePanel.add(uploadButton);
 
-        topTablePanel.add(new JLabel("Shuffle Plan:"));
-        topTablePanel.add(shufflePlan);
+        JPanel shufflePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        shufflePanel.add(new JLabel("Shuffle Plan:"));
+        shufflePanel.add(shufflePlan);
+
+        topTablePanel.add(shufflePanel);
 
         final JTextField keyID = new JTextField(15);
         JTextField threshold = new JTextField(3);
@@ -238,8 +242,6 @@ public class CommandApplet
         threshold.setText("4");
 
         JButton shuffleButton = new JButton("Shuffle and Download Selected");
-
-        JButton downloadButton = new JButton("Download Selected");
 
         shuffleButton.addActionListener(new ActionListener()
         {
@@ -358,10 +360,17 @@ public class CommandApplet
                 }
             }
         });
-        downloadKeyPanel.add(new JLabel("Key ID: "));
-        downloadKeyPanel.add(keyID);
-        downloadKeyPanel.add(new JLabel("Threshold"));
-        downloadKeyPanel.add(threshold);
+
+        JPanel keyIDPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        keyIDPanel.add(new JLabel("Key ID: "));
+        keyIDPanel.add(keyID);
+
+        JPanel thresholdPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        thresholdPanel.add(new JLabel("Threshold"));
+        thresholdPanel.add(threshold);
+
+        downloadKeyPanel.add(keyIDPanel);
+        downloadKeyPanel.add(thresholdPanel);
         downloadKeyPanel.add(exportButton);
 
         JPanel candidateMapPanel = new JPanel();
@@ -394,7 +403,6 @@ public class CommandApplet
         JPanel downloadButtonPanel = new JPanel();
         downloadButtonPanel.setLayout(new BoxLayout(downloadButtonPanel, BoxLayout.X_AXIS));
 
-        downloadButtonPanel.add(downloadButton);
         downloadButtonPanel.add(shuffleButton);
 
         downloadControlPanel.add(downloadKeyPanel);
