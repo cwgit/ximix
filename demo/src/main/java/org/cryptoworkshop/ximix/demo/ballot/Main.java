@@ -142,7 +142,7 @@ public class Main
 
         for (int i = 0; i != count; i++)
         {
-            File f = new File("REGION-" + fmt.format(i));
+            File f = new File("REGION-" + fmt.format(i) + ".blt");
 
             ECPair[][] ballots = generateBallots(new Random(i), ballotSize, encryptor, pubKey.getParameters(), new SecureRandom());
 

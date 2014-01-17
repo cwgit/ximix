@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -64,8 +65,10 @@ import javax.swing.table.AbstractTableModel;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.openssl.PEMWriter;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
@@ -84,9 +87,11 @@ import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
 import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
+import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
+import org.cryptoworkshop.ximix.console.util.vote.VoteUnpacker;
 
 public class CommandApplet
     extends JApplet
@@ -196,6 +201,28 @@ public class CommandApplet
 
         final JTable  boardTable = new JTable(new BoardTableModel());
 
+        JButton candidateMapBrowseButton = new JButton("...");
+
+        final JTextField configField = new JTextField(20);
+
+        candidateMapBrowseButton.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent)
+            {
+                JFileChooser chooser = new JFileChooser();
+
+                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+                int result = chooser.showDialog(CommandApplet.this, "Select");
+
+                if (result == JFileChooser.APPROVE_OPTION)
+                {
+                    configField.setText(chooser.getSelectedFile().getAbsolutePath());
+                }
+            }
+        });
+
         JButton uploadButton = new JButton("Do Upload");
 
         final URL finalMixnetConf = mixnetConf;
@@ -277,7 +304,7 @@ public class CommandApplet
                         }
                     }
 
-                    Thread taskThread = new Thread(new FullShuffleTask(new File(dirName), "ECENCKEY", (BoardTableModel)boardTable.getModel(), plan, finalMixnetConf, eventNotifier));
+                    Thread taskThread = new Thread(new FullShuffleTask(new File(dirName), keyID.getText().trim(), (BoardTableModel)boardTable.getModel(), plan, finalMixnetConf, configField.getText().trim(), eventNotifier));
 
                     taskThread.setPriority(Thread.NORM_PRIORITY);
 
@@ -374,30 +401,9 @@ public class CommandApplet
         downloadKeyPanel.add(exportButton);
 
         JPanel candidateMapPanel = new JPanel();
-        candidateMapPanel.add(new JLabel("Candidate Map: "));
-        JButton candidateMapBrowseButton = new JButton("...");
+        candidateMapPanel.add(new JLabel("Candidate Config: "));
 
-        final JTextField candidateMapField = new JTextField(20);
-
-        candidateMapBrowseButton.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent)
-            {
-                JFileChooser chooser = new JFileChooser();
-
-                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-
-                int result = chooser.showDialog(CommandApplet.this, "Select");
-
-                if (result == JFileChooser.APPROVE_OPTION)
-                {
-                    candidateMapField.setText(chooser.getSelectedFile().getAbsolutePath());
-                }
-            }
-        });
-
-        candidateMapPanel.add(candidateMapField);
+        candidateMapPanel.add(configField);
         candidateMapPanel.add(candidateMapBrowseButton);
 
         JPanel downloadButtonPanel = new JPanel();
@@ -811,9 +817,9 @@ public class CommandApplet
                 {
                     processSemaphore.acquire();
 
-                    String boardName = file.getName();
+                    String boardName = file.getName().substring(0, file.getName().indexOf('.'));
 
-                    BoardEntry entry = boardModel.getEntry(file.getName(), primary, secondary);
+                    BoardEntry entry = boardModel.getEntry(boardName, primary, secondary);
 
                     if (!commandService.isBoardExisting(boardName))
                     {
@@ -906,14 +912,16 @@ public class CommandApplet
         private final String[] shuffflePlan;
         private final EventNotifier eventNotifier;
         private final URL mixnetConf;
+        private final String csvConfig;
 
-        public FullShuffleTask(File destDir, String keyID, BoardTableModel boardModel, String[] shufflePlan, URL mixnetConf, EventNotifier eventNotifier)
+        public FullShuffleTask(File destDir, String keyID, BoardTableModel boardModel, String[] shufflePlan, URL mixnetConf, String csvConfig, EventNotifier eventNotifier)
         {
             this.destDir = destDir;
             this.keyID = keyID;
             this.boardModel = boardModel;
             this.shuffflePlan = shufflePlan;
             this.mixnetConf = mixnetConf;
+            this.csvConfig = csvConfig;
             this.eventNotifier = eventNotifier;
         }
 
@@ -950,7 +958,7 @@ public class CommandApplet
 
                     entry.setShuffleProgress("Pending");
 
-                    threadPool.submit(new ShuffleAndDownloadTask(destDir, entry, commandService, keyID, pubKey, shuffleLatch, shuffflePlan, dialog, eventNotifier));
+                    threadPool.submit(new ShuffleAndDownloadTask(destDir, entry, commandService, keyID, pubKey, shuffleLatch, shuffflePlan, csvConfig, dialog, eventNotifier));
                 }
 
                 shuffleLatch.await();
@@ -976,8 +984,9 @@ public class CommandApplet
         private final String[] shufflePlan;
         private final ProgressDialog dialog;
         private final EventNotifier eventNotifier;
+        private final String conversionFile;
 
-        public ShuffleAndDownloadTask(File destDir, BoardEntry boardEntry, CommandService commandService, String keyID, ECPublicKeyParameters pubKey, CountDownLatch shuffleLatch, String[] shufflePlan, ProgressDialog dialog, EventNotifier eventNotifier)
+        public ShuffleAndDownloadTask(File destDir, BoardEntry boardEntry, CommandService commandService, String keyID, ECPublicKeyParameters pubKey, CountDownLatch shuffleLatch, String[] shufflePlan, String conversionFile, ProgressDialog dialog, EventNotifier eventNotifier)
         {
             this.destDir = destDir;
             this.boardEntry = boardEntry;
@@ -986,6 +995,7 @@ public class CommandApplet
             this.pubKey = pubKey;
             this.shuffleLatch = shuffleLatch;
             this.shufflePlan = shufflePlan;
+            this.conversionFile = conversionFile;
             this.dialog = dialog;
             this.eventNotifier = eventNotifier;
         }
@@ -1260,6 +1270,45 @@ public class CommandApplet
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 1.0);
 
                 shuffleLatch.countDown();
+
+                //
+                // Convert the votes into a CSV
+                //
+                VoteUnpacker unpacker = new VoteUnpacker(new File(conversionFile));
+
+                ASN1InputStream aIn = new ASN1InputStream(new FileInputStream(boardEntry.getName() + ".out"));
+
+                String[] details = boardEntry.getName().split("_"); // The second part of the name tells us which type the race is
+
+                BufferedWriter bfOut = new BufferedWriter(new FileWriter(new File(boardEntry.getName() + ".csv")));
+
+                Object o;
+                while ((o = aIn.readObject()) != null)
+                {
+                    PointSequence seq = PointSequence.getInstance(CustomNamedCurves.getByName("secp256r1").getCurve(), o);
+                    ECPoint[]     points = seq.getECPoints();
+
+                    for (int i = 0; i != points.length; i++)
+                    {
+                        int[] votes = unpacker.lookup(details[1], points[i]);
+                        if (i != 0)
+                        {
+                            bfOut.write(",");
+                        }
+                        for  (int j = 0; j != votes.length; j++)
+                        {
+                            if (j != 0)
+                            {
+                                bfOut.write(",");
+                            }
+                            bfOut.write(Integer.toString(votes[j]));
+                        }
+                    }
+
+                    bfOut.newLine();
+                }
+
+                bfOut.close();
             }
             catch (Exception e)
             {
