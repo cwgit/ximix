@@ -1015,21 +1015,10 @@ public class CommandApplet
             {
                 final CountDownLatch myLatch = new CountDownLatch(1);
 
-                String nodeAndStep = null;
-
-                for (int i = 0; i < shufflePlan.length - 1; i++)
-                {
-                    if (!shufflePlan[i].equals(shufflePlan[i + 1]))
-                    {
-                        nodeAndStep = shufflePlan[i] + "/" + i;
-                        break;
-                    }
-                }
-
-                final String nextStatus = nodeAndStep;
-
                 ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
                 {
+                    private boolean firstStepDone = false;
+
                     @Override
                     public void completed()
                     {
@@ -1041,8 +1030,9 @@ public class CommandApplet
                     public void status(String statusObject)
                     {
                         boardEntry.setShuffleProgress(statusObject);
-                        if (nextStatus == null || statusObject.contains("Shuffling (" + nextStatus))
+                        if (!statusObject.startsWith("Starting") && !firstStepDone)
                         {
+                            firstStepDone = true;
                             processSemaphore.release();
                         }
                         System.err.println("status: " + statusObject);
@@ -1276,11 +1266,11 @@ public class CommandApplet
                 //
                 VoteUnpacker unpacker = new VoteUnpacker(new File(conversionFile));
 
-                ASN1InputStream aIn = new ASN1InputStream(new FileInputStream(boardEntry.getName() + ".out"));
+                ASN1InputStream aIn = new ASN1InputStream(new FileInputStream(new File(destDir, boardEntry.getName() + ".out")));
 
                 String[] details = boardEntry.getName().split("_"); // The second part of the name tells us which type the race is
 
-                BufferedWriter bfOut = new BufferedWriter(new FileWriter(new File(boardEntry.getName() + ".csv")));
+                BufferedWriter bfOut = new BufferedWriter(new FileWriter(new File(destDir, boardEntry.getName() + ".csv")));
 
                 Object o;
                 while ((o = aIn.readObject()) != null)

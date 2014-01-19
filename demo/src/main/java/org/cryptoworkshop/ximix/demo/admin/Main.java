@@ -125,7 +125,7 @@ public class Main
         {
             KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.ECDSA, "secp256r1")
                                                        .withThreshold(2)
-                                                       .withNodes("A", "B", "C", "D")
+                                                       .withNodes("A", "B", "C", "D", "E")
                                                        .build();
 
 
@@ -138,7 +138,7 @@ public class Main
         {
             KeyGenerationOptions keyGenOptions = new KeyGenerationOptions.Builder(Algorithm.BLS, "d62003-159-158.param")
                                                        .withThreshold(3)
-                                                       .withNodes("A", "B", "C", "D")
+                                                       .withNodes("A", "B", "C", "D", "E")
                                                        .build();
 
 

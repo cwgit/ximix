@@ -16,8 +16,11 @@
 package org.cryptoworkshop.ximix.demo.ballot;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -46,7 +49,7 @@ public class Main
 {
     private static ECPoint generatePoint(ECDomainParameters params, SecureRandom rand)
     {
-        return params.getG().multiply(getRandomInteger(params.getN(), rand));
+        return params.getG().multiply(getRandomInteger(params.getN(), rand)).normalize();
     }
 
     private static BigInteger getRandomInteger(BigInteger n, SecureRandom rand)
@@ -61,8 +64,12 @@ public class Main
         return r;
     }
 
-    private static ECPair[][] generateBallots(Random rand, int ballotSize, ECElGamalEncryptor encryptor, ECDomainParameters ecParams, SecureRandom pointRandom)
+    private static void generateBallots(String baseName, Random rand, int ballotSize, ECElGamalEncryptor encryptor, ECDomainParameters ecParams, SecureRandom pointRandom)
+        throws IOException
     {
+        File ballotFile = new File(baseName + ".blt");
+        File candidateFile = new File(baseName + "." + "candidates.json");
+
         int numberOfCandidates = 4 + rand.nextInt(10);
 
         List<ECPoint> candidateNumbers = new ArrayList<>(numberOfCandidates);
@@ -90,7 +97,59 @@ public class Main
             ballots[ballotNo] = ballot;
         }
 
-        return ballots;
+        OutputStream fOut = new BufferedOutputStream(new FileOutputStream(ballotFile));
+
+        for (int j = 0; j != ballots.length; j++)
+        {
+            fOut.write(new PairSequence(ballots[j]).getEncoded());
+        }
+
+        fOut.close();
+
+        BufferedWriter cWrt = new BufferedWriter(new FileWriter(candidateFile));
+
+        cWrt.write("{");
+        cWrt.newLine();
+
+        cWrt.write("    \"RaceId\": \"" + baseName + "\",");
+        cWrt.newLine();
+
+        cWrt.write("    \"RaceName\": \"Bass\",");
+        cWrt.newLine();
+
+        cWrt.write("    \"RaceType\": \"LA\",");
+        cWrt.newLine();
+
+        cWrt.write("    \"CandidateIds\": [");
+        cWrt.newLine();
+
+        for (int j = 0; j != candidateNumbers.size(); j++)
+        {
+            ECPoint candidate = candidateNumbers.get(j);
+
+            cWrt.write("        {");
+            cWrt.newLine();
+            cWrt.write("            \"x\" : \"" + candidate.getAffineXCoord().toBigInteger().toString(16) + "\",");
+            cWrt.newLine();
+            cWrt.write("            \"y\" : \"" + candidate.getAffineYCoord().toBigInteger().toString(16) + "\"");
+            cWrt.newLine();
+            if (j < candidateNumbers.size() - 1)
+            {
+                cWrt.write("        },");
+            }
+            else
+            {
+                cWrt.write("        }");
+            }
+            cWrt.newLine();
+        }
+
+        cWrt.write("    ]");
+        cWrt.newLine();
+
+        cWrt.write("}");
+        cWrt.newLine();
+        cWrt.close();
     }
 
     public static void main(String[] args)
@@ -142,18 +201,9 @@ public class Main
 
         for (int i = 0; i != count; i++)
         {
-            File f = new File("REGION-" + fmt.format(i) + ".blt");
+            String baseName = "REGION-" + fmt.format(i) + "_LA";
 
-            ECPair[][] ballots = generateBallots(new Random(i), ballotSize, encryptor, pubKey.getParameters(), new SecureRandom());
-
-            OutputStream fOut = new BufferedOutputStream(new FileOutputStream(f));
-
-            for (int j = 0; j != ballots.length; j++)
-            {
-                fOut.write(new PairSequence(ballots[j]).getEncoded());
-            }
-
-            fOut.close();
+            generateBallots(baseName, new Random(i), ballotSize, encryptor, pubKey.getParameters(), new SecureRandom());
         }
     }
 }
