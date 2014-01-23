@@ -129,7 +129,7 @@ public class XimixNodeContext
         {
             try
             {
-                File keyManagerCaStoreFile = new File(nodeConfig.getStringProperty("keyManagerStore") + ".p12");
+                File keyManagerCaStoreFile = new File(homeDirectory, nodeConfig.getStringProperty("keyManagerStore") + ".p12");
 
                 char[] keyManagerPasswd = nodeConfig.getStringProperty("keyManagerPassword").toCharArray();
 

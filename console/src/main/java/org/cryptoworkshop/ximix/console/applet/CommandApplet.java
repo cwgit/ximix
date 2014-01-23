@@ -1270,7 +1270,8 @@ public class CommandApplet
 
                 String[] details = boardEntry.getName().split("_"); // The second part of the name tells us which type the race is
 
-                BufferedWriter bfOut = new BufferedWriter(new FileWriter(new File(destDir, boardEntry.getName() + ".csv")));
+                BufferedWriter bfOut = new BufferedWriter(new FileWriter(new File(destDir, boardEntry.getName() + "." + unpacker.getSuffix(details[0], details[1], details[2]) + ".csv")));
+                int ballotLength = unpacker.getBallotLength(details[0], details[1], details[2]);
 
                 Object o;
                 while ((o = aIn.readObject()) != null)
@@ -1278,20 +1279,38 @@ public class CommandApplet
                     PointSequence seq = PointSequence.getInstance(CustomNamedCurves.getByName("secp256r1").getCurve(), o);
                     ECPoint[]     points = seq.getECPoints();
 
+                    List<Integer>  candidates = new ArrayList<>();
+                    int maxCandidateID = 0;
+
                     for (int i = 0; i != points.length; i++)
                     {
-                        int[] votes = unpacker.lookup(details[1], points[i]);
+                        int[] votes = unpacker.lookup(details[0], details[1], details[2], points[i]);
+                        for  (int j = 0; j != votes.length; j++)
+                        {
+                            candidates.add(votes[j]);
+                            if (votes[j] > maxCandidateID)
+                            {
+                                maxCandidateID = votes[j];
+                            }
+                        }
+                    }
+
+                    int[] preferences = new int[ballotLength];
+                    int   preference = 1;
+                    for (int i = 0; i != candidates.size(); i++)
+                    {
+                        preferences[candidates.get(i) - 1] = preference++;
+                    }
+
+                    for (int i = 0; i != preferences.length; i++)
+                    {
                         if (i != 0)
                         {
                             bfOut.write(",");
                         }
-                        for  (int j = 0; j != votes.length; j++)
+                        if (preferences[i] != 0)
                         {
-                            if (j != 0)
-                            {
-                                bfOut.write(",");
-                            }
-                            bfOut.write(Integer.toString(votes[j]));
+                            bfOut.write(Integer.toString(preferences[i]));
                         }
                     }
 

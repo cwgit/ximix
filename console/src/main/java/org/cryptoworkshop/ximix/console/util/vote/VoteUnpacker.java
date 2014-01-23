@@ -5,8 +5,10 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -29,6 +31,7 @@ public class VoteUnpacker
 {
     private final ECCurve             curve;
     private final Map<String, Lookup> lookupMap = new HashMap<>();
+    private final Map<String, CandidateIndex> candidateTable = new HashMap<>();
     private final ECPoint             paddingPoint;
 
     public VoteUnpacker(File unpackerConfig)
@@ -62,7 +65,7 @@ public class VoteUnpacker
             @Override
             public boolean accept(File dir, String name)
             {
-                return name.endsWith(".json");
+                return name.endsWith(".json") || name.endsWith(".cid");
             }
         });
 
@@ -73,42 +76,77 @@ public class VoteUnpacker
             JSONObject candidateData = IOUtils.readJSONObjectFromFile(table.getPath());
 
             JSONArray candidates = candidateData.getJSONArray("CandidateIds");
-//            for (int i = 0; i != candidates.length(); i++)
-//            {
-//                System.err.println(candidates.get(i));
-//            }
+            List<ECPoint> candidateList = new ArrayList<>();
+
+            for (int i = 0; i != candidates.length(); i++)
+            {
+                JSONObject candidateID = candidates.getJSONObject(i);
+
+                candidateList.add(curve.createPoint(new BigInteger(candidateID.getString("x"), 16), new BigInteger(candidateID.getString("y"), 16)));
+            }
+
+            candidateTable.put(table.getName().substring(0, table.getName().indexOf('.')), new CandidateIndex(candidateData.getString("RaceName"), candidateData.getString("DistrictName"), candidateList));
         }
     }
 
+    public String getSuffix(String gid, String type, String meta)
+    {
+         return candidateTable.get(gid + "_" + type + "_" + meta).getSuffix();
+    }
+
     /**
-     * Return an array of votes, with 0 indicating no vote was given.
+     * Return an array of votes, can be empty if none were made. The list will be
+     * candidate numbers in ballot order as preferences.
      *
-     * @param type indicator for the packing table to use.
+     * @param type  indicator for the packing table to use.
      * @param point a possibly packed set of indexes.
      * @return an array of votes based on ballot order
      */
-    public int[] lookup(String type, ECPoint point)
+    public int[] lookup(String gid, String type, String meta, ECPoint point)
     {
         Lookup lookUp = lookupMap.get(type.toLowerCase());
 
+        if (type.equalsIgnoreCase("ATL"))
+        {
+            List<ECPoint> candidateList = candidateTable.get(gid + "_" + type + "_" + meta).getCandidateList();
+            for (int i = 0; i != candidateList.size(); i++)
+            {
+                if (candidateList.get(i).equals(point))
+                {
+                    return new int[]{i + 1};
+                }
+            }
+        }
+
         if (point.equals(paddingPoint))
         {
-            return new int[lookUp.packingSize];
+            return new int[0];
         }
 
         byte[] indexes = lookUp.find(point);
 
-        // TODO: at the moment the candidate files are not needed, they're in the config in
-        // case the ballot position needs to be added. At the moment we take the ballot position
-        // as the index + 1.
-        int[] values = new int[lookUp.packingSize];
-
-        for (int i = 0; i != indexes.length; i++)
+        //
+        // truncate zeroes
+        int end = indexes.length - 1;
+        while (end >= 0 && indexes[end] == 0)
         {
-            values[i] = indexes[i] + 1;
+            end--;
+        }
+
+        // this list is candidate numbers in ballot order as preferences.
+        int[] values = new int[end + 1];
+
+        for (int i = 0; i != values.length; i++)
+        {
+            values[i] = indexes[i];
         }
 
         return values;
+    }
+
+    public int getBallotLength(String gid, String type, String meta)
+    {
+        return candidateTable.get(gid + "_" + type + "_" + meta).getCandidateList().size();
     }
 
     private class Lookup
@@ -126,9 +164,48 @@ public class VoteUnpacker
 
         byte[] find(ECPoint point)
         {
-            return BinarySearchFile.convertToPlain(bsf.binarySearch(point.getEncoded(true)), packingSize);
+            byte[] encoding = bsf.binarySearch(point.getEncoded(true));
+            if (encoding == null)
+            {
+                // TODO: logging
+                System.err.println(point.getXCoord().toBigInteger().toString(16) + " " + point.getYCoord().toBigInteger().toString(16));
+                return null;
+            }
+            return BinarySearchFile.convertToPlain(encoding, packingSize);
         }
     }
+
+    private class CandidateIndex
+    {
+        private final String raceName;
+        private final String districtName;
+        private final List<ECPoint> candidateList;
+
+        CandidateIndex(String raceName, String districtName, List<ECPoint> candidateList)
+        {
+            this.raceName = raceName;
+            if (raceName.equals(districtName))
+            {
+                this.districtName = null;
+            }
+            else
+            {
+                this.districtName = districtName;
+            }
+            this.candidateList = candidateList;
+        }
+
+        public String getSuffix()
+        {
+            return (districtName != null) ? raceName + "_" + districtName : raceName;
+        }
+
+        public List<ECPoint> getCandidateList()
+        {
+            return candidateList;
+        }
+    }
+
 
     public static void main(String[] args)
         throws Exception
@@ -146,7 +223,7 @@ public class VoteUnpacker
         {
             PointSequence seq = PointSequence.getInstance(CustomNamedCurves.getByName("secp256r1").getCurve(), o);
 
-            System.err.println(unpacker.lookup(details[1], seq.getECPoints()[0]));
+            System.err.println(unpacker.lookup(details[0], details[1], details[2], seq.getECPoints()[0]));
         }
 
 
