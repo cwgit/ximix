@@ -31,6 +31,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.operator.ECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
@@ -92,15 +93,18 @@ public class NodeDecryptionService
                 }
                 catch (IOException e)
                 {
-                    e.printStackTrace();  //TOOD: log
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Error encoding decrypt: " + e.getMessage(), e);
+
+                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Error encoding decrypt: "  + e.getMessage()));
                 }
             }
 
             return new MessageReply(MessageReply.Type.OKAY, new ShareMessage(operator.getSequenceNo(), partialDecryptsBuilder.build()));
         default:
-            System.err.println("unknown command");
+            nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Unknown command: " + message.getType());
+
+            return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command: " + message.getType()));
         }
-        return null;  // TODO:
     }
 
     public boolean isAbleToHandle(Message message)

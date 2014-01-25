@@ -15,7 +15,9 @@
  */
 package org.cryptoworkshop.ximix.client.connection;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -23,7 +25,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +38,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -72,18 +72,21 @@ import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CreateBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptDataMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.DecryptShuffledBoardMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.DownloadShuffledBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPartialPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.FileTransferMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptDownloadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryResponse;
+import org.cryptoworkshop.ximix.common.asn1.message.TranscriptTransferMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
@@ -158,6 +161,19 @@ class ClientCommandService
     }
 
     @Override
+    public Operation<DownloadOperationListener> downloadShuffleResult(String boardName, DownloadOptions options, Map<Integer, InputStream> generalTranscripts, Map<Integer, InputStream> witnessTranscripts, DownloadOperationListener defaultListener)
+        throws ServiceConnectionException
+    {
+        Operation<DownloadOperationListener> op = new DownloadShuffleResultOp(Executors.newSingleThreadExecutor(), boardName, options, generalTranscripts, witnessTranscripts);
+
+        op.addListener(defaultListener);
+
+        executor.execute((Runnable)op);
+
+        return op;
+    }
+
+    @Override
     public Operation<ShuffleTranscriptsDownloadOperationListener> downloadShuffleTranscripts(String boardName, long operationNumber, ShuffleTranscriptOptions transcriptOptions, ShuffleTranscriptsDownloadOperationListener defaultListener, String... nodes)
         throws ServiceConnectionException
     {
@@ -210,7 +226,7 @@ class ClientCommandService
 
         executor.execute(futureTask);
 
-         // TODO: sort out return values.
+        // TODO: sort out return values.
         try
         {
             MessageReply reply = futureTask.get();
@@ -638,36 +654,11 @@ class ClientCommandService
 
                         List<byte[]> baseMessageBlock = partialDecrypts[baseIndex];
                         BigInteger baseWeight = weights[baseIndex];
-                        List<PostedMessage>  postedMessages = messageBlock.getMessages();
+                        List<PostedMessage> postedMessages = messageBlock.getMessages();
 
                         for (int messageIndex = 0; messageIndex != baseMessageBlock.size(); messageIndex++)
                         {
-                            PairSequence ps = PairSequence.getInstance(domainParams.getCurve(), baseMessageBlock.get(messageIndex));
-                            ECPoint[] weightedDecryptions = new ECPoint[ps.size()];
-                            ECPoint[] fulls = new ECPoint[ps.size()];
-
-                            ECPair[] partials = ps.getECPairs();
-                            for (int i = 0; i != weightedDecryptions.length; i++)
-                            {
-                                weightedDecryptions[i] = partials[i].getX().multiply(baseWeight);
-                            }
-
-                            for (int wIndex = baseIndex + 1; wIndex < weights.length; wIndex++)
-                            {
-                                if (weights[wIndex] != null)
-                                {
-                                    ECPair[] nPartials = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex)).getECPairs();
-                                    for (int i = 0; i != weightedDecryptions.length; i++)
-                                    {
-                                        weightedDecryptions[i] = weightedDecryptions[i].add(nPartials[i].getX().multiply(weights[wIndex]));
-                                    }
-                                }
-                            }
-
-                            for (int i = 0; i != weightedDecryptions.length; i++)
-                            {
-                                fulls[i] = partials[i].getY().add(weightedDecryptions[i].negate());
-                            }
+                            ECPoint[] fulls = reassemblePoints(messageIndex, domainParams, partialDecrypts, weights, baseIndex, baseMessageBlock, baseWeight);
 
                             int index = postedMessages.get(messageIndex).getIndex();
 
@@ -686,7 +677,7 @@ class ClientCommandService
                 else
                 {
                     // assume plain text
-                    for (;;)
+                    for (; ; )
                     {
                         reply = connection.sendMessage(CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS, new BoardDownloadMessage(boardName, 10));
 
@@ -750,7 +741,7 @@ class ClientCommandService
                 sha256.update(encoded, 0, encoded.length);
             }
 
-            for (String node: nodes)
+            for (String node : nodes)
             {
                 AsymmetricKeyParameter key = keyMap.get(node);
 
@@ -778,7 +769,7 @@ class ClientCommandService
 
             ECElGamalEncryptor ecEnc = new ECElGamalEncryptor();
 
-            for (String node: nodes)
+            for (String node : nodes)
             {
                 ECPublicKeyParameters key = (ECPublicKeyParameters)keyMap.get(node);
 
@@ -817,12 +808,12 @@ class ClientCommandService
                     if (Arrays.equals(challengeMessage, challengeResult))
                     {
                         proofLogStream.write(new ChallengeLogMessage(messageIndex, shareMessage.getSequenceNo(), true, m, keyInfoMap.get(node), sourceMessage, challengeResult).getEncoded());
-                        eventNotifier.notify(EventNotifier.Level.INFO, "Challenge for message "  + messageIndex + " for node " + node + " passed.");
+                        eventNotifier.notify(EventNotifier.Level.INFO, "Challenge for message " + messageIndex + " for node " + node + " passed.");
                     }
                     else
                     {
-                         proofLogStream.write(new ChallengeLogMessage(messageIndex, shareMessage.getSequenceNo(), false, m, keyInfoMap.get(node), sourceMessage, challengeResult).getEncoded());
-                         eventNotifier.notify(EventNotifier.Level.ERROR, "Challenge for message " + messageIndex + " for node " + node + " failed!");
+                        proofLogStream.write(new ChallengeLogMessage(messageIndex, shareMessage.getSequenceNo(), false, m, keyInfoMap.get(node), sourceMessage, challengeResult).getEncoded());
+                        eventNotifier.notify(EventNotifier.Level.ERROR, "Challenge for message " + messageIndex + " for node " + node + " failed!");
                     }
                 }
                 else
@@ -832,7 +823,283 @@ class ClientCommandService
             }
         }
     }
-    
+
+    private class DownloadShuffleResultOp
+        extends Operation<DownloadOperationListener>
+        implements Runnable
+    {
+        private final ExecutorService decoupler;
+        private final String boardName;
+        private final DownloadOptions options;
+        private final Map<Integer, InputStream> generalTranscripts;
+        private final Map<Integer, InputStream> witnessTranscripts;
+
+        public DownloadShuffleResultOp(ExecutorService decoupler, String boardName, DownloadOptions options, Map<Integer, InputStream> generalTranscripts, Map<Integer, InputStream> witnessTranscripts)
+        {
+            super(decoupler, eventNotifier, DownloadOperationListener.class);
+
+            this.decoupler = decoupler;
+            this.boardName = boardName;
+            this.options = options;
+            this.generalTranscripts = generalTranscripts;
+            this.witnessTranscripts = witnessTranscripts;
+        }
+
+        public void run()
+        {
+            String[] nodes = toOrderedSet(options.getNodesToUse()).toArray(new String[0]);
+            DecryptionChallengeSpec challengeSpec = options.getChallengeSpec();
+            Map<String, AsymmetricKeyParameter> keyMap = new HashMap<>();
+            MessageChooser proofMessageChooser = null;
+            OutputStream proofLogStream = null;
+
+            //
+            // upload the transcripts
+            //
+            if (!uploadTranscript(nodes, generalTranscripts, ".gtr"))
+            {
+                return;
+            }
+
+            if (!uploadTranscript(nodes, witnessTranscripts, ".wtr"))
+            {
+                return;
+            }
+
+            //
+            // initialise the decryption process
+            //
+            for (String node : nodes)
+            {
+                try
+                {
+                    MessageReply reply = connection.sendMessage(node, CommandMessage.Type.SETUP_PARTIAL_DECRYPT, new DecryptShuffledBoardMessage(options.getKeyID(), boardName));
+                    if (!reply.getType().equals(MessageReply.Type.OKAY))
+                    {
+                        notifier.failed(node + " reply " + DERUTF8String.getInstance(reply.getPayload()).getString());
+                        return;
+                    }
+                }
+                catch (Exception e)
+                {
+                    notifier.failed(e.toString());
+                    return;
+                }
+            }
+
+            int boardIndex = 0;
+
+            ECDomainParameters domainParams;
+
+            try
+            {
+                MessageReply keyReply = connection.sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, new FetchPublicKeyMessage(options.getKeyID()));
+
+                SubjectPublicKeyInfo pubKeyInfo = SubjectPublicKeyInfo.getInstance(keyReply.getPayload());
+
+                domainParams = ((ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo)).getParameters();
+            }
+            catch (Exception e)
+            {
+                notifier.failed(e.toString());
+                return;
+            }
+
+            for (;;)
+            {
+                MessageReply[] partialDecryptResponses = new MessageReply[options.getThreshold()];
+                String[] nodesUsed = new String[options.getThreshold()];
+
+                try
+                {
+                    // TODO: deal with drop outs - in this case it's tricky, backend code will need to take into account a node
+                    // might be asked to take over half way through.
+                    int count = 0;
+                    while (count != options.getThreshold())
+                    {
+                        partialDecryptResponses[count] = connection.sendMessage(nodes[count], CommandMessage.Type.DOWNLOAD_PARTIAL_DECRYPTS, new DownloadShuffledBoardMessage(options.getKeyID(), boardName, 100)); // TODO: configure;
+                        if (partialDecryptResponses[count].getType() == MessageReply.Type.OKAY)
+                        {
+                            nodesUsed[count] = nodes[count];
+                            count++;
+                        }
+                        else
+                        {
+                            // TODO: maybe log
+                            partialDecryptResponses[count] = null;
+                        }
+                    }
+
+
+                    int pdIndex = 0;
+                    while (partialDecryptResponses[pdIndex] == null)
+                    {
+                        pdIndex++;
+                    }
+
+                    PostedMessageDataBlock baseBlock = PostedMessageDataBlock.getInstance(ShareMessage.getInstance(partialDecryptResponses[pdIndex].getPayload()).getShareData());
+                    if (baseBlock.size() == 0)
+                    {
+                        break;
+                    }
+
+                    ShareMessage[] shareMessages = new ShareMessage[options.getThreshold()];
+                    int maxSequenceNo = 0;
+
+                    for (int i = 0; i != shareMessages.length; i++)
+                    {
+                        shareMessages[i] = ShareMessage.getInstance(partialDecryptResponses[pdIndex++].getPayload());
+                        if (maxSequenceNo < shareMessages[i].getSequenceNo())
+                        {
+                            maxSequenceNo = shareMessages[i].getSequenceNo();
+                        }
+                    }
+
+                    // weighting
+                    List<byte[]>[] partialDecrypts = new List[maxSequenceNo + 1];
+
+                    for (int i = 0; i != shareMessages.length; i++)
+                    {
+                        ShareMessage shareMsg = shareMessages[i];
+
+                        partialDecrypts[shareMsg.getSequenceNo()] = PostedMessageDataBlock.getInstance(shareMsg.getShareData()).getMessages();
+                    }
+
+                    //
+                    // we don't need to know how many peers, just the maximum index (maxSequenceNo + 1) of the one available
+                    //
+                    LagrangeWeightCalculator calculator = new LagrangeWeightCalculator(maxSequenceNo + 1, domainParams.getN());
+
+                    BigInteger[] weights = calculator.computeWeights(partialDecrypts);
+
+                    int baseIndex = 0;
+                    for (int i = 0; i != partialDecrypts.length; i++)
+                    {
+                        if (partialDecrypts[i] != null)
+                        {
+                            baseIndex = i;
+                            break;
+                        }
+                    }
+
+                    List<byte[]> baseMessageBlock = partialDecrypts[baseIndex];
+                    BigInteger baseWeight = weights[baseIndex];
+
+                    for (int messageIndex = 0; messageIndex != baseBlock.size(); messageIndex++)
+                    {
+                        ECPoint[] fulls = reassemblePoints(messageIndex, domainParams, partialDecrypts, weights, baseIndex, baseMessageBlock, baseWeight);
+
+                        notifier.messageDownloaded(boardIndex++, new PointSequence(fulls).getEncoded());
+                    }
+                }
+                catch (Exception e)
+                {
+                    notifier.failed(e.toString());
+                }
+            }
+
+            notifier.completed();
+
+            decoupler.shutdown();
+        }
+
+        private boolean uploadTranscript(String[] nodes, Map<Integer, InputStream> transcriptMap, String suffix)
+        {
+            for (Integer key : transcriptMap.keySet())
+            {
+                try
+                {
+                    if (!uploadStream(nodes, boardName, key, transcriptMap.get(key), suffix))
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception e)
+                {
+                    notifier.failed(e.toString());
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private boolean uploadStream(String[] nodes, String boardName, Integer key, InputStream input, String suffix)
+            throws IOException, ServiceConnectionException
+        {
+            int chunkSize = 10240; // TODO: make configurable
+            InputStream fIn = new BufferedInputStream(input, chunkSize);
+            byte[] chunk = new byte[chunkSize];
+
+            int in;
+            String targetName = boardName + "." + key + suffix;
+
+            while ((in = fIn.read(chunk)) >= 0)
+            {
+                if (in < chunkSize)
+                {
+                    byte[] tmp = new byte[in];
+                    System.arraycopy(chunk, 0, tmp, 0, tmp.length);
+                    chunk = tmp;
+                }
+
+                FileTransferMessage trfMessage = new FileTransferMessage(targetName, chunk);
+                for (String node : nodes)
+                {
+                    MessageReply reply = connection.sendMessage(node, CommandMessage.Type.FILE_UPLOAD, trfMessage);
+                    if (!reply.getType().equals(MessageReply.Type.OKAY))
+                    {
+                        notifier.failed(node + " reply " + DERUTF8String.getInstance(reply.getPayload()).getString());
+                        return false;
+                    }
+                }
+            }
+
+            FileTransferMessage endMessage = new FileTransferMessage(targetName);
+            for (String node : nodes)
+            {
+                MessageReply reply = connection.sendMessage(node, CommandMessage.Type.FILE_UPLOAD, endMessage);
+                if (!reply.getType().equals(MessageReply.Type.OKAY))
+                {
+                    notifier.failed(node + " reply " + DERUTF8String.getInstance(reply.getPayload()).getString());
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    private ECPoint[] reassemblePoints(int messageIndex, ECDomainParameters domainParams, List<byte[]>[] partialDecrypts, BigInteger[] weights, int baseIndex, List<byte[]> baseMessageBlock, BigInteger baseWeight)
+    {
+        PairSequence ps = PairSequence.getInstance(domainParams.getCurve(), baseMessageBlock.get(messageIndex));
+        ECPoint[] weightedDecryptions = new ECPoint[ps.size()];
+        ECPoint[] fulls = new ECPoint[ps.size()];
+
+        ECPair[] partials = ps.getECPairs();
+        for (int i = 0; i != weightedDecryptions.length; i++)
+        {
+            weightedDecryptions[i] = partials[i].getX().multiply(baseWeight);
+        }
+
+        for (int wIndex = baseIndex + 1; wIndex < weights.length; wIndex++)
+        {
+            if (weights[wIndex] != null)
+            {
+                ECPair[] nPartials = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex)).getECPairs();
+                for (int i = 0; i != weightedDecryptions.length; i++)
+                {
+                    weightedDecryptions[i] = weightedDecryptions[i].add(nPartials[i].getX().multiply(weights[wIndex]));
+                }
+            }
+        }
+
+        for (int i = 0; i != weightedDecryptions.length; i++)
+        {
+            fulls[i] = partials[i].getY().add(weightedDecryptions[i].negate());
+        }
+
+        return fulls;
+    }
+
     private class DownloadShuffleTranscriptsOp
         extends Operation<ShuffleTranscriptsDownloadOperationListener>
         implements Runnable
@@ -915,13 +1182,13 @@ class ClientCommandService
             {
                 PipedOutputStream pOut = null;
 
-                for (;;)
+                for (; ; )
                 {
                     reply = connection.sendMessage(node, CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT, new TranscriptDownloadMessage(queryID, operationOfInterestNumber, stepNo, transcriptOptions.getTranscriptType(), transcriptOptions.getChunkSize(), transcriptOptions.isPairingEnabled(), transcriptOptions.getSeedValue()));
 
-                    TranscriptBlock transcriptBlock = TranscriptBlock.getInstance(reply.getPayload());
+                    TranscriptTransferMessage transcriptBlock = TranscriptTransferMessage.getInstance(reply.getPayload());
 
-                    if (transcriptBlock.size() == 0)
+                    if (transcriptBlock.isEndOfTransfer())
                     {
                         break;
                     }
@@ -934,10 +1201,7 @@ class ClientCommandService
                         notifier.shuffleTranscriptArrived(operationOfInterestNumber, transcriptBlock.getStepNo(), pIn);
                     }
 
-                    for (Enumeration<ASN1Encodable> en = transcriptBlock.getDetails().getObjects(); en.hasMoreElements();)
-                    {
-                        pOut.write(en.nextElement().toASN1Primitive().getEncoded());
-                    }
+                    pOut.write(transcriptBlock.getChunk());
                 }
 
                 if (pOut != null)

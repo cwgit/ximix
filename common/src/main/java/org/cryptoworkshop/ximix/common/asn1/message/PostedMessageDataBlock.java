@@ -55,6 +55,11 @@ public class PostedMessageDataBlock
             this.messages = new ArrayList<>(capacity);
         }
 
+        public boolean hasCapacity()
+        {
+            return messages.size() < capacity;
+        }
+
         public Builder add(byte[] message)
         {
             messages.add(message);

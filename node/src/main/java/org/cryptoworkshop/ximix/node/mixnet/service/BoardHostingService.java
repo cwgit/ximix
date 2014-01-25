@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.node.mixnet.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -29,8 +32,10 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.cms.CMSSignedDataStreamGenerator;
 import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
@@ -58,6 +63,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptDownloadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryResponse;
+import org.cryptoworkshop.ximix.common.asn1.message.TranscriptTransferMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
@@ -89,6 +95,7 @@ public class BoardHostingService
     private final AtomicLong queryCounter = new AtomicLong(0L);
     private final Constructor witnessChallengerConstructor;
     private final Map<String, IndexNumberGenerator> challengers = new HashMap<>();
+    private final Map<String, TranscriptGenerator> transcriptGenerators = new HashMap<>();
     private final BoardExecutor boardExecutor;
 
     /**
@@ -571,7 +578,33 @@ public class BoardHostingService
 
                         TranscriptBlock transcriptBlock = transitBoard.fetchTranscriptData(transcriptDownloadMessage.getType(), challenger, new TranscriptBlock.Builder(transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getMaxNumberOfMessages()));
 
-                        return new MessageReply(MessageReply.Type.OKAY, transcriptBlock);
+                        String generatorKey = getTranscriptGeneratorKey(transcriptDownloadMessage);
+                        TranscriptGenerator transGen = transcriptGenerators.get(generatorKey);
+                        if (transGen == null)
+                        {
+                            transGen = new TranscriptGenerator();
+
+                            transcriptGenerators.put(generatorKey, transGen);
+                        }
+
+                        if (transcriptBlock.size() != 0)
+                        {
+                            for (Enumeration en = transcriptBlock.getDetails().getObjects(); en.hasMoreElements();)
+                            {
+                                transGen.writeFragment(((ASN1Object)en.nextElement()).getEncoded());
+                            }
+
+                            return new MessageReply(MessageReply.Type.OKAY, new TranscriptTransferMessage(transcriptBlock.getStepNo(), transGen.getFragment()));
+                        }
+
+                        if (transGen.hasData())
+                        {
+                            transGen.finish();
+                            return new MessageReply(MessageReply.Type.OKAY, new TranscriptTransferMessage(transcriptBlock.getStepNo(), transGen.getFragment()));
+                        }
+
+                        // end of data
+                        return new MessageReply(MessageReply.Type.OKAY, new TranscriptTransferMessage(transcriptBlock.getStepNo()));
                     }
                 });
             case DOWNLOAD_SHUFFLE_TRANSCRIPT_STEPS:
@@ -674,6 +707,11 @@ public class BoardHostingService
             return Long.toString(transcriptDownloadMessage.getQueryID());
         }
 
+        return transcriptDownloadMessage.getQueryID() + "." + transcriptDownloadMessage.getStepNo();
+    }
+
+    private String getTranscriptGeneratorKey(TranscriptDownloadMessage transcriptDownloadMessage)
+    {
         return transcriptDownloadMessage.getQueryID() + "." + transcriptDownloadMessage.getStepNo();
     }
 
@@ -896,6 +934,50 @@ public class BoardHostingService
                 // TODO:
                 e.printStackTrace();
             }
+        }
+    }
+
+    private class TranscriptGenerator
+    {
+        private CMSSignedDataStreamGenerator cmsGen = new CMSSignedDataStreamGenerator();
+        private ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        private volatile OutputStream cmsOut;
+
+        TranscriptGenerator()
+            throws IOException
+        {
+        }
+
+        public void writeFragment(byte[] fragment)
+            throws IOException
+        {
+            if (cmsOut == null)
+            {
+                cmsOut = cmsGen.open(bOut, true);
+            }
+
+            cmsOut.write(fragment);
+        }
+
+        public boolean hasData()
+        {
+            return cmsOut != null;
+        }
+
+        public void finish()
+            throws IOException
+        {
+            cmsOut.close();
+            cmsOut = null;
+        }
+
+        public byte[] getFragment()
+        {
+            byte[] fragment = bOut.toByteArray();
+
+            bOut.reset();
+
+            return fragment;
         }
     }
 }

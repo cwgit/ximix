@@ -36,6 +36,7 @@ public class CapabilityMessage
     {
         BOARD_HOSTING,
         DECRYPTION,
+        SHUFFLE_DECRYPTION,
         ENCRYPTION,
         KEY_RETRIEVAL,
         KEY_GENERATION,

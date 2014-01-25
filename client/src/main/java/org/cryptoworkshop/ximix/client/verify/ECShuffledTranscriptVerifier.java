@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.cms.CMSSignedDataParser;
 import org.bouncycastle.crypto.Commitment;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.ec.ECFixedTransform;
@@ -33,6 +34,7 @@ import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.ec.ECPairFactorTransform;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageCommitment;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedData;
@@ -79,7 +81,9 @@ public class ECShuffledTranscriptVerifier
             // we read the witnesses first as there is no need to load messages from the others if they
             // are not referenced here.
             //
-            ASN1InputStream aIn = new ASN1InputStream(witnessTranscript);
+            CMSSignedDataParser cmsParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(), witnessTranscript);
+
+            ASN1InputStream aIn = new ASN1InputStream(cmsParser.getSignedContent().getContentStream());
             while ((obj = aIn.readObject()) != null)
             {
                 PostedData pM = PostedData.getInstance(obj);
@@ -89,7 +93,8 @@ public class ECShuffledTranscriptVerifier
                 finalIndexesOfInterest.add(cm.getNewIndex());
             }
 
-            aIn = new ASN1InputStream(initialTranscript);
+            cmsParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(), initialTranscript);
+            aIn = new ASN1InputStream(cmsParser.getSignedContent().getContentStream());
 
             while ((obj = aIn.readObject()) != null)
             {
@@ -101,7 +106,8 @@ public class ECShuffledTranscriptVerifier
                 }
             }
 
-            aIn = new ASN1InputStream(finalTranscript);
+            cmsParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(), finalTranscript);
+            aIn = new ASN1InputStream(cmsParser.getSignedContent().getContentStream());
 
             while ((obj = aIn.readObject()) != null)
             {

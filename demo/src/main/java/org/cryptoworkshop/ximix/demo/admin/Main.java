@@ -35,6 +35,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.encoders.Base64;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
@@ -191,6 +192,8 @@ public class Main
             client.uploadMessage("FRED", encrypted.getEncoded());
         }
 
+        final Set<ECPoint> verifiedPart1 = new HashSet<>(part1);
+        final Set<ECPoint> verifiedPart2 = new HashSet<>(part2);
 
         // board is hosted on "B" move to "A" then to "C" then back to "B"
 
@@ -406,8 +409,69 @@ public class Main
 
             verifier.verify();
         }
+        System.err.println(new String(Base64.encode(encPubKey)));
 
         System.err.println("transcripts verified");
+
+        Map<Integer, InputStream> streamWitnessTranscripts = new HashMap<>();
+        for (Integer key : witnessTranscripts.keySet())
+        {
+            streamWitnessTranscripts.put(key, new ByteArrayInputStream(witnessTranscripts.get(key)));
+        }
+
+        Map<Integer, InputStream> streamGeneralTranscripts = new HashMap<>();
+        for (Integer key : generalTranscripts.keySet())
+        {
+            streamGeneralTranscripts.put(key, new ByteArrayInputStream(generalTranscripts.get(key)));
+        }
+
+        final CountDownLatch shuffleOutputDownloadCompleted = new CountDownLatch(1);
+
+        commandService.downloadShuffleResult("FRED",new DownloadOptions.Builder()
+                                                                      .withKeyID("ECENCKEY")
+                                                                      .withThreshold(4)
+                                                                      .withNodes("A", "B", "C", "D").build(), streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
+        {
+            int counter = 0;
+
+            @Override
+            public void messageDownloaded(int index, byte[] message)
+            {
+                PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
+
+                if (verifiedPart1.remove(decrypted.getECPoints()[0]) && verifiedPart2.remove(decrypted.getECPoints()[1]))
+                {
+                    System.err.println(index + " message downloaded successfully");
+                }
+                else
+                {
+                    System.err.println(index + " decryption failed");
+                }
+                counter++;
+            }
+
+            @Override
+            public void completed()
+            {
+                shuffleOutputDownloadCompleted.countDown();
+                System.err.println("completed " + (numMessages == counter));
+            }
+
+            @Override
+            public void status(String statusObject)
+            {
+                System.err.println("status: " + statusObject);
+            }
+
+            @Override
+            public void failed(String errorObject)
+            {
+                shuffleOutputDownloadCompleted.countDown();
+                System.err.println("failed " + errorObject);
+            }
+        });
+
+        shuffleOutputDownloadCompleted.await();
 
         keyGenerationService.shutdown();
         commandService.shutdown();

@@ -46,6 +46,9 @@
             <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeDecryptionService</implementation>
         </service>
         <service>
+            <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeShuffledBoardDecryptionService</implementation>
+        </service>
+        <service>
             <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeSigningService</implementation>
         </service>
         <service>
