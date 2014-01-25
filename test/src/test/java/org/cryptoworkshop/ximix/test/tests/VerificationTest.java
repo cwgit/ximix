@@ -201,6 +201,12 @@ public class VerificationTest
         ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
         {
             @Override
+            public void commit(Map<String, byte[]> seedCommitments)
+            {
+
+            }
+
+            @Override
             public void completed()
             {
                 shuffleCompleted.set(true);
@@ -536,6 +542,12 @@ public class VerificationTest
 
         ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
         {
+            @Override
+            public void commit(Map<String, byte[]> seedCommitments)
+            {
+
+            }
+
             @Override
             public void completed()
             {

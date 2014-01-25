@@ -1020,6 +1020,12 @@ public class CommandApplet
                     private boolean firstStepDone = false;
 
                     @Override
+                    public void commit(Map<String, byte[]> seedCommitments)
+                    {
+
+                    }
+
+                    @Override
                     public void completed()
                     {
                         myLatch.countDown();
@@ -1179,6 +1185,8 @@ public class CommandApplet
                     verifier.verify();
 
                     witnessTranscriptStream.close();
+                    initialTranscriptStream.close();
+                    nextTranscriptStream.close();
                 }
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.75);

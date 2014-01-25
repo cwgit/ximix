@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
+import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +37,9 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.cms.CMSSignedDataStreamGenerator;
+import org.bouncycastle.crypto.Commitment;
+import org.bouncycastle.crypto.commitments.GeneralHashCommitter;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
@@ -59,6 +63,9 @@ import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedData;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedAndWitnessMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedCommitmentMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptDownloadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryMessage;
@@ -96,6 +103,7 @@ public class BoardHostingService
     private final Constructor witnessChallengerConstructor;
     private final Map<String, IndexNumberGenerator> challengers = new HashMap<>();
     private final Map<String, TranscriptGenerator> transcriptGenerators = new HashMap<>();
+    private final Map<String, byte[][]> seedsAndWitnesses = new HashMap<>();
     private final BoardExecutor boardExecutor;
 
     /**
@@ -195,6 +203,48 @@ public class BoardHostingService
         {
             switch (((CommandMessage)message).getType())
             {
+            case GENERATE_SEED:
+                final SeedMessage seedMessage = SeedMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(seedMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        String seedKey = seedMessage.getBoardName() + "." + seedMessage.getOperationNumber();
+                        if (seedsAndWitnesses.containsKey(seedKey))
+                        {
+                             return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Duplicate seed generation request for operation " + seedMessage.getOperationNumber()));
+                        }
+                                                                 // TODO: specify source of randomness
+                        SecureRandom random = new SecureRandom();
+
+                        byte[] seed = new byte[64];     // largest we can manage with SHA-512
+
+                        random.nextBytes(seed);
+
+                        GeneralHashCommitter sha512Committer = new GeneralHashCommitter(new SHA512Digest(), random);
+
+                        Commitment commitment = sha512Committer.commit(seed);
+
+                        seedsAndWitnesses.put(seedKey, new byte[][] { seed, commitment.getSecret() });
+
+                        return new MessageReply(MessageReply.Type.OKAY, new SeedCommitmentMessage(seedMessage.getBoardName(), seedMessage.getOperationNumber(), commitment.getCommitment()));
+                    }
+                });
+            case FETCH_SEED:
+                final SeedMessage seedFetchMessage = SeedMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(seedFetchMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        byte[][] seedAndWitness = seedsAndWitnesses.get(seedFetchMessage.getBoardName() + "." + seedFetchMessage.getOperationNumber());
+
+                        return new MessageReply(MessageReply.Type.OKAY, new SeedAndWitnessMessage(seedAndWitness[0], seedAndWitness[1]));
+                    }
+                });
             case GET_BOARD_HOST:
                 final BoardMessage boardMessage = BoardMessage.getInstance(message.getPayload());
 
@@ -542,24 +592,44 @@ public class BoardHostingService
                             }
                             else
                             {
+                                SHA512Digest seedDigest = new SHA512Digest();
+                                byte[]       challengeSeed = new byte[seedDigest.getDigestSize()];
+
                                 if (transcriptDownloadMessage.getSeed() != null)
                                 {
-                                    nodeContext.getEventNotifier().notify(EventNotifier.Level.INFO, "Challenge seed: " + new String(Hex.encode(transcriptDownloadMessage.getSeed())));
+                                    byte[] originalSeed = transcriptDownloadMessage.getSeed();
+
+                                    // we follow the formulation in "Randomized Partial Checking Revisited" where the seed is
+                                    // modified by the step number, the one difference being that in our case this will only take
+                                    // place at the start of a pairing, or on an individual step.
+                                    seedDigest.update(originalSeed, 0, originalSeed.length);
+
+                                    int stepNo = transcriptDownloadMessage.getStepNo();
+
+                                    seedDigest.update((byte)(stepNo >>> 24));
+                                    seedDigest.update((byte)(stepNo >>> 16));
+                                    seedDigest.update((byte)(stepNo >>> 8));
+                                    seedDigest.update((byte)stepNo);
+
+                                    seedDigest.doFinal(challengeSeed, 0);
                                 }
+
+                                nodeContext.getEventNotifier().notify(EventNotifier.Level.INFO, "Challenge seed: " + new String(Hex.encode(challengeSeed)));
+
                                 try
                                 {
                                     // step 0 is a copy step, download all witness values, same with any other copy board.
                                     if (isCopyBoard)
                                     {
-                                        challenger = new SerialChallenger(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed());
+                                        challenger = new SerialChallenger(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), challengeSeed);
                                     }
                                     else if (transcriptDownloadMessage.isWithPairing())
                                     {
-                                        challenger = new PairedChallenger(transitBoard, transcriptDownloadMessage.getStepNo(), (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed()));
+                                        challenger = new PairedChallenger(transitBoard, transcriptDownloadMessage.getStepNo(), (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), challengeSeed));
                                     }
                                     else
                                     {
-                                        challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed());
+                                        challenger = (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), challengeSeed);
                                     }
                                 }
                                 catch (Exception e)

@@ -46,7 +46,7 @@ public class VerifierTest
 
     // 50 values
     private static final byte[] witnessTranscript = Base64.decode(
-        "MIAGCSqGSIb3DQEHAqCAMIACAQExADCABgkqhkiG9w0BBwGggCSABIID6DBq"
+              "MIAGCSqGSIb3DQEHAqCAMIACAQExADCABgkqhkiG9w0BBwGggCSABIID6DBq"
             + "AgE+BGUwYwIBDwQ8ECzOtosHqlmyQkFymmEr+09zM4YsP2ikimvxrfqH7n3u"
             + "ioOsqmjwLF/Ivc6CGZEP4UmPpGgwI2LZubQ9BCAg3cpWBhBx3nSavq59wYKv"
             + "I2EdZx3/BysTEFHWJn+XmjBqAgEABGUwYwIBJQQ85JdzwUH4IR/Gqem3Den4"
@@ -896,7 +896,7 @@ public class VerifierTest
 
     // 100 values
     private static final byte[] finalTranscript = Base64.decode(
-        "MIAGCSqGSIb3DQEHAqCAMIACAQExADCABgkqhkiG9w0BBwGggCSABIID6DCC"
+              "MIAGCSqGSIb3DQEHAqCAMIACAQExADCABgkqhkiG9w0BBwGggCSABIID6DCC"
             + "AT8CAQAEggEWMIIBEjCBhgRBBJeJ2mMRvKzobib9yA/S+ZgpV+2HXiaiNlQ6"
             + "ASfV9Tw0u0dauF6FpXZkXkYWdZ0jx8qOqD3du50jBA/469KPHscEQQRWrKGn"
             + "6hf/jvwhtQ16069G9WiBm26DmDFLQqb8evDtjd5czU7vK96/Fgv+nX6PYFZX"

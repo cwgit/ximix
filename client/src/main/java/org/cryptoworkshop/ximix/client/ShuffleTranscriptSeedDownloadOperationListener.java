@@ -20,16 +20,10 @@ import java.util.Map;
 import org.cryptoworkshop.ximix.common.util.OperationListener;
 
 /**
- * Listener for monitoring shuffle operations.
+ * Listener for monitoring shuffle transcript download operations.
  */
-public interface ShuffleOperationListener
+public interface ShuffleTranscriptSeedDownloadOperationListener
     extends OperationListener<String>
 {
-    /**
-     * Called to pass in the seeds for later transcript recovery committed to by the nodes in
-     * the shuffle.
-     *
-     * @param seedCommitments a map of node name, commitment value representing the commitments made.
-     */
-    void commit(Map<String, byte[]> seedCommitments);
+    void committedSeedMap(Map<String, byte[]> seeds, Map<String, byte[]> witnesses);
 }

@@ -371,6 +371,12 @@ public class KeyProcessingTest extends TestCase
         ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
         {
             @Override
+            public void commit(Map<String, byte[]> seedCommitments)
+            {
+
+            }
+
+            @Override
             public void completed()
             {
                 shuffleCompleted.set(true);

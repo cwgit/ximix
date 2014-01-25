@@ -27,15 +27,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 
+import org.bouncycastle.crypto.Commitment;
+import org.bouncycastle.crypto.Committer;
+import org.bouncycastle.crypto.commitments.GeneralHashCommitter;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
@@ -198,20 +203,27 @@ public class Main
         // board is hosted on "B" move to "A" then to "C" then back to "B"
 
         final CountDownLatch shuffleLatch = new CountDownLatch(1);
+        final Map<String, byte[]> seedCommitmentMap = new HashMap<>();
 
         ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
         {
             @Override
-            public void completed()
+            public void commit(Map<String, byte[]> seedCommitments)
             {
-                shuffleLatch.countDown();
-                System.err.println("done");
+                seedCommitmentMap.putAll(seedCommitments);
             }
 
             @Override
             public void status(String statusObject)
             {
                 System.err.println("status: " + statusObject);
+            }
+
+            @Override
+            public void completed()
+            {
+                shuffleLatch.countDown();
+                System.err.println("done");
             }
 
             @Override
@@ -295,9 +307,41 @@ public class Main
 
         challengeVerifier.verify();
 
+        Map<String, byte[][]> seedMap = commandService.downloadShuffleSeedsAndWitnesses("FRED", shuffleOp.getOperationNumber(), "A", "C", "D");
+
+        Committer sha512Committer = new GeneralHashCommitter(new SHA512Digest(), null);
+        byte[] seed = null;
+
+        for (String node : seedCommitmentMap.keySet())
+        {
+            byte[][] seedAndWitness = seedMap.get(node);
+            Commitment commitment = new Commitment(seedAndWitness[1], seedCommitmentMap.get(node));
+
+            if (!sha512Committer.isRevealed(commitment, seedAndWitness[0]))
+            {
+                System.err.println("commitment check failed on seed");
+            }
+
+            if (seed == null)
+            {
+                seed = seedAndWitness[0].clone();
+            }
+            else
+            {
+                byte[] nSeed = seedAndWitness[0];
+
+                for (int i = 0; i != seed.length; i++)
+                {
+                    seed[i] ^= nSeed[i];
+                }
+            }
+        }
+
+        System.err.println(new String(Hex.encode(seed)));
+
         final CountDownLatch transcriptCompleted = new CountDownLatch(1);
 
-        final Map<Integer, byte[]> generalTranscripts = new HashMap<>();
+        final Map<Integer, byte[]> generalTranscripts = new TreeMap<>();
 
         ShuffleTranscriptsDownloadOperationListener transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
         {
@@ -347,7 +391,24 @@ public class Main
 
         transcriptCompleted.await();
 
-        final Map<Integer, byte[]> witnessTranscripts = new HashMap<>();
+        SHA512Digest seedHash = new SHA512Digest();
+
+        for (Integer step : generalTranscripts.keySet())
+        {
+            byte[] bytes = generalTranscripts.get(step);
+
+            seedHash.update(bytes, 0, bytes.length);
+        }
+
+        // added the distributed seed
+
+        seedHash.update(seed, 0, seed.length);
+
+        byte[] challengeSeed = new byte[seedHash.getDigestSize()];
+
+        seedHash.doFinal(challengeSeed, 0);
+
+        final Map<Integer, byte[]> witnessTranscripts = new TreeMap<>();
 
         final CountDownLatch witnessTranscriptCompleted = new CountDownLatch(1);
         transcriptListener = new ShuffleTranscriptsDownloadOperationListener()
@@ -395,7 +456,7 @@ public class Main
         };
 
         // it should be noted the challenge seed should be random data!
-        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).withPairingEnabled(true).build(), transcriptListener, "A", "C", "D");
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(challengeSeed).withPairingEnabled(true).build(), transcriptListener, "A", "C", "D");
 
         witnessTranscriptCompleted.await();
 
@@ -409,7 +470,6 @@ public class Main
 
             verifier.verify();
         }
-        System.err.println(new String(Base64.encode(encPubKey)));
 
         System.err.println("transcripts verified");
 

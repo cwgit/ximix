@@ -15,6 +15,8 @@
  */
 package org.cryptoworkshop.ximix.client;
 
+import java.util.Map;
+
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.util.Operation;
 
@@ -23,6 +25,21 @@ import org.cryptoworkshop.ximix.common.util.Operation;
  */
 public interface ShuffleTranscriptsDownloadOperation
 {
+    /**
+      * Return a map of the seeds and witness values to open the commitments to seed values made
+     *  at the start of the shuffle.
+     *
+      * @param boardName the board the operationNumber should match with.
+      * @param operationNumber the number of operation of interest.
+      * @param nodes the node path of interest.
+      * @throws org.cryptoworkshop.ximix.client.connection.ServiceConnectionException
+      */
+     Map<String, byte[][]> downloadShuffleSeedsAndWitnesses(
+         String boardName,
+         long operationNumber,
+         String... nodes)
+         throws ServiceConnectionException;
+
     /**
       * Download the transcripts for a shuffle. These come down as a series of streams representing
       * each step in the shuffle.

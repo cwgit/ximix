@@ -59,6 +59,8 @@ class MessageEvaluator
         alwaysHandleType.add(CommandMessage.Type.GET_BOARD_HOST);
         alwaysHandleType.add(CommandMessage.Type.BOARD_CREATE);
         alwaysHandleType.add(CommandMessage.Type.BACKUP_BOARD_CREATE);
+        alwaysHandleType.add(CommandMessage.Type.GENERATE_SEED);
+        alwaysHandleType.add(CommandMessage.Type.FETCH_SEED);
     }
 
     private final BoardIndex boardIndex;

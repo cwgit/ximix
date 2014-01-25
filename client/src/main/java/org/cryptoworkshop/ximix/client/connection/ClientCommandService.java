@@ -82,6 +82,9 @@ import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedAndWitnessMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedCommitmentMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptDownloadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryMessage;
@@ -171,6 +174,54 @@ class ClientCommandService
         executor.execute((Runnable)op);
 
         return op;
+    }
+
+    @Override
+    public Map<String, byte[][]> downloadShuffleSeedsAndWitnesses(final String boardName, final long operationNumber, final String... nodes)
+        throws ServiceConnectionException
+    {
+        FutureTask<Map<String, byte[][]>> task = new FutureTask<>(new Callable<Map<String, byte[][]>>()
+        {
+            @Override
+            public Map<String, byte[][]> call()
+                throws Exception
+            {
+                Map<String, byte[][]> seedsAndWitnesses = new HashMap<>();
+
+                for (String node : nodes)
+                {
+                    MessageReply reply = connection.sendMessage(node, CommandMessage.Type.FETCH_SEED, new SeedMessage(boardName, operationNumber));
+
+                    if (reply.getType() == MessageReply.Type.OKAY)
+                    {
+                        SeedAndWitnessMessage swMessage = SeedAndWitnessMessage.getInstance(reply.getPayload());
+
+                        seedsAndWitnesses.put(node, new byte[][] { swMessage.getSeed(), swMessage.getWitness() });
+                    }
+                }
+
+                return seedsAndWitnesses;
+            }
+        });
+
+        executor.execute(task);
+
+        try
+        {
+            return task.get();
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+
+            eventNotifier.notify(EventNotifier.Level.ERROR, "Seed fetch task interrupted");
+            throw new ServiceConnectionException("Seed fetch task interrupted");
+        }
+        catch (ExecutionException e)
+        {
+            eventNotifier.notify(EventNotifier.Level.ERROR, "Seed fetch task failed: " + e.getMessage(), e);
+            throw new ServiceConnectionException("Seed fetch task failed: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -405,6 +456,32 @@ class ClientCommandService
                 connection.sendMessage(CommandMessage.Type.BOARD_SHUFFLE_LOCK, new BoardMessage(boardName));
 
                 String nextNode = nodes[0];
+
+                Map<String, byte[]> commitmentMap = new HashMap<>();
+
+                for (String node : nodes)
+                {
+                    if (commitmentMap.containsKey(node))
+                    {
+                        continue;
+                    }
+
+                    MessageReply seedReply = connection.sendMessage(node, CommandMessage.Type.GENERATE_SEED, new SeedMessage(boardName, this.getOperationNumber()));
+
+                    if (seedReply.getType() == MessageReply.Type.OKAY)
+                    {
+                        SeedCommitmentMessage msg = SeedCommitmentMessage.getInstance(seedReply.getPayload());
+
+                        commitmentMap.put(node, msg.getCommitment());
+                    }
+                    else
+                    {
+                        notifier.failed(DERUTF8String.getInstance(seedReply.getPayload()).getString());
+                        return;
+                    }
+                }
+
+                notifier.commit(commitmentMap);
 
                 // initial board state is copied to step 0 at start
                 connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, 1));
