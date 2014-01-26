@@ -17,6 +17,7 @@ package org.cryptoworkshop.ximix.node.service;
 
 import java.io.File;
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -197,4 +198,11 @@ public interface NodeContext
      * @return the event notifier for this node.
      */
     EventNotifier getEventNotifier();
+
+    /**
+     * Return the trust anchor for the network.
+     *
+     * @return the root certificate for the network the node is a member of.
+     */
+    X509Certificate getTrustAnchor();
 }

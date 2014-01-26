@@ -4,6 +4,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.security.KeyStore;
 import java.security.Security;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -302,6 +303,12 @@ public class BLSKeyManagerTest
         {
 
             return new TestNotifier();
+        }
+
+        @Override
+        public X509Certificate getTrustAnchor()
+        {
+            return null;
         }
 
         @Override

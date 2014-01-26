@@ -40,6 +40,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
+import org.cryptoworkshop.ximix.client.verify.SignedDataVerifier;
 import org.cryptoworkshop.ximix.client.verify.TranscriptVerificationException;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
@@ -69,6 +70,8 @@ public class NodeShuffledBoardDecryptionService
     extends BasicNodeService
 {
     private final File workDirectory;
+    private final SignedDataVerifier signatureVerifier;
+
     private Map<File, OutputStream> activeFiles = Collections.synchronizedMap(new HashMap<File, OutputStream>());
     private Map<String, CMSSignedDataParser> activeDownloads = Collections.synchronizedMap(new HashMap<String, CMSSignedDataParser>());
 
@@ -92,6 +95,8 @@ public class NodeShuffledBoardDecryptionService
                 throw new ConfigException("Unable to create work directory: " + workDirectory.getPath());
             }
         }
+
+        signatureVerifier = new SignedDataVerifier(nodeContext.getTrustAnchor());
     }
 
     public CapabilityMessage getCapability()
@@ -181,7 +186,7 @@ public class NodeShuffledBoardDecryptionService
                 }
             });
 
-            final Map<Integer, File> generalTranscripts = createTranscriptMap(files);
+            final Map<Integer, File> generalTranscripts = createTranscriptMap(signatureVerifier, files);
 
             files = workDirectory.listFiles(new FilenameFilter()
             {
@@ -192,7 +197,7 @@ public class NodeShuffledBoardDecryptionService
                 }
             });
 
-            final Map<Integer, File> witnessTranscripts = createTranscriptMap(files);
+            final Map<Integer, File> witnessTranscripts = createTranscriptMap(signatureVerifier, files);
 
             try
             {
@@ -309,7 +314,7 @@ public class NodeShuffledBoardDecryptionService
             || message.getType() == CommandMessage.Type.DOWNLOAD_PARTIAL_DECRYPTS;
     }
 
-    private Map createTranscriptMap(File[] fileList)
+    private Map createTranscriptMap(SignedDataVerifier verifier, File[] fileList)
     {
         final Map<Integer, File> transcripts = new TreeMap<>();
 
@@ -319,9 +324,27 @@ public class NodeShuffledBoardDecryptionService
             int beginIndex = name.indexOf('.') + 1;
             int stepNumber = Integer.parseInt(name.substring(beginIndex, name.indexOf('.', beginIndex)));
 
-            transcripts.put(stepNumber, file);
+            try
+            {
+                CMSSignedDataParser cmsParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(), new BufferedInputStream(new FileInputStream(file)));
+
+                if (verifier.verifySignature(cmsParser))
+                {
+                    transcripts.put(stepNumber, file);
+                }
+                else
+                {
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Signature check failed: " + file.getPath());
+                }
+
+                cmsParser.close();
+            }
+            catch (Exception e)
+            {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Signature check failed on  " + file.getPath() + ": " + e.getMessage(), e);
+            }
         }
-        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Unknown command: " + transcripts);
+
         return transcripts;
     }
 }

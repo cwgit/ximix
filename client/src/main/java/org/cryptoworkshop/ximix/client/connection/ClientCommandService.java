@@ -38,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -83,7 +84,6 @@ import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.SeedAndWitnessMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.SeedCommitmentMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.SeedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptDownloadMessage;
@@ -470,9 +470,9 @@ class ClientCommandService
 
                     if (seedReply.getType() == MessageReply.Type.OKAY)
                     {
-                        SeedCommitmentMessage msg = SeedCommitmentMessage.getInstance(seedReply.getPayload());
+                        ASN1Encodable msg = seedReply.getPayload();
 
-                        commitmentMap.put(node, msg.getCommitment());
+                        commitmentMap.put(node, msg.toASN1Primitive().getEncoded());
                     }
                     else
                     {

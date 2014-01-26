@@ -456,6 +456,24 @@ public class CryptoServicesTest
 
             name.appendChild(document.createTextNode(nodeName));
 
+            Element trustAnchor = document.createElement("trustAnchor");
+
+            rootElement.appendChild(trustAnchor);
+
+            trustAnchor.appendChild(document.createTextNode("trustCa"));
+
+            Element keyManagerStore = document.createElement("keyManagerStore");
+
+            rootElement.appendChild(keyManagerStore);
+
+            keyManagerStore.appendChild(document.createTextNode("nodeCaStore"));
+
+            Element keyManagerPassword = document.createElement("keyManagerPassword");
+
+            rootElement.appendChild(keyManagerPassword);
+
+            keyManagerPassword.appendChild(document.createTextNode("Hello"));
+
             Element portNo = document.createElement("portNo");
 
             rootElement.appendChild(portNo);

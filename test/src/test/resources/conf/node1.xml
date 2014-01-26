@@ -1,10 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <node>
-    <name>A</name>
     <portNo>12000</portNo>
     <portBacklog>10</portBacklog>
     <portAddress>0.0.0.0</portAddress> <!-- Completely promiscuous -->
-    <description></description>
+    <name>A</name>
+    <trustAnchor>trustCa</trustAnchor>
+    <keyManagerStore>nodeCaStore</keyManagerStore>
+    <keyManagerPassword>Hello</keyManagerPassword>
+    <description>
+        <detail>
+            <item>Location</item>
+            <value>Floor 5, Isle 2, Rack 17, Shelf 2</value>
+        </detail>
+        <detail>
+            <item>Project</item>
+            <value>Ximix</value>
+        </detail>
+        <detail>
+            <item>Organisation</item>
+            <value>VEC</value>
+        </detail>
+        <detail>
+            <item>Contact</item>
+            <value>0425 555 555</value>
+        </detail>
+    </description>
     <services>
         <service>
             <implementation>org.cryptoworkshop.ximix.node.mixnet.service.BoardHostingService</implementation>
@@ -16,9 +36,6 @@
                     <implementation>org.cryptoworkshop.ximix.node.mixnet.transform.NullTransform</implementation>
                 </transform>
             </transforms>
-            <challenger>
-                <implementation>org.cryptoworkshop.ximix.node.mixnet.challenge.SeededChallenger</implementation>
-            </challenger>
         </service>
         <service>
             <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeKeyRetrievalService</implementation>
@@ -30,7 +47,13 @@
             <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeDecryptionService</implementation>
         </service>
         <service>
+            <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeShuffledBoardDecryptionService</implementation>
+        </service>
+        <service>
             <implementation>org.cryptoworkshop.ximix.node.crypto.service.NodeSigningService</implementation>
+        </service>
+        <service>
+            <implementation>org.cryptoworkshop.ximix.node.monitor.NodeMonitorService</implementation>
         </service>
     </services>
 </node>

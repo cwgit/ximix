@@ -26,10 +26,11 @@ public interface ShuffleOperationListener
     extends OperationListener<String>
 {
     /**
-     * Called to pass in the seeds for later transcript recovery committed to by the nodes in
+     * Called to pass in the commitments for seeds for later transcript recovery committed to by the nodes in
      * the shuffle.
      *
-     * @param seedCommitments a map of node name, commitment value representing the commitments made.
+     * @param seedCommitments a map of node name, byte[] pairs. The byte[] represents a CMS SignedData object
+     *                        containing a SeedCommitmentMessage.
      */
     void commit(Map<String, byte[]> seedCommitments);
 }

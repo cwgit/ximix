@@ -18,11 +18,14 @@ package org.cryptoworkshop.ximix.node.core;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +43,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.util.io.Streams;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
 import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
@@ -91,6 +97,7 @@ public class XimixNodeContext
     private final ListeningSocketInfo listeningSocketInfo;
     private final EventNotifier eventNotifier;
     private final KeyStore keyManagerCaStore;
+    private final X509Certificate trustAnchor;
 
     public XimixNodeContext(Map<String, ServicesConnection> peerMap, final Config nodeConfig, EventNotifier eventNotifier)
         throws ConfigException
@@ -129,6 +136,19 @@ public class XimixNodeContext
         {
             try
             {
+                PEMParser pParse = new PEMParser(new FileReader(new File(homeDirectory, nodeConfig.getStringProperty("trustAnchor") + ".pem")));
+
+                trustAnchor = new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder)pParse.readObject());
+
+                pParse.close();
+            }
+            catch (Exception e)
+            {
+                throw new ConfigException("unable to read trust anchor: " + e.getMessage(), e);
+            }
+
+            try
+            {
                 File keyManagerCaStoreFile = new File(homeDirectory, nodeConfig.getStringProperty("keyManagerStore") + ".p12");
 
                 char[] keyManagerPasswd = nodeConfig.getStringProperty("keyManagerPassword").toCharArray();
@@ -137,6 +157,37 @@ public class XimixNodeContext
 
                 setupKeyManager(homeDirectory, keyManagerPasswd, ecKeyManager);
                 setupKeyManager(homeDirectory, keyManagerPasswd, blsKeyManager);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new ConfigException("unable to create node key store: " + e.getMessage(), e);
+            }
+            catch (IOException e)
+            {
+                throw new ConfigException("unable to read node key store: " + e.getMessage(), e);
+            }
+        }
+        else
+        {
+            // running in memory only mode.
+            try
+            {
+                PEMParser pParse = new PEMParser(new InputStreamReader(this.getClass().getResourceAsStream("/conf/" + nodeConfig.getStringProperty("trustAnchor") + ".pem")));
+
+                trustAnchor = new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder)pParse.readObject());
+
+                pParse.close();
+            }
+            catch (Exception e)
+            {
+                throw new ConfigException("unable to read trust anchor: " + e.getMessage(), e);
+            }
+
+            try
+            {
+                char[] keyManagerPasswd = nodeConfig.getStringProperty("keyManagerPassword").toCharArray();
+
+                keyManagerCaStore.load(this.getClass().getResourceAsStream("/conf/" + nodeConfig.getStringProperty("keyManagerStore") + ".p12"), keyManagerPasswd);
             }
             catch (GeneralSecurityException e)
             {
@@ -577,6 +628,12 @@ public class XimixNodeContext
     public EventNotifier getEventNotifier()
     {
         return eventNotifier;
+    }
+
+    @Override
+    public X509Certificate getTrustAnchor()
+    {
+        return trustAnchor;
     }
 
     @Override

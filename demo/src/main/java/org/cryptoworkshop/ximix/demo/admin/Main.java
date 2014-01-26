@@ -19,10 +19,13 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -30,6 +33,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cms.CMSSignedData;
+import org.bouncycastle.cms.CMSSignedDataParser;
 import org.bouncycastle.crypto.Commitment;
 import org.bouncycastle.crypto.Committer;
 import org.bouncycastle.crypto.commitments.GeneralHashCommitter;
@@ -39,7 +46,10 @@ import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
@@ -58,8 +68,10 @@ import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
 import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
+import org.cryptoworkshop.ximix.client.verify.SignedDataVerifier;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedCommitmentMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
@@ -88,6 +100,8 @@ public class Main
     public static void main(String[] args)
         throws Exception
     {
+        Security.addProvider(new BouncyCastleProvider());
+
         XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(new File(args[0]), new EventNotifier()
         {
             @Override
@@ -110,6 +124,12 @@ public class Main
                 throwable.printStackTrace(System.err);
             }
         });
+
+        PEMParser pParse = new PEMParser(new FileReader(args[1]));
+
+        X509Certificate trustAnchor = new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder)pParse.readObject());
+
+        pParse.close();
 
         KeyGenerationService keyGenerationService = adminRegistrar.connect(KeyGenerationService.class);
 
@@ -312,32 +332,46 @@ public class Main
         Committer sha512Committer = new GeneralHashCommitter(new SHA512Digest(), null);
         byte[] seed = null;
 
+        SignedDataVerifier signatureVerifier = new SignedDataVerifier(trustAnchor);
+
         for (String node : seedCommitmentMap.keySet())
         {
             byte[][] seedAndWitness = seedMap.get(node);
-            Commitment commitment = new Commitment(seedAndWitness[1], seedCommitmentMap.get(node));
 
-            if (!sha512Committer.isRevealed(commitment, seedAndWitness[0]))
-            {
-                System.err.println("commitment check failed on seed");
-            }
+            CMSSignedData signedData = new CMSSignedData(seedCommitmentMap.get(node));
 
-            if (seed == null)
+            if (signatureVerifier.verifySignature(signedData))
             {
-                seed = seedAndWitness[0].clone();
+                SeedCommitmentMessage seedCommitmentMessage = SeedCommitmentMessage.getInstance(signedData.getSignedContent().getContent());
+
+                Commitment commitment = new Commitment(seedAndWitness[1], seedCommitmentMessage.getCommitment());
+
+                if (!sha512Committer.isRevealed(commitment, seedAndWitness[0]))
+                {
+                    System.err.println("commitment check failed on seed");
+                }
+
+                if (seed == null)
+                {
+                    seed = seedAndWitness[0].clone();
+                }
+                else
+                {
+                    byte[] nSeed = seedAndWitness[0];
+
+                    for (int i = 0; i != seed.length; i++)
+                    {
+                        seed[i] ^= nSeed[i];
+                    }
+                }
             }
             else
             {
-                byte[] nSeed = seedAndWitness[0];
-
-                for (int i = 0; i != seed.length; i++)
-                {
-                    seed[i] ^= nSeed[i];
-                }
+                System.err.println("signature check on commitment failed on seed");
             }
         }
 
-        System.err.println(new String(Hex.encode(seed)));
+        System.err.println("network seed: " + new String(Hex.encode(seed)));
 
         final CountDownLatch transcriptCompleted = new CountDownLatch(1);
 
@@ -397,7 +431,14 @@ public class Main
         {
             byte[] bytes = generalTranscripts.get(step);
 
-            seedHash.update(bytes, 0, bytes.length);
+            if (signatureVerifier.verifySignature(new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), bytes)))
+            {
+                seedHash.update(bytes, 0, bytes.length);
+            }
+            else
+            {
+                System.err.println("General commitment check signature failed");
+            }
         }
 
         // added the distributed seed
@@ -459,6 +500,20 @@ public class Main
         commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(challengeSeed).withPairingEnabled(true).build(), transcriptListener, "A", "C", "D");
 
         witnessTranscriptCompleted.await();
+
+        for (Integer step : witnessTranscripts.keySet())
+        {
+            byte[] bytes = witnessTranscripts.get(step);
+
+            if (signatureVerifier.verifySignature(new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), bytes)))
+            {
+                seedHash.update(bytes, 0, bytes.length);
+            }
+            else
+            {
+                System.err.println("Witness commitment check signature failed");
+            }
+        }
 
         for (Integer key : witnessTranscripts.keySet())
         {
