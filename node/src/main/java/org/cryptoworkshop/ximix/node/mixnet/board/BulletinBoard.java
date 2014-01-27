@@ -19,9 +19,9 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageWitnessBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
+import org.cryptoworkshop.ximix.common.util.IndexNumberGenerator;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
 
 /**
  * Basic interface for a bulletin board.

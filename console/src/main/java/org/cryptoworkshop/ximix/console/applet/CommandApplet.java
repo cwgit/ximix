@@ -22,6 +22,7 @@ import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -30,8 +31,11 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.Security;
+import java.security.cert.X509Certificate;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,17 +69,23 @@ import javax.swing.table.AbstractTableModel;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cms.CMSSignedDataParser;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openssl.MiscPEMGenerator;
+import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
-import org.cryptoworkshop.ximix.client.DownloadOptions;
+import org.cryptoworkshop.ximix.client.DownloadShuffleResultOptions;
 import org.cryptoworkshop.ximix.client.KeyService;
 import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
@@ -85,9 +95,11 @@ import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListen
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
-import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
 import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
+import org.cryptoworkshop.ximix.client.verify.LinkIndexVerifier;
+import org.cryptoworkshop.ximix.client.verify.SignedDataVerifier;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedAndWitnessMessage;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
@@ -96,14 +108,34 @@ import org.cryptoworkshop.ximix.console.util.vote.VoteUnpacker;
 public class CommandApplet
     extends JApplet
 {
+    String trust = "-----BEGIN CERTIFICATE-----\n"+
+        "MIIB/jCCAaQCAQEwCgYIKoZIzj0EAwIwgYoxCzAJBgNVBAYTAkFVMSAwHgYDVQQK\n"+
+        "DBdDcnlwdG8gV29ya3Nob3AgUHR5IEx0ZDEbMBkGA1UECwwSWGltaXggTm9kZSBU\n"+
+        "ZXN0IENBMRIwEAYDVQQHDAlNZWxib3VybmUxETAPBgNVBAgMCFZpY3RvcmlhMRUw\n"+
+        "EwYDVQQDDAxUcnVzdCBBbmNob3IwHhcNMTQwMTI2MDAyMzIwWhcNMTQwMjEyMDEw\n"+
+        "NDM5WjCBijELMAkGA1UEBhMCQVUxIDAeBgNVBAoMF0NyeXB0byBXb3Jrc2hvcCBQ\n"+
+        "dHkgTHRkMRswGQYDVQQLDBJYaW1peCBOb2RlIFRlc3QgQ0ExEjAQBgNVBAcMCU1l\n"+
+        "bGJvdXJuZTERMA8GA1UECAwIVmljdG9yaWExFTATBgNVBAMMDFRydXN0IEFuY2hv\n"+
+        "cjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPi4By/W1ERoil8zTMzssTWevcBS\n"+
+        "f8pGZv7smhDDbN9lqimuTWw4uQB+KoOdzVaQVTENWDIGy1bdJ4nCDLCUeuQwCgYI\n"+
+        "KoZIzj0EAwIDSAAwRQIhAL7yIPg6GUX7IlVpcBFqF+yCq5TnR7ApE39uKJ/Ftkmi\n"+
+        "AiAkGWvE/pmFBYA2jQGH4WChbYMIvrjDBcgXfJE5oYQj7Q==\n"+
+        "-----END CERTIFICATE-----\n";
+
     private static final int BATCH_SIZE = 10;
     private ExecutorService  threadPool = Executors.newCachedThreadPool();   // TODO: maybe configure?
     private static final int ncores = 3;
 
+    private X509Certificate trustAnchor;
     private Semaphore processSemaphore = new Semaphore(ncores);
 
     public void init()
     {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
         final URL mixnetConf = getConfURL();
 
         JPanel topPanel = new JPanel();
@@ -116,6 +148,17 @@ public class CommandApplet
         JButton uploadBrowseButton = new JButton("...");
 
         final JTextField uploadDirField = new JTextField(20);
+
+        PEMParser pemParser = new PEMParser(new StringReader(trust));
+
+        try
+        {
+            trustAnchor = new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder)pemParser.readObject());
+        }
+        catch (Exception e)
+        {
+            throw new IllegalStateException("Can't parse trust anchor.", e);
+        }
 
         uploadBrowseButton.addActionListener(new ActionListener()
         {
@@ -1015,6 +1058,8 @@ public class CommandApplet
             {
                 final CountDownLatch myLatch = new CountDownLatch(1);
 
+                final Map<String, byte[]> seedCommitmentMap = new HashMap<>();
+
                 ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
                 {
                     private boolean firstStepDone = false;
@@ -1022,7 +1067,7 @@ public class CommandApplet
                     @Override
                     public void commit(Map<String, byte[]> seedCommitments)
                     {
-
+                        seedCommitmentMap.putAll(seedCommitments);
                     }
 
                     @Override
@@ -1113,6 +1158,34 @@ public class CommandApplet
 
                 transcriptCompleted.await();
 
+                SignedDataVerifier signatureVerifier = new SignedDataVerifier(trustAnchor);
+
+                Map<String, byte[][]> seedAndWitnessesMap = commandService.downloadShuffleSeedsAndWitnesses(boardEntry.getName(), shuffleOp.getOperationNumber(), shufflePlan);
+
+                int boardSize = LinkIndexVerifier.getAndCheckBoardSize(generalTranscripts.values().toArray(new File[generalTranscripts.size()]));
+
+                LinkIndexVerifier.Builder builder = new LinkIndexVerifier.Builder(boardSize);
+
+                builder.setNetworkSeeds(seedCommitmentMap, seedAndWitnessesMap);
+
+                for (Integer step : generalTranscripts.keySet())
+                {
+                    File transcriptFile = generalTranscripts.get(step);
+
+                    if (signatureVerifier.signatureVerified(new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), new BufferedInputStream(new FileInputStream(transcriptFile)))))
+                    {
+                         builder.addTranscript(transcriptFile);
+                    }
+                    else
+                    {
+                        System.err.println("General commitment check signature failed");
+                    }
+                }
+
+                LinkIndexVerifier linkVerifier = builder.build();
+
+                byte[] challengeSeed = linkVerifier.getChallengeSeed();
+
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.50);
 
                 final CountDownLatch witnessTranscriptCompleted = new CountDownLatch(1);
@@ -1164,7 +1237,7 @@ public class CommandApplet
                     }
                 };
 
-                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(new byte[55]).withPairingEnabled(true).build(), transcriptListener, shufflePlan);
+                commandService.downloadShuffleTranscripts(boardEntry.getName(), shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(challengeSeed).withPairingEnabled(true).build(), transcriptListener, shufflePlan);
 
                 witnessTranscriptCompleted.await();
 
@@ -1208,12 +1281,38 @@ public class CommandApplet
 
                 final OutputStream downloadStream = new FileOutputStream(new File(destDir, boardEntry.getName() + ".out"));
 
-                Operation<DownloadOperationListener> op = commandService.downloadBoardContents(boardEntry.getName(),
-                                                                       new DownloadOptions.Builder()
-                                                                              .withKeyID(keyID)
+                Map<String, InputStream> streamSeedCommitments = new HashMap<>();
+                for (String key : seedCommitmentMap.keySet())
+                {
+                    streamSeedCommitments.put(key, new ByteArrayInputStream(seedCommitmentMap.get(key)));
+                }
+
+                Map<String, InputStream> streamSeedsAndWitnesses = new HashMap<>();
+                for (String key : seedAndWitnessesMap.keySet())
+                {
+                    byte[][] sAndW = seedAndWitnessesMap.get(key);
+                    streamSeedsAndWitnesses.put(key, new ByteArrayInputStream(new SeedAndWitnessMessage(sAndW[0], sAndW[1]).getEncoded()));
+                }
+
+                Map<Integer, InputStream> streamWitnessTranscripts = new HashMap<>();
+                for (Integer key : witnessTranscripts.keySet())
+                {
+                    streamWitnessTranscripts.put(key, new FileInputStream(witnessTranscripts.get(key)));
+                }
+
+                Map<Integer, InputStream> streamGeneralTranscripts = new HashMap<>();
+                for (Integer key : generalTranscripts.keySet())
+                {
+                    streamGeneralTranscripts.put(key, new FileInputStream(generalTranscripts.get(key)));
+                }
+
+                final CountDownLatch shuffleOutputDownloadCompleted = new CountDownLatch(1);
+
+                commandService.downloadShuffleResult(boardEntry.getName(), new DownloadShuffleResultOptions.Builder()
+                                                                              .withKeyID("ECENCKEY")
                                                                               .withThreshold(4)
-                                                                              .withNodes("A", "B", "C", "D")
-                                                                              .withChallengeSpec(decryptionChallengeSpec).build(), new DownloadOperationListener()
+                                                                              .withPairingEnabled(true)
+                                                                              .withNodes("A", "B", "C", "D", "E").build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
                 {
                     int counter = 0;
 
@@ -1221,13 +1320,13 @@ public class CommandApplet
                     public void messageDownloaded(int index, byte[] message)
                     {
                         try
-                        {
-                            downloadStream.write(message);
-                        }
-                        catch (IOException e)
-                        {
-                            e.printStackTrace();  // TODO:
-                        }
+                         {
+                             downloadStream.write(message);
+                         }
+                         catch (IOException e)
+                         {
+                             e.printStackTrace();  // TODO:
+                         }
 
                         counter++;
                     }
@@ -1252,18 +1351,20 @@ public class CommandApplet
                     }
                 });
 
-                downloadLatch.await();
+                shuffleOutputDownloadCompleted.await();
+
+                for (Integer key : witnessTranscripts.keySet())
+                {
+                    streamWitnessTranscripts.get(key).close();
+                }
+
+                for (Integer key : generalTranscripts.keySet())
+                {
+                    streamGeneralTranscripts.get(key).close();
+                }
 
                 downloadStream.close();
                 challengeLogStream.close();
-
-                InputStream challengeStream = new BufferedInputStream(new FileInputStream(challengeLog));
-
-                ECDecryptionChallengeVerifier verifier = new ECDecryptionChallengeVerifier(pubKey, challengeStream);
-
-                verifier.verify();
-
-                challengeStream.close();
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 1.0);
 

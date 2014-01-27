@@ -61,7 +61,7 @@ public class SignedDataVerifier
      * @param cmsData a CMSSignedData object.
      * @return true if signature checks out, false if there is a problem with the signature or the path to its verifying certificate.
      */
-    public boolean verifySignature(CMSSignedData cmsData)
+    public boolean signatureVerified(CMSSignedData cmsData)
     {
         Store certs = cmsData.getCertificates();
         SignerInformationStore signers = cmsData.getSignerInfos();
@@ -94,7 +94,7 @@ public class SignedDataVerifier
      * @param cmsParser a CMSSignedData object.
      * @return true if signature checks out, false if there is a problem with the signature or the path to its verifying certificate.
      */
-    public boolean verifySignature(CMSSignedDataParser cmsParser)
+    public boolean signatureVerified(CMSSignedDataParser cmsParser)
         throws IOException, CMSException
     {
         cmsParser.getSignedContent().drain();

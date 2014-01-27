@@ -31,14 +31,16 @@ public interface DownloadShuffleResultOperation
      *
      * @param boardName name of the board to download from.
      * @param options the options to use in the decryption/download process.
+     * @param seedCommitmentMap a collection of input streams representing the seed commitments from each node.
+     * @param seedAndWitnessesMap a collection of input streams representing the seed and witness values from each node.
      * @param generalTranscripts a collection of input streams representing the general transcripts at each step.
-     * @param witnessTranscipts a colleciton of input streams representing the witness transcripts at each step.
+     * @param witnessTranscipts a collection of input streams representing the witness transcripts at each step.
      * @param defaultListener the listener to be sent messages
      */
     Operation<DownloadOperationListener> downloadShuffleResult(
-        String          boardName,
-        DownloadOptions options,
-        Map<Integer, InputStream>  generalTranscripts,
+        String boardName,
+        DownloadShuffleResultOptions options,
+        Map<String, InputStream> seedCommitmentMap, Map<String, InputStream> seedAndWitnessesMap, Map<Integer, InputStream> generalTranscripts,
         Map<Integer, InputStream> witnessTranscipts,
         DownloadOperationListener defaultListener)
         throws ServiceConnectionException;

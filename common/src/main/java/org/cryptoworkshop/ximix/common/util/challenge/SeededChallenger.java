@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.mixnet.challenge;
+package org.cryptoworkshop.ximix.common.util.challenge;
 
 import java.util.BitSet;
 
@@ -22,7 +22,7 @@ import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.crypto.prng.EntropySourceProvider;
 import org.bouncycastle.crypto.prng.drbg.HashSP800DRBG;
 import org.bouncycastle.crypto.prng.drbg.SP80090DRBG;
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
+import org.cryptoworkshop.ximix.common.util.IndexNumberGenerator;
 
 /**
  * A challenger uses a provided seed in conjunction with a hash function

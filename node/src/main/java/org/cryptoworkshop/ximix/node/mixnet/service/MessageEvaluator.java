@@ -24,8 +24,8 @@ import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CopyAndMoveMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
-import org.cryptoworkshop.ximix.common.asn1.message.PermuteAndMoveMessage;
 
 /**
  * Utility class for determining whether or not a board related messages can be handled.
@@ -109,7 +109,7 @@ class MessageEvaluator
 
             if (type == CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE)
             {
-                PermuteAndMoveMessage boardMessage = PermuteAndMoveMessage.getInstance(message.getPayload());
+                CopyAndMoveMessage boardMessage = CopyAndMoveMessage.getInstance(message.getPayload());
 
                 return boardIndex.hasBoard(boardMessage.getBoardName());
             }

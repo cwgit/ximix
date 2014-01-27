@@ -61,6 +61,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CopyAndMoveMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CreateBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageCommitment;
@@ -83,15 +84,16 @@ import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
+import org.cryptoworkshop.ximix.common.util.IndexNumberGenerator;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
+import org.cryptoworkshop.ximix.common.util.challenge.PairedChallenger;
+import org.cryptoworkshop.ximix.common.util.challenge.SeededChallenger;
+import org.cryptoworkshop.ximix.common.util.challenge.SerialChallenger;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardRegistry;
-import org.cryptoworkshop.ximix.node.mixnet.challenge.PairedChallenger;
-import org.cryptoworkshop.ximix.node.mixnet.challenge.SeededChallenger;
-import org.cryptoworkshop.ximix.node.mixnet.challenge.SerialChallenger;
+import org.cryptoworkshop.ximix.node.mixnet.shuffle.CopyAndMoveTask;
 import org.cryptoworkshop.ximix.node.mixnet.shuffle.TransformShuffleAndMoveTask;
 import org.cryptoworkshop.ximix.node.mixnet.transform.Transform;
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
@@ -445,7 +447,7 @@ public class BoardHostingService
                     }
                 });
             case START_SHUFFLE_AND_MOVE_BOARD_TO_NODE:
-                final PermuteAndMoveMessage startPandMmessage = PermuteAndMoveMessage.getInstance(message.getPayload());
+                final CopyAndMoveMessage startPandMmessage = CopyAndMoveMessage.getInstance(message.getPayload());
 
                 return boardExecutor.submitTask(startPandMmessage.getBoardName(), new Callable<MessageReply>()
                 {
@@ -458,7 +460,7 @@ public class BoardHostingService
                             return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(startPandMmessage.getBoardName(), BoardErrorStatusMessage.Status.NOT_SHUFFLE_LOCKED));
                         }
 
-                        nodeContext.execute(new StartShuffleTask(nodeContext, boardRegistry, startPandMmessage));
+                        nodeContext.execute(new CopyAndMoveTask(nodeContext, boardRegistry, getPeerConnection(startPandMmessage.getDestinationNode()), startPandMmessage));
 
                         return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
                     }
@@ -617,6 +619,8 @@ public class BoardHostingService
                                 {
                                     byte[] originalSeed = transcriptDownloadMessage.getSeed();
 
+                                    nodeContext.getEventNotifier().notify(EventNotifier.Level.INFO, "Original seed: " + new String(Hex.encode(originalSeed)));
+
                                     // we follow the formulation in "Randomized Partial Checking Revisited" where the seed is
                                     // modified by the step number, the one difference being that in our case this will only take
                                     // place at the start of a pairing, or on an individual step.
@@ -632,18 +636,34 @@ public class BoardHostingService
                                     seedDigest.doFinal(challengeSeed, 0);
                                 }
 
-                                nodeContext.getEventNotifier().notify(EventNotifier.Level.INFO, "Challenge seed: " + new String(Hex.encode(challengeSeed)));
+                                nodeContext.getEventNotifier().notify(EventNotifier.Level.INFO, "Challenge seed: " + transcriptDownloadMessage.getStepNo() + " " + new String(Hex.encode(challengeSeed)));
 
                                 try
                                 {
-                                    // step 0 is a copy step, download all witness values, same with any other copy board.
                                     if (isCopyBoard)
                                     {
                                         challenger = new SerialChallenger(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), challengeSeed);
                                     }
                                     else if (transcriptDownloadMessage.isWithPairing())
                                     {
-                                        challenger = new PairedChallenger(transitBoard, transcriptDownloadMessage.getStepNo(), (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), challengeSeed));
+                                        // TODO: maybe configure
+                                        int chunkSize = 100;
+                                        IndexNumberGenerator sourceGenerator = new SerialChallenger(transitBoard.size(), 0, null);
+                                        int[] indexes = new int[transitBoard.size()];
+                                        int count = 0;
+                                        while (sourceGenerator.hasNext())
+                                        {
+                                            TranscriptBlock transcript = transitBoard.fetchTranscriptData(TranscriptType.WITNESSES, sourceGenerator, new TranscriptBlock.Builder(0, chunkSize));
+
+                                            for (Enumeration en = transcript.getDetails().getObjects(); en.hasMoreElements();)
+                                            {
+                                                PostedData msg = PostedData.getInstance(en.nextElement());
+
+                                                indexes[count++] = MessageCommitment.getInstance(msg.getData()).getNewIndex();
+                                            }
+                                        }
+
+                                        challenger = new PairedChallenger(indexes, transcriptDownloadMessage.getStepNo(), (IndexNumberGenerator)witnessChallengerConstructor.newInstance(transitBoard.transcriptSize(transcriptDownloadMessage.getType()), transcriptDownloadMessage.getStepNo(), challengeSeed));
                                     }
                                     else
                                     {
@@ -938,37 +958,6 @@ public class BoardHostingService
         public Map<String, Transform> getTransforms()
         {
             return transforms;
-        }
-    }
-
-    private class StartShuffleTask
-        implements Runnable
-    {
-        private final NodeContext nodeContext;
-        private final PermuteAndMoveMessage startPandMmessage;
-        private final BulletinBoardRegistry boardRegistry;
-
-        public StartShuffleTask(NodeContext nodeContext, BulletinBoardRegistry boardRegistry, PermuteAndMoveMessage startPandMmessage)
-        {
-            this.nodeContext = nodeContext;
-            this.boardRegistry = boardRegistry;
-            this.startPandMmessage = startPandMmessage;
-        }
-
-        @Override
-        public void run()
-        {
-            try
-            {
-                boardRegistry.moveToTransit(startPandMmessage.getOperationNumber(), startPandMmessage.getBoardName(), startPandMmessage.getStepNumber());
-
-                new TransformShuffleAndMoveTask(nodeContext, boardRegistry, getPeerConnection(startPandMmessage.getDestinationNode()), startPandMmessage).run();
-            }
-            catch (Exception e)
-            {
-                // TODO:
-                e.printStackTrace();
-            }
         }
     }
 

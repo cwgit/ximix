@@ -35,12 +35,7 @@ import java.util.concurrent.CountDownLatch;
 
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataParser;
-import org.bouncycastle.crypto.Commitment;
-import org.bouncycastle.crypto.Committer;
-import org.bouncycastle.crypto.commitments.GeneralHashCommitter;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -56,6 +51,7 @@ import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
+import org.cryptoworkshop.ximix.client.DownloadShuffleResultOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.client.MessageChooser;
@@ -68,10 +64,11 @@ import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
 import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
+import org.cryptoworkshop.ximix.client.verify.LinkIndexVerifier;
 import org.cryptoworkshop.ximix.client.verify.SignedDataVerifier;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
-import org.cryptoworkshop.ximix.common.asn1.message.SeedCommitmentMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedAndWitnessMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
@@ -327,51 +324,10 @@ public class Main
 
         challengeVerifier.verify();
 
-        Map<String, byte[][]> seedMap = commandService.downloadShuffleSeedsAndWitnesses("FRED", shuffleOp.getOperationNumber(), "A", "C", "D");
+        Map<String, byte[][]> seedAndWitnessesMap = commandService.downloadShuffleSeedsAndWitnesses("FRED", shuffleOp.getOperationNumber(), "A", "C", "D");
 
-        Committer sha512Committer = new GeneralHashCommitter(new SHA512Digest(), null);
-        byte[] seed = null;
 
         SignedDataVerifier signatureVerifier = new SignedDataVerifier(trustAnchor);
-
-        for (String node : seedCommitmentMap.keySet())
-        {
-            byte[][] seedAndWitness = seedMap.get(node);
-
-            CMSSignedData signedData = new CMSSignedData(seedCommitmentMap.get(node));
-
-            if (signatureVerifier.verifySignature(signedData))
-            {
-                SeedCommitmentMessage seedCommitmentMessage = SeedCommitmentMessage.getInstance(signedData.getSignedContent().getContent());
-
-                Commitment commitment = new Commitment(seedAndWitness[1], seedCommitmentMessage.getCommitment());
-
-                if (!sha512Committer.isRevealed(commitment, seedAndWitness[0]))
-                {
-                    System.err.println("commitment check failed on seed");
-                }
-
-                if (seed == null)
-                {
-                    seed = seedAndWitness[0].clone();
-                }
-                else
-                {
-                    byte[] nSeed = seedAndWitness[0];
-
-                    for (int i = 0; i != seed.length; i++)
-                    {
-                        seed[i] ^= nSeed[i];
-                    }
-                }
-            }
-            else
-            {
-                System.err.println("signature check on commitment failed on seed");
-            }
-        }
-
-        System.err.println("network seed: " + new String(Hex.encode(seed)));
 
         final CountDownLatch transcriptCompleted = new CountDownLatch(1);
 
@@ -417,6 +373,7 @@ public class Main
             @Override
             public void failed(String errorObject)
             {
+                System.err.println("failed: " + errorObject);
                 transcriptCompleted.countDown();
             }
         };
@@ -425,15 +382,17 @@ public class Main
 
         transcriptCompleted.await();
 
-        SHA512Digest seedHash = new SHA512Digest();
+        LinkIndexVerifier.Builder builder = new LinkIndexVerifier.Builder(numMessages);
+
+        builder.setNetworkSeeds(seedCommitmentMap, seedAndWitnessesMap);
 
         for (Integer step : generalTranscripts.keySet())
         {
             byte[] bytes = generalTranscripts.get(step);
 
-            if (signatureVerifier.verifySignature(new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), bytes)))
+            if (signatureVerifier.signatureVerified(new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), bytes)))
             {
-                seedHash.update(bytes, 0, bytes.length);
+                 builder.addTranscript(new ByteArrayInputStream(bytes));
             }
             else
             {
@@ -441,14 +400,25 @@ public class Main
             }
         }
 
+        LinkIndexVerifier linkVerifier = builder.build();
+
+        byte[] challengeSeed = linkVerifier.getChallengeSeed();
+
+        System.err.println("network seed: " + new String(Hex.encode(challengeSeed)));
+
+        for (Integer step : generalTranscripts.keySet())
+        {
+            byte[] bytes = generalTranscripts.get(step);
+
+            if (!signatureVerifier.signatureVerified(new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), bytes)))
+            {
+                System.err.println("General commitment check signature failed");
+            }
+        }
+
+        //
         // added the distributed seed
-
-        seedHash.update(seed, 0, seed.length);
-
-        byte[] challengeSeed = new byte[seedHash.getDigestSize()];
-
-        seedHash.doFinal(challengeSeed, 0);
-
+        //
         final Map<Integer, byte[]> witnessTranscripts = new TreeMap<>();
 
         final CountDownLatch witnessTranscriptCompleted = new CountDownLatch(1);
@@ -496,7 +466,6 @@ public class Main
             }
         };
 
-        // it should be noted the challenge seed should be random data!
         commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(challengeSeed).withPairingEnabled(true).build(), transcriptListener, "A", "C", "D");
 
         witnessTranscriptCompleted.await();
@@ -505,16 +474,25 @@ public class Main
         {
             byte[] bytes = witnessTranscripts.get(step);
 
-            if (signatureVerifier.verifySignature(new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), bytes)))
-            {
-                seedHash.update(bytes, 0, bytes.length);
-            }
-            else
+            if (!signatureVerifier.signatureVerified(new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), bytes)))
             {
                 System.err.println("Witness commitment check signature failed");
             }
         }
 
+        //
+        // verify the witness transcripts are correctly generated
+        //
+        for (Integer step : witnessTranscripts.keySet())
+        {
+            byte[] bytes = witnessTranscripts.get(step);
+
+            linkVerifier.verify(step, true, new ByteArrayInputStream(bytes));
+        }
+
+        //
+        // verify the revealed commitments.
+        //
         for (Integer key : witnessTranscripts.keySet())
         {
             byte[] transcript = witnessTranscripts.get(key);
@@ -527,6 +505,19 @@ public class Main
         }
 
         System.err.println("transcripts verified");
+
+        Map<String, InputStream> streamSeedCommitments = new HashMap<>();
+        for (String key : seedCommitmentMap.keySet())
+        {
+            streamSeedCommitments.put(key, new ByteArrayInputStream(seedCommitmentMap.get(key)));
+        }
+
+        Map<String, InputStream> streamSeedsAndWitnesses = new HashMap<>();
+        for (String key : seedAndWitnessesMap.keySet())
+        {
+            byte[][] sAndW = seedAndWitnessesMap.get(key);
+            streamSeedsAndWitnesses.put(key, new ByteArrayInputStream(new SeedAndWitnessMessage(sAndW[0], sAndW[1]).getEncoded()));
+        }
 
         Map<Integer, InputStream> streamWitnessTranscripts = new HashMap<>();
         for (Integer key : witnessTranscripts.keySet())
@@ -542,10 +533,11 @@ public class Main
 
         final CountDownLatch shuffleOutputDownloadCompleted = new CountDownLatch(1);
 
-        commandService.downloadShuffleResult("FRED",new DownloadOptions.Builder()
+        commandService.downloadShuffleResult("FRED", new DownloadShuffleResultOptions.Builder()
                                                                       .withKeyID("ECENCKEY")
                                                                       .withThreshold(4)
-                                                                      .withNodes("A", "B", "C", "D").build(), streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
+                                                                      .withPairingEnabled(true)
+                                                                      .withNodes("A", "B", "C", "D").build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
         {
             int counter = 0;
 

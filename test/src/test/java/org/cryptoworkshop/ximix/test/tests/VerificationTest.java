@@ -309,7 +309,7 @@ public class VerificationTest
 
         transcriptCompleted.await();
 
-        TestCase.assertEquals(6, generalTranscripts.size());
+        TestCase.assertEquals(5, generalTranscripts.size());
 
         final Map<Integer, byte[]> witnessTranscripts = new HashMap<>();
 
@@ -362,7 +362,7 @@ public class VerificationTest
 
         witnessTranscriptCompleted.await();
 
-        TestCase.assertEquals(5, witnessTranscripts.size());
+        TestCase.assertEquals(4, witnessTranscripts.size());
 
         for (Integer key : witnessTranscripts.keySet())
         {
@@ -651,7 +651,7 @@ public class VerificationTest
 
         transcriptCompleted.await();
 
-        TestCase.assertEquals(8, generalTranscripts.size());
+        TestCase.assertEquals(7, generalTranscripts.size());
 
         final Map<Integer, byte[]> witnessTranscripts = new HashMap<>();
 
@@ -704,7 +704,7 @@ public class VerificationTest
 
         witnessTranscriptCompleted.await();
 
-        TestCase.assertEquals(7, witnessTranscripts.size());
+        TestCase.assertEquals(6, witnessTranscripts.size());
 
         for (Integer key : witnessTranscripts.keySet())
         {

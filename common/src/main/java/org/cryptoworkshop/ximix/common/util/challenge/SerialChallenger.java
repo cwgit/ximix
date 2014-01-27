@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.mixnet.challenge;
+package org.cryptoworkshop.ximix.common.util.challenge;
 
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.cryptoworkshop.ximix.common.util.IndexNumberGenerator;
 
 /**
- * A base class for a challenger that swaps between odds and even ranges of messages.
+ * A challenger that simply increments through the board contents.
  */
-public abstract class OddsEvensChallenger
+public class SerialChallenger
     implements IndexNumberGenerator
 {
-    protected final int stepNo;
-    protected final  boolean isOddStepNumber;
-    protected final int range;
-    protected final boolean isOddRange;
+    private final int size;
+
+    private AtomicInteger counter;
 
     /**
      * Base constructor.
@@ -35,11 +36,21 @@ public abstract class OddsEvensChallenger
      * @param stepNo the number of the step in the shuffling process.
      * @param seed a random seed for creating index numbers to challenge on.
      */
-    public OddsEvensChallenger(Integer size, Integer stepNo, byte[] seed)
+    public SerialChallenger(Integer size, Integer stepNo, byte[] seed)
     {
-        this.stepNo = stepNo;
-        this.isOddStepNumber = ((stepNo.intValue() & 0x1) == 1);
-        this.range = size / 2;
-        this.isOddRange = ((size.intValue() & 0x1) == 1);
+        this.size = size;
+        this.counter = new AtomicInteger(0);
+    }
+
+    @Override
+    public boolean hasNext()
+    {
+        return counter.get() != size;
+    }
+
+    @Override
+    public int nextIndex()
+    {
+        return counter.getAndIncrement();
     }
 }

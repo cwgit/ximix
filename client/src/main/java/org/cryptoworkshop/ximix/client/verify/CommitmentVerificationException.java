@@ -13,24 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.cryptoworkshop.ximix.node.mixnet.util;
+package org.cryptoworkshop.ximix.client.verify;
 
 /**
- * General interface for the generation of streams of index numbers.
+ * Exception thrown on verification failure.
  */
-public interface IndexNumberGenerator
+public class CommitmentVerificationException
+    extends Exception
 {
     /**
-     * Return true if there is another index number available
+     * Create an exception with the given message.
      *
-     * @return true if another index number, false otherwise.
+     * @param msg message to be associated with the exception.
      */
-    boolean hasNext();
+    public CommitmentVerificationException(String msg)
+    {
+        super(msg);
+    }
 
     /**
-     * Return the next index number
+     * Create an exception with the given message and an associated cause.
      *
-     * @return an index number.
+     * @param msg message to be associated with the exception.
+     * @param cause the underlying cause of the exception.
      */
-    int nextIndex();
+    public CommitmentVerificationException(String msg, Throwable cause)
+    {
+        super(msg, cause);
+    }
 }

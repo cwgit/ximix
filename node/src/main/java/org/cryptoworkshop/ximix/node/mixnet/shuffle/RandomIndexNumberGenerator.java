@@ -18,7 +18,7 @@ package org.cryptoworkshop.ximix.node.mixnet.shuffle;
 import java.security.SecureRandom;
 import java.util.BitSet;
 
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
+import org.cryptoworkshop.ximix.common.util.IndexNumberGenerator;
 
 /**
  * A generator of index numbers that covers a range of 0 to (size - 1). The generator uses an

@@ -16,6 +16,6 @@
 /**
 Basic challengers used for working out which messages/commitments to download.
 */
-package org.cryptoworkshop.ximix.node.mixnet.challenge;
+package org.cryptoworkshop.ximix.common.util.challenge;
 
 

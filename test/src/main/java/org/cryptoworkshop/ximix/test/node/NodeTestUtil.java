@@ -1,11 +1,13 @@
 package org.cryptoworkshop.ximix.test.node;
 
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
@@ -53,6 +55,11 @@ public class NodeTestUtil
     public static XimixNode getXimixNode(String networkConfig, String nodeConfigPath, EventNotifier handler)
         throws ConfigException
     {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
         XimixNodeBuilder builder = new XimixNodeBuilder(ResourceAnchor.load(networkConfig)).withThrowableListener(handler);
 
         return builder.build(ResourceAnchor.load(nodeConfigPath));

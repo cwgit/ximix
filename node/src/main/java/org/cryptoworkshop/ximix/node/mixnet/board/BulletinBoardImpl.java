@@ -31,9 +31,9 @@ import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
+import org.cryptoworkshop.ximix.common.util.IndexNumberGenerator;
 import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 

@@ -5,8 +5,8 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.DEROctetString;
-import org.cryptoworkshop.ximix.node.mixnet.challenge.SeededChallenger;
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
+import org.cryptoworkshop.ximix.common.util.IndexNumberGenerator;
+import org.cryptoworkshop.ximix.common.util.challenge.SeededChallenger;
 import org.junit.Test;
 
 /**

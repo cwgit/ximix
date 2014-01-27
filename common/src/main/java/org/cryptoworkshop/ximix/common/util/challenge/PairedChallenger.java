@@ -1,14 +1,8 @@
-package org.cryptoworkshop.ximix.node.mixnet.challenge;
+package org.cryptoworkshop.ximix.common.util.challenge;
 
 import java.util.BitSet;
-import java.util.Enumeration;
 
-import org.cryptoworkshop.ximix.common.asn1.message.MessageCommitment;
-import org.cryptoworkshop.ximix.common.asn1.message.PostedData;
-import org.cryptoworkshop.ximix.common.asn1.message.TranscriptBlock;
-import org.cryptoworkshop.ximix.common.util.TranscriptType;
-import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
-import org.cryptoworkshop.ximix.node.mixnet.util.IndexNumberGenerator;
+import org.cryptoworkshop.ximix.common.util.IndexNumberGenerator;
 
 /**
  * This challenger is based on the paired link breaking challenger in "Making Mix Nets Robust For Electronic Voting By Randomized Partial Checking"
@@ -29,32 +23,16 @@ public class PairedChallenger
     /**
      * Base Constructor.This creates a challenger with an initial isEvenCall state set to false.
      *
-     * @param initialBoard the initial board to work out the paired index sets.
+     * @param indexes the mappings from the first board to the second one in the pair..
      * @param stepNo initial step number.
      * @param firstPartIndexes the generator to provide the indexes for the first of the pairing.
      */
-    public PairedChallenger(BulletinBoard initialBoard, int stepNo, IndexNumberGenerator firstPartIndexes)
+    public PairedChallenger(int[] indexes, int stepNo, IndexNumberGenerator firstPartIndexes)
     {
-        // TODO: maybe configure chunksize
-        int chunkSize = 100;
-        IndexNumberGenerator sourceGenerator = new SerialChallenger(initialBoard.size(), 0, null);
-
-        indexes = new int[initialBoard.size()];
-        int count = 0;
-        while (sourceGenerator.hasNext())
-        {
-            TranscriptBlock transcript = initialBoard.fetchTranscriptData(TranscriptType.WITNESSES, sourceGenerator, new TranscriptBlock.Builder(0, chunkSize));
-
-            for (Enumeration en = transcript.getDetails().getObjects(); en.hasMoreElements();)
-            {
-                PostedData msg = PostedData.getInstance(en.nextElement());
-
-                indexes[count++] = MessageCommitment.getInstance(msg.getData()).getNewIndex();
-            }
-        }
+        this.indexes = indexes;
 
         this.bitSet = new BitSet(indexes.length);
-        count = 0;
+        int count = 0;
         while (firstPartIndexes.hasNext())
         {
             count++;

@@ -479,7 +479,7 @@ public class KeyProcessingTest extends TestCase
 
         transcriptCompleted.await();
 
-        TestCase.assertEquals(6, generalTranscripts.size());
+        TestCase.assertEquals(5, generalTranscripts.size());
 
         final Map<String, byte[]> witnessTranscripts = new HashMap<>();
 
@@ -532,7 +532,7 @@ public class KeyProcessingTest extends TestCase
 
         witnessTranscriptCompleted.await();
 
-        TestCase.assertEquals(5, witnessTranscripts.size());
+        TestCase.assertEquals(4, witnessTranscripts.size());
 
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];

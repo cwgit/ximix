@@ -56,6 +56,7 @@ import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
+import org.cryptoworkshop.ximix.client.DownloadShuffleResultOptions;
 import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
@@ -71,6 +72,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ChallengeLogMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CopyAndMoveMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CreateBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptShuffledBoardMessage;
@@ -164,10 +166,10 @@ class ClientCommandService
     }
 
     @Override
-    public Operation<DownloadOperationListener> downloadShuffleResult(String boardName, DownloadOptions options, Map<Integer, InputStream> generalTranscripts, Map<Integer, InputStream> witnessTranscripts, DownloadOperationListener defaultListener)
+    public Operation<DownloadOperationListener> downloadShuffleResult(String boardName, DownloadShuffleResultOptions options, Map<String, InputStream> seedCommitmentMap, Map<String, InputStream> seedAndWitnessesMap, Map<Integer, InputStream> generalTranscripts, Map<Integer, InputStream> witnessTranscripts, DownloadOperationListener defaultListener)
         throws ServiceConnectionException
     {
-        Operation<DownloadOperationListener> op = new DownloadShuffleResultOp(Executors.newSingleThreadExecutor(), boardName, options, generalTranscripts, witnessTranscripts);
+        Operation<DownloadOperationListener> op = new DownloadShuffleResultOp(Executors.newSingleThreadExecutor(), boardName, options, seedCommitmentMap, seedAndWitnessesMap, generalTranscripts, witnessTranscripts);
 
         op.addListener(defaultListener);
 
@@ -455,8 +457,6 @@ class ClientCommandService
             {
                 connection.sendMessage(CommandMessage.Type.BOARD_SHUFFLE_LOCK, new BoardMessage(boardName));
 
-                String nextNode = nodes[0];
-
                 Map<String, byte[]> commitmentMap = new HashMap<>();
 
                 for (String node : nodes)
@@ -484,9 +484,9 @@ class ClientCommandService
                 notifier.commit(commitmentMap);
 
                 // initial board state is copied to step 0 at start
-                connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, 1));
+                connection.sendMessage(nodes[0], CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, 0));
 
-                MessageReply startRep = connection.sendMessage(CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, 0, options.getTransformName(), options.getKeyID(), nextNode));
+                MessageReply startRep = connection.sendMessage(CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE, new CopyAndMoveMessage(this.getOperationNumber(), boardName, 0, nodes[0]));
                 if (startRep.getType() == MessageReply.Type.ERROR)
                 {
                     notifier.failed(DERUTF8String.getInstance(startRep.getPayload()).getString());
@@ -494,37 +494,34 @@ class ClientCommandService
                 }
 
                 String boardHost = DERUTF8String.getInstance(startRep.getPayload()).getString();
-                notifier.status("Starting  (" + nextNode + "/0)");
-                for (int i = 1; i < nodes.length; i++)
+                notifier.status("Starting  (" + nodes[0] + "/0)");
+                for (int i = 0; i < nodes.length - 1; i++)
                 {
-                    String curNode = nextNode;
+                    waitForCompleteStatus(this.getOperationNumber(), nodes[i], i);
 
-                    waitForCompleteStatus(this.getOperationNumber(), curNode, i);
+                    connection.sendMessage(nodes[i + 1], CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, i + 1));
 
-                    nextNode = nodes[i];
-                    connection.sendMessage(nextNode, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, i + 1));
-
-                    MessageReply reply = connection.sendMessage(curNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, i, options.getTransformName(), options.getKeyID(), nextNode));
+                    MessageReply reply = connection.sendMessage(nodes[i], CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, i, options.getTransformName(), options.getKeyID(), nodes[i + 1]));
                     if (reply.getType() == MessageReply.Type.ERROR)
                     {
                         notifier.failed(DERUTF8String.getInstance(reply.getPayload()).getString());
                         return;
                     }
 
-                    notifier.status("Shuffling (" + nextNode + "/" + i + ")");
+                    notifier.status("Shuffling (" + nodes[i + 1] + "/" + (i + 1) + ")");
                 }
 
-                waitForCompleteStatus(this.getOperationNumber(), nextNode, nodes.length);
+                waitForCompleteStatus(this.getOperationNumber(), nodes[nodes.length - 1], nodes.length - 1);
 
-                connection.sendMessage(boardHost, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
+                connection.sendMessage(boardHost, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length));
 
-                connection.sendMessage(nextNode, CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, nodes.length, options.getTransformName(), options.getKeyID(), boardHost));
+                connection.sendMessage(nodes[nodes.length - 1], CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, nodes.length - 1, options.getTransformName(), options.getKeyID(), boardHost));
 
-                waitForCompleteStatus(this.getOperationNumber(), boardHost, nodes.length + 1);
+                waitForCompleteStatus(this.getOperationNumber(), boardHost, nodes.length);
 
-                notifier.status("Returning (" + nextNode + "/" + nodes.length + ")");
+                notifier.status("Returning (" + boardHost + "/" + nodes.length + ")");
 
-                connection.sendMessage(boardHost, CommandMessage.Type.RETURN_TO_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length + 1));
+                connection.sendMessage(boardHost, CommandMessage.Type.RETURN_TO_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length));
 
                 waitForUnlockStatus(boardHost, boardName);
 
@@ -907,17 +904,21 @@ class ClientCommandService
     {
         private final ExecutorService decoupler;
         private final String boardName;
-        private final DownloadOptions options;
+        private final DownloadShuffleResultOptions options;
+        private final Map<String, InputStream> seedCommitmentMap;
+        private final Map<String, InputStream> seedAndWitnessesMap;
         private final Map<Integer, InputStream> generalTranscripts;
         private final Map<Integer, InputStream> witnessTranscripts;
 
-        public DownloadShuffleResultOp(ExecutorService decoupler, String boardName, DownloadOptions options, Map<Integer, InputStream> generalTranscripts, Map<Integer, InputStream> witnessTranscripts)
+        public DownloadShuffleResultOp(ExecutorService decoupler, String boardName, DownloadShuffleResultOptions options, Map<String, InputStream> seedCommitmentMap, Map<String, InputStream> seedAndWitnessesMap, Map<Integer, InputStream> generalTranscripts, Map<Integer, InputStream> witnessTranscripts)
         {
             super(decoupler, eventNotifier, DownloadOperationListener.class);
 
             this.decoupler = decoupler;
             this.boardName = boardName;
             this.options = options;
+            this.seedCommitmentMap = seedCommitmentMap;
+            this.seedAndWitnessesMap = seedAndWitnessesMap;
             this.generalTranscripts = generalTranscripts;
             this.witnessTranscripts = witnessTranscripts;
         }
@@ -925,14 +926,20 @@ class ClientCommandService
         public void run()
         {
             String[] nodes = toOrderedSet(options.getNodesToUse()).toArray(new String[0]);
-            DecryptionChallengeSpec challengeSpec = options.getChallengeSpec();
-            Map<String, AsymmetricKeyParameter> keyMap = new HashMap<>();
-            MessageChooser proofMessageChooser = null;
-            OutputStream proofLogStream = null;
 
             //
             // upload the transcripts
             //
+            if (!uploadMaps(nodes, seedCommitmentMap, ".sc"))
+            {
+                return;
+            }
+
+            if (!uploadMaps(nodes, seedAndWitnessesMap, ".svw"))
+            {
+                return;
+            }
+
             if (!uploadTranscript(nodes, generalTranscripts, ".gtr"))
             {
                 return;
@@ -950,7 +957,7 @@ class ClientCommandService
             {
                 try
                 {
-                    MessageReply reply = connection.sendMessage(node, CommandMessage.Type.SETUP_PARTIAL_DECRYPT, new DecryptShuffledBoardMessage(options.getKeyID(), boardName));
+                    MessageReply reply = connection.sendMessage(node, CommandMessage.Type.SETUP_PARTIAL_DECRYPT, new DecryptShuffledBoardMessage(options.getKeyID(), boardName, options.isPairingEnabled()));
                     if (!reply.getType().equals(MessageReply.Type.OKAY))
                     {
                         notifier.failed(node + " reply " + DERUTF8String.getInstance(reply.getPayload()).getString());
@@ -1080,13 +1087,34 @@ class ClientCommandService
             decoupler.shutdown();
         }
 
+        private boolean uploadMaps(String[] nodes, Map<String, InputStream> transcriptMap, String suffix)
+        {
+            for (String key : transcriptMap.keySet())
+            {
+                try
+                {
+                    if (!uploadStream(nodes, boardName + "." + key + suffix, transcriptMap.get(key)))
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception e)
+                {
+                    notifier.failed(e.toString());
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private boolean uploadTranscript(String[] nodes, Map<Integer, InputStream> transcriptMap, String suffix)
         {
             for (Integer key : transcriptMap.keySet())
             {
                 try
                 {
-                    if (!uploadStream(nodes, boardName, key, transcriptMap.get(key), suffix))
+                    if (!uploadStream(nodes, boardName + "." + key + suffix, transcriptMap.get(key)))
                     {
                         return false;
                     }
@@ -1100,7 +1128,7 @@ class ClientCommandService
             return true;
         }
 
-        private boolean uploadStream(String[] nodes, String boardName, Integer key, InputStream input, String suffix)
+        private boolean uploadStream(String[] nodes, String targetName, InputStream input)
             throws IOException, ServiceConnectionException
         {
             int chunkSize = 10240; // TODO: make configurable
@@ -1108,8 +1136,6 @@ class ClientCommandService
             byte[] chunk = new byte[chunkSize];
 
             int in;
-            String targetName = boardName + "." + key + suffix;
-
             while ((in = fIn.read(chunk)) >= 0)
             {
                 if (in < chunkSize)
@@ -1255,7 +1281,12 @@ class ClientCommandService
 
             long queryID = response.getQueryID();
 
-            for (int stepNo : response.stepNos())
+            int[] stepNos = response.stepNos();
+
+            // need to make sure these are in a specific order for challenge verification to work.
+            Arrays.sort(stepNos);
+
+            for (int stepNo : stepNos)
             {
                 PipedOutputStream pOut = null;
 

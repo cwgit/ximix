@@ -33,13 +33,16 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataParser;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
+import org.cryptoworkshop.ximix.client.verify.CommitmentVerificationException;
 import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
+import org.cryptoworkshop.ximix.client.verify.LinkIndexVerifier;
 import org.cryptoworkshop.ximix.client.verify.SignedDataVerifier;
 import org.cryptoworkshop.ximix.client.verify.TranscriptVerificationException;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
@@ -54,6 +57,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
+import org.cryptoworkshop.ximix.common.asn1.message.SeedAndWitnessMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
@@ -177,6 +181,7 @@ public class NodeShuffledBoardDecryptionService
             }
 
 
+            // verify signatures.
             File[] files = workDirectory.listFiles(new FilenameFilter()
             {
                 @Override
@@ -187,6 +192,17 @@ public class NodeShuffledBoardDecryptionService
             });
 
             final Map<Integer, File> generalTranscripts = createTranscriptMap(signatureVerifier, files);
+
+            int boardSize;
+
+            try
+            {
+                boardSize = LinkIndexVerifier.getAndCheckBoardSize(files);
+            }
+            catch (TranscriptVerificationException e)
+            {
+                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Decrypt refused, size validation failed: " + e.getMessage()));
+            }
 
             files = workDirectory.listFiles(new FilenameFilter()
             {
@@ -199,8 +215,56 @@ public class NodeShuffledBoardDecryptionService
 
             final Map<Integer, File> witnessTranscripts = createTranscriptMap(signatureVerifier, files);
 
+            files = workDirectory.listFiles(new FilenameFilter()
+            {
+                @Override
+                public boolean accept(File dir, String name)
+                {
+                    return name.startsWith(setupMessage.getBoardName()) && name.endsWith(".sc");
+                }
+            });
+
+            final Map<String, byte[]> seedCommitmentMap = createSeedCommitmentMap(signatureVerifier, files);
+
+            files = workDirectory.listFiles(new FilenameFilter()
+            {
+                @Override
+                public boolean accept(File dir, String name)
+                {
+                    return name.startsWith(setupMessage.getBoardName()) && name.endsWith(".svw");
+                }
+            });
+
+            final Map<String, byte[][]> seedAndWitnessesMap = createSeedAndWitnessMap(files);
+
+            LinkIndexVerifier.Builder verifierBuilder = new LinkIndexVerifier.Builder(boardSize);
+
             try
             {
+                verifierBuilder.setNetworkSeeds(seedCommitmentMap, seedAndWitnessesMap);
+
+                for (Integer key : generalTranscripts.keySet())
+                {
+                    BufferedInputStream bIn = new BufferedInputStream(new FileInputStream(generalTranscripts.get(key)));
+
+                    verifierBuilder.addTranscript(bIn);
+
+                    bIn.close();
+                }
+
+                LinkIndexVerifier linkIndexVerifier = verifierBuilder.build();
+
+                // verify which links have been opened.
+                for (Integer key : witnessTranscripts.keySet())
+                {
+                    BufferedInputStream bIn = new BufferedInputStream(new FileInputStream(witnessTranscripts.get(key)));
+
+                    linkIndexVerifier.verify(key, setupMessage.isWithPairing(), bIn);
+
+                    bIn.close();
+                }
+
+                // verify the opened commitments.
                 for (Integer key : witnessTranscripts.keySet())
                 {
                     File transcriptFile = witnessTranscripts.get(key);
@@ -223,6 +287,10 @@ public class NodeShuffledBoardDecryptionService
             catch (IOException e)
             {
                 return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String(setupMessage.getBoardName() + ": " + e.getMessage()));
+            }
+            catch (CommitmentVerificationException e)
+            {
+                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Decrypt refused, validation failed: " + e.getMessage()));
             }
             catch (TranscriptVerificationException e)
             {
@@ -328,7 +396,7 @@ public class NodeShuffledBoardDecryptionService
             {
                 CMSSignedDataParser cmsParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(), new BufferedInputStream(new FileInputStream(file)));
 
-                if (verifier.verifySignature(cmsParser))
+                if (verifier.signatureVerified(cmsParser))
                 {
                     transcripts.put(stepNumber, file);
                 }
@@ -338,6 +406,76 @@ public class NodeShuffledBoardDecryptionService
                 }
 
                 cmsParser.close();
+            }
+            catch (Exception e)
+            {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Signature check failed on  " + file.getPath() + ": " + e.getMessage(), e);
+            }
+        }
+
+        return transcripts;
+    }
+
+    private Map<String, byte[][]> createSeedAndWitnessMap(File[] fileList)
+    {
+        final Map<String, byte[][]> transcripts = new TreeMap<>();
+
+        for (File file : fileList)
+        {
+            String name = file.getName();
+            int beginIndex = name.indexOf('.') + 1;
+            String nodeName = name.substring(beginIndex, name.indexOf('.', beginIndex));
+
+            try
+            {
+                ASN1InputStream aIn = new ASN1InputStream(new FileInputStream(file));
+
+                SeedAndWitnessMessage sAnW = SeedAndWitnessMessage.getInstance(aIn.readObject());
+
+                if (aIn.readObject() != null)
+                {
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "createSeedAndWitnessMap extra data found: " + file.getPath());
+                }
+
+                transcripts.put(nodeName, new byte[][] { sAnW.getSeed(), sAnW.getWitness() });
+
+                aIn.close();
+            }
+            catch (Exception e)
+            {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Signature check failed on  " + file.getPath() + ": " + e.getMessage(), e);
+            }
+        }
+
+        return transcripts;
+    }
+
+    private Map<String, byte[]> createSeedCommitmentMap(SignedDataVerifier verifier, File[] fileList)
+    {
+        final Map<String, byte[]> transcripts = new TreeMap<>();
+
+        for (File file : fileList)
+        {
+            String name = file.getName();
+            int beginIndex = name.indexOf('.') + 1;
+            String nodeName = name.substring(beginIndex, name.indexOf('.', beginIndex));
+
+            try
+            {
+                BufferedInputStream sigData = new BufferedInputStream(new FileInputStream(file));
+
+                CMSSignedData cmsSignedData = new CMSSignedData(sigData);
+
+                if (verifier.signatureVerified(cmsSignedData))
+                {
+                    transcripts.put(nodeName, cmsSignedData.getEncoded());
+                }
+                else
+                {
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Signature check failed: " + file.getPath());
+                }
+
+                sigData.close();
             }
             catch (Exception e)
             {

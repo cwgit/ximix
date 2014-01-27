@@ -15,6 +15,7 @@
  */
 package org.cryptoworkshop.ximix.common.asn1.message;
 
+import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -31,23 +32,27 @@ public class DecryptShuffledBoardMessage
 {
     private final String boardName;
     private final String keyID;
+    private final boolean isWithPairing;
 
     /**
      * Base constructor.
      *
      * @param keyID the ID of the private key to decrypt against.
      * @param boardName the source board that the original shuffle was on.
+     * @param isWithPairing whether or not the shuffle was done in pairing mode, true if it was, false otherwise.
      */
-    public DecryptShuffledBoardMessage(String keyID, String boardName)
+    public DecryptShuffledBoardMessage(String keyID, String boardName, boolean isWithPairing)
     {
         this.keyID = keyID;
         this.boardName = boardName;
+        this.isWithPairing = isWithPairing;
     }
 
     private DecryptShuffledBoardMessage(ASN1Sequence seq)
     {
         this.keyID = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
-        this.boardName= DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+        this.boardName = DERUTF8String.getInstance(seq.getObjectAt(1)).getString();
+        this.isWithPairing = ASN1Boolean.getInstance(seq.getObjectAt(2)).isTrue();
     }
 
     public static final DecryptShuffledBoardMessage getInstance(Object o)
@@ -71,6 +76,7 @@ public class DecryptShuffledBoardMessage
 
         v.add(new DERUTF8String(keyID));
         v.add(new DERUTF8String(boardName));
+        v.add(ASN1Boolean.getInstance(isWithPairing));
 
         return new DERSequence(v);
     }
@@ -83,5 +89,10 @@ public class DecryptShuffledBoardMessage
     public String getKeyID()
     {
         return keyID;
+    }
+
+    public boolean isWithPairing()
+    {
+        return isWithPairing;
     }
 }
