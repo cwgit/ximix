@@ -1001,7 +1001,7 @@ class ClientCommandService
                     int count = 0;
                     while (count != options.getThreshold())
                     {
-                        partialDecryptResponses[count] = connection.sendMessage(nodes[count], CommandMessage.Type.DOWNLOAD_PARTIAL_DECRYPTS, new DownloadShuffledBoardMessage(options.getKeyID(), boardName, 100)); // TODO: configure;
+                        partialDecryptResponses[count] = connection.sendMessage(nodes[count], CommandMessage.Type.DOWNLOAD_PARTIAL_DECRYPTS, new DownloadShuffledBoardMessage(options.getKeyID(), boardName, 20)); // TODO: configure;
                         if (partialDecryptResponses[count].getType() == MessageReply.Type.OKAY)
                         {
                             nodesUsed[count] = nodes[count];

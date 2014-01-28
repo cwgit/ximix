@@ -77,7 +77,7 @@ public class NodeShuffledBoardDecryptionService
     private final SignedDataVerifier signatureVerifier;
 
     private Map<File, OutputStream> activeFiles = Collections.synchronizedMap(new HashMap<File, OutputStream>());
-    private Map<String, CMSSignedDataParser> activeDownloads = Collections.synchronizedMap(new HashMap<String, CMSSignedDataParser>());
+    private Map<String, ASN1InputStream> activeDecrypts = Collections.synchronizedMap(new HashMap<String, ASN1InputStream>());
 
     /**
      * Base constructor.
@@ -303,7 +303,7 @@ public class NodeShuffledBoardDecryptionService
             {
                 CMSSignedDataParser cmsParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(), new BufferedInputStream(new FileInputStream(finalFile)));
 
-                activeDownloads.put(setupMessage.getBoardName(), cmsParser);
+                activeDecrypts.put(setupMessage.getBoardName(), new ASN1InputStream(cmsParser.getSignedContent().getContentStream()));
 
                 return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(setupMessage.getBoardName()));
             }
@@ -329,14 +329,12 @@ public class NodeShuffledBoardDecryptionService
 
             ECDomainParameters domainParameters = ecOperator.getDomainParameters();
 
-            CMSSignedDataParser cmsParser = activeDownloads.get(downMessage.getBoardName());
+            ASN1InputStream aIn = activeDecrypts.get(downMessage.getBoardName());
 
-            if (cmsParser == null)
+            if (aIn == null)
             {
                 return new MessageReply(MessageReply.Type.OKAY, new ShareMessage(operator.getSequenceNo(), partialDecryptsBuilder.build()));
             }
-
-            ASN1InputStream aIn = new ASN1InputStream(cmsParser.getSignedContent().getContentStream());
 
             try
             {
@@ -356,8 +354,8 @@ public class NodeShuffledBoardDecryptionService
 
                 if (o == null)
                 {
-                    activeDownloads.remove(downMessage.getBoardName());
-                    cmsParser.close();
+                    activeDecrypts.remove(downMessage.getBoardName());
+                    aIn.close();
                 }
 
                 return new MessageReply(MessageReply.Type.OKAY, new ShareMessage(operator.getSequenceNo(), partialDecryptsBuilder.build()));

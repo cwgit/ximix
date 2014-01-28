@@ -62,13 +62,16 @@ class NodeServicesConnection
     public void close()
         throws ServiceConnectionException
     {
-        try
+        synchronized (this)
         {
-            connection.close();
-        }
-        catch (Exception ex)
-        {
-            throw new ServiceConnectionException(ex.getMessage());
+            try
+            {
+                connection.close();
+            }
+            catch (Exception ex)
+            {
+                throw new ServiceConnectionException(ex.getMessage());
+            }
         }
     }
 
