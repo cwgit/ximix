@@ -147,7 +147,10 @@ public class ShareMap<K, V>
 
     public Set<K> getIDs()
     {
-        return sharedMap.keySet();
+        synchronized (this)
+        {
+            return sharedMap.keySet();
+        }
     }
 
     private class AddTask

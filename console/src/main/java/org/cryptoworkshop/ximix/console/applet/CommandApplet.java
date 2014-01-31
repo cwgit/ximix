@@ -1334,7 +1334,7 @@ public class CommandApplet
                     @Override
                     public void completed()
                     {
-                        downloadLatch.countDown();
+                        shuffleOutputDownloadCompleted.countDown();
                     }
 
                     @Override
@@ -1346,7 +1346,7 @@ public class CommandApplet
                     @Override
                     public void failed(String errorObject)
                     {
-                        downloadLatch.countDown();
+                        shuffleOutputDownloadCompleted.countDown();
                         System.err.println("failed");
                     }
                 });

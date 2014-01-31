@@ -63,6 +63,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CopyAndMoveMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CreateBoardMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ErrorMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageCommitment;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
@@ -673,7 +674,8 @@ public class BoardHostingService
                                 catch (Exception e)
                                 {
                                     nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, e);
-                                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unable to create challenger on " + nodeContext.getName()));
+
+                                    return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Unable to create challenger on " + nodeContext.getName()));
                                 }
                             }
                             challengers.put(challengerKey, challenger);
@@ -750,7 +752,7 @@ public class BoardHostingService
                     public MessageReply call()
                         throws Exception
                     {
-                        return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command"));
+                        return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Unknown command"));
                     }
                 });
 

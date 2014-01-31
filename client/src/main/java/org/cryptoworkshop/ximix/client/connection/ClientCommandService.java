@@ -40,6 +40,8 @@ import java.util.concurrent.FutureTask;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -66,6 +68,7 @@ import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardErrorStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
@@ -270,6 +273,7 @@ class ClientCommandService
                 catch (ServiceConnectionException e)
                 {
                     eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on board creation: " + e.getMessage(), e);
+
                     return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Exception on board creation: " + e.getMessage()));
                 }
 
@@ -321,6 +325,7 @@ class ClientCommandService
                 catch (ServiceConnectionException e)
                 {
                     eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on isBoardExisting: " + e.getMessage(), e);
+
                     return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Exception on isBoardExisting: " + e.getMessage()));
                 }
 
@@ -407,7 +412,7 @@ class ClientCommandService
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {
-            throw new ServiceConnectionException("message failed: " + DERUTF8String.getInstance(reply.getPayload()).getString());
+            throw new ServiceConnectionException("message failed: " + getErrorString(reply.getPayload()));
         }
     }
 
@@ -420,8 +425,34 @@ class ClientCommandService
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {
-            throw new ServiceConnectionException("message failed: " + DERUTF8String.getInstance(reply.getPayload()).getString());
+            throw new ServiceConnectionException("message failed: " + getErrorString(reply.getPayload()));
         }
+    }
+
+    private String getErrorString(ASN1Encodable obj)
+    {
+        if (obj instanceof DERUTF8String)
+        {
+            return DERUTF8String.getInstance(obj).getString();
+        }
+
+        if (obj instanceof ASN1TaggedObject)
+        {
+            ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(obj);
+
+            if (taggedObject.getTagNo() == 0)
+            {
+                return DERUTF8String.getInstance(taggedObject, true).getString();
+            }
+            if (taggedObject.getTagNo() == 1)
+            {
+                BoardErrorStatusMessage statusMessage = BoardErrorStatusMessage.getInstance(ASN1Sequence.getInstance(taggedObject, true));
+
+                return statusMessage.getBoardName() + ": " + statusMessage.getStatus();
+            }
+        }
+
+        return "Unknown error object";
     }
 
     private static class CaseInsensitiveComparator

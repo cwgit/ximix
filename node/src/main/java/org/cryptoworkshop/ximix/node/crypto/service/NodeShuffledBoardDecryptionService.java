@@ -201,6 +201,8 @@ public class NodeShuffledBoardDecryptionService
             }
             catch (TranscriptVerificationException e)
             {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Decrypt refused, size validation failed: " + e.getMessage(), e);
+
                 return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Decrypt refused, size validation failed: " + e.getMessage()));
             }
 
@@ -284,17 +286,23 @@ public class NodeShuffledBoardDecryptionService
                     nextTranscriptStream.close();
                 }
             }
-            catch (IOException e)
-            {
-                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String(setupMessage.getBoardName() + ": " + e.getMessage()));
-            }
             catch (CommitmentVerificationException e)
             {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Decrypt refused, validation failed: " + e.getMessage(), e);
+
                 return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Decrypt refused, validation failed: " + e.getMessage()));
             }
             catch (TranscriptVerificationException e)
             {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Decrypt refused, validation failed: " + e.getMessage(), e);
+
                 return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Decrypt refused, validation failed: " + e.getMessage()));
+            }
+            catch (Exception e)
+            {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, setupMessage.getBoardName() + ": " + e.getMessage(), e);
+
+                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String(setupMessage.getBoardName() + ": " + e.getMessage()));
             }
 
             File finalFile = generalTranscripts.get(witnessTranscripts.size());
@@ -360,7 +368,7 @@ public class NodeShuffledBoardDecryptionService
 
                 return new MessageReply(MessageReply.Type.OKAY, new ShareMessage(operator.getSequenceNo(), partialDecryptsBuilder.build()));
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Error parsing posted message stream: " + e.getMessage(), e);
 

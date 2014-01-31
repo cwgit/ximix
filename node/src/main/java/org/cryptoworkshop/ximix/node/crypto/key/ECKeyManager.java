@@ -141,15 +141,18 @@ public class ECKeyManager
     }
 
     @Override
-    public synchronized boolean hasPrivateKey(String keyID)
+    public boolean hasPrivateKey(String keyID)
     {
         return sharedPrivateKeyMap.containsKey(keyID);
     }
 
     @Override
-    public synchronized boolean isSigningKey(String keyID)
+    public boolean isSigningKey(String keyID)
     {
-        return signingKeys.contains(keyID);
+        synchronized (this)
+        {
+            return signingKeys.contains(keyID);
+        }
     }
 
     public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, NamedKeyGenParams keyGenParams)

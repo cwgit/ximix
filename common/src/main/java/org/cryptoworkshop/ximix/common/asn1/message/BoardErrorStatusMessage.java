@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 
 /**
@@ -77,7 +78,7 @@ public class BoardErrorStatusMessage
         v.add(new DERUTF8String(boardName));
         v.add(new ASN1Enumerated(status.ordinal()));
 
-        return new DERSequence(v);
+        return new DERTaggedObject(true, 1, new DERSequence(v));
     }
 
     public String getBoardName()
