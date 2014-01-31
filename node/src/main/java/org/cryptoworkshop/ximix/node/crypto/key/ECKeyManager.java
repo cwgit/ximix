@@ -22,6 +22,7 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -101,7 +102,7 @@ public class ECKeyManager
 {
     private static final int TIME_OUT = 20;
 
-    private final Map<String, ECDomainParameters> paramsMap = new HashMap<>();
+    private final Map<String, ECDomainParameters> paramsMap = Collections.<String, ECDomainParameters>synchronizedMap(new HashMap<String, ECDomainParameters>());
     private final Map<String, BigInteger> hMap = new HashMap<>();
     private final Set<String> signingKeys = new HashSet<>();
     private final ShareMap<String, BigInteger> sharedPrivateKeyMap;
@@ -141,18 +142,15 @@ public class ECKeyManager
     }
 
     @Override
-    public boolean hasPrivateKey(String keyID)
+    public synchronized boolean hasPrivateKey(String keyID)
     {
         return sharedPrivateKeyMap.containsKey(keyID);
     }
 
     @Override
-    public boolean isSigningKey(String keyID)
+    public synchronized boolean isSigningKey(String keyID)
     {
-        synchronized (this)
-        {
-            return signingKeys.contains(keyID);
-        }
+        return signingKeys.contains(keyID);
     }
 
     public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, NamedKeyGenParams keyGenParams)
@@ -364,7 +362,7 @@ public class ECKeyManager
         }
     }
 
-    public ECDomainParameters getParams(String keyID)
+    public synchronized ECDomainParameters getParams(String keyID)
     {
         return paramsMap.get(keyID);
     }
