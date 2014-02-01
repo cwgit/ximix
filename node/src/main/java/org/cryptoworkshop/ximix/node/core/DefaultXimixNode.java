@@ -95,7 +95,7 @@ class DefaultXimixNode
             }
             catch (IOException e)
             {
-
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.WARN, "Exception on closing socket: " + e.getMessage(), e);
             }
         }
 

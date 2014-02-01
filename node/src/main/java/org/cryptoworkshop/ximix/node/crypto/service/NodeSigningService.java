@@ -28,6 +28,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.signature.BLSSignerEngine;
 import org.cryptoworkshop.ximix.node.crypto.signature.ECDSASignerEngine;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
@@ -104,7 +105,8 @@ public class NodeSigningService
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, new DERUTF8String("NodeKeyGenerationService failure: " + e.getMessage()));
+
             return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("NodeKeyGenerationService failure: " + e.getMessage()));
         }
     }

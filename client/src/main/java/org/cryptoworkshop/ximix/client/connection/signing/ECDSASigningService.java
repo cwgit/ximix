@@ -41,6 +41,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.SignatureCreateMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  * Client side signing service for accumulating an ECDSA signature.
@@ -142,7 +143,7 @@ public class ECDSASigningService
             }
             catch (ServiceConnectionException e)
             {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                connection.getEventNotifier().notify(EventNotifier.Level.ERROR, "sendInitialiseMessage failure: " + e.getMessage(), e);
             }
         }
     }

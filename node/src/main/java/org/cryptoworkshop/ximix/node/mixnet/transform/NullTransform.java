@@ -44,6 +44,7 @@ public class NullTransform
         return new byte[0];
     }
 
+    @SuppressWarnings({"CloneDoesntCallSuperClone", "CloneDoesntDeclareCloneNotSupportedException"})
     @Override
     public Transform clone()
     {

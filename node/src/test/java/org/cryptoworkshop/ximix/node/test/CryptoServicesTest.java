@@ -57,6 +57,7 @@ import org.cryptoworkshop.ximix.common.config.ConfigException;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.core.XimixNodeContext;
 import org.cryptoworkshop.ximix.node.crypto.key.BLSKeyPairGenerator;
 import org.cryptoworkshop.ximix.node.crypto.key.ECKeyPairGenerator;
@@ -212,6 +213,8 @@ public class CryptoServicesTest
                     try
                     {
                         decReply = fullMap.get(nodeName).sendMessage(CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage("ECKEY", Collections.singletonList(new PairSequence(cipherText).getEncoded())));
+
+                        partialDecs[index++] = PairSequence.getInstance(pubKey1.getParameters().getCurve(), PostedMessageDataBlock.getInstance(ShareMessage.getInstance(decReply.getPayload()).getShareData()).getMessages().get(0)).getECPairs()[0].getX();
                     }
                     catch (ServiceConnectionException e)
                     {
@@ -221,7 +224,6 @@ public class CryptoServicesTest
                     {
                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     }
-                    partialDecs[index++] = PairSequence.getInstance(pubKey1.getParameters().getCurve(), PostedMessageDataBlock.getInstance(ShareMessage.getInstance(decReply.getPayload()).getShareData()).getMessages().get(0)).getECPairs()[0].getX();
                 }
 
                 LagrangeWeightCalculator lagrangeWeightCalculator = new LagrangeWeightCalculator(peers.length, pubKey1.getParameters().getN());
@@ -330,6 +332,12 @@ public class CryptoServicesTest
                 }
 
                 @Override
+                public EventNotifier getEventNotifier()
+                {
+                    return null;
+                }
+
+                @Override
                 public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
                     throws ServiceConnectionException
                 {
@@ -352,6 +360,8 @@ public class CryptoServicesTest
         }
 
         it.unisa.dia.gas.jpbc.Element finalSignature = pairing.getG1().newElement();
+
+        Assert.assertNotNull(decReply);
 
         finalSignature.setFromBytes(ASN1OctetString.getInstance(decReply.getPayload()).getOctets());
 
@@ -392,6 +402,12 @@ public class CryptoServicesTest
                 public CapabilityMessage[] getCapabilities()
                 {
                     return context.getCapabilities();
+                }
+
+                @Override
+                public EventNotifier getEventNotifier()
+                {
+                    return context.getEventNotifier();
                 }
 
                 @Override

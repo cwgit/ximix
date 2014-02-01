@@ -24,6 +24,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoard;
 import org.cryptoworkshop.ximix.node.mixnet.board.BulletinBoardRegistry;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
@@ -82,17 +83,16 @@ public class CopyAndMoveTask
 
             if (reply.getType() != MessageReply.Type.OKAY)
             {
-                throw new ServiceConnectionException("message failed");
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "End of transfer message failed: " + reply.interpretPayloadAsError());
             }
         }
         catch (ServiceConnectionException e)
         {
-            e.printStackTrace();
-            // TODO: log?
+            nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Connection failed: " + e.getMessage(), e);
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "CopyAndMoveTask connection failed: " + e.getMessage(), e);
         }
     }
 

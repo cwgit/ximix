@@ -288,8 +288,7 @@ public class BulletinBoardImpl
             }
             catch (IOException e)
             {
-                // TODO: this should never happen, so perhaps IllegalState or maybe log.
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+               throw new IllegalStateException("Unable to encode witness value!!!!", e);
             }
         }
 

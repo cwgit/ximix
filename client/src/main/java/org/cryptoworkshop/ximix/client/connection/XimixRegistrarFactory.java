@@ -60,14 +60,15 @@ public class XimixRegistrarFactory
      * unprivileged user is only allowed to upload messages and request public keys or signatures.
      *
      * @param configFile file containing the Ximix configuration to use.
+     * @param eventNotifier notifier to be used in case of error messages or warnings.
      * @return a XimixRegistrar that can be used to discover services.
      * @throws ConfigException if there is an error in the configuration.
      * @throws FileNotFoundException if the File object configFile is a reference to file that does not exist.
      */
-    public static XimixRegistrar createServicesRegistrar(File configFile)
+    public static XimixRegistrar createServicesRegistrar(File configFile, EventNotifier eventNotifier)
         throws ConfigException, FileNotFoundException
     {
-        return createServicesRegistrar(new Config(configFile));
+        return createServicesRegistrar(new Config(configFile), eventNotifier);
     }
 
     /**
@@ -75,10 +76,11 @@ public class XimixRegistrarFactory
      * unprivileged user is only allowed to upload messages and request public keys or signatures.
      *
      * @param config Ximix configuration to use.
+     * @param eventNotifier notifier to be used in case of error messages or warnings.
      * @return a XimixRegistrar that can be used to discover services.
      * @throws ConfigException if there is an error in the configuration.
      */
-    public static XimixRegistrar createServicesRegistrar(Config config)
+    public static XimixRegistrar createServicesRegistrar(Config config, final EventNotifier eventNotifier)
         throws ConfigException
     {
         final List<NodeConfig> nodes = config.getConfigObjects("node", new NodeConfigFactory());
@@ -90,15 +92,15 @@ public class XimixRegistrarFactory
             {
                 if (serviceClass.isAssignableFrom(UploadService.class))
                 {
-                    return (T)new ClientUploadService(new ServicesConnectionImpl(nodes));
+                    return (T)new ClientUploadService(new ServicesConnectionImpl(nodes, eventNotifier));
                 }
                 if (serviceClass.isAssignableFrom(KeyService.class))
                 {
-                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes));
+                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes, eventNotifier));
                 }
                 if (serviceClass.isAssignableFrom(SigningService.class))
                 {
-                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes));
+                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes, eventNotifier));
                 }
 
                 throw new RegistrarServiceException("Unable to identify service");
@@ -160,23 +162,23 @@ public class XimixRegistrarFactory
             {
                 if (serviceClass.isAssignableFrom(CommandService.class))
                 {
-                    return (T)new ClientCommandService(new AdminServicesConnectionImpl(nodes), eventNotifier);
+                    return (T)new ClientCommandService(new AdminServicesConnectionImpl(nodes, eventNotifier));
                 }
                 if (serviceClass.isAssignableFrom(KeyGenerationService.class))
                 {
-                    return (T)new KeyGenerationCommandService(new AdminServicesConnectionImpl(nodes));
+                    return (T)new KeyGenerationCommandService(new AdminServicesConnectionImpl(nodes, eventNotifier));
                 }
                 if (serviceClass.isAssignableFrom(UploadService.class))
                 {
-                    return (T)new ClientUploadService(new AdminServicesConnectionImpl(nodes));
+                    return (T)new ClientUploadService(new AdminServicesConnectionImpl(nodes, eventNotifier));
                 }
                 if (serviceClass.isAssignableFrom(SigningService.class))
                 {
-                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes));
+                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes, eventNotifier));
                 }
                 if (serviceClass.isAssignableFrom(MonitorService.class))
                 {
-                    return (T)new ClientNodeHealthMonitor(new AdminServicesConnectionImpl(nodes), getDetailMap(nodes));
+                    return (T)new ClientNodeHealthMonitor(new AdminServicesConnectionImpl(nodes, eventNotifier), getDetailMap(nodes, eventNotifier));
                 }
 
                 throw new RegistrarServiceException("Unable to identify service");
@@ -187,11 +189,15 @@ public class XimixRegistrarFactory
     private static class AdminServicesConnectionImpl
         implements AdminServicesConnection
     {
+        private final EventNotifier eventNotifier;
+
         private Map<String, NodeServicesConnection> connectionMap = Collections.synchronizedMap(new HashMap<String, NodeServicesConnection>());
         private Set<CapabilityMessage> capabilitySet = new HashSet<>();
 
-        public AdminServicesConnectionImpl(List<NodeConfig> configList)
+        public AdminServicesConnectionImpl(List<NodeConfig> configList, EventNotifier eventNotifier)
         {
+            this.eventNotifier = eventNotifier;
+
             for (int i = 0; i != configList.size(); i++)
             {
                 final NodeConfig nodeConf = configList.get(i);
@@ -201,7 +207,7 @@ public class XimixRegistrarFactory
                     // TODO: we should query each node to see what it's capabilities are.
                     try
                     {
-                        NodeServicesConnection connection = new NodeServicesConnection(nodeConf);
+                        NodeServicesConnection connection = new NodeServicesConnection(nodeConf, eventNotifier);
 
                         capabilitySet.addAll(Arrays.asList(connection.getCapabilities()));
 
@@ -214,7 +220,7 @@ public class XimixRegistrarFactory
                 }
                 else
                 {
-                    nodeConf.getThrowable().printStackTrace();
+                    eventNotifier.notify(EventNotifier.Level.ERROR, "Exception processing connection config: " + nodeConf.getThrowable().getMessage(), nodeConf.getThrowable());
                 }
             }
         }
@@ -233,6 +239,12 @@ public class XimixRegistrarFactory
         public CapabilityMessage[] getCapabilities()
         {
             return capabilitySet.toArray(new CapabilityMessage[capabilitySet.size()]);
+        }
+
+        @Override
+        public EventNotifier getEventNotifier()
+        {
+            return eventNotifier;
         }
 
         public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
@@ -262,7 +274,7 @@ public class XimixRegistrarFactory
         }
     }
 
-    private static Map<String, NodeDetail> getDetailMap(List<NodeConfig> nodes)
+    private static Map<String, NodeDetail> getDetailMap(List<NodeConfig> nodes, EventNotifier eventNotifier)
     {
         Map<String, NodeDetail> details = new HashMap<>(nodes.size());
 
@@ -271,6 +283,10 @@ public class XimixRegistrarFactory
             if (config.getThrowable() == null)
             {
                 details.put(config.getName(), new NodeDetail(config.getName(), config.getAddress(), config.getPortNo()));
+            }
+            else
+            {
+                eventNotifier.notify(EventNotifier.Level.ERROR, "Exception getting detail map: " + config.getThrowable().getMessage(), config.getThrowable());
             }
         }
 

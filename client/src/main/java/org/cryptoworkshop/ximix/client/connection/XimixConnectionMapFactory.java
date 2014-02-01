@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  * Factory class to allow building of services connection maps. Normally just used for inter-node communication.
@@ -31,19 +32,21 @@ public class XimixConnectionMapFactory
     /**
      * Create a map of ServicesConnection objects for the passed in Ximix configuration config.
      *
+     *
      * @param config Ximix configuration to use.
+     * @param eventNotifier event notifier to use in case of error.
      * @return a map of ServicesConnection objects representing handles to each node in the network.
      * @throws ConfigException if there is an error in the configuration.
      */
-    public static Map<String, ServicesConnection> createServicesConnectionMap(Config config)
+    public static Map<String, ServicesConnection> createServicesConnectionMap(Config config, EventNotifier eventNotifier)
         throws ConfigException
     {
         final List<NodeConfig> nodes = config.getConfigObjects("node", new NodeConfigFactory());
 
-        return createServicesConnectionMap(nodes);
+        return createServicesConnectionMap(nodes, eventNotifier);
     }
 
-    private static Map<String, ServicesConnection> createServicesConnectionMap(List<NodeConfig> nodes)
+    private static Map<String, ServicesConnection> createServicesConnectionMap(List<NodeConfig> nodes, EventNotifier eventNotifier)
     {
         Map<String, ServicesConnection> rMap = new HashMap<>();
 
@@ -54,7 +57,7 @@ public class XimixConnectionMapFactory
             final String name = node.getName();
             final List<NodeConfig> thisNode = Collections.singletonList(node);
 
-            rMap.put(name, new ServicesConnectionImpl(thisNode));
+            rMap.put(name, new ServicesConnectionImpl(thisNode, eventNotifier));
         }
 
         return rMap;

@@ -17,6 +17,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.SignatureMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
 import org.cryptoworkshop.ximix.node.crypto.operator.BLSPrivateKeyOperator;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
@@ -70,12 +71,15 @@ public class BLSSignerEngine
                 // TODO: need to clean up state tables here.
                 return reply;
             default:
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Unknown command in NodeSigningService.");
+
                 return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeSigningService."));
             }
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "NodeKeyGenerationService failure: " + e.getMessage(), e);
+
             return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("NodeKeyGenerationService failure: " + e.getMessage()));
         }
     }

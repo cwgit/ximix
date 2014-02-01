@@ -24,12 +24,14 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ErrorMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusRequestMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigObjectFactory;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.mixnet.service.BoardHostingService;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
 import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
@@ -156,7 +158,9 @@ public class NodeMonitorService
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "monitor exception: " + e.getMessage(), e);
+
+                    return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage(e.toString()));
                 }
 
 

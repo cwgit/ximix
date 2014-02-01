@@ -91,6 +91,7 @@ public class MultiColumnRowTransform
         return k;
     }
 
+    @SuppressWarnings({"CloneDoesntCallSuperClone", "CloneDoesntDeclareCloneNotSupportedException"})
     public Transform clone()
     {
         return new MultiColumnRowTransform();

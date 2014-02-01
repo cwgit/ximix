@@ -15,7 +15,6 @@
  */
 package org.cryptoworkshop.ximix.node.mixnet.shuffle;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -157,23 +156,18 @@ public class TransformShuffleAndMoveTask
             MessageReply reply = peerConnection.sendMessage(CommandMessage.Type.TRANSFER_TO_BOARD_ENDED, new TransitBoardMessage(message.getOperationNumber(), board.getName(), nextStepNumber));
 
             if (reply.getType() != MessageReply.Type.OKAY)
-            {
-                throw new ServiceConnectionException("message failed");
-            }
-        }
-        catch (ServiceConnectionException e)
-        {
-            e.printStackTrace();
-            // TODO: log?
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-        catch (RuntimeException e)
-        {
-            e.printStackTrace();
-        }
+             {
+                 nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "End of transfer message failed: " + reply.interpretPayloadAsError());
+             }
+         }
+         catch (ServiceConnectionException e)
+         {
+             nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Connection failed: " + e.getMessage(), e);
+         }
+         catch (Exception e)
+         {
+             nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "TransformShuffleAndMoveTask connection failed: " + e.getMessage(), e);
+         }
     }
 
     private void processMessageBlock(PostedMessageBlock.Builder messageBlockBuilder, int nextStepNumber)

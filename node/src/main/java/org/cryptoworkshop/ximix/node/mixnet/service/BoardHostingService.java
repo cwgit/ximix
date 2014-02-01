@@ -856,6 +856,12 @@ public class BoardHostingService
                 }
 
                 @Override
+                public EventNotifier getEventNotifier()
+                {
+                    return nodeContext.getEventNotifier();
+                }
+
+                @Override
                 public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
                     throws ServiceConnectionException
                 {
@@ -980,39 +986,30 @@ public class BoardHostingService
         @Override
         public void run()
         {
-            try
+            BulletinBoard transitBoard = boardRegistry.getTransitBoard(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber());
+            BulletinBoard homeBoard = boardRegistry.getBoard(transitBoardMessage.getBoardName());
+            PostedMessageBlock.Builder messageFetcher = new PostedMessageBlock.Builder(100);
+
+            homeBoard.clear();
+
+            int index = 0;
+            for (PostedMessage postedMessage : transitBoard)
             {
-                BulletinBoard transitBoard = boardRegistry.getTransitBoard(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber());
-                BulletinBoard homeBoard = boardRegistry.getBoard(transitBoardMessage.getBoardName());
-                PostedMessageBlock.Builder messageFetcher = new PostedMessageBlock.Builder(100);
+                messageFetcher.add(index++, postedMessage.getMessage());
 
-                homeBoard.clear();
-
-                int index = 0;
-                for (PostedMessage postedMessage : transitBoard)
-                {
-                    messageFetcher.add(index++, postedMessage.getMessage());
-
-                    if (messageFetcher.isFull())
-                    {
-                        homeBoard.postMessageBlock(messageFetcher.build());
-                        messageFetcher.clear();
-                    }
-                }
-
-                if (!messageFetcher.isEmpty())
+                if (messageFetcher.isFull())
                 {
                     homeBoard.postMessageBlock(messageFetcher.build());
+                    messageFetcher.clear();
                 }
-
-                boardRegistry.shuffleUnlock(transitBoardMessage.getBoardName());
-
             }
-            catch (Exception e)
+
+            if (!messageFetcher.isEmpty())
             {
-                // TODO:
-                e.printStackTrace();
+                homeBoard.postMessageBlock(messageFetcher.build());
             }
+
+            boardRegistry.shuffleUnlock(transitBoardMessage.getBoardName());
         }
     }
 

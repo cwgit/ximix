@@ -29,6 +29,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.asn1.message.StoreMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
@@ -99,7 +100,8 @@ public class ECKeyPairGenerator
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "NodeKeyGenerationService failure: " + e.getMessage(), e);
+
             return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("NodeKeyGenerationService failure: " + e.getMessage()));
         }
 
@@ -144,10 +146,14 @@ public class ECKeyPairGenerator
                             try
                             {
                                 MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(algorithm, new KeyPairGenerateMessage(algorithm, Type.STORE, new StoreMessage(keyID, messages[counter]))));
+                                if (rep.getType() != MessageReply.Type.OKAY)
+                                {
+                                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Error in SendShare" + rep.interpretPayloadAsError());
+                                }
                             }
                             catch (ServiceConnectionException e)
                             {
-                                e.printStackTrace(); // TODO handle.
+                                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Exception in SendShare: " + e.getMessage(), e);
                             }
                         }
                     });

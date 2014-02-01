@@ -238,7 +238,7 @@ public class BLSKeyManager
         BLS01Parameters domainParams = paramsMap.get(keyID);
         BLSCommittedSecretShare share = new BLSCommittedSecretShare(message.getValue(), message.getWitness(), message.getCommitmentFactors());
 
-        // TODO: need to be able to do this to verify key generation.
+        // TODO: need to be able to do this to verify key generation. JPBC throws NotImplementedException though!!!!
 //        if (share.isRevealed(message.getIndex(), domainParams, hMap.get(keyID)))
 //        {
             sharedPrivateKeyMap.addValue(keyID, new BigIntegerShare(message.getIndex(), message.getValue()));

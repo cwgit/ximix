@@ -55,5 +55,6 @@ public interface Transform
      *
      * @return transform deep copy.
      */
+    @SuppressWarnings({"CloneDoesntDeclareCloneNotSupportedException"})
     public Transform clone();
 }

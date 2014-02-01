@@ -21,7 +21,9 @@ import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERUTF8String;
 
 /**
  * Basic reply message.
@@ -100,6 +102,37 @@ public class MessageReply
     public ASN1Encodable getPayload()
     {
         return payload;
+    }
+
+    /**
+     * Interpret the payload to create an error string.
+     *
+     * @return a String representation of the payload.
+     */
+    public String interpretPayloadAsError()
+    {
+        if (payload instanceof DERUTF8String)
+        {
+            return DERUTF8String.getInstance(payload).getString();
+        }
+
+        if (payload instanceof ASN1TaggedObject)
+        {
+            ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(payload);
+
+            if (taggedObject.getTagNo() == 0)
+            {
+                return DERUTF8String.getInstance(taggedObject, true).getString();
+            }
+            if (taggedObject.getTagNo() == 1)
+            {
+                BoardErrorStatusMessage statusMessage = BoardErrorStatusMessage.getInstance(ASN1Sequence.getInstance(taggedObject, true));
+
+                return statusMessage.getBoardName() + ": " + statusMessage.getStatus();
+            }
+        }
+
+        return "Unknown error object";
     }
 
     @Override

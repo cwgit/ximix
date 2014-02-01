@@ -28,6 +28,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeInfo;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  * Internal implementation of a named ServicesConnection. This class ties a connection back to a specific node.
@@ -35,21 +36,21 @@ import org.cryptoworkshop.ximix.common.asn1.message.NodeInfo;
 class NodeServicesConnection
     implements SpecificServicesConnection
 {
+    private final EventNotifier eventNotifier;
+
     private NodeInfo nodeInfo;
     private Socket connection;
     private InputStream cIn;
     private OutputStream cOut;
 
-    public NodeServicesConnection(NodeConfig config)
+    public NodeServicesConnection(NodeConfig config, EventNotifier eventNotifier)
         throws IOException
     {
+        this.eventNotifier = eventNotifier;
         this.connection = new Socket(config.getAddress(), config.getPortNo());
 
-        if (connection != null)
-        {
-            cOut = connection.getOutputStream();
-            cIn = connection.getInputStream();
-        }
+        cOut = connection.getOutputStream();
+        cIn = connection.getInputStream();
 
         ASN1InputStream aIn = new ASN1InputStream(cIn, 300000); // TODO:
         synchronized (this)
@@ -85,6 +86,12 @@ class NodeServicesConnection
         return nodeInfo.getCapabilities();
     }
 
+    @Override
+    public EventNotifier getEventNotifier()
+    {
+        return eventNotifier;
+    }
+
     public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
         throws ServiceConnectionException
     {
@@ -105,9 +112,8 @@ class NodeServicesConnection
         }
         catch (Exception e)
         {
-            e.printStackTrace();
             // TODO: this should only happen when we've run out of nodes.
-            throw new ServiceConnectionException("couldn't send");
+            throw new ServiceConnectionException("couldn't send", e);
         }
     }
 }

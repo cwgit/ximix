@@ -63,6 +63,11 @@ public class AdapterInfo implements Comparable<AdapterInfo>
     @Override
     public int compareTo(AdapterInfo o)
     {
+        if (o == null)
+        {
+            return -1;
+        }
+
         return name.compareTo(o.getName());
     }
 }

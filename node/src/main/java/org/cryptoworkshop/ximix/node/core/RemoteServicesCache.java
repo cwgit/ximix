@@ -93,11 +93,14 @@ public class RemoteServicesCache
         Future<NodeInfo> future = cache.remove(entry);
         if (future != null)
         {
-            future.cancel(true);
-        }
-        else     // put back queries that are still in progress to allow for short term caching.
-        {
-            cache.put(entry, future);
+            if (future.isDone())
+            {
+                future.cancel(true);
+            }
+            else if (!future.isCancelled())    // put back queries that are still in progress to allow for short term caching.
+            {
+                cache.put(entry, future);
+            }
         }
     }
 
@@ -412,10 +415,14 @@ public class RemoteServicesCache
         @Override
         public boolean equals(Object o)
         {
-            // if this isn't the case we've screwed up badly!
-            NodeEntry other = (NodeEntry)o;
+            if (o instanceof NodeEntry)
+            {
+                NodeEntry other = (NodeEntry)o;
 
-            return this.name.equals(other.name);
+                return this.name.equals(other.name);
+            }
+
+            return false;
         }
     }
 }

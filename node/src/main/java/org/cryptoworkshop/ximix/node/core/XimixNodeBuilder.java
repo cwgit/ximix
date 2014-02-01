@@ -93,7 +93,7 @@ public class XimixNodeBuilder
     public XimixNode build(Config nodeConfig)
         throws ConfigException
     {
-        final Map<String, ServicesConnection> servicesMap = XimixConnectionMapFactory.createServicesConnectionMap(peersConfig);
+        final Map<String, ServicesConnection> servicesMap = XimixConnectionMapFactory.createServicesConnectionMap(peersConfig, eventNotifier);
 
         return new DefaultXimixNode(nodeConfig, servicesMap, eventNotifier);
     }

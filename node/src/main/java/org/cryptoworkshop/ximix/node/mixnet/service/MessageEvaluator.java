@@ -93,28 +93,30 @@ class MessageEvaluator
         }
         else
         {
-            if  (needToBeHostingType.contains(type))
+            CommandMessage.Type comType = (CommandMessage.Type)type;
+
+            if  (needToBeHostingType.contains(comType))
             {
                 BoardMessage boardMessage = BoardMessage.getInstance(message.getPayload());
 
                 return boardIndex.hasBoard(boardMessage.getBoardName());
             }
 
-            if (type == CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS)
+            if (comType == CommandMessage.Type.DOWNLOAD_BOARD_CONTENTS)
             {
                 BoardDownloadMessage boardMessage = BoardDownloadMessage.getInstance(message.getPayload());
 
                 return boardIndex.hasBoard(boardMessage.getBoardName());
             }
 
-            if (type == CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE)
+            if (comType == CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE)
             {
                 CopyAndMoveMessage boardMessage = CopyAndMoveMessage.getInstance(message.getPayload());
 
                 return boardIndex.hasBoard(boardMessage.getBoardName());
             }
 
-            return alwaysHandleType.contains(type);
+            return alwaysHandleType.contains(comType);
         }
 
         return false;

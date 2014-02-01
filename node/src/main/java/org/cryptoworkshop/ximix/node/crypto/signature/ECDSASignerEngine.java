@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -40,6 +39,7 @@ import org.cryptoworkshop.ximix.client.connection.signing.message.ECDSAPartialCr
 import org.cryptoworkshop.ximix.client.connection.signing.message.ECDSAPointMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ECPointMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ErrorMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.IDMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.KeyIDMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
@@ -49,6 +49,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.StoreMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ShamirSecretSplitter;
 import org.cryptoworkshop.ximix.common.crypto.threshold.SplitSecret;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.operator.ECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.node.crypto.util.BigIntegerShare;
 import org.cryptoworkshop.ximix.node.crypto.util.ECPointShare;
@@ -202,30 +203,16 @@ public class ECDSASignerEngine
                 // TODO: need to clean up state tables here.
                 return reply;
             default:
-                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command in NodeSigningService."));
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Unknown command in ECDSASignerEngine.");
+
+                return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Unknown command in ECDSASignerEngine."));
             }
         }
         catch (Exception e)
         {
-            e.printStackTrace();
-            return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("NodeKeyGenerationService failure: " + e.getMessage()));
-        }
-    }
+            nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "ECDSASignerEngine failure: " + e.getMessage(), e);
 
-    private void sendInitialiseMessage(Type initType, ECDSAInitialiseMessage createMessage)
-    {
-        Participant[] nodes = createMessage.getNodesToUse();
-
-        for (Participant nodeName : nodes)
-        {
-            try
-            {
-                sendMessage(nodeName.getName(), initType, createMessage);
-            }
-            catch (ServiceConnectionException e)
-            {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
+            return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("ECDSASignerEngine failure: " + e.getMessage()));
         }
     }
 
@@ -405,11 +392,9 @@ public class ECDSASignerEngine
 
         public void run()
         {
-            try
-            {
             for (final Participant participant : peers)
             {
-                if (participant.equals(nodeContext.getName()))
+                if (participant.getName().equals(nodeContext.getName()))
                 {
                     sharedValueMap.addValue(sigID, new BigIntegerShare(participant.getSequenceNo(), messages[participant.getSequenceNo()]));
                 }
@@ -422,20 +407,19 @@ public class ECDSASignerEngine
                             try
                             {
                                 MessageReply rep = sendMessage(participant.getName(), type, new StoreMessage(sigID.getID(), new ShareMessage(participant.getSequenceNo(), new BigIntegerMessage(messages[participant.getSequenceNo()]))));
+                                if (rep.getType() != MessageReply.Type.OKAY)
+                                {
+                                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "SendShareTask failure " + rep.interpretPayloadAsError());
+                                }
                             }
                             catch (ServiceConnectionException e)
                             {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "SendShareTask failure: " + e.toString());
                             }
                         }
                     });
 
                 }
-            }
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
             }
         }
     }
@@ -464,7 +448,7 @@ public class ECDSASignerEngine
             {
                 final ECPoint p = domainParams.getG().multiply(messages[node.getSequenceNo()]);
 
-                if (node.equals(nodeContext.getName()))
+                if (node.getName().equals(nodeContext.getName()))
                 {
                     sharedPMap.addValue(sigID, new ECPointShare(node.getSequenceNo(), p));
                 }
@@ -477,10 +461,14 @@ public class ECDSASignerEngine
                             try
                             {
                                 MessageReply rep = sendMessage(node.getName(), Type.STORE_P, new StoreMessage(sigID.getID(), new ShareMessage(node.getSequenceNo(), new ECDSAPointMessage(keyID, p))));
+                                if (rep.getType() != MessageReply.Type.OKAY)
+                                {
+                                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "SendPointShareTask failure " + rep.interpretPayloadAsError());
+                                }
                             }
                             catch (ServiceConnectionException e)
                             {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "SendPointShareTask failure: " + e.toString());
                             }
                         }
                     }, 1000, TimeUnit.MILLISECONDS);

@@ -2,7 +2,6 @@ package org.cryptoworkshop.ximix.node.service;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -73,22 +72,6 @@ public class CrossSection
     public void decrement(String name, int value)
     {
         increment(name, (Math.abs(value) * -1));
-    }
-
-
-    public List getAsList(String name, boolean returnEmpty)
-    {
-        Object o = values.get(name);
-        if (o != null && o instanceof List)
-        {
-            return (List)o;
-        }
-        else if (returnEmpty)
-        {
-            return Collections.EMPTY_LIST;
-        }
-
-        throw new IllegalArgumentException(name + " cannot be assigned to a List, it is " + o.getClass());
     }
 
     public Map<String, Object> getMap()

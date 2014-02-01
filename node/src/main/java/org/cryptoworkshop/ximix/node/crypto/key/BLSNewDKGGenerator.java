@@ -88,13 +88,6 @@ public class BLSNewDKGGenerator
 
     public void storeThresholdKeyShare(String keyID, BLSCommittedSecretShareMessage message)
     {
-        try
-        {
-            keyManager.buildSharedKey(keyID, message);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+        keyManager.buildSharedKey(keyID, message);
     }
 }

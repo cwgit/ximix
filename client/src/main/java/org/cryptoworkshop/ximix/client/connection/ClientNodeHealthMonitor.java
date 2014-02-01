@@ -2,6 +2,7 @@ package org.cryptoworkshop.ximix.client.connection;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,8 +42,6 @@ class ClientNodeHealthMonitor
     public StatisticsData getStatistics(String name)
         throws ServiceConnectionException
     {
-        NodeStatusMessage.Statistics out = null;
-
         MessageReply reply = connection.sendMessage(name, CommandMessage.Type.NODE_STATISTICS, NodeStatusRequestMessage.forStatisticsRequest());
         if (reply.getType() == MessageReply.Type.ERROR)
         {
@@ -50,11 +49,11 @@ class ClientNodeHealthMonitor
         }
         else
         {
-            out = NodeStatusMessage.Statistics.getInstance(reply.getPayload());
+            return new StatisticsData(NodeStatusMessage.Statistics.getInstance(reply.getPayload()).getValues());
         }
 
 
-        return new StatisticsData(out.getValues());
+        return new StatisticsData(new HashMap<String, Object>());
     }
 
     @Override

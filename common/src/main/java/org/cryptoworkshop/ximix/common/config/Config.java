@@ -52,14 +52,7 @@ public class Config
     {
         this.homeDirectory = configFile.getParentFile();
 
-        try
-        {
-            init(new FileInputStream(configFile));
-        }
-        catch (FileNotFoundException fnf)
-        {
-            throw fnf;
-        }
+        init(new FileInputStream(configFile));
     }
 
     /**

@@ -972,8 +972,6 @@ public class CommandApplet
             {
                 XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(mixnetConf.openStream(), eventNotifier);
 
-                CommandService commandService = adminRegistrar.connect(CommandService.class);
-
                 KeyService keyService = adminRegistrar.connect(KeyService.class);
 
                 ECPublicKeyParameters pubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(keyService.fetchPublicKey(keyID));
@@ -993,18 +991,30 @@ public class CommandApplet
 
                 final ProgressDialog dialog = getProgressDialog("Shuffle and Download Progress", selected.size());
 
+                List<CommandService> servicePool = new ArrayList<>();
+
+                for (int i = 0; i != 5; i++)
+                {
+                    servicePool.add(adminRegistrar.connect(CommandService.class));
+                }
+
                 for (int i = 0; i != selected.size(); i++)
                 {
                     BoardEntry entry = selected.get(i);
 
                     entry.setShuffleProgress("Pending");
 
-                    threadPool.submit(new ShuffleAndDownloadTask(destDir, entry, commandService, keyID, pubKey, shuffleLatch, shuffflePlan, csvConfig, dialog, eventNotifier));
+                    threadPool.submit(new ShuffleAndDownloadTask(destDir, entry, servicePool.get(i % servicePool.size()), keyID, pubKey, shuffleLatch, shuffflePlan, csvConfig, dialog, eventNotifier));
                 }
 
                 shuffleLatch.await();
 
-                commandService.shutdown();
+                for (CommandService service : servicePool)
+                {
+                    service.shutdown();
+                }
+
+                keyService.shutdown();
             }
             catch (Exception e)
             {

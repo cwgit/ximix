@@ -1,11 +1,5 @@
 package org.cryptoworkshop.ximix.installer;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
-import javax.swing.*;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.Console;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,6 +13,13 @@ import java.util.List;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import javax.swing.JOptionPane;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  *
@@ -221,7 +222,10 @@ public class Installer
                 if (ze.isDirectory())
                 {
                     File out = new File((File)properties().get(INSTALL_DIR), ze.getName());
-                    out.mkdirs();
+                    if (!out.mkdirs())
+                    {
+                        throw new RuntimeException("Unable to create directory " + out);
+                    }
                 }
                 else
                 {

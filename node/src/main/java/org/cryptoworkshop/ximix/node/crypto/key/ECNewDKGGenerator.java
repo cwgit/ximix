@@ -88,13 +88,6 @@ public class ECNewDKGGenerator
 
     public void storeThresholdKeyShare(String keyID, ECCommittedSecretShareMessage message)
     {
-        try
-        {
-            keyManager.buildSharedKey(keyID, message);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+        keyManager.buildSharedKey(keyID, message);
     }
 }

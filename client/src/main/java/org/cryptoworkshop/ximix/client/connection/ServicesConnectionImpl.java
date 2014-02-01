@@ -17,11 +17,13 @@ package org.cryptoworkshop.ximix.client.connection;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Random;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  * Internal implementation of a general ServicesConnection. Unlike a NodeServicesConnection this class addresses the
@@ -30,17 +32,22 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 class ServicesConnectionImpl
     implements ServicesConnection
 {
+    private final EventNotifier eventNotifier;
+
     private NodeServicesConnection connection;
     private NodeConfig nodeConf;
 
-    public ServicesConnectionImpl(List<NodeConfig> configList)
+    public ServicesConnectionImpl(List<NodeConfig> configList, EventNotifier eventNotifier)
     {
+        this.eventNotifier = eventNotifier;
+
         //
         // find a node to connect to
         //
-        // TODO: this should start at a random point in the list
 
-        int start = 0;
+        // start at a random point in the list
+        int start = new Random().nextInt();
+
         for (int i = 0; i != configList.size(); i++)
         {
             int nodeNo = (start + i) % configList.size();
@@ -61,6 +68,10 @@ class ServicesConnectionImpl
                     continue;
                 }
                 break;
+            }
+            else
+            {
+                eventNotifier.notify(EventNotifier.Level.ERROR, "Exception processing services connection config: " + nodeConf.getThrowable().getMessage(), nodeConf.getThrowable());
             }
         }
     }
@@ -92,7 +103,7 @@ class ServicesConnectionImpl
     {
         if (connection == null)
         {
-            connection = new NodeServicesConnection(nodeConf);
+            connection = new NodeServicesConnection(nodeConf, eventNotifier);
         }
 
         return connection;
@@ -108,6 +119,12 @@ class ServicesConnectionImpl
         {
             return new CapabilityMessage[0];
         }
+    }
+
+    @Override
+    public EventNotifier getEventNotifier()
+    {
+        return eventNotifier;
     }
 
     public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)

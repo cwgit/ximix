@@ -78,7 +78,7 @@ public class BoardUploadIndexedMessage
 
     public static final BoardUploadIndexedMessage getInstance(Object o)
     {
-        if (o instanceof BoardUploadMessage)
+        if (o instanceof BoardUploadIndexedMessage)
         {
             return (BoardUploadIndexedMessage)o;
         }

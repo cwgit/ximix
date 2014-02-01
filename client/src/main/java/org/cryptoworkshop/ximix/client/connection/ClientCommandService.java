@@ -37,11 +37,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.RunnableFuture;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -68,7 +67,6 @@ import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.BoardErrorStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardUploadMessage;
@@ -80,6 +78,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.CreateBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptDataMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptShuffledBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DownloadShuffledBoardMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ErrorMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPartialPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FileTransferMessage;
@@ -115,10 +114,10 @@ class ClientCommandService
 
     private ConcurrentHashMap<String, FutureTask<String>> boardHostCache = new ConcurrentHashMap<>(); // TODO: maybe expire?
 
-    public ClientCommandService(AdminServicesConnection connection, EventNotifier eventNotifier)
+    public ClientCommandService(AdminServicesConnection connection)
     {
         this.connection = connection;
-        this.eventNotifier = eventNotifier;
+        this.eventNotifier = connection.getEventNotifier();
     }
 
     static Set<String> toOrderedSet(String[] nodes)
@@ -220,11 +219,13 @@ class ClientCommandService
             Thread.currentThread().interrupt();
 
             eventNotifier.notify(EventNotifier.Level.ERROR, "Seed fetch task interrupted");
+
             throw new ServiceConnectionException("Seed fetch task interrupted");
         }
         catch (ExecutionException e)
         {
             eventNotifier.notify(EventNotifier.Level.ERROR, "Seed fetch task failed: " + e.getMessage(), e);
+
             throw new ServiceConnectionException("Seed fetch task failed: " + e.getMessage(), e);
         }
     }
@@ -274,7 +275,7 @@ class ClientCommandService
                 {
                     eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on board creation: " + e.getMessage(), e);
 
-                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Exception on board creation: " + e.getMessage()));
+                    return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Exception on board creation: " + e.getMessage()));
                 }
 
                 return reply;
@@ -326,7 +327,7 @@ class ClientCommandService
                 {
                     eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on isBoardExisting: " + e.getMessage(), e);
 
-                    return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Exception on isBoardExisting: " + e.getMessage()));
+                    return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Exception on isBoardExisting: " + e.getMessage()));
                 }
 
                 return reply;
@@ -349,7 +350,7 @@ class ClientCommandService
             throw new ServiceConnectionException("Unable to do isBoardExisting query: " + e.getMessage(), e);
         }
 
-        return !(reply.getPayload() instanceof ASN1Null);
+        return reply != null && !(reply.getPayload() instanceof ASN1Null);
     }
 
     private String getHostName(final String boardName)
@@ -373,10 +374,11 @@ class ClientCommandService
                     catch (ServiceConnectionException e)
                     {
                         eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on upload: " + e.getMessage(), e);
+
                         return "Exception on isBoardExisting: " + e.getMessage();
                     }
 
-                    return DERUTF8String.getInstance(reply.getPayload()).getString();
+                    return (reply.getType() == MessageReply.Type.OKAY) ? DERUTF8String.getInstance(reply.getPayload()).getString() : reply.interpretPayloadAsError();
                 }
             });
 
@@ -412,7 +414,7 @@ class ClientCommandService
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {
-            throw new ServiceConnectionException("message failed: " + getErrorString(reply.getPayload()));
+            throw new ServiceConnectionException("message failed: " + reply.interpretPayloadAsError());
         }
     }
 
@@ -425,34 +427,8 @@ class ClientCommandService
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {
-            throw new ServiceConnectionException("message failed: " + getErrorString(reply.getPayload()));
+            throw new ServiceConnectionException("message failed: " + reply.interpretPayloadAsError());
         }
-    }
-
-    private String getErrorString(ASN1Encodable obj)
-    {
-        if (obj instanceof DERUTF8String)
-        {
-            return DERUTF8String.getInstance(obj).getString();
-        }
-
-        if (obj instanceof ASN1TaggedObject)
-        {
-            ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(obj);
-
-            if (taggedObject.getTagNo() == 0)
-            {
-                return DERUTF8String.getInstance(taggedObject, true).getString();
-            }
-            if (taggedObject.getTagNo() == 1)
-            {
-                BoardErrorStatusMessage statusMessage = BoardErrorStatusMessage.getInstance(ASN1Sequence.getInstance(taggedObject, true));
-
-                return statusMessage.getBoardName() + ": " + statusMessage.getStatus();
-            }
-        }
-
-        return "Unknown error object";
     }
 
     private static class CaseInsensitiveComparator
@@ -507,7 +483,7 @@ class ClientCommandService
                     }
                     else
                     {
-                        notifier.failed(DERUTF8String.getInstance(seedReply.getPayload()).getString());
+                        notifier.failed(seedReply.interpretPayloadAsError());
                         return;
                     }
                 }
@@ -520,7 +496,7 @@ class ClientCommandService
                 MessageReply startRep = connection.sendMessage(CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE, new CopyAndMoveMessage(this.getOperationNumber(), boardName, 0, nodes[0]));
                 if (startRep.getType() == MessageReply.Type.ERROR)
                 {
-                    notifier.failed(DERUTF8String.getInstance(startRep.getPayload()).getString());
+                    notifier.failed(startRep.interpretPayloadAsError());
                     return;
                 }
 
@@ -535,7 +511,7 @@ class ClientCommandService
                     MessageReply reply = connection.sendMessage(nodes[i], CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, i, options.getTransformName(), options.getKeyID(), nodes[i + 1]));
                     if (reply.getType() == MessageReply.Type.ERROR)
                     {
-                        notifier.failed(DERUTF8String.getInstance(reply.getPayload()).getString());
+                        notifier.failed(reply.interpretPayloadAsError());
                         return;
                     }
 
@@ -631,7 +607,7 @@ class ClientCommandService
 
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {
-                    notifier.failed(reply.getPayload().toString());
+                    notifier.failed(reply.interpretPayloadAsError());
                     return;
                 }
 
@@ -984,14 +960,34 @@ class ClientCommandService
             //
             // initialise the decryption process
             //
+            Map<String, RunnableFuture<MessageReply>> nodeFutureMap = new HashMap<>();
+
+            for (final String node : nodes)
+            {
+                FutureTask<MessageReply> task = new FutureTask<>(new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        return connection.sendMessage(node, CommandMessage.Type.SETUP_PARTIAL_DECRYPT, new DecryptShuffledBoardMessage(options.getKeyID(), boardName, options.isPairingEnabled()));
+                    }
+                });
+
+                nodeFutureMap.put(node, task);
+
+                executor.submit(task);
+            }
+
             for (String node : nodes)
             {
                 try
                 {
-                    MessageReply reply = connection.sendMessage(node, CommandMessage.Type.SETUP_PARTIAL_DECRYPT, new DecryptShuffledBoardMessage(options.getKeyID(), boardName, options.isPairingEnabled()));
+
+                    MessageReply reply = nodeFutureMap.get(node).get();
                     if (!reply.getType().equals(MessageReply.Type.OKAY))
                     {
-                        notifier.failed(node + " reply " + DERUTF8String.getInstance(reply.getPayload()).getString());
+                        notifier.failed(node + " reply " + reply.interpretPayloadAsError());
                         return;
                     }
                 }
@@ -1182,7 +1178,7 @@ class ClientCommandService
                     MessageReply reply = connection.sendMessage(node, CommandMessage.Type.FILE_UPLOAD, trfMessage);
                     if (!reply.getType().equals(MessageReply.Type.OKAY))
                     {
-                        notifier.failed(node + " reply " + DERUTF8String.getInstance(reply.getPayload()).getString());
+                        notifier.failed(node + " reply " + reply.interpretPayloadAsError());
                         return false;
                     }
                 }
@@ -1194,7 +1190,7 @@ class ClientCommandService
                 MessageReply reply = connection.sendMessage(node, CommandMessage.Type.FILE_UPLOAD, endMessage);
                 if (!reply.getType().equals(MessageReply.Type.OKAY))
                 {
-                    notifier.failed(node + " reply " + DERUTF8String.getInstance(reply.getPayload()).getString());
+                    notifier.failed(node + " reply " + reply.interpretPayloadAsError());
                     return false;
                 }
             }

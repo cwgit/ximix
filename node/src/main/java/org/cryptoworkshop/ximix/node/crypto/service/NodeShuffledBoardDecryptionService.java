@@ -51,6 +51,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptShuffledBoardMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DownloadShuffledBoardMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ErrorMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FetchPublicKeyMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.FileTransferMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.Message;
@@ -256,6 +257,10 @@ public class NodeShuffledBoardDecryptionService
 
                 LinkIndexVerifier linkIndexVerifier = verifierBuilder.build();
 
+                // TODO: these next two for loops are obvious candidates for parallelization - it would
+                // just need to be managed in a manner that was sensitive to the number of cores and that fact
+                // this request may not be the only one the node is currently processing...
+
                 // verify which links have been opened.
                 for (Integer key : witnessTranscripts.keySet())
                 {
@@ -319,7 +324,7 @@ public class NodeShuffledBoardDecryptionService
             {
                 nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Unable to process data for download key " + setupMessage.getKeyID());
 
-                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Error opening posted message stream"));
+                return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Error opening posted message stream"));
             }
         case DOWNLOAD_PARTIAL_DECRYPTS:
             DownloadShuffledBoardMessage downMessage = DownloadShuffledBoardMessage.getInstance(message.getPayload());
@@ -330,7 +335,7 @@ public class NodeShuffledBoardDecryptionService
 
             if (!(operator instanceof ECPrivateKeyOperator))
             {
-                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Inappropriate key type"));
+                return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Inappropriate key type"));
             }
 
             ECPrivateKeyOperator ecOperator = (ECPrivateKeyOperator)operator;
@@ -372,12 +377,12 @@ public class NodeShuffledBoardDecryptionService
             {
                 nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Error parsing posted message stream: " + e.getMessage(), e);
 
-                return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Error parsing posted message stream: " + e.getMessage()));
+                return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Error parsing posted message stream: " + e.getMessage()));
             }
         default:
             nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Unknown command: " + message.getType());
 
-            return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Unknown command: " + message.getType()));
+            return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Unknown command: " + message.getType()));
         }
     }
 

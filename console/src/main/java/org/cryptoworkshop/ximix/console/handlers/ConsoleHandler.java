@@ -81,6 +81,7 @@ public class ConsoleHandler
     {
         NodeAdapter adapter = adapterMap.get(lastPart);
 
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (adapter)
         {
             if (!adapter.isOpened())

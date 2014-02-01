@@ -39,6 +39,7 @@ import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.key.util.BLSPublicKeyFactory;
 
 public class Main
@@ -76,7 +77,28 @@ public class Main
     public static void main(String[] args)
         throws Exception
     {
-        XimixRegistrar registrar = XimixRegistrarFactory.createServicesRegistrar(new File(args[0]));
+        XimixRegistrar registrar = XimixRegistrarFactory.createServicesRegistrar(new File(args[0]), new EventNotifier()
+        {
+            @Override
+            public void notify(Level level, Throwable throwable)
+            {
+                System.err.print(level + " " + throwable.getMessage());
+                throwable.printStackTrace(System.err);
+            }
+
+            @Override
+            public void notify(Level level, Object detail)
+            {
+                System.err.println(level + " " + detail.toString());
+            }
+
+            @Override
+            public void notify(Level level, Object detail, Throwable throwable)
+            {
+                System.err.println(level + " " + detail.toString());
+                throwable.printStackTrace(System.err);
+            }
+        });
 
         KeyService    keyFetcher = registrar.connect(KeyService.class);
         //UploadService client = registrar.connect(UploadService.class);

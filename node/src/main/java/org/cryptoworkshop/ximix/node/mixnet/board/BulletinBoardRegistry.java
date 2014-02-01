@@ -55,7 +55,7 @@ public class BulletinBoardRegistry
     private final ConcurrentNavigableMap<String, String> stateMap;
     private final BulletinBoardChangeListener changeListener;
 
-    private Map<String, BulletinBoard> boards = new HashMap<>();
+    private final Map<String, BulletinBoard> boards = new HashMap<>();
     private Map<String, BulletinBoard> transitBoards = new HashMap<String, BulletinBoard>();
     private Map<String, BulletinBoard> backupBoards = new HashMap<>();
     private Set<String> suspendedBoards = new HashSet<>();

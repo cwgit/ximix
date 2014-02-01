@@ -74,6 +74,8 @@ public class AdapterConfig extends HashMap<String, Object>
                     ArrayList l = new ArrayList();
                     l.add(remove(name));
                     l.add(node.getTextContent());
+
+                    put(name, l);
                 }
             }
         }
