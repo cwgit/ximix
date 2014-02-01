@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.cryptoworkshop.ximix.common.asn1.message.BigIntegerMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardErrorStatusMessage;
@@ -103,7 +104,7 @@ public class MessageTest extends TestCase
         ByteArrayInputStream bin = new ByteArrayInputStream(bos.toByteArray());
         ASN1InputStream din = new ASN1InputStream(bin);
 
-        BoardErrorStatusMessage res = BoardErrorStatusMessage.getInstance(din.readObject());
+        BoardErrorStatusMessage res = BoardErrorStatusMessage.getInstance(ASN1TaggedObject.getInstance(din.readObject()).getObject());
 
 
         TestCase.assertEquals(msg.getBoardName(), res.getBoardName());

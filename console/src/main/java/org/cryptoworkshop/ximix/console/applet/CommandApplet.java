@@ -83,11 +83,9 @@ import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
-import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadShuffleResultOptions;
 import org.cryptoworkshop.ximix.client.KeyService;
-import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
@@ -1264,21 +1262,6 @@ public class CommandApplet
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.75);
 
-                final CountDownLatch downloadLatch = new CountDownLatch(1);
-
-                File challengeLog = new File(destDir, boardEntry.getName() + ".clg");
-                OutputStream challengeLogStream = new BufferedOutputStream(new FileOutputStream(challengeLog));
-
-                DecryptionChallengeSpec decryptionChallengeSpec = new DecryptionChallengeSpec(new MessageChooser()
-                {
-                    @Override
-                    public boolean chooseMessage(int index)
-                    {
-                        return index % 5 == 0;
-                    }
-                },
-                challengeLogStream);
-
                 final OutputStream downloadStream = new FileOutputStream(new File(destDir, boardEntry.getName() + ".out"));
 
                 Map<String, InputStream> streamSeedCommitments = new HashMap<>();
@@ -1351,6 +1334,7 @@ public class CommandApplet
                     }
                 });
 
+                // make sure you do this before closing the streams!
                 shuffleOutputDownloadCompleted.await();
 
                 for (Integer key : witnessTranscripts.keySet())
@@ -1364,7 +1348,6 @@ public class CommandApplet
                 }
 
                 downloadStream.close();
-                challengeLogStream.close();
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 1.0);
 

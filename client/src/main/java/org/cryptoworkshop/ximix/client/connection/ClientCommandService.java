@@ -592,7 +592,7 @@ class ClientCommandService
             {
                 try
                 {
-                    Thread.sleep(2000);  // TODO: configure?
+                    Thread.sleep(5000);  // TODO: configure?
                 }
                 catch (InterruptedException ex)
                 {

@@ -100,7 +100,7 @@ class NodeServicesConnection
                 {
                     cOut.write(new CommandMessage((CommandMessage.Type)type, messagePayload).getEncoded());
                 }
-                return MessageReply.getInstance(new ASN1InputStream(cIn, 100000).readObject());      // TODO
+                return MessageReply.getInstance(new ASN1InputStream(cIn, 300000).readObject());      // TODO
             }
         }
         catch (Exception e)

@@ -22,7 +22,6 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -102,7 +101,7 @@ public class ECKeyManager
 {
     private static final int TIME_OUT = 20;
 
-    private final Map<String, ECDomainParameters> paramsMap = Collections.<String, ECDomainParameters>synchronizedMap(new HashMap<String, ECDomainParameters>());
+    private final Map<String, ECDomainParameters> paramsMap = new HashMap<>();
     private final Map<String, BigInteger> hMap = new HashMap<>();
     private final Set<String> signingKeys = new HashSet<>();
     private final ShareMap<String, BigInteger> sharedPrivateKeyMap;
