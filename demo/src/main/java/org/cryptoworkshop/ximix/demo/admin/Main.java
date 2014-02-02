@@ -48,13 +48,10 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
-import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
-import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.DownloadShuffleResultOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
-import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
@@ -62,7 +59,6 @@ import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListen
 import org.cryptoworkshop.ximix.client.UploadService;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrar;
 import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
-import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
 import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
 import org.cryptoworkshop.ximix.client.verify.LinkIndexVerifier;
 import org.cryptoworkshop.ximix.client.verify.SignedDataVerifier;
@@ -255,74 +251,75 @@ public class Main
 
         shuffleLatch.await();
 
-        final CountDownLatch downloadLatch = new CountDownLatch(1);
-
-        ByteArrayOutputStream challengeLogStream = new ByteArrayOutputStream();
-
-        DecryptionChallengeSpec decryptionChallengeSpec = new DecryptionChallengeSpec(new MessageChooser()
-        {
-            @Override
-            public boolean chooseMessage(int index)
-            {
-                return index % 5 == 0;
-            }
-        },
-        challengeLogStream);
-
-        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED",
-                                                                                       new DownloadOptions.Builder()
-                                                                                              .withKeyID("ECENCKEY")
-                                                                                              .withThreshold(4)
-                                                                                              .withNodes("A", "B", "C", "D")
-                                                                                              .withChallengeSpec(decryptionChallengeSpec).build(), new DownloadOperationListener()
-        {
-            int counter = 0;
-
-            @Override
-            public void messageDownloaded(int index, byte[] message)
-            {
-                PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
-
-                if (part1.remove(decrypted.getECPoints()[0]) && part2.remove(decrypted.getECPoints()[1]))
-                {
-                    System.err.println(index + " message downloaded successfully");
-                }
-                else
-                {
-                    System.err.println(index + " decryption failed");
-                }
-                counter++;
-            }
-
-            @Override
-            public void completed()
-            {
-                downloadLatch.countDown();
-                System.err.println("completed " + (numMessages == counter));
-            }
-
-            @Override
-            public void status(String statusObject)
-            {
-                System.err.println("status: " + statusObject);
-            }
-
-            @Override
-            public void failed(String errorObject)
-            {
-                downloadLatch.countDown();
-                System.err.println("failed");
-            }
-        });
-
-        downloadLatch.await();
-
-        //
-        // verify the decryption challenge log.
-        //
-        ECDecryptionChallengeVerifier challengeVerifier = new ECDecryptionChallengeVerifier(pubKey, new ByteArrayInputStream(challengeLogStream.toByteArray()));
-
-        challengeVerifier.verify();
+// Commented out as this service not available on VEC
+//        final CountDownLatch downloadLatch = new CountDownLatch(1);
+//
+//        ByteArrayOutputStream challengeLogStream = new ByteArrayOutputStream();
+//
+//        DecryptionChallengeSpec decryptionChallengeSpec = new DecryptionChallengeSpec(new MessageChooser()
+//        {
+//            @Override
+//            public boolean chooseMessage(int index)
+//            {
+//                return index % 5 == 0;
+//            }
+//        },
+//        challengeLogStream);
+//
+//        Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED",
+//                                                                                       new DownloadOptions.Builder()
+//                                                                                              .withKeyID("ECENCKEY")
+//                                                                                              .withThreshold(4)
+//                                                                                              .withNodes("A", "B", "C", "D")
+//                                                                                              .withChallengeSpec(decryptionChallengeSpec).build(), new DownloadOperationListener()
+//        {
+//            int counter = 0;
+//
+//            @Override
+//            public void messageDownloaded(int index, byte[] message)
+//            {
+//                PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
+//
+//                if (part1.remove(decrypted.getECPoints()[0]) && part2.remove(decrypted.getECPoints()[1]))
+//                {
+//                    System.err.println(index + " message downloaded successfully");
+//                }
+//                else
+//                {
+//                    System.err.println(index + " decryption failed");
+//                }
+//                counter++;
+//            }
+//
+//            @Override
+//            public void completed()
+//            {
+//                downloadLatch.countDown();
+//                System.err.println("completed " + (numMessages == counter));
+//            }
+//
+//            @Override
+//            public void status(String statusObject)
+//            {
+//                System.err.println("status: " + statusObject);
+//            }
+//
+//            @Override
+//            public void failed(String errorObject)
+//            {
+//                downloadLatch.countDown();
+//                System.err.println("failed");
+//            }
+//        });
+//
+//        downloadLatch.await();
+//
+//        //
+//        // verify the decryption challenge log.
+//        //
+//        ECDecryptionChallengeVerifier challengeVerifier = new ECDecryptionChallengeVerifier(pubKey, new ByteArrayInputStream(challengeLogStream.toByteArray()));
+//
+//        challengeVerifier.verify();
 
         Map<String, byte[][]> seedAndWitnessesMap = commandService.downloadShuffleSeedsAndWitnesses("FRED", shuffleOp.getOperationNumber(), "A", "C", "D");
 
