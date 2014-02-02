@@ -284,10 +284,13 @@ class ClientCommandService
 
         executor.execute(futureTask);
 
-        // TODO: sort out return values.
         try
         {
             MessageReply reply = futureTask.get();
+            if (reply.getType() != MessageReply.Type.OKAY)
+            {
+                throw new ServiceConnectionException("Unable to create board: " + reply.interpretPayloadAsError());
+            }
         }
         catch (InterruptedException e)
         {

@@ -812,7 +812,7 @@ public class BoardHostingService
 
     private String getChallengerKey(TranscriptDownloadMessage transcriptDownloadMessage, boolean isCopyBoard)
     {
-        if (transcriptDownloadMessage.isWithPairing() && !isCopyBoard)
+        if (transcriptDownloadMessage.isWithPairing() && transcriptDownloadMessage.getType() != TranscriptType.GENERAL && !isCopyBoard)
         {
             return Long.toString(transcriptDownloadMessage.getQueryID());
         }
@@ -842,6 +842,7 @@ public class BoardHostingService
 
         throw new IllegalStateException("sourceGenerator failed on copy step");
     }
+
     private ServicesConnection getPeerConnection(String destinationNode)
     {
         // return a proxy for ourselves.

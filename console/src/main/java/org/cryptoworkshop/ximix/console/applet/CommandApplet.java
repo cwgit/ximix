@@ -84,6 +84,7 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
+import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.DownloadShuffleResultOptions;
 import org.cryptoworkshop.ximix.client.KeyService;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
@@ -1420,6 +1421,43 @@ public class CommandApplet
                 }
 
                 bfOut.close();
+
+                // if we get to here download the board contents and empty it
+                // TODO: add explicit board clear command.
+                final CountDownLatch downloadLatch = new CountDownLatch(1);
+
+                Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED",
+                                                                                               new DownloadOptions.Builder().build(), new DownloadOperationListener()
+                {
+                    int counter = 0;
+
+                    @Override
+                    public void messageDownloaded(int index, byte[] message)
+                    {
+                         // ignore
+                    }
+
+                    @Override
+                    public void completed()
+                    {
+                        downloadLatch.countDown();
+                    }
+
+                    @Override
+                    public void status(String statusObject)
+                    {
+                        System.err.println("status: " + statusObject);
+                    }
+
+                    @Override
+                    public void failed(String errorObject)
+                    {
+                        downloadLatch.countDown();
+                        System.err.println("failed: " + errorObject);
+                    }
+                });
+
+                downloadLatch.await();
             }
             catch (Exception e)
             {

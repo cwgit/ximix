@@ -1,5 +1,7 @@
 package org.cryptoworkshop.ximix.test.node;
 
+import java.io.File;
+import java.io.IOException;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,7 +67,23 @@ public class NodeTestUtil
         return builder.build(ResourceAnchor.load(nodeConfigPath));
     }
 
+    public static XimixNode getXimixNode(File homeDirectory, String networkConfig, String nodeConfigPath, EventNotifier handler)
+        throws ConfigException, IOException
+    {
+        if (!homeDirectory.exists())
+        {
+            homeDirectory.mkdir();
+        }
 
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        XimixNodeBuilder builder = new XimixNodeBuilder(ResourceAnchor.load(networkConfig)).withThrowableListener(handler);
+
+        return builder.build(ResourceAnchor.load(homeDirectory, nodeConfigPath));
+    }
 
     public static XimixNode getXimixNode(String networkConfig, String nodeConfigPath)
         throws ConfigException
