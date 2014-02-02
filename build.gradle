@@ -658,6 +658,7 @@ void populateNodeStage(String name, File installerJarStageDir, File mixnetConfig
     if (nodeConfig != null) {
         org.apache.commons.io.FileUtils.copyFile(nodeConfig, new File(confDir, "node.xml"));
         org.apache.commons.io.FileUtils.copyFile(new File(nodeConfig.getParentFile(), "nodeCaStore.p12"), new File(confDir, "nodeCaStore.p12"));
+        org.apache.commons.io.FileUtils.copyFile(new File(nodeConfig.getParentFile(), "trustCa.pem"), new File(confDir, "trustCa.pem"));
     }
 }
 
