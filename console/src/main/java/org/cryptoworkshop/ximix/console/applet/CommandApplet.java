@@ -1426,7 +1426,7 @@ public class CommandApplet
                 // TODO: add explicit board clear command.
                 final CountDownLatch downloadLatch = new CountDownLatch(1);
 
-                Operation<DownloadOperationListener> op = commandService.downloadBoardContents("FRED",
+                Operation<DownloadOperationListener> op = commandService.downloadBoardContents(boardEntry.getName(),
                                                                                                new DownloadOptions.Builder().build(), new DownloadOperationListener()
                 {
                     int counter = 0;
