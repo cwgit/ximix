@@ -40,7 +40,9 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageCommitment;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedData;
 import org.cryptoworkshop.ximix.common.asn1.message.SeedCommitmentMessage;
+import org.cryptoworkshop.ximix.common.util.IndexNumberGenerator;
 import org.cryptoworkshop.ximix.common.util.challenge.SeededChallenger;
+import org.cryptoworkshop.ximix.common.util.challenge.SerialChallenger;
 
 /**
  * Verifier for link index challenges. If the challenge seed produced by the verifier is use in the network
@@ -201,15 +203,25 @@ public class LinkIndexVerifier
 
         seedDigest.doFinal(stepSeed, 0);
 
-        SeededChallenger seedChallenger = new SeededChallenger(boardSize, stepNo, stepSeed);
-        Set<Integer> indexes = new HashSet<>();
+        IndexNumberGenerator challenger;
 
-        while (seedChallenger.hasNext())
+        if (boardSize != 1)
         {
-            indexes.add(seedChallenger.nextIndex());
+            challenger = new SeededChallenger(boardSize, stepNo, stepSeed);
+        }
+        else
+        {
+            challenger = new SerialChallenger(boardSize, stepNo, stepSeed);
         }
 
-        if (isWithPairing)
+        Set<Integer> indexes = new HashSet<>();
+
+        while (challenger.hasNext())
+        {
+            indexes.add(challenger.nextIndex());
+        }
+
+        if (boardSize != 1 && isWithPairing)
         {
             if (!currentSID.equals(lastSID))
             {

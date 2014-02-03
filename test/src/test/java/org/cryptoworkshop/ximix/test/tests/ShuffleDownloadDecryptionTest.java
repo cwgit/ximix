@@ -144,6 +144,19 @@ public class ShuffleDownloadDecryptionTest
     public void testShuffleVerification()
         throws Exception
     {
+        doShuffleDownloadTest(20);
+    }
+
+    @Test
+    public void testSingleBallotShuffleVerification()
+        throws Exception
+    {
+        doShuffleDownloadTest(1);
+    }
+
+    private void doShuffleDownloadTest(int numberOfPoints)
+        throws Exception
+    {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
         handler.squelchType(SocketException.class);
 
@@ -211,10 +224,6 @@ public class ShuffleDownloadDecryptionTest
         //
         // Set up plain text and upload encrypted pair.
         //
-
-        int numberOfPoints = 20; // Adjust number of points to test here.
-
-
         final ECPoint[] plainText1 = new ECPoint[numberOfPoints];
         final ECPoint[] plainText2 = new ECPoint[numberOfPoints];
         final Set<ECPoint> plain1 = new HashSet<>();
@@ -564,17 +573,45 @@ public class ShuffleDownloadDecryptionTest
     public void testShuffleVerificationWithPairing()
         throws Exception
     {
-        doTestWithPairingFlag(true);
+        doTestWithPairingFlag(20, true);
     }
 
     @Test
     public void testShuffleVerificationWithoutPairingWithDuplicate()
         throws Exception
     {
-        doTestWithPairingFlag(false);
+        doTestWithPairingFlag(20, false);
     }
 
-    private void doTestWithPairingFlag(boolean isPairingEnabled)
+    @Test
+    public void testSingleBallotShuffleVerificationWithPairing()
+        throws Exception
+    {
+        doTestWithPairingFlag(1, true);
+    }
+
+    @Test
+    public void testTwoBallotShuffleVerificationWithPairing()
+        throws Exception
+    {
+        doTestWithPairingFlag(2, true);
+    }
+
+    @Test
+    public void testThreeBallotShuffleVerificationWithPairing()
+        throws Exception
+    {
+        doTestWithPairingFlag(3, true);
+    }
+
+    @Test
+    public void testSingleBallotShuffleVerificationWithoutPairingWithDuplicate()
+        throws Exception
+    {
+        doTestWithPairingFlag(1, false);
+    }
+
+    private void doTestWithPairingFlag(int numberOfPoints, boolean isPairingEnabled)
         throws Exception
     {
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
@@ -645,10 +682,6 @@ public class ShuffleDownloadDecryptionTest
         //
         // Set up plain text and upload encrypted pair.
         //
-
-        int numberOfPoints = 20; // Adjust number of points to test here.
-
-
         final ECPoint[] plainText1 = new ECPoint[numberOfPoints];
         final ECPoint[] plainText2 = new ECPoint[numberOfPoints];
         final Set<ECPoint> plain1 = new HashSet<>();

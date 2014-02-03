@@ -27,7 +27,7 @@ public class DownloadOptions
     {
         private String keyID;
         private int threshold;
-        private String[] nodesToUse;
+        private String[] nodesToUse = new String[0];
         private DecryptionChallengeSpec challengeSpec;
 
         /**

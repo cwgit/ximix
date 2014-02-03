@@ -257,10 +257,6 @@ public class NodeShuffledBoardDecryptionService
 
                 LinkIndexVerifier linkIndexVerifier = verifierBuilder.build();
 
-                // TODO: these next two for loops are obvious candidates for parallelization - it would
-                // just need to be managed in a manner that was sensitive to the number of cores and that fact
-                // this request may not be the only one the node is currently processing...
-
                 // verify which links have been opened.
                 for (Integer key : witnessTranscripts.keySet())
                 {

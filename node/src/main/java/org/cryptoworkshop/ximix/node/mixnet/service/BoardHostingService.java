@@ -224,7 +224,7 @@ public class BoardHostingService
                         String seedKey = seedMessage.getBoardName() + "." + seedMessage.getOperationNumber();
                         if (seedsAndWitnesses.containsKey(seedKey))
                         {
-                             return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("Duplicate seed generation request for operation " + seedMessage.getOperationNumber()));
+                             return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Duplicate seed generation request for operation " + seedMessage.getOperationNumber()));
                         }
                                                                  // TODO: specify source of randomness
                         SecureRandom random = new SecureRandom();
@@ -261,7 +261,13 @@ public class BoardHostingService
                     public MessageReply call()
                         throws Exception
                     {
-                        byte[][] seedAndWitness = seedsAndWitnesses.get(seedFetchMessage.getBoardName() + "." + seedFetchMessage.getOperationNumber());
+                        String seedKey = seedFetchMessage.getBoardName() + "." + seedFetchMessage.getOperationNumber();
+                        byte[][] seedAndWitness = seedsAndWitnesses.get(seedKey);
+
+                        if (seedAndWitness == null)
+                        {
+                             return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("Unknown seed requested for key: " + seedKey));
+                        }
 
                         return new MessageReply(MessageReply.Type.OKAY, new SeedAndWitnessMessage(seedAndWitness[0], seedAndWitness[1]));
                     }
@@ -602,12 +608,16 @@ public class BoardHostingService
                         throws Exception
                     {
                         boolean isCopyBoard = isCopyBoard(transitBoard);
-                        String challengerKey = getChallengerKey(transcriptDownloadMessage, isCopyBoard);
+                        String challengerKey = getChallengerKey(transcriptDownloadMessage, isCopyBoard || (transitBoard.size() == 1));
 
                         IndexNumberGenerator challenger = challengers.get(challengerKey);
                         if (challenger == null)
                         {
-                            if (TranscriptType.GENERAL == transcriptDownloadMessage.getType())
+                            if (transitBoard.size() == 1)
+                            {
+                                challenger = new SerialChallenger(1,transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed());
+                            }
+                            else if (TranscriptType.GENERAL == transcriptDownloadMessage.getType())
                             {
                                 challenger = new SerialChallenger(transitBoard.transcriptSize(TranscriptType.GENERAL), transcriptDownloadMessage.getStepNo(), transcriptDownloadMessage.getSeed());
                             }
@@ -840,7 +850,7 @@ public class BoardHostingService
             }
         }
 
-        throw new IllegalStateException("sourceGenerator failed on copy step");
+        return true; // no commitment data present
     }
 
     private ServicesConnection getPeerConnection(String destinationNode)

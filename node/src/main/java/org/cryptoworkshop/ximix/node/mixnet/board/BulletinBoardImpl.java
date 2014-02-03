@@ -133,7 +133,11 @@ public class BulletinBoardImpl
             {
                 int index = indexGenerator.nextIndex();
 
-                responseBuilder.add(new PostedData(index, witnessMap.get(index)));
+                byte[] data = witnessMap.get(index);
+                if (data != null)
+                {
+                    responseBuilder.add(new PostedData(index, data));
+                }
             }
         }
         else

@@ -25,6 +25,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ErrorMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.NodeInfo;
@@ -112,8 +113,9 @@ class NodeServicesConnection
         }
         catch (Exception e)
         {
-            // TODO: this should only happen when we've run out of nodes.
-            throw new ServiceConnectionException("couldn't send", e);
+            eventNotifier.notify(EventNotifier.Level.ERROR, "couldn't send: " + e.getMessage(), e);
+
+            return new MessageReply(MessageReply.Type.ERROR, new ErrorMessage("couldn't send: " + e.getMessage()));
         }
     }
 }

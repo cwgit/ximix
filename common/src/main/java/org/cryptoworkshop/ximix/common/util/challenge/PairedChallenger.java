@@ -50,13 +50,13 @@ public class PairedChallenger
      *
      * @param stepNo the current step number.
      */
-    public void setStepNo(int stepNo)
+    public synchronized void setStepNo(int stepNo)
     {
         if (this.stepNo != stepNo)
         {
             startIndex = 0;
             counter = 0;
-            isEvenCall = !isEvenCall;
+            isEvenCall = !isEvenCall && indexes.length != 1;
             max = indexes.length - max;
             this.stepNo = stepNo;
         }

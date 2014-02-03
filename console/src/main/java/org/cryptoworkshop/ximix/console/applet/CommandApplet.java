@@ -994,7 +994,7 @@ public class CommandApplet
 
                 List<CommandService> servicePool = new ArrayList<>();
 
-                for (int i = 0; i != 5; i++)
+                for (int i = 0; i != 3; i++)
                 {
                     servicePool.add(adminRegistrar.connect(CommandService.class));
                 }
@@ -1065,7 +1065,7 @@ public class CommandApplet
 
             try
             {
-                final CountDownLatch myLatch = new CountDownLatch(1);
+                final CountDownLatch shuffleOperationLatch = new CountDownLatch(1);
 
                 final Map<String, byte[]> seedCommitmentMap = new HashMap<>();
 
@@ -1082,7 +1082,7 @@ public class CommandApplet
                     @Override
                     public void completed()
                     {
-                        myLatch.countDown();
+                        shuffleOperationLatch.countDown();
                         System.err.println("done");
                     }
 
@@ -1101,7 +1101,7 @@ public class CommandApplet
                     @Override
                     public void failed(String errorObject)
                     {
-                        myLatch.countDown();
+                        shuffleOperationLatch.countDown();
                         System.err.println("failed: " + errorObject);
                     }
                 };
@@ -1110,7 +1110,7 @@ public class CommandApplet
 
                 Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove(boardEntry.getName(), new ShuffleOptions.Builder("MultiColumnRowTransform").withKeyID(keyID).build(), shuffleListener, shufflePlan);
 
-                myLatch.await();
+                shuffleOperationLatch.await();
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.25);
 
@@ -1306,7 +1306,7 @@ public class CommandApplet
                                                                               .withKeyID("ECENCKEY")
                                                                               .withThreshold(4)
                                                                               .withPairingEnabled(true)
-                                                                              .withNodes(shufflePlan).build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
+                                                                              .withNodes("A", "B", "C", "D", "E").build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
                 {
                     int counter = 0;
 
@@ -1341,7 +1341,7 @@ public class CommandApplet
                     public void failed(String errorObject)
                     {
                         shuffleOutputDownloadCompleted.countDown();
-                        System.err.println("failed");
+                        System.err.println("failed shuffle download: " + errorObject);
                     }
                 });
 
@@ -1361,8 +1361,6 @@ public class CommandApplet
                 downloadStream.close();
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 1.0);
-
-                shuffleLatch.countDown();
 
                 //
                 // Convert the votes into a CSV
@@ -1465,6 +1463,8 @@ public class CommandApplet
             }
             finally
             {
+                shuffleLatch.countDown();
+
                 dialog.adjustProgress(1);
             }
         }

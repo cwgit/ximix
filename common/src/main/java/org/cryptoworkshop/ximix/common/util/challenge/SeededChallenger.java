@@ -51,12 +51,12 @@ public class SeededChallenger
      */
     public SeededChallenger(Integer size, Integer stepNo, byte[] seed)
     {
-        this.max = size / 2;
         this.counter = 0;
         this.startIndex = 0;
 
         this.bitSet = buildBitSet(size, new HashSP800DRBG(new SHA256Digest(), 256, new SingleEntropySourceProvider(seed).get(440), null, null));
         this.isMirror = (((seed[seed.length - 1] & 0xff) + stepNo) & 0x01) == 0;
+        this.max = (isMirror) ? (size - (size / 2)) : (size / 2);
     }
 
     @Override
@@ -80,11 +80,12 @@ public class SeededChallenger
     private BitSet buildBitSet(int size, SP80090DRBG drbg)
     {
         BitSet bitSet = new BitSet(size);
+        int    nBits = size / 2;
 
         int upper = size - 1;
         int lower = 0;
 
-        for (int i = 0; i != max; i++)
+        for (int i = 0; i != nBits; i++)
         {
             int nIndex = nextInt(drbg, upper - lower + 1) + lower;
 

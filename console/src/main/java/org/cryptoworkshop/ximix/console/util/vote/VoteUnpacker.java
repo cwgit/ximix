@@ -8,14 +8,17 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Strings;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -33,6 +36,7 @@ public class VoteUnpacker
     private final Map<String, Lookup> lookupMap = new HashMap<>();
     private final Map<String, CandidateIndex> candidateTable = new HashMap<>();
     private final ECPoint             paddingPoint;
+    private final Set<String>         useCandidateList = new HashSet<>();
 
     public VoteUnpacker(File unpackerConfig)
         throws IOException, JSONException, JSONIOException
@@ -55,6 +59,10 @@ public class VoteUnpacker
                 String base = name.substring(0, name.indexOf('.', "table.".length() + 1));
 
                 lookupMap.put(base.substring("table.".length()).toLowerCase(), new Lookup(unpackerConfig.getParentFile(), mapProperties, base));
+            }
+            if (name.startsWith("use.direct"))
+            {
+                useCandidateList.add(Strings.toLowerCase(mapProperties.getProperty(name)));
             }
         }
 
@@ -106,9 +114,10 @@ public class VoteUnpacker
     {
         Lookup lookUp = lookupMap.get(type.toLowerCase());
 
-        if (type.equalsIgnoreCase("ATL"))
+        if (useCandidateList.contains(Strings.toLowerCase(type)))
         {
             List<ECPoint> candidateList = candidateTable.get(gid + "_" + type + "_" + meta).getCandidateList();
+
             for (int i = 0; i != candidateList.size(); i++)
             {
                 if (candidateList.get(i).equals(point))
