@@ -63,7 +63,7 @@ public class SeededChallengerTest
             sample.remove(ind.nextIndex());
         }
 
-        TestCase.assertEquals(501, sample.size());
+        TestCase.assertEquals(500, sample.size());
 
         ind = new SeededChallenger(1001, 1, new DEROctetString(new byte[55]).getEncoded());
 
@@ -72,6 +72,6 @@ public class SeededChallengerTest
             sample.remove(ind.nextIndex());
         }
 
-        TestCase.assertEquals(1, sample.size());
+        TestCase.assertEquals(0, sample.size());
     }
 }
