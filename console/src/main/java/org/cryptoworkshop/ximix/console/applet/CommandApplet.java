@@ -1306,7 +1306,7 @@ public class CommandApplet
                                                                               .withKeyID("ECENCKEY")
                                                                               .withThreshold(4)
                                                                               .withPairingEnabled(true)
-                                                                              .withNodes("A", "B", "C", "D", "E").build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
+                                                                              .withNodes(shufflePlan).build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
                 {
                     int counter = 0;
 
