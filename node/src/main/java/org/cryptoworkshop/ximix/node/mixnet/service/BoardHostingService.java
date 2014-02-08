@@ -861,6 +861,13 @@ public class BoardHostingService
             return new ServicesConnection()
             {
                 @Override
+                public void activate()
+                    throws ServiceConnectionException
+                {
+                    // ignore
+                }
+
+                @Override
                 public CapabilityMessage[] getCapabilities()
                 {
                     return new CapabilityMessage[]{BoardHostingService.this.getCapability()};
@@ -880,7 +887,7 @@ public class BoardHostingService
                 }
 
                 @Override
-                public void close()
+                public void shutdown()
                     throws ServiceConnectionException
                 {
                     // ignore

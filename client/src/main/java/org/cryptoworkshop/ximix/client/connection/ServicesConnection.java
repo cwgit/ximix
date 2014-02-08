@@ -27,11 +27,18 @@ import org.cryptoworkshop.ximix.common.util.EventNotifier;
 public interface ServicesConnection
 {
     /**
+     * Do initial activation of the connection
+     */
+    void activate()
+        throws ServiceConnectionException;
+
+    /**
      * Return the capability set represented by the network nodes behind this connection.
      *
      * @return an array of capabilities.
      */
-    CapabilityMessage[] getCapabilities();
+    CapabilityMessage[] getCapabilities()
+        throws ServiceConnectionException;
 
     /**
      * Return the event notifier to use for problems or info messages on this connection.
@@ -55,5 +62,5 @@ public interface ServicesConnection
      *
      * @throws ServiceConnectionException in case of failure to shutdown cleanly.
      */
-    void close() throws ServiceConnectionException;
+    void shutdown() throws ServiceConnectionException;
 }

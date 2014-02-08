@@ -55,7 +55,7 @@ class KeyGenerationCommandService
     public void shutdown()
         throws ServiceConnectionException
     {
-        connection.close();
+        connection.shutdown();
     }
 
     @Override

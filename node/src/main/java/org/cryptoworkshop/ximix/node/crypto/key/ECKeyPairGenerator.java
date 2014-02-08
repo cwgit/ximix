@@ -20,6 +20,7 @@ import java.util.List;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
+import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
@@ -60,7 +61,7 @@ public class ECKeyPairGenerator
 
     public CapabilityMessage getCapability()
     {
-        return new CapabilityMessage(CapabilityMessage.Type.KEY_GENERATION, new ASN1Encodable[0]); // TODO:
+        return new CapabilityMessage(CapabilityMessage.Type.KEY_GENERATION, new ASN1Encodable[0]); // TODO: add algorithms?
     }
 
     public MessageReply handle(KeyPairGenerateMessage message)
@@ -137,28 +138,58 @@ public class ECKeyPairGenerator
                 }
                 else
                 {
-                    final int counter = index++;
-
-                    nodeContext.execute(new Runnable()
-                    {
-                        public void run()
-                        {
-                            try
-                            {
-                                MessageReply rep = nodeContext.getPeerMap().get(name).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(algorithm, new KeyPairGenerateMessage(algorithm, Type.STORE, new StoreMessage(keyID, messages[counter]))));
-                                if (rep.getType() != MessageReply.Type.OKAY)
-                                {
-                                    nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Error in SendShare" + rep.interpretPayloadAsError());
-                                }
-                            }
-                            catch (ServiceConnectionException e)
-                            {
-                                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Exception in SendShare: " + e.getMessage(), e);
-                            }
-                        }
-                    });
-
+                    nodeContext.execute(new SendShareToNodeTask(name, keyID, algorithm, messages[index++]));
                 }
+            }
+        }
+    }
+
+    private class SendShareToNodeTask
+        implements Runnable
+    {
+        private final String name;
+        private final String keyID;
+        private final Algorithm algorithm;
+        private final ECCommittedSecretShareMessage shareMessage;
+
+        SendShareToNodeTask(String name, String keyID, Algorithm algorithm, ECCommittedSecretShareMessage shareMessage)
+        {
+            this.name = name;
+            this.keyID = keyID;
+            this.algorithm = algorithm;
+            this.shareMessage = shareMessage;
+        }
+
+        public void run()
+        {
+            try
+            {
+                ServicesConnection connection = nodeContext.getPeerMap().get(name);
+                if (connection != null)
+                {
+                    MessageReply rep = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(algorithm, new KeyPairGenerateMessage(algorithm, Type.STORE, new StoreMessage(keyID, shareMessage))));
+                    if (rep.getType() != MessageReply.Type.OKAY)
+                    {
+                        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Error in SendShare: " + rep.interpretPayloadAsError());
+                    }
+                }
+                else
+                {
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.WARN, "Node " + name + " not connected, waiting");
+                    try
+                    {
+                        Thread.sleep(2000);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                    nodeContext.execute(SendShareToNodeTask.this);
+                }
+            }
+            catch (ServiceConnectionException e)
+            {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Exception in SendShareToNodeTask: " + e.getMessage(), e);
             }
         }
     }
@@ -186,7 +217,15 @@ public class ECKeyPairGenerator
             }
             else
             {
-                // TODO: there needs to be a limit on how long we do this!
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.WARN, "Still waiting for generate message for key " + keyID);
+                try
+                {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                }
                 nodeContext.execute(StoreShareTask.this);
             }
         }

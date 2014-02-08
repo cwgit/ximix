@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
@@ -34,19 +35,20 @@ public class XimixConnectionMapFactory
      *
      *
      * @param config Ximix configuration to use.
+     * @param decoupler decoupler thread to perform event notification under.
      * @param eventNotifier event notifier to use in case of error.
      * @return a map of ServicesConnection objects representing handles to each node in the network.
      * @throws ConfigException if there is an error in the configuration.
      */
-    public static Map<String, ServicesConnection> createServicesConnectionMap(Config config, EventNotifier eventNotifier)
+    public static Map<String, ServicesConnection> createServicesConnectionMap(Config config, Executor decoupler, EventNotifier eventNotifier)
         throws ConfigException
     {
         final List<NodeConfig> nodes = config.getConfigObjects("node", new NodeConfigFactory());
 
-        return createServicesConnectionMap(nodes, eventNotifier);
+        return createServicesConnectionMap(nodes, decoupler, eventNotifier);
     }
 
-    private static Map<String, ServicesConnection> createServicesConnectionMap(List<NodeConfig> nodes, EventNotifier eventNotifier)
+    private static Map<String, ServicesConnection> createServicesConnectionMap(List<NodeConfig> nodes, Executor decoupler, EventNotifier eventNotifier)
     {
         Map<String, ServicesConnection> rMap = new HashMap<>();
 
@@ -57,7 +59,7 @@ public class XimixConnectionMapFactory
             final String name = node.getName();
             final List<NodeConfig> thisNode = Collections.singletonList(node);
 
-            rMap.put(name, new ServicesConnectionImpl(thisNode, eventNotifier));
+            rMap.put(name, new ServicesConnectionImpl(thisNode, decoupler, eventNotifier));
         }
 
         return rMap;

@@ -17,16 +17,17 @@ package org.cryptoworkshop.ximix.client.connection;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.client.CommandService;
@@ -42,7 +43,9 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
+import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
 /**
  * Factory class to allow clients to build Ximix registrars.Once an actual registrar is built services on the running
@@ -87,23 +90,31 @@ public class XimixRegistrarFactory
 
         return new XimixRegistrar()
         {
+            private final ExecutorService decoupler = Executors.newSingleThreadExecutor();
+
             public <T> T connect(Class<T> serviceClass)
                 throws RegistrarServiceException
             {
                 if (serviceClass.isAssignableFrom(UploadService.class))
                 {
-                    return (T)new ClientUploadService(new ServicesConnectionImpl(nodes, eventNotifier));
+                    return (T)new ClientUploadService(new ServicesConnectionImpl(nodes, decoupler, eventNotifier));
                 }
                 if (serviceClass.isAssignableFrom(KeyService.class))
                 {
-                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes, eventNotifier));
+                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes, decoupler, eventNotifier));
                 }
                 if (serviceClass.isAssignableFrom(SigningService.class))
                 {
-                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes, eventNotifier));
+                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes, decoupler, eventNotifier));
                 }
 
                 throw new RegistrarServiceException("Unable to identify service");
+            }
+
+            @Override
+            public void shutdown()
+            {
+                 decoupler.shutdown();
             }
         };
     }
@@ -157,31 +168,52 @@ public class XimixRegistrarFactory
 
         return new XimixRegistrar()
         {
+            final ExecutorService decoupler = Executors.newSingleThreadExecutor();
+
             public <T> T connect(Class<T> serviceClass)
                 throws RegistrarServiceException
             {
+                AdminServicesConnectionImpl adminServicesConnection = new AdminServicesConnectionImpl(nodes, decoupler, eventNotifier);
+
+                try
+                {
+                    adminServicesConnection.activate();
+                }
+                catch (ServiceConnectionException e)
+                {
+                    eventNotifier.notify(EventNotifier.Level.ERROR, "Unable to activate connection");
+
+                    throw new RegistrarServiceException("Unable to activate registrar");
+                }
+
                 if (serviceClass.isAssignableFrom(CommandService.class))
                 {
-                    return (T)new ClientCommandService(new AdminServicesConnectionImpl(nodes, eventNotifier));
+                    return (T)new ClientCommandService(adminServicesConnection);
                 }
                 if (serviceClass.isAssignableFrom(KeyGenerationService.class))
                 {
-                    return (T)new KeyGenerationCommandService(new AdminServicesConnectionImpl(nodes, eventNotifier));
+                    return (T)new KeyGenerationCommandService(adminServicesConnection);
                 }
                 if (serviceClass.isAssignableFrom(UploadService.class))
                 {
-                    return (T)new ClientUploadService(new AdminServicesConnectionImpl(nodes, eventNotifier));
+                    return (T)new ClientUploadService(adminServicesConnection);
                 }
                 if (serviceClass.isAssignableFrom(SigningService.class))
                 {
-                    return (T)new ClientSigningService(new AdminServicesConnectionImpl(nodes, eventNotifier));
+                    return (T)new ClientSigningService(adminServicesConnection);
                 }
                 if (serviceClass.isAssignableFrom(MonitorService.class))
                 {
-                    return (T)new ClientNodeHealthMonitor(new AdminServicesConnectionImpl(nodes, eventNotifier), getDetailMap(nodes, eventNotifier));
+                    return (T)new ClientNodeHealthMonitor(adminServicesConnection, getDetailMap(nodes, eventNotifier));
                 }
 
                 throw new RegistrarServiceException("Unable to identify service");
+            }
+
+            @Override
+            public void shutdown()
+            {
+                decoupler.shutdown();
             }
         };
     }
@@ -190,13 +222,40 @@ public class XimixRegistrarFactory
         implements AdminServicesConnection
     {
         private final EventNotifier eventNotifier;
+        private final NodeConnectionListener nodeConnectionListener;
 
+        private Map<String, Boolean> connectionStatus = Collections.synchronizedMap(new HashMap<String, Boolean>());
         private Map<String, NodeServicesConnection> connectionMap = Collections.synchronizedMap(new HashMap<String, NodeServicesConnection>());
-        private Set<CapabilityMessage> capabilitySet = new HashSet<>();
+        private Set<CapabilityMessage> capabilitySet = Collections.synchronizedSet(new HashSet<CapabilityMessage>());
 
-        public AdminServicesConnectionImpl(List<NodeConfig> configList, EventNotifier eventNotifier)
+        public AdminServicesConnectionImpl(List<NodeConfig> configList, Executor decoupler, EventNotifier eventNotifier)
         {
-            this.eventNotifier = eventNotifier;
+            ListenerHandler<EventNotifier> notifierHandler = new DecoupledListenerHandlerFactory(decoupler, eventNotifier).createHandler(EventNotifier.class);
+            notifierHandler.addListener(eventNotifier);
+            this.eventNotifier = notifierHandler.getNotifier();
+
+            ListenerHandler<NodeConnectionListener> listenerHandler = new DecoupledListenerHandlerFactory(decoupler, eventNotifier).createHandler(NodeConnectionListener.class);
+            listenerHandler.addListener(new NodeConnectionListener()
+            {
+                @Override
+                public void status(String name, boolean isAvailable)
+                {
+                    connectionStatus.put(name, isAvailable);
+
+                    if (isAvailable)
+                    {
+                        try
+                        {
+                            capabilitySet.addAll(Arrays.asList(connectionMap.get(name).getCapabilities()));
+                        }
+                        catch (ServiceConnectionException e)
+                        {
+                            e.printStackTrace();      // TODO: should never happen... but...
+                        }
+                    }
+                }
+            });
+            this.nodeConnectionListener = listenerHandler.getNotifier();
 
             for (int i = 0; i != configList.size(); i++)
             {
@@ -204,19 +263,9 @@ public class XimixRegistrarFactory
 
                 if (nodeConf.getThrowable() == null)
                 {
-                    // TODO: we should query each node to see what it's capabilities are.
-                    try
-                    {
-                        NodeServicesConnection connection = new NodeServicesConnection(nodeConf, eventNotifier);
+                    final NodeServicesConnection connection = new NodeServicesConnection(nodeConf, nodeConnectionListener, eventNotifier);
 
-                        capabilitySet.addAll(Arrays.asList(connection.getCapabilities()));
-
-                        connectionMap.put(connection.getName(), connection);
-                    }
-                    catch (IOException e)
-                    {
-                        continue;
-                    }
+                    connectionMap.put(connection.getName(), connection);
                 }
                 else
                 {
@@ -226,13 +275,37 @@ public class XimixRegistrarFactory
         }
 
         @Override
-        public void close()
+        public void shutdown()
             throws ServiceConnectionException
         {
-            Iterator<NodeServicesConnection> e = connectionMap.values().iterator();
-            while (e.hasNext())
+            for (NodeServicesConnection connection : connectionMap.values())
             {
-                e.next().close();
+                try
+                {
+                    connection.shutdown();
+                }
+                catch (ServiceConnectionException e)
+                {
+                    eventNotifier.notify(EventNotifier.Level.WARN, "Exception on shutting down connection to " + connection.getName() + ": " +e.getMessage(), e);
+                }
+            }
+        }
+
+        @Override
+        public void activate()
+            throws ServiceConnectionException
+        {
+            // TODO: this could be done in parallel
+            for (NodeServicesConnection connection : connectionMap.values())
+            {
+                try
+                {
+                    connection.activate();
+                }
+                catch (Exception e)
+                {
+                    eventNotifier.notify(EventNotifier.Level.WARN, "Node " + connection.getName() + " not yet available.");
+                }
             }
         }
 
@@ -250,14 +323,39 @@ public class XimixRegistrarFactory
         public MessageReply sendMessage(MessageType type, ASN1Encodable messagePayload)
             throws ServiceConnectionException
         {
-            return connectionMap.get(getActiveNodeNames().iterator().next()).sendMessage(type, messagePayload);
+            if (getActiveNodeNames().isEmpty())
+            {
+                throw new ServiceConnectionException("No Ximix nodes are available!");
+            }
+
+            try
+            {
+                return connectionMap.get(getActiveNodeNames().iterator().next()).sendMessage(type, messagePayload);
+            }
+            catch (ServiceConnectionException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                throw new ServiceConnectionException("Unable to send message: " + e.getMessage(), e);
+            }
         }
 
         @Override
         public Set<String> getActiveNodeNames()
         {
-            // TODO: this should only return names with an active connection
-            return new HashSet<>(connectionMap.keySet());
+            Set<String>  nodeNames = new HashSet<>();
+
+            for (String name : connectionStatus.keySet())
+            {
+                if (connectionStatus.get(name))     // true is active
+                {
+                     nodeNames.add(name);
+                }
+            }
+
+            return nodeNames;
         }
 
         public MessageReply sendMessage(String nodeName, MessageType type, ASN1Encodable messagePayload)

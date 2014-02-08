@@ -74,15 +74,11 @@ public class BLSProcessingTest
         //
         handler.squelchType(SocketException.class);
 
-
-
         XimixNode nodeOne = getXimixNode("/conf/mixnet.xml", "/conf/node1.xml", handler);
         NodeTestUtil.launch(nodeOne);
 
-
         XimixNode nodeTwo = getXimixNode("/conf/mixnet.xml", "/conf/node2.xml", handler);
         NodeTestUtil.launch(nodeTwo);
-
 
         XimixNode nodeThree = getXimixNode("/conf/mixnet.xml", "/conf/node3.xml", handler);
         NodeTestUtil.launch(nodeThree);
@@ -137,9 +133,10 @@ public class BLSProcessingTest
         //
         // Shutdown nodes and close services.
         //
-        NodeTestUtil.shutdownNodes();
         keyGenerationService.shutdown();
         signingService.shutdown();
+
+        NodeTestUtil.shutdownNodes();
     }
 
     @Test
@@ -188,9 +185,10 @@ public class BLSProcessingTest
         doMixedMissingTest(signingService, sigPubKey, new String[]{ "D", "E", "B", "A" });
         doMixedMissingTest(signingService, sigPubKey, new String[]{ "D", "E", "B", "C" });
 
-        NodeTestUtil.shutdownNodes();
         keyGenerationService.shutdown();
         signingService.shutdown();
+
+        NodeTestUtil.shutdownNodes();
     }
 
     private void doMixedMissingTest(SigningService signingService, final BLS01PublicKeyParameters sigPubKey, String[] sigNodes)

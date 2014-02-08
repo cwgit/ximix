@@ -326,6 +326,13 @@ public class CryptoServicesTest
                 }
 
                 @Override
+                public void activate()
+                    throws ServiceConnectionException
+                {
+
+                }
+
+                @Override
                 public CapabilityMessage[] getCapabilities()
                 {
                     return new CapabilityMessage[0];  //To change body of implemented methods use File | Settings | File Templates.
@@ -345,7 +352,7 @@ public class CryptoServicesTest
                 }
 
                 @Override
-                public void close()
+                public void shutdown()
                     throws ServiceConnectionException
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
@@ -399,6 +406,13 @@ public class CryptoServicesTest
             connectionMap.put(nodeName, new ServicesConnection()
             {
                 @Override
+                public void activate()
+                    throws ServiceConnectionException
+                {
+
+                }
+
+                @Override
                 public CapabilityMessage[] getCapabilities()
                 {
                     return context.getCapabilities();
@@ -431,7 +445,7 @@ public class CryptoServicesTest
                 }
 
                 @Override
-                public void close() throws ServiceConnectionException
+                public void shutdown() throws ServiceConnectionException
                 {
                     throw new RuntimeException("Not implemented.");
                 }

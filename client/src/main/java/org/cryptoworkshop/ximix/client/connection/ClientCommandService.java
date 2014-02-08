@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -138,7 +139,7 @@ class ClientCommandService
     {
         decouple.shutdown();
         executor.shutdown();
-        connection.close();
+        connection.shutdown();
     }
 
     @Override
@@ -977,7 +978,21 @@ class ClientCommandService
 
         public void run()
         {
-            String[] nodes = toOrderedSet(options.getNodesToUse()).toArray(new String[0]);
+            //
+            // check we're talking to a node that's up!
+            //
+            Set<String>  activeNodes = connection.getActiveNodeNames();
+            Set<String>  usableNodes = new LinkedHashSet<>();
+
+            for (final String node : toOrderedSet(options.getNodesToUse()).toArray(new String[0]))
+            {
+                if (activeNodes.contains(node))
+                {
+                    usableNodes.add(node);
+                }
+            }
+
+            String[] nodes = usableNodes.toArray(new String[usableNodes.size()]);
 
             //
             // upload the transcripts

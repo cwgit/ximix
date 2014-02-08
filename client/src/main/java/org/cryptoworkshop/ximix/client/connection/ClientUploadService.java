@@ -38,7 +38,7 @@ class ClientUploadService
     @Override
     public void shutdown() throws ServiceConnectionException
     {
-        this.connection.close();
+        this.connection.shutdown();
     }
 
     public void uploadMessage(String boardName, byte[] message)

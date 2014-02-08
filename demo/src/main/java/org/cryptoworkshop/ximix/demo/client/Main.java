@@ -191,5 +191,9 @@ public class Main
         {
             System.out.println("sig failed...");
         }
+
+        keyFetcher.shutdown();
+        signingService.shutdown();
+        registrar.shutdown();
     }
 }

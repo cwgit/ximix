@@ -237,6 +237,26 @@ public class XimixNodeContext
                 }
             }
         });
+        // now activate our peer connections
+
+        for (final String node: getPeerMap().keySet())
+        {
+            connectionExecutor.submit(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        getPeerMap().get(node).activate();
+                    }
+                    catch (Exception e)
+                    {
+                        getEventNotifier().notify(EventNotifier.Level.WARN, "Node " + node + " currently unavailable: " + e.getMessage(), e);
+                    }
+                }
+            });
+        }
     }
 
     @Override

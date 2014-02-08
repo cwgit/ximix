@@ -18,6 +18,8 @@ package org.cryptoworkshop.ximix.node.core;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
@@ -93,7 +95,9 @@ public class XimixNodeBuilder
     public XimixNode build(Config nodeConfig)
         throws ConfigException
     {
-        final Map<String, ServicesConnection> servicesMap = XimixConnectionMapFactory.createServicesConnectionMap(peersConfig, eventNotifier);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        final Map<String, ServicesConnection> servicesMap = XimixConnectionMapFactory.createServicesConnectionMap(peersConfig, executor, eventNotifier);
 
         return new DefaultXimixNode(nodeConfig, servicesMap, eventNotifier);
     }

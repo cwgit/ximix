@@ -15,15 +15,19 @@
  */
 package org.cryptoworkshop.ximix.client.connection;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
+import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
+import org.cryptoworkshop.ximix.common.util.ListenerHandler;
 
 /**
  * Internal implementation of a general ServicesConnection. Unlike a NodeServicesConnection this class addresses the
@@ -33,41 +37,39 @@ class ServicesConnectionImpl
     implements ServicesConnection
 {
     private final EventNotifier eventNotifier;
+    private final NodeConnectionListener nodeConnectionListener;
+    private final CountDownLatch isActivated = new CountDownLatch(1);
+    private final List<NodeServicesConnection> connections = new ArrayList<>();
 
-    private NodeServicesConnection connection;
-    private NodeConfig nodeConf;
+    private volatile NodeServicesConnection connection;
 
-    public ServicesConnectionImpl(List<NodeConfig> configList, EventNotifier eventNotifier)
+    public ServicesConnectionImpl(List<NodeConfig> configList, Executor decoupler, EventNotifier eventNotifier)
     {
-        this.eventNotifier = eventNotifier;
+        ListenerHandler<EventNotifier> notifierHandler = new DecoupledListenerHandlerFactory(decoupler, eventNotifier).createHandler(EventNotifier.class);
+        notifierHandler.addListener(eventNotifier);
+        this.eventNotifier = notifierHandler.getNotifier();
+
+        ListenerHandler<NodeConnectionListener> listenerHandler = new DecoupledListenerHandlerFactory(decoupler, eventNotifier).createHandler(NodeConnectionListener.class);
+        listenerHandler.addListener(new NodeConnectionListener()
+        {
+            @Override
+            public void status(String name, boolean isAvailable)
+            {
+                // TODO: need to add code here to swap out a dead node for a live one
+            }
+        });
+        this.nodeConnectionListener = listenerHandler.getNotifier();
 
         //
         // find a node to connect to
         //
-
-        // start at a random point in the list
-        int start = new Random().nextInt();
-
         for (int i = 0; i != configList.size(); i++)
         {
-            int nodeNo = (start + i) % configList.size();
-
-            nodeConf = configList.get(nodeNo);
+            NodeConfig nodeConf = configList.get(i);
 
             if (nodeConf.getThrowable() == null)
             {
-                try
-                {
-                    if (getConnection() == null)
-                    {
-                        continue;
-                    }
-                }
-                catch (IOException e)
-                {
-                    continue;
-                }
-                break;
+                connections.add(new NodeServicesConnection(nodeConf, nodeConnectionListener, eventNotifier));
             }
             else
             {
@@ -77,45 +79,73 @@ class ServicesConnectionImpl
     }
 
     @Override
-    public void close()
+    public void shutdown()
         throws ServiceConnectionException
     {
-        connection.close();
+        connection.shutdown();
     }
 
-    private synchronized NodeServicesConnection resetConnection()
+    @Override
+    public void activate()
+        throws ServiceConnectionException
     {
-        // TODO: need to look into possible connection leakage here. 2 threads may end up trying to reset at the same time.
-        connection = null;
-
         try
         {
-            return getConnection();
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
-    }
+            // we have a choice so choose one
+            if (connections.size() > 1)
+            {
+                // start at a random point in the list
+                int start = new Random().nextInt();
 
-    private synchronized NodeServicesConnection getConnection()
-        throws IOException
-    {
-        if (connection == null)
-        {
-            connection = new NodeServicesConnection(nodeConf, eventNotifier);
-        }
+                for (int i = 0; i != connections.size(); i++)
+                {
+                    int nodeNo = (start + i) % connections.size();
 
-        return connection;
+                    try
+                    {
+                        connections.get(nodeNo).activate();
+
+                        connection = connections.get(nodeNo);
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        // try again...
+                    }
+                }
+
+                // none are currently working, we'll just have to make the best of it.
+                connection = connections.get(0);
+            }
+            else
+            {
+                // if we end up here, there's only one
+                connection = connections.get(0);
+                connection.activate();
+            }
+        }
+        finally
+        {
+            isActivated.countDown();
+        }
     }
 
     public CapabilityMessage[] getCapabilities()
     {
         try
         {
-            return getConnection().getCapabilities();
+            isActivated.await();
         }
-        catch (IOException e)
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
+
+        try
+        {
+            return connection.getCapabilities();
+        }
+        catch (Exception e)
         {
             return new CapabilityMessage[0];
         }
@@ -132,11 +162,13 @@ class ServicesConnectionImpl
     {
         try
         {
-            return getConnection().sendMessage(type, messagePayload);
+            isActivated.await();
         }
-        catch (Exception e)
+        catch (InterruptedException e)
         {
-            return resetConnection().sendMessage(type, messagePayload);
+            Thread.currentThread().interrupt();
         }
+
+        return connection.sendMessage(type, messagePayload);
     }
 }

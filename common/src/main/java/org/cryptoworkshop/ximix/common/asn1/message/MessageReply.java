@@ -116,6 +116,11 @@ public class MessageReply
             return DERUTF8String.getInstance(payload).getString();
         }
 
+        if (payload instanceof ErrorMessage)
+        {
+            return ErrorMessage.getInstance(payload).getMessage();
+        }
+
         if (payload instanceof ASN1TaggedObject)
         {
             ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(payload);
@@ -132,7 +137,7 @@ public class MessageReply
             }
         }
 
-        return "Unknown error object";
+        return "Unknown error object: " + payload.toString();
     }
 
     @Override

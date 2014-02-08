@@ -247,7 +247,7 @@ public class Main
             }
         };
 
-        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECENCKEY").build(), shuffleListener, "A", "A", "C", "C", "D");
+        Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove("FRED",  new ShuffleOptions.Builder(MultiColumnRowTransform.NAME).withKeyID("ECENCKEY").build(), shuffleListener, "A", "A", "C", "C", "E");
 
         shuffleLatch.await();
 
@@ -321,7 +321,7 @@ public class Main
 //
 //        challengeVerifier.verify();
 
-        Map<String, byte[][]> seedAndWitnessesMap = commandService.downloadShuffleSeedsAndWitnesses("FRED", shuffleOp.getOperationNumber(), "A", "C", "D");
+        Map<String, byte[][]> seedAndWitnessesMap = commandService.downloadShuffleSeedsAndWitnesses("FRED", shuffleOp.getOperationNumber(), "A", "C", "E");
 
 
         SignedDataVerifier signatureVerifier = new SignedDataVerifier(trustAnchor);
@@ -375,7 +375,7 @@ public class Main
             }
         };
 
-        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.GENERAL).build(), transcriptListener, "A", "C", "D");
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.GENERAL).build(), transcriptListener, "A", "C", "E");
 
         transcriptCompleted.await();
 
@@ -463,7 +463,7 @@ public class Main
             }
         };
 
-        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(challengeSeed).withPairingEnabled(true).build(), transcriptListener, "A", "C", "D");
+        commandService.downloadShuffleTranscripts("FRED", shuffleOp.getOperationNumber(),  new ShuffleTranscriptOptions.Builder(TranscriptType.WITNESSES).withChallengeSeed(challengeSeed).withPairingEnabled(true).build(), transcriptListener, "A", "C", "E");
 
         witnessTranscriptCompleted.await();
 
@@ -534,7 +534,7 @@ public class Main
                                                                       .withKeyID("ECENCKEY")
                                                                       .withThreshold(4)
                                                                       .withPairingEnabled(true)
-                                                                      .withNodes("A", "B", "C", "D").build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
+                                                                      .withNodes("A", "B", "C", "D", "E").build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
         {
             int counter = 0;
 
@@ -578,6 +578,9 @@ public class Main
         shuffleOutputDownloadCompleted.await();
 
         keyGenerationService.shutdown();
+        client.shutdown();
         commandService.shutdown();
+
+        adminRegistrar.shutdown();
     }
 }
