@@ -15,6 +15,8 @@
  */
 package org.cryptoworkshop.ximix.client;
 
+import java.security.SecureRandom;
+
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 
 /**
@@ -32,6 +34,7 @@ public class KeyGenerationOptions
 
         private int threshold;
         private String[] nodesToUse;
+        private SecureRandom random;
 
         /**
          * Basic constructor, specify the algorithm and any parameters required.
@@ -72,6 +75,20 @@ public class KeyGenerationOptions
         }
 
         /**
+         * Specify a source of randomness for the generation of any client side values required
+         * for key generation.
+         *
+         * @param random a user provided source of randomness.
+         * @return the current builder instance.
+         */
+        public Builder withSecureRandom(SecureRandom random)
+        {
+            this.random = random;
+
+            return this;
+        }
+
+        /**
          * Build the actual key generation options to be passed to the key generation service.
          *
          * @return the appropriate KeyGenerationOptions object.
@@ -86,6 +103,7 @@ public class KeyGenerationOptions
     private final String[] parameters;
     private final int threshold;
     private final String[] nodesToUse;
+    private final SecureRandom random;
 
     private KeyGenerationOptions(Builder builder)
     {
@@ -93,6 +111,15 @@ public class KeyGenerationOptions
         this.parameters = builder.parameters;
         this.threshold = builder.threshold;
         this.nodesToUse = builder.nodesToUse;
+
+        if (builder.random == null)
+        {
+            this.random = new SecureRandom();
+        }
+        else
+        {
+            this.random = builder.random;
+        }
     }
 
     /**
@@ -123,6 +150,17 @@ public class KeyGenerationOptions
     public String[] getNodesToUse()
     {
         return nodesToUse.clone();
+    }
+
+    /**
+     * Return a source of randomness for the generation of any client side values required
+     * for key generation.
+     *
+     * @return a source of randomness.
+     */
+    public SecureRandom getRandom()
+    {
+        return random;
     }
 
     /**

@@ -187,7 +187,7 @@ public class BLSKeyPairGenerator
                     nodeContext.getEventNotifier().notify(EventNotifier.Level.WARN, "Node " + name + " not connected, retrying");
                     try
                     {
-                        Thread.sleep(2000);
+                        Thread.sleep(2000);    // TODO: configurable?
                     }
                     catch (InterruptedException e)
                     {
@@ -229,7 +229,7 @@ public class BLSKeyPairGenerator
                 nodeContext.getEventNotifier().notify(EventNotifier.Level.WARN, "Still waiting for generate message for key " + keyID);
                 try
                 {
-                    Thread.sleep(1000);
+                    Thread.sleep(1000);   // TODO: configurable?
                 }
                 catch (InterruptedException e)
                 {

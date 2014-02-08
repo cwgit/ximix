@@ -50,6 +50,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
@@ -159,7 +160,7 @@ public class ECKeyManager
         if (domainParameters == null)
         {
             ASN1ObjectIdentifier curveID = ECNamedCurveTable.getOID(keyGenParams.getDomainParameters());
-            X9ECParameters params = ECNamedCurveTable.getByName(keyGenParams.getDomainParameters());
+            X9ECParameters params = CustomNamedCurves.getByName(keyGenParams.getDomainParameters());
 
             if (params == null)
             {

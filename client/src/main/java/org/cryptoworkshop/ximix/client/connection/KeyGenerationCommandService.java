@@ -17,8 +17,13 @@ package org.cryptoworkshop.ximix.client.connection;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Arrays;
 
+import it.unisa.dia.gas.jpbc.CurveParameters;
+import it.unisa.dia.gas.plaf.jpbc.pairing.DefaultCurveParameters;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
@@ -38,6 +43,8 @@ import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 class KeyGenerationCommandService
     implements KeyGenerationService
 {
+    private static final int MAX_ITERATIONS = 1000;      // if we can't generate a random number in the right subgroup in this many iterations, something is badly wrong
+
     private enum Type
         implements MessageType
     {
@@ -64,7 +71,9 @@ class KeyGenerationCommandService
     {                            // TODO: may not need the if after all.
         if (keyGenOptions.getAlgorithm() == Algorithm.BLS)
         {
-            NamedKeyGenParams blsKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), BigInteger.valueOf(1000001), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
+            CurveParameters curveParameters = new DefaultCurveParameters().load(this.getClass().getResourceAsStream("d62003-159-158.param"));      // Type D curve
+
+            NamedKeyGenParams blsKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), generateH(curveParameters.getBigInteger("n"), keyGenOptions.getRandom()), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
 
             for (String node : keyGenOptions.getNodesToUse())
             {
@@ -74,8 +83,10 @@ class KeyGenerationCommandService
             return fetchPublicKey(keyID);
         }
         else
-        {                                                          // TODO: generate H
-            NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), BigInteger.valueOf(1000001), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
+        {
+            X9ECParameters params = ECNamedCurveTable.getByName(keyGenOptions.getParameters()[0]);
+
+            NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), generateH(params.getN(), keyGenOptions.getRandom()), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
 
             for (String node : keyGenOptions.getNodesToUse())
             {
@@ -107,5 +118,31 @@ class KeyGenerationCommandService
         {
             throw new ServiceConnectionException("malformed public key returned: " + e.getMessage());
         }
+    }
+
+    private BigInteger generateH(BigInteger g, SecureRandom random)
+        throws ServiceConnectionException
+    {
+        int gBitLength = g.bitLength();
+        int count = 0;
+
+        BigInteger k = null;
+        do
+        {
+            if (count++ >= MAX_ITERATIONS)
+            {
+                break;
+            }
+
+            k = new BigInteger(gBitLength, random);
+        }
+        while (k.equals(BigInteger.ZERO) || k.compareTo(g) >= 0);
+
+        if (count >= MAX_ITERATIONS)
+        {
+            throw new ServiceConnectionException("Unable to generate random values for key generation.");
+        }
+
+        return k;
     }
 }
