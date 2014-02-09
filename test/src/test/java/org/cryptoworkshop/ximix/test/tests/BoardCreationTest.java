@@ -19,6 +19,7 @@ import java.math.BigInteger;
 import java.net.SocketException;
 import java.security.SecureRandom;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -393,7 +394,7 @@ public class BoardCreationTest
                 int counter = 0;
 
                 @Override
-                public void messageDownloaded(int index, byte[] message)
+                public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                 {
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];

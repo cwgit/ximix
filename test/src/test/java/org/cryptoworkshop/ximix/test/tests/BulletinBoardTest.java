@@ -3,6 +3,7 @@ package org.cryptoworkshop.ximix.test.tests;
 import java.net.SocketException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -109,7 +110,7 @@ public class BulletinBoardTest
             new DownloadOperationListener()
             {
                 @Override
-                public void messageDownloaded(int index, byte[] message)
+                public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                 {
                     msgDownloaded.add(message);
 
@@ -250,7 +251,7 @@ public class BulletinBoardTest
             new DownloadOperationListener()
             {
                 @Override
-                public void messageDownloaded(int index, byte[] message)
+                public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                 {
                     msgDownloaded.add(message);
                     if (msgDownloaded.size() == testSize)

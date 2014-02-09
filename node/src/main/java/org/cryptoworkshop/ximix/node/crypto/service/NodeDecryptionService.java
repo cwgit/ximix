@@ -16,13 +16,16 @@
 package org.cryptoworkshop.ximix.node.crypto.service;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
+import org.cryptoworkshop.ximix.common.asn1.board.PairSequenceWithProofs;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.DecryptDataMessage;
@@ -79,17 +82,29 @@ public class NodeDecryptionService
 
             ECDomainParameters domainParameters = ecOperator.getDomainParameters();
 
+            ProofGenerator pGen = new ProofGenerator();
+
             for (int i = 0; i != messages.size(); i++)
             {
                 PairSequence ps = PairSequence.getInstance(domainParameters.getCurve(), messages.get(i));
                 ECPair[] pairs = ps.getECPairs();
+                ECPoint[] proofs = new ECPoint[pairs.length];
+
                 for (int j = 0; j != pairs.length; j++)
                 {
                     pairs[j] = new ECPair(ecOperator.transform(pairs[j].getX()), pairs[j].getY());
                 }
+
+                BigInteger challenge = pGen.computeChallenge(ps.getECPairs(), pairs);
+
+                for (int j = 0; j != pairs.length; j++)
+                {
+                    proofs[j] = pGen.computeProof(pairs[j].getX(), challenge, domainParameters, ecOperator);
+                }
+
                 try
                 {
-                    partialDecryptsBuilder.add(new PairSequence(pairs).getEncoded());
+                    partialDecryptsBuilder.add(new PairSequenceWithProofs(pairs, proofs).getEncoded());
                 }
                 catch (IOException e)
                 {

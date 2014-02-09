@@ -28,7 +28,6 @@ public class DownloadOptions
         private String keyID;
         private int threshold;
         private String[] nodesToUse = new String[0];
-        private DecryptionChallengeSpec challengeSpec;
 
         /**
          * Base constructor
@@ -78,19 +77,6 @@ public class DownloadOptions
         }
 
         /**
-         * Flag how decryption challenges should be managed..
-         *
-         * @param challengeSpec a specification for which messages to challenge on and where to log.
-         * @return the current builder instance.
-         */
-        public Builder withChallengeSpec(DecryptionChallengeSpec challengeSpec)
-        {
-            this.challengeSpec = challengeSpec;
-
-            return this;
-        }
-
-        /**
          * Build an actual download options object suitable for use with services supporting the download operation.
          *
          * @return a DownloadOptions object.
@@ -104,24 +90,12 @@ public class DownloadOptions
     private final String keyID;
     private final int threshold;
     private final String[] nodesToUse;
-    private final DecryptionChallengeSpec challengeSpec;
 
     private DownloadOptions(Builder builder)
     {
         this.keyID = builder.keyID;
         this.threshold = builder.threshold;
         this.nodesToUse = builder.nodesToUse.clone();
-        this.challengeSpec = builder.challengeSpec;
-    }
-
-    /**
-     * Return the specification to show how decryption challenges are to be generated and logged.
-     *
-     * @return the DecryptionChallengeSpec describing how to handle challenges.
-     */
-    public DecryptionChallengeSpec getChallengeSpec()
-    {
-        return challengeSpec;
     }
 
     /**

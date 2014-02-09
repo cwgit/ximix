@@ -15,6 +15,8 @@
  */
 package org.cryptoworkshop.ximix.client;
 
+import java.util.List;
+
 import org.cryptoworkshop.ximix.common.util.OperationListener;
 
 /**
@@ -28,6 +30,7 @@ public interface DownloadOperationListener
      *
      * @param index index of the downloaded message on the bulletin board.
      * @param message the downloaded message.
+     * @param proofs a map of the proofs applicable to this message
      */
-    public void messageDownloaded(int index, byte[] message);
+    public void messageDownloaded(int index, byte[] message, List<byte[]> proofs);
 }

@@ -26,6 +26,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -43,12 +44,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
-import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
-import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
@@ -226,7 +225,7 @@ public class KeyProcessingTest extends TestCase
                 int counter = 0;
 
                 @Override
-                public void messageDownloaded(int index, byte[] message)
+                public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                 {
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];
@@ -552,7 +551,7 @@ public class KeyProcessingTest extends TestCase
                 int counter = 0;
 
                 @Override
-                public void messageDownloaded(int index, byte[] message)
+                public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                 {
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];
@@ -705,21 +704,13 @@ public class KeyProcessingTest extends TestCase
             new DownloadOptions.Builder()
                 .withKeyID("ECKEY")
                 .withThreshold(4)
-                .withChallengeSpec(new DecryptionChallengeSpec(new MessageChooser()
-                                    {
-                                        @Override
-                                        public boolean chooseMessage(int index)
-                                        {
-                                            return index == 1;
-                                        }
-                                    }, logStream))
                 .withNodes("A", "B", "C", "D", "E").build(),
             new DownloadOperationListener()
             {
                 int counter = 0;
 
                 @Override
-                public void messageDownloaded(int index, byte[] message)
+                public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                 {
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];
@@ -877,7 +868,7 @@ public class KeyProcessingTest extends TestCase
                 int counter = 0;
 
                 @Override
-                public void messageDownloaded(int index, byte[] message)
+                public void messageDownloaded(int index, byte[] message,  List<byte[]> proofs)
                 {
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];

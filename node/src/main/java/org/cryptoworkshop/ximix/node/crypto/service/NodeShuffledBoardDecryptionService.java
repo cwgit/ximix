@@ -24,6 +24,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +40,7 @@ import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.cryptoworkshop.ximix.client.verify.CommitmentVerificationException;
 import org.cryptoworkshop.ximix.client.verify.ECShuffledTranscriptVerifier;
@@ -46,6 +48,7 @@ import org.cryptoworkshop.ximix.client.verify.LinkIndexVerifier;
 import org.cryptoworkshop.ximix.client.verify.SignedDataVerifier;
 import org.cryptoworkshop.ximix.client.verify.TranscriptVerificationException;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
+import org.cryptoworkshop.ximix.common.asn1.board.PairSequenceWithProofs;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
@@ -347,18 +350,72 @@ public class NodeShuffledBoardDecryptionService
 
             try
             {
+                /*
+                //
+                // compute proof hash
+                //
+                SHA256Digest sha256 = new SHA256Digest();
+                Map<String, SubjectPublicKeyInfo> keyInfoMap = new HashMap<>();
+
+                //
+                // compute the multiplier m
+                //
+                for (int i = 0; i != sourceMessage.length; i++)
+                {
+                    byte[] encoded = sourceMessage[i].getEncoded();
+
+                    sha256.update(encoded, 0, encoded.length);
+                }
+
+                for (String node : nodes)
+                {
+                    AsymmetricKeyParameter key = keyMap.get(node);
+
+                    SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(key);
+
+                    keyInfoMap.put(node, keyInfo);
+
+                    byte[] encoded = keyInfo.getEncoded();
+
+                    sha256.update(encoded, 0, encoded.length);
+                }
+
+                byte[] mEnc = new byte[sha256.getDigestSize()];
+
+                sha256.doFinal(mEnc, 0);
+
+                BigInteger m = new BigInteger(1, mEnc);
+
+                ECPoint[] challengeMessage = new ECPoint[sourceMessage.length];
+
+                for (int i = 0; i != sourceMessage.length; i++)
+                {
+                    challengeMessage[i] = sourceMessage[i].multiply(m);
+                }
+                  */
+
                 Object o = null;
+                ProofGenerator pGen = new ProofGenerator();
                 while (partialDecryptsBuilder.hasCapacity() && (o = aIn.readObject()) != null)
                 {
                     PostedMessage postedMessage = PostedMessage.getInstance(o);
                     PairSequence ps = PairSequence.getInstance(domainParameters.getCurve(), postedMessage.getMessage());
                     ECPair[] pairs = ps.getECPairs();
+                    ECPoint[] proofs = new ECPoint[pairs.length];
+
                     for (int j = 0; j != pairs.length; j++)
                     {
                         pairs[j] = new ECPair(ecOperator.transform(pairs[j].getX()), pairs[j].getY());
                     }
 
-                    partialDecryptsBuilder.add(new PairSequence(pairs).getEncoded());
+                    BigInteger challenge = pGen.computeChallenge(ps.getECPairs(), pairs);
+
+                    for (int j = 0; j != pairs.length; j++)
+                    {
+                        proofs[j] = pGen.computeProof(pairs[j].getX(), challenge, domainParameters, ecOperator);
+                    }
+
+                    partialDecryptsBuilder.add(new PairSequenceWithProofs(pairs, proofs).getEncoded());
                 }
 
                 if (o == null)

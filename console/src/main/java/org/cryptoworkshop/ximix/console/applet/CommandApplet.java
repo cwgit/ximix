@@ -1311,7 +1311,7 @@ public class CommandApplet
                     int counter = 0;
 
                     @Override
-                    public void messageDownloaded(int index, byte[] message)
+                    public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                     {
                         try
                          {
@@ -1430,7 +1430,7 @@ public class CommandApplet
                     int counter = 0;
 
                     @Override
-                    public void messageDownloaded(int index, byte[] message)
+                    public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                     {
                          // ignore
                     }

@@ -17,47 +17,53 @@ package org.cryptoworkshop.ximix.common.asn1.board;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
 
 /**
- * Helper class for carrying an array of EC pairs.
+ * Helper class for carrying an array of EC pairs with associated proofs of decryption.
  */
-public class PairSequence
+public class PairSequenceWithProofs
     extends ASN1Object
 {
     private final ECPair[] ecPairs;
+    private final ECPoint[] ecProofs;
 
     /**
-     * Create a sequence from a single pair.
-     *
-     * @param ecPair the pair to include
-     */
-    public PairSequence(ECPair ecPair)
-    {
-        this.ecPairs = new ECPair[] { ecPair };
-    }
-
-    /**
-     * Create a sequence from a collection of pairs.
+     * Create a sequence from a collection of pairs representing partial decrypts.
      *
      * @param ecPairs the pairs to include.
+     * @param ecProofs proofs of decryption associated with each pair
      */
-    public PairSequence(ECPair... ecPairs)
+    public PairSequenceWithProofs(ECPair[] ecPairs, ECPoint[] ecProofs)
     {
         this.ecPairs = ecPairs.clone();
+        this.ecProofs = ecProofs.clone();
     }
 
-    private PairSequence(ECCurve curve, ASN1Sequence s)
+    private PairSequenceWithProofs(ECCurve curve, ASN1Sequence sequence)
     {
+        ASN1Sequence s = ASN1Sequence.getInstance(sequence.getObjectAt(0));
+
         ecPairs = new ECPair[s.size()];
 
         for (int i = 0; i != ecPairs.length; i++)
         {
             ecPairs[i] = Pair.getInstance(curve, s.getObjectAt(i)).getECPair();
+        }
+
+        s = ASN1Sequence.getInstance(sequence.getObjectAt(1));
+        ecProofs = new ECPoint[s.size()];
+
+        for (int i = 0; i != ecPairs.length; i++)
+        {
+            ecProofs[i] = curve.decodePoint(ASN1OctetString.getInstance(s.getObjectAt(i)).getOctets());
         }
     }
 
@@ -70,6 +76,7 @@ public class PairSequence
      */
     public ASN1Primitive toASN1Primitive()
     {
+        ASN1EncodableVector tot = new ASN1EncodableVector();
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         for (ECPair pair : ecPairs)
@@ -77,7 +84,17 @@ public class PairSequence
             v.add(new Pair(pair));
         }
 
-        return new DERSequence(v);
+        tot.add(new DERSequence(v));
+
+        v = new ASN1EncodableVector();
+        for (ECPoint point : ecProofs)
+        {
+            v.add(new DEROctetString(point.getEncoded()));
+        }
+
+        tot.add(new DERSequence(v));
+
+        return new DERSequence(tot);
     }
 
     /**
@@ -87,32 +104,42 @@ public class PairSequence
      * @param o the sequence object.
      * @return a constructed EC pair sequence.
      */
-    public static PairSequence getInstance(ECCurve curve, Object o)
+    public static PairSequenceWithProofs getInstance(ECCurve curve, Object o)
     {
-        if (o instanceof PairSequence)
+        if (o instanceof PairSequenceWithProofs)
         {
-            return (PairSequence)o;
+            return (PairSequenceWithProofs)o;
         }
         if (o != null)
         {
-            return new PairSequence(curve, ASN1Sequence.getInstance(o));
+            return new PairSequenceWithProofs(curve, ASN1Sequence.getInstance(o));
         }
 
         return null;
     }
 
     /**
-     * Return the EC pairs held in this sequence.
+     * Return the EC partial decrypts held in this object.
      *
      * @return an array of EC pairs.
      */
     public ECPair[] getECPairs()
     {
-        return ecPairs.clone();
+        return ecPairs;
     }
 
     /**
-     * Return the number of pairs contained in the sequence.
+     * Return the EC proofs associated with the pairs in this object.
+     *
+     * @return an array of EC points representing proofs.
+     */
+    public ECPoint[] getECProofs()
+    {
+        return ecProofs;
+    }
+
+    /**
+     * Return the number of pairs contained in the object.
      *
      * @return the size of the sequence.
      */

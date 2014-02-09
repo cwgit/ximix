@@ -29,7 +29,6 @@ public class DownloadShuffleResultOptions
         private int threshold;
         private String[] nodesToUse;
         private boolean isWithPairing;
-        private DecryptionChallengeSpec challengeSpec;
 
         /**
          * Base constructor
@@ -78,19 +77,6 @@ public class DownloadShuffleResultOptions
             return this;
         }
 
-        /**
-         * Flag how decryption challenges should be managed..
-         *
-         * @param challengeSpec a specification for which messages to challenge on and where to log.
-         * @return the current builder instance.
-         */
-        public Builder withChallengeSpec(DecryptionChallengeSpec challengeSpec)
-        {
-            this.challengeSpec = challengeSpec;
-
-            return this;
-        }
-
         public Builder withPairingEnabled(boolean isWithPairing)
         {
             this.isWithPairing = isWithPairing;
@@ -112,7 +98,6 @@ public class DownloadShuffleResultOptions
     private final String keyID;
     private final int threshold;
     private final String[] nodesToUse;
-    private final DecryptionChallengeSpec challengeSpec;
     private final boolean isWithPairing;
 
     private DownloadShuffleResultOptions(Builder builder)
@@ -120,18 +105,7 @@ public class DownloadShuffleResultOptions
         this.keyID = builder.keyID;
         this.threshold = builder.threshold;
         this.nodesToUse = builder.nodesToUse.clone();
-        this.challengeSpec = builder.challengeSpec;
         this.isWithPairing = builder.isWithPairing;
-    }
-
-    /**
-     * Return the specification to show how decryption challenges are to be generated and logged.
-     *
-     * @return the DecryptionChallengeSpec describing how to handle challenges.
-     */
-    public DecryptionChallengeSpec getChallengeSpec()
-    {
-        return challengeSpec;
     }
 
     /**

@@ -17,7 +17,6 @@ package org.cryptoworkshop.ximix.client.verify;
 
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.Arrays;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
@@ -71,7 +70,7 @@ public class ECDecryptionChallengeVerifier
                 ChallengeLogMessage logMessage = ChallengeLogMessage.getInstance(obj);
 
                 ECPoint[] sourceMessage = logMessage.getSourceMessage();
-                ECPoint[] challengeResults = logMessage.getChallengeResult();
+                ECPoint[] proofs = logMessage.getProofs();
 
                 ECPublicKeyParameters currentPubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(logMessage.getKeyInfo());
                 if (!isSameParameters(pubKey.getParameters(), currentPubKey.getParameters()))
@@ -127,12 +126,11 @@ public class ECDecryptionChallengeVerifier
 
                 for (int i = 0; i != sourceMessage.length; i++)
                 {
-                    sourceMessage[i] = sourceMessage[i].multiply(logMessage.getM());
-                }
-
-                if (!Arrays.equals(sourceMessage, challengeResults))
-                {
-                    throw new TranscriptVerificationException("Challenge results do not match combined source message and m value.");
+                    // check proof
+                    if (!sourceMessage[i].add(activePeers[logMessage.getSequenceNo()].getQ().multiply(logMessage.getM())).normalize().equals(proofs[i]))
+                    {
+                        throw new TranscriptVerificationException("Proof results do not match combined source message and m value.");
+                    }
                 }
             }
         }

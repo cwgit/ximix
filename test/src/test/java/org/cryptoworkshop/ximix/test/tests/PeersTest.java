@@ -18,6 +18,7 @@ package org.cryptoworkshop.ximix.test.tests;
 import java.math.BigInteger;
 import java.net.SocketException;
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -207,7 +208,7 @@ public class PeersTest
                 int counter = 0;
 
                 @Override
-                public void messageDownloaded(int index, byte[] message)
+                public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                 {
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];

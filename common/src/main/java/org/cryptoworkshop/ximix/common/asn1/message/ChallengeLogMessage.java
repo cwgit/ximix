@@ -135,7 +135,7 @@ public class ChallengeLogMessage
         return sourceMessage;
     }
 
-    public ECPoint[] getChallengeResult()
+    public ECPoint[] getProofs()
     {
         return challengeResult;
     }

@@ -39,6 +39,7 @@ import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
 import org.cryptoworkshop.ximix.client.connection.signing.BLSSigningService;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
+import org.cryptoworkshop.ximix.common.asn1.board.PairSequenceWithProofs;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ClientMessage;
@@ -214,7 +215,7 @@ public class CryptoServicesTest
                     {
                         decReply = fullMap.get(nodeName).sendMessage(CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage("ECKEY", Collections.singletonList(new PairSequence(cipherText).getEncoded())));
 
-                        partialDecs[index++] = PairSequence.getInstance(pubKey1.getParameters().getCurve(), PostedMessageDataBlock.getInstance(ShareMessage.getInstance(decReply.getPayload()).getShareData()).getMessages().get(0)).getECPairs()[0].getX();
+                        partialDecs[index++] = PairSequenceWithProofs.getInstance(pubKey1.getParameters().getCurve(), PostedMessageDataBlock.getInstance(ShareMessage.getInstance(decReply.getPayload()).getShareData()).getMessages().get(0)).getECPairs()[0].getX();
                     }
                     catch (ServiceConnectionException e)
                     {

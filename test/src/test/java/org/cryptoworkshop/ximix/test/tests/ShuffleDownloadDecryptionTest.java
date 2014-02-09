@@ -29,6 +29,7 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -530,7 +531,7 @@ public class ShuffleDownloadDecryptionTest
             .withNodes("A", "B", "C", "D").build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
         {
             @Override
-            public void messageDownloaded(int index, byte[] message)
+            public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
             {
                 PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
 
@@ -986,7 +987,7 @@ public class ShuffleDownloadDecryptionTest
             .withNodes("A", "B", "C", "D").build(), streamSeedCommitments, streamSeedsAndWitnesses, streamGeneralTranscripts, streamWitnessTranscripts, new DownloadOperationListener()
         {
             @Override
-            public void messageDownloaded(int index, byte[] message)
+            public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
             {
                 PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
 

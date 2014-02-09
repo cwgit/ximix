@@ -16,12 +16,16 @@
 package org.cryptoworkshop.ximix.client.connection;
 
 import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,11 +45,12 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cms.CMSSignedDataParser;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -53,19 +58,20 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
+import org.bouncycastle.util.io.TeeInputStream;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
 import org.cryptoworkshop.ximix.client.CommandService;
-import org.cryptoworkshop.ximix.client.DecryptionChallengeSpec;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.DownloadShuffleResultOptions;
-import org.cryptoworkshop.ximix.client.MessageChooser;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
+import org.cryptoworkshop.ximix.common.asn1.board.PairSequenceWithProofs;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardMessage;
@@ -650,37 +656,11 @@ class ClientCommandService
                 if (options.getKeyID() != null)
                 {
                     String[] nodes = toOrderedSet(options.getNodesToUse()).toArray(new String[0]);
-                    DecryptionChallengeSpec challengeSpec = options.getChallengeSpec();
+
                     Map<String, AsymmetricKeyParameter> keyMap = new HashMap<>();
-                    MessageChooser proofMessageChooser = null;
                     OutputStream proofLogStream = null;
 
-                    if (challengeSpec != null)
-                    {
-                        for (String node : nodes)
-                        {
-                            reply = connection.sendMessage(node, CommandMessage.Type.FETCH_PARTIAL_PUBLIC_KEY, new FetchPartialPublicKeyMessage(node, options.getKeyID()));
-
-                            if (reply.getType() != MessageReply.Type.OKAY)
-                            {
-                                throw new ServiceConnectionException("message failed");
-                            }
-
-                            try
-                            {
-                                PartialPublicKeyInfo partialPublicKeyInfo = PartialPublicKeyInfo.getInstance(reply.getPayload());
-
-                                keyMap.put(node, PublicKeyFactory.createKey(partialPublicKeyInfo.getPartialKeyInfo()));
-                            }
-                            catch (Exception e)
-                            {
-                                throw new ServiceConnectionException("Malformed public key response.");
-                            }
-                        }
-
-                        proofMessageChooser = challengeSpec.getChooser();
-                        proofLogStream = challengeSpec.getLogStream();
-                    }
+                    keyMap = buildPublicKeyMap(nodes, options.getKeyID());
 
                     for (;;)
                     {
@@ -703,16 +683,19 @@ class ClientCommandService
                         PostedMessageDataBlock data = messageDataBuilder.build();
 
                         MessageReply[] partialDecryptResponses = new MessageReply[options.getThreshold()];
+                        AsymmetricKeyParameter[] publicKeys = new AsymmetricKeyParameter[options.getThreshold()];
                         String[] nodesUsed = new String[options.getThreshold()];
 
                         // TODO: deal with drop outs
                         int count = 0;
+                        int nodeCount = 0;
                         while (count != options.getThreshold())
                         {
-                            partialDecryptResponses[count] = connection.sendMessage(nodes[count], CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), data.getMessages()));
+                            partialDecryptResponses[count] = connection.sendMessage(nodes[nodeCount], CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), data.getMessages()));
+                            publicKeys[count] = keyMap.get(nodes[nodeCount]);
                             if (partialDecryptResponses[count].getType() == MessageReply.Type.OKAY)
                             {
-                                nodesUsed[count] = nodes[count];
+                                nodesUsed[count] = nodes[nodeCount];
                                 count++;
                             }
                             else
@@ -720,6 +703,7 @@ class ClientCommandService
                                 // TODO: maybe log
                                 partialDecryptResponses[count] = null;
                             }
+                            nodeCount++;
                         }
 
                         MessageReply keyReply = connection.sendMessage(ClientMessage.Type.FETCH_PUBLIC_KEY, new FetchPublicKeyMessage(options.getKeyID()));
@@ -742,12 +726,16 @@ class ClientCommandService
 
                         // weighting
                         List<byte[]>[] partialDecrypts = new List[maxSequenceNo + 1];
+                        AsymmetricKeyParameter[] partialPubKeys = new AsymmetricKeyParameter[maxSequenceNo + 1];
+                        String[] nodeNames = new String[maxSequenceNo + 1];
 
                         for (int i = 0; i != shareMessages.length; i++)
                         {
                             ShareMessage shareMsg = shareMessages[i];
 
                             partialDecrypts[shareMsg.getSequenceNo()] = PostedMessageDataBlock.getInstance(shareMsg.getShareData()).getMessages();
+                            partialPubKeys[shareMsg.getSequenceNo()] = publicKeys[i];
+                            nodeNames[shareMsg.getSequenceNo()] = nodesUsed[i];
                         }
 
                         //
@@ -767,32 +755,25 @@ class ClientCommandService
                             }
                         }
 
-                        List<byte[]> baseMessageBlock = partialDecrypts[baseIndex];
+
                         BigInteger baseWeight = weights[baseIndex];
                         List<PostedMessage> postedMessages = messageBlock.getMessages();
+                        List<byte[]> baseMessageBlock = partialDecrypts[baseIndex];
 
                         for (int messageIndex = 0; messageIndex != baseMessageBlock.size(); messageIndex++)
                         {
-                            ECPoint[] fulls = reassemblePoints(messageIndex, domainParams, partialDecrypts, weights, baseIndex, baseMessageBlock, baseWeight);
+                            List<byte[]> proofList = verifyPoints(PairSequence.getInstance(domainParams.getCurve(), messageBlock.getMessages().get(messageIndex).getMessage()).getECPairs(), domainParams, nodeNames, partialPubKeys, partialDecrypts, weights, messageIndex);
+
+                            ECPoint[] fulls = reassemblePoints(domainParams, partialDecrypts, weights, baseIndex, baseWeight, messageIndex);
 
                             int index = postedMessages.get(messageIndex).getIndex();
 
-                            if (proofMessageChooser != null)
-                            {
-                                if (proofMessageChooser.chooseMessage(index))
-                                {
-                                    issueChallenge(proofLogStream, index, nodesUsed, keyMap, fulls);
-                                }
-                            }
-
-                            notifier.messageDownloaded(index, new PointSequence(fulls).getEncoded());
+                            notifier.messageDownloaded(index, new PointSequence(fulls).getEncoded(), proofList);
                         }
                     }
                 }
                 else
                 {
-                    try
-                    {
                     // assume plain text
                     for (; ; )
                     {
@@ -809,7 +790,7 @@ class ClientCommandService
 
                             for (PostedMessage posted : messageBlock.getMessages())
                             {
-                                notifier.messageDownloaded(posted.getIndex(), posted.getMessage());
+                                notifier.messageDownloaded(posted.getIndex(), posted.getMessage(), new ArrayList<byte[]>());
                             }
                         }
                         else
@@ -817,11 +798,6 @@ class ClientCommandService
                             notifier.failed("Failed: " + reply.getPayload().toString());
                             return;
                         }
-                    }
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
                     }
                 }
 
@@ -842,111 +818,6 @@ class ClientCommandService
             finally
             {
                 decoupler.shutdown();
-            }
-        }
-
-        //
-        // generate and log a zero knowledge proof.
-        //
-        // "A Secure and Optimally Efficient Multi-Authority Election Scheme"
-        // R. Cramer, R. Gennaro, B. Schoenmakers, CGS Journal, October, 1997.
-        // Section 2.6
-        //
-        private void issueChallenge(OutputStream proofLogStream, int messageIndex, String[] nodes, Map<String, AsymmetricKeyParameter> keyMap, ECPoint[] sourceMessage)
-            throws IOException, ServiceConnectionException
-        {
-            SHA256Digest sha256 = new SHA256Digest();
-            Map<String, SubjectPublicKeyInfo> keyInfoMap = new HashMap<>();
-
-            //
-            // compute the multiplier m
-            //
-            for (int i = 0; i != sourceMessage.length; i++)
-            {
-                byte[] encoded = sourceMessage[i].getEncoded();
-
-                sha256.update(encoded, 0, encoded.length);
-            }
-
-            for (String node : nodes)
-            {
-                AsymmetricKeyParameter key = keyMap.get(node);
-
-                SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(key);
-
-                keyInfoMap.put(node, keyInfo);
-
-                byte[] encoded = keyInfo.getEncoded();
-
-                sha256.update(encoded, 0, encoded.length);
-            }
-
-            byte[] mEnc = new byte[sha256.getDigestSize()];
-
-            sha256.doFinal(mEnc, 0);
-
-            BigInteger m = new BigInteger(1, mEnc);
-
-            ECPoint[] challengeMessage = new ECPoint[sourceMessage.length];
-
-            for (int i = 0; i != sourceMessage.length; i++)
-            {
-                challengeMessage[i] = sourceMessage[i].multiply(m);
-            }
-
-            ECElGamalEncryptor ecEnc = new ECElGamalEncryptor();
-
-            for (String node : nodes)
-            {
-                ECPublicKeyParameters key = (ECPublicKeyParameters)keyMap.get(node);
-
-                ecEnc.init(key);
-
-                ECPair[] encChallengeMessage = new ECPair[sourceMessage.length];
-
-                for (int i = 0; i != challengeMessage.length; i++)
-                {
-                    encChallengeMessage[i] = ecEnc.encrypt(challengeMessage[i]);
-                }
-
-                List<byte[]> message = Collections.singletonList(new PairSequence(encChallengeMessage).getEncoded());
-
-                MessageReply reply = connection.sendMessage(node, CommandMessage.Type.PARTIAL_DECRYPT, new DecryptDataMessage(options.getKeyID(), message));
-
-                if (reply.getType() == MessageReply.Type.OKAY)
-                {
-                    ShareMessage shareMessage = ShareMessage.getInstance(reply.getPayload());
-                    List<byte[]> dataBlock = PostedMessageDataBlock.getInstance(shareMessage.getShareData()).getMessages();
-                    PairSequence ps = PairSequence.getInstance(key.getParameters().getCurve(), dataBlock.get(0));
-
-                    ECPair[] decrypts = ps.getECPairs();
-                    ECPoint[] challengeResult = new ECPoint[decrypts.length];
-
-                    for (int i = 0; i != decrypts.length; i++)
-                    {
-                        challengeResult[i] = decrypts[i].getX();
-                    }
-
-                    for (int i = 0; i != decrypts.length; i++)
-                    {
-                        challengeResult[i] = decrypts[i].getY().add(challengeResult[i].negate());
-                    }
-
-                    if (Arrays.equals(challengeMessage, challengeResult))
-                    {
-                        proofLogStream.write(new ChallengeLogMessage(messageIndex, shareMessage.getSequenceNo(), true, m, keyInfoMap.get(node), sourceMessage, challengeResult).getEncoded());
-                        eventNotifier.notify(EventNotifier.Level.INFO, "Challenge for message " + messageIndex + " for node " + node + " passed.");
-                    }
-                    else
-                    {
-                        proofLogStream.write(new ChallengeLogMessage(messageIndex, shareMessage.getSequenceNo(), false, m, keyInfoMap.get(node), sourceMessage, challengeResult).getEncoded());
-                        eventNotifier.notify(EventNotifier.Level.ERROR, "Challenge for message " + messageIndex + " for node " + node + " failed!");
-                    }
-                }
-                else
-                {
-                    eventNotifier.notify(EventNotifier.Level.ERROR, "Challenge message rejected");
-                }
             }
         }
     }
@@ -1007,8 +878,44 @@ class ClientCommandService
                 return;
             }
 
+            // find the last general transcript as we need a copy of the cipher texts
+            Integer lastKey = Integer.valueOf(0);
+
+            for (Integer key : generalTranscripts.keySet())
+            {
+                if (key > lastKey)
+                {
+                    lastKey = key;
+                }
+            }
+
+            File finalTranscriptFile;
+            FileOutputStream transOut;
+
+            try
+            {
+                finalTranscriptFile = File.createTempFile("ximix", ".gtr");
+                transOut = new FileOutputStream(finalTranscriptFile);
+            }
+            catch (IOException e)
+            {
+                notifier.failed(e.toString());
+                return;
+            }
+
+            generalTranscripts.put(lastKey, new TeeInputStream(generalTranscripts.get(lastKey), transOut)); // TODO: should assume generalTranscripts is modifiable
             if (!uploadTranscript(nodes, generalTranscripts, ".gtr"))
             {
+                return;
+            }
+
+            try
+            {
+                transOut.close();
+            }
+            catch (IOException e)
+            {
+                notifier.failed(e.toString());
                 return;
             }
 
@@ -1076,20 +983,42 @@ class ClientCommandService
                 return;
             }
 
+            int batchSize = 20; // TODO: configure
+            PostedMessage[] finalMessages = new PostedMessage[batchSize];
+            ASN1InputStream finalTranscript;
+            FileInputStream finalTransIn;
+
+            try
+            {
+                finalTransIn = new FileInputStream(finalTranscriptFile);
+                CMSSignedDataParser cmsParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(), new BufferedInputStream(finalTransIn));
+
+                finalTranscript = new ASN1InputStream(cmsParser.getSignedContent().getContentStream());
+            }
+            catch (Exception e)
+            {
+                notifier.failed("Unable to open temporary transcript file: " + e.getMessage());
+                return;
+            }
+
             for (;;)
             {
                 MessageReply[] partialDecryptResponses = new MessageReply[options.getThreshold()];
+                AsymmetricKeyParameter[] publicKeys = new AsymmetricKeyParameter[options.getThreshold()];
                 String[] nodesUsed = new String[options.getThreshold()];
 
                 try
                 {
+                    Map<String, AsymmetricKeyParameter> keyMap = buildPublicKeyMap(nodes, options.getKeyID());
+
                     // TODO: deal with drop outs - in this case it's tricky, backend code will need to take into account a node
                     // might be asked to take over half way through.
                     int count = 0;
                     int nodeIndex = 0;
                     while (count != options.getThreshold())
                     {
-                        partialDecryptResponses[count] = connection.sendMessage(nodes[nodeIndex], CommandMessage.Type.DOWNLOAD_PARTIAL_DECRYPTS, new DownloadShuffledBoardMessage(options.getKeyID(), boardName, 20)); // TODO: configure;
+                        partialDecryptResponses[count] = connection.sendMessage(nodes[nodeIndex], CommandMessage.Type.DOWNLOAD_PARTIAL_DECRYPTS, new DownloadShuffledBoardMessage(options.getKeyID(), boardName, batchSize)); // TODO: configure;
+                        publicKeys[count] = keyMap.get(nodes[nodeIndex]);
                         if (partialDecryptResponses[count].getType() == MessageReply.Type.OKAY)
                         {
                             nodesUsed[count] = nodes[nodeIndex];
@@ -1103,14 +1032,14 @@ class ClientCommandService
                         nodeIndex++;
                     }
 
-
-                    int pdIndex = 0;
-                    while (partialDecryptResponses[pdIndex] == null)
+                    int transCount = 0;
+                    Object msg;
+                    while (transCount < batchSize && (msg = finalTranscript.readObject()) != null)
                     {
-                        pdIndex++;
+                        finalMessages[transCount++] = PostedMessage.getInstance(msg);
                     }
 
-                    PostedMessageDataBlock baseBlock = PostedMessageDataBlock.getInstance(ShareMessage.getInstance(partialDecryptResponses[pdIndex].getPayload()).getShareData());
+                    PostedMessageDataBlock baseBlock = PostedMessageDataBlock.getInstance(ShareMessage.getInstance(partialDecryptResponses[0].getPayload()).getShareData());
                     if (baseBlock.size() == 0)
                     {
                         break;
@@ -1121,7 +1050,7 @@ class ClientCommandService
 
                     for (int i = 0; i != shareMessages.length; i++)
                     {
-                        shareMessages[i] = ShareMessage.getInstance(partialDecryptResponses[pdIndex++].getPayload());
+                        shareMessages[i] = ShareMessage.getInstance(partialDecryptResponses[i].getPayload());
                         if (maxSequenceNo < shareMessages[i].getSequenceNo())
                         {
                             maxSequenceNo = shareMessages[i].getSequenceNo();
@@ -1130,12 +1059,16 @@ class ClientCommandService
 
                     // weighting
                     List<byte[]>[] partialDecrypts = new List[maxSequenceNo + 1];
+                    AsymmetricKeyParameter[] partialPubKeys = new AsymmetricKeyParameter[maxSequenceNo + 1];
+                    String[] nodeNames = new String[maxSequenceNo + 1];
 
                     for (int i = 0; i != shareMessages.length; i++)
                     {
                         ShareMessage shareMsg = shareMessages[i];
 
                         partialDecrypts[shareMsg.getSequenceNo()] = PostedMessageDataBlock.getInstance(shareMsg.getShareData()).getMessages();
+                        partialPubKeys[shareMsg.getSequenceNo()] = publicKeys[i];
+                        nodeNames[shareMsg.getSequenceNo()] = nodesUsed[i];
                     }
 
                     //
@@ -1155,14 +1088,15 @@ class ClientCommandService
                         }
                     }
 
-                    List<byte[]> baseMessageBlock = partialDecrypts[baseIndex];
                     BigInteger baseWeight = weights[baseIndex];
 
                     for (int messageIndex = 0; messageIndex != baseBlock.size(); messageIndex++)
                     {
-                        ECPoint[] fulls = reassemblePoints(messageIndex, domainParams, partialDecrypts, weights, baseIndex, baseMessageBlock, baseWeight);
+                        List<byte[]> proofs = verifyPoints(PairSequence.getInstance(domainParams.getCurve(), finalMessages[messageIndex].getMessage()).getECPairs(), domainParams, nodeNames, partialPubKeys, partialDecrypts, weights, messageIndex);
 
-                        notifier.messageDownloaded(boardIndex++, new PointSequence(fulls).getEncoded());
+                        ECPoint[] fulls = reassemblePoints(domainParams, partialDecrypts, weights, baseIndex, baseWeight, messageIndex);
+
+                        notifier.messageDownloaded(boardIndex++, new PointSequence(fulls).getEncoded(), proofs);
                     }
                 }
                 catch (Exception e)
@@ -1172,6 +1106,17 @@ class ClientCommandService
                     notifier.failed(e.toString());
                 }
             }
+
+            try
+            {
+                finalTranscript.close();
+            }
+            catch (IOException e)
+            {
+                eventNotifier.notify(EventNotifier.Level.ERROR, "Unable to close final transcript file: " + e.getMessage(), e);
+            }
+
+            finalTranscriptFile.delete();       // TODO: perhaps check?
 
             notifier.completed();
 
@@ -1227,6 +1172,7 @@ class ClientCommandService
             byte[] chunk = new byte[chunkSize];
 
             int in;
+
             while ((in = fIn.read(chunk)) >= 0)
             {
                 if (in < chunkSize)
@@ -1262,13 +1208,79 @@ class ClientCommandService
         }
     }
 
-    private ECPoint[] reassemblePoints(int messageIndex, ECDomainParameters domainParams, List<byte[]>[] partialDecrypts, BigInteger[] weights, int baseIndex, List<byte[]> baseMessageBlock, BigInteger baseWeight)
+    private List<byte[]> verifyPoints(ECPair[] cipherText, ECDomainParameters domainParams, String[] nodeNames, AsymmetricKeyParameter[] pubKeys, List<byte[]>[] partialDecrypts, BigInteger[] weights, int messageIndex)
+        throws ServiceConnectionException
     {
-        PairSequence ps = PairSequence.getInstance(domainParams.getCurve(), baseMessageBlock.get(messageIndex));
+        List<byte[]> proofList = new ArrayList<>();
+
+        for (int wIndex = 0; wIndex < weights.length; wIndex++)
+        {
+            if (weights[wIndex] != null)
+            {
+                ECPublicKeyParameters nodeKey = (ECPublicKeyParameters)pubKeys[wIndex];
+                PairSequenceWithProofs pairSequenceWithProofs = PairSequenceWithProofs.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex));
+
+                ECPoint[] proofs = pairSequenceWithProofs.getECProofs();
+                ECPair[] partials = pairSequenceWithProofs.getECPairs();
+
+                if (proofs.length != partials.length)
+                {
+                    eventNotifier.notify(EventNotifier.Level.ERROR, "Partial decrypts and proofs differ in length from node " + nodeNames[wIndex]);
+                    throw new ServiceConnectionException("Partial decrypts and proofs differ in length");
+                }
+
+                BigInteger challenge = computeChallenge(cipherText, partials);
+                ECPoint[] decrypts = new ECPoint[partials.length];
+
+                for (int i = 0; i != partials.length; i++)
+                {
+                    decrypts[i] = partials[i].getX();
+                }
+
+                boolean failed = false;
+                for (int i = 0; i != partials.length; i++)
+                {
+                    if (!isVerifiedDecryption(nodeKey, partials[i].getX(), challenge, proofs[i]))
+                    {
+                       failed = true;
+                    }
+                }
+
+                try
+                {
+                    if (!failed)
+                    {
+                        proofList.add(new ChallengeLogMessage(messageIndex, wIndex, true, challenge, SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(nodeKey), decrypts, proofs).getEncoded());
+                        eventNotifier.notify(EventNotifier.Level.INFO, "Challenge for message " + messageIndex + " for node " + nodeNames[wIndex] + " passed.");
+                    }
+                    else
+                    {
+                        proofList.add(new ChallengeLogMessage(messageIndex, wIndex, false, challenge, SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(nodeKey), decrypts, proofs).getEncoded());
+                        eventNotifier.notify(EventNotifier.Level.ERROR, "Challenge for message " + messageIndex + " for node " + nodeNames[wIndex] + " failed!");
+                    }
+                }
+                catch (Exception e)
+                {
+                    eventNotifier.notify(EventNotifier.Level.ERROR, "Partial decrypts failed to encode from " + nodeNames[wIndex] + ": " + e.getMessage(), e);
+                    throw new ServiceConnectionException("Partial decrypts failed to encode from " + nodeNames[wIndex] + ": " + e.getMessage(), e);
+                }
+            }
+        }
+
+        return proofList;
+    }
+
+    private ECPoint[] reassemblePoints(ECDomainParameters domainParams, List<byte[]>[] partialDecrypts, BigInteger[] weights, int baseIndex, BigInteger baseWeight, int messageIndex)
+        throws ServiceConnectionException
+    {
+        List<byte[]> baseMessageBlock = partialDecrypts[baseIndex];
+
+        PairSequenceWithProofs ps = PairSequenceWithProofs.getInstance(domainParams.getCurve(), baseMessageBlock.get(messageIndex));
         ECPoint[] weightedDecryptions = new ECPoint[ps.size()];
         ECPoint[] fulls = new ECPoint[ps.size()];
 
         ECPair[] partials = ps.getECPairs();
+
         for (int i = 0; i != weightedDecryptions.length; i++)
         {
             weightedDecryptions[i] = partials[i].getX().multiply(baseWeight);
@@ -1278,7 +1290,9 @@ class ClientCommandService
         {
             if (weights[wIndex] != null)
             {
-                ECPair[] nPartials = PairSequence.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex)).getECPairs();
+                PairSequenceWithProofs pairSequenceWithProofs = PairSequenceWithProofs.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex));
+
+                ECPair[] nPartials = pairSequenceWithProofs.getECPairs();
                 for (int i = 0; i != weightedDecryptions.length; i++)
                 {
                     weightedDecryptions[i] = weightedDecryptions[i].add(nPartials[i].getX().multiply(weights[wIndex]));
@@ -1292,6 +1306,44 @@ class ClientCommandService
         }
 
         return fulls;
+    }
+
+    // The next two functions are an application of:
+    // An application of "Efficient Cryptographic Protocol Design Based on Distributed El Gamal Encryption, F. Brandt, and
+    // "How not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios" by D. Bernhard, O. Prereira, and B. Warinschi.
+    private BigInteger computeChallenge(ECPair[] ciphers, ECPair[] partials)
+    {
+        SHA256Digest sha256 = new SHA256Digest();
+
+        for (ECPair cText : ciphers)
+        {
+            addIn(sha256, cText.getX());
+            addIn(sha256, cText.getY());
+        }
+
+        for (ECPair plain : partials)
+        {
+            addIn(sha256, plain.getX());
+            addIn(sha256, plain.getY());
+        }
+
+        byte[] res = new byte[sha256.getDigestSize()];
+
+        sha256.doFinal(res, 0);
+
+        return new BigInteger(1, res);
+    }
+
+    private boolean isVerifiedDecryption(ECPublicKeyParameters nodeKey, ECPoint pTxt, BigInteger challenge, ECPoint proof)
+    {
+        return pTxt.add(nodeKey.getQ().multiply(challenge)).normalize().equals(proof);
+    }
+
+    private void addIn(SHA256Digest sha256, ECPoint point)
+    {
+        byte[] enc = point.getEncoded();
+
+        sha256.update(enc, 0, enc.length);
     }
 
     private class DownloadShuffleTranscriptsOp
@@ -1410,4 +1462,34 @@ class ClientCommandService
             }
         }
     }
+
+    private Map<String, AsymmetricKeyParameter> buildPublicKeyMap(String[] nodes, String keyID)
+        throws ServiceConnectionException
+    {
+        Map<String, AsymmetricKeyParameter> keyMap = new HashMap<>();
+
+        for (String node : nodes)
+        {
+            MessageReply reply = connection.sendMessage(node, CommandMessage.Type.FETCH_PARTIAL_PUBLIC_KEY, new FetchPartialPublicKeyMessage(node, keyID));
+
+            if (reply.getType() != MessageReply.Type.OKAY)
+            {
+                eventNotifier.notify(EventNotifier.Level.WARN, "Unable to get partial public key from " + node + ":" +  reply.interpretPayloadAsError());
+            }
+
+            try
+            {
+                PartialPublicKeyInfo partialPublicKeyInfo = PartialPublicKeyInfo.getInstance(reply.getPayload());
+
+                keyMap.put(node, PublicKeyFactory.createKey(partialPublicKeyInfo.getPartialKeyInfo()));
+            }
+            catch (Exception e)
+            {
+                eventNotifier.notify(EventNotifier.Level.WARN, "Unable to get partial public key from " + node + ": " + e.getMessage(), e);
+            }
+        }
+
+        return keyMap;
+    }
+
 }
