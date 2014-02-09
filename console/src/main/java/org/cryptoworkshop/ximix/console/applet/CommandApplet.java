@@ -1274,6 +1274,7 @@ public class CommandApplet
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.75);
 
                 final OutputStream downloadStream = new FileOutputStream(new File(destDir, boardEntry.getName() + ".out"));
+                final OutputStream proofLogStream = new FileOutputStream(new File(destDir, boardEntry.getName() + ".plg"));
 
                 Map<String, InputStream> streamSeedCommitments = new HashMap<>();
                 for (String key : seedCommitmentMap.keySet())
@@ -1314,13 +1315,17 @@ public class CommandApplet
                     public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                     {
                         try
-                         {
-                             downloadStream.write(message);
-                         }
-                         catch (IOException e)
-                         {
-                             e.printStackTrace();  // TODO:
-                         }
+                        {
+                            downloadStream.write(message);
+                            for (byte[] proof : proofs)
+                            {
+                                proofLogStream.write(proof);
+                            }
+                        }
+                        catch (IOException e)
+                        {
+                            e.printStackTrace();  // TODO:
+                        }
 
                         counter++;
                     }
@@ -1359,6 +1364,7 @@ public class CommandApplet
                 }
 
                 downloadStream.close();
+                proofLogStream.close();
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 1.0);
 
