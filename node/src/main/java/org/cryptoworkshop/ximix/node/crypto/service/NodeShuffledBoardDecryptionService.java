@@ -350,50 +350,6 @@ public class NodeShuffledBoardDecryptionService
 
             try
             {
-                /*
-                //
-                // compute proof hash
-                //
-                SHA256Digest sha256 = new SHA256Digest();
-                Map<String, SubjectPublicKeyInfo> keyInfoMap = new HashMap<>();
-
-                //
-                // compute the multiplier m
-                //
-                for (int i = 0; i != sourceMessage.length; i++)
-                {
-                    byte[] encoded = sourceMessage[i].getEncoded();
-
-                    sha256.update(encoded, 0, encoded.length);
-                }
-
-                for (String node : nodes)
-                {
-                    AsymmetricKeyParameter key = keyMap.get(node);
-
-                    SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(key);
-
-                    keyInfoMap.put(node, keyInfo);
-
-                    byte[] encoded = keyInfo.getEncoded();
-
-                    sha256.update(encoded, 0, encoded.length);
-                }
-
-                byte[] mEnc = new byte[sha256.getDigestSize()];
-
-                sha256.doFinal(mEnc, 0);
-
-                BigInteger m = new BigInteger(1, mEnc);
-
-                ECPoint[] challengeMessage = new ECPoint[sourceMessage.length];
-
-                for (int i = 0; i != sourceMessage.length; i++)
-                {
-                    challengeMessage[i] = sourceMessage[i].multiply(m);
-                }
-                  */
-
                 Object o = null;
                 ProofGenerator pGen = new ProofGenerator();
                 while (partialDecryptsBuilder.hasCapacity() && (o = aIn.readObject()) != null)
