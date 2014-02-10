@@ -385,7 +385,7 @@ class ClientCommandService
                     {
                         eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on upload: " + e.getMessage(), e);
 
-                        return "Exception on isBoardExisting: " + e.getMessage();
+                        return "Exception on GET_BOARD_HOST: " + e.getMessage();
                     }
 
                     return (reply.getType() == MessageReply.Type.OKAY) ? DERUTF8String.getInstance(reply.getPayload()).getString() : reply.interpretPayloadAsError();
@@ -405,13 +405,14 @@ class ClientCommandService
         catch (InterruptedException e)
         {
             boardHostCache.remove(boardName);
-            eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on upload: " + e.getMessage(), e);
+            eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on getHostName(): " + e.getMessage(), e);
+            Thread.currentThread().interrupt();
             throw new ServiceConnectionException(e.getMessage(), e);
         }
         catch (ExecutionException e)
         {
             boardHostCache.remove(boardName);
-            eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on upload: " + e.getMessage(), e);
+            eventNotifier.notify(EventNotifier.Level.ERROR, "Exception on getHostName(): " + e.getMessage(), e);
             throw new ServiceConnectionException(e.getMessage(), e);
         }
     }
@@ -1237,26 +1238,25 @@ class ClientCommandService
                     decrypts[i] = partials[i].getX();
                 }
 
-                boolean failed = false;
+                boolean hasPassed = true;
                 for (int i = 0; i != partials.length; i++)
                 {
                     if (!isVerifiedDecryption(nodeKey, partials[i].getX(), challenge, proofs[i]))
                     {
-                       failed = true;
+                       hasPassed = false;
                     }
                 }
 
                 try
                 {
-                    if (!failed)
+                    proofList.add(new ChallengeLogMessage(messageIndex, wIndex, hasPassed, challenge, SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(nodeKey), decrypts, proofs).getEncoded());
+                    if (hasPassed)
                     {
-                        proofList.add(new ChallengeLogMessage(messageIndex, wIndex, true, challenge, SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(nodeKey), decrypts, proofs).getEncoded());
-                        eventNotifier.notify(EventNotifier.Level.INFO, "Challenge for message " + messageIndex + " for node " + nodeNames[wIndex] + " passed.");
+                        eventNotifier.notify(EventNotifier.Level.INFO, "Proof for message " + messageIndex + " for node " + nodeNames[wIndex] + " passed.");
                     }
                     else
                     {
-                        proofList.add(new ChallengeLogMessage(messageIndex, wIndex, false, challenge, SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(nodeKey), decrypts, proofs).getEncoded());
-                        eventNotifier.notify(EventNotifier.Level.ERROR, "Challenge for message " + messageIndex + " for node " + nodeNames[wIndex] + " failed!");
+                        eventNotifier.notify(EventNotifier.Level.ERROR, "Proof for message " + messageIndex + " for node " + nodeNames[wIndex] + " failed!");
                     }
                 }
                 catch (Exception e)
