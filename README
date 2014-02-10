@@ -1,0 +1,43 @@
+
+Welcome to the Ximix distribution.
+
+1. Build Setup.
+
+Building the distribution requires, at a minimum, gradle 1.8 and JDK 1.7.
+
+Once you have gradle installed you need to type:
+
+gradle fetch_libs
+
+To download the dependencies. At the moment fetch_libs is required as not all the dependencies are available in the Maven repository.
+
+2. Building
+
+Type:
+
+gradle build
+
+to compile the sources and run the current test suite. The test suite takes a while at the moment as it uses the same timeouts as production for dealing with missing nodes.
+
+3. Generating coverage analysis
+
+Type:
+
+gradle clean
+gradle build coverage
+
+To compile and run the tests with coverage analysis. The output from the anyliser will appear in the build/reports directory.
+
+4. Generating JavaDoc
+
+Type:
+
+gradle apiJavaDoc
+
+to generate the JavaDoc. The JavaDoc will appear in build/docs.
+
+5. Further Information.
+
+See the file LICENSE in this directory for license information.
+
+To find out more in general, have a look at http://www.cryptoworkshop.com/ximix for information on running the installer generators and building nodes.
