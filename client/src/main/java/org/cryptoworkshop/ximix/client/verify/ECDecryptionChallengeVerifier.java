@@ -29,6 +29,7 @@ import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator
 
 /**
  * Verifier for a decryption challenge log stream
+ * TODO: this should probably also take the final output, and verify that the partial decrypts match the final output as well.
  */
 public class ECDecryptionChallengeVerifier
 {
