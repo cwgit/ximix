@@ -25,7 +25,6 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSProcessableByteArray;
@@ -50,7 +50,8 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.util.encoders.Hex;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
-import org.cryptoworkshop.ximix.common.asn1.message.BoardDetails;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardCapabilities;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardDetailMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardDownloadMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardErrorStatusMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardMessage;
@@ -169,19 +170,13 @@ public class BoardHostingService
     public CapabilityMessage getCapability()
     {
         String[] names = boardRegistry.getBoardNames();
-        BoardDetails[] details = new BoardDetails[names.length];
+        BoardCapabilities[] details = new BoardCapabilities[names.length];
+        Set<String> transformNames = boardRegistry.getTransformNames();
 
         int count = 0;
         for (String name : names)
         {
-            Transform[] transforms = boardRegistry.getTransforms();
-            Set<String> transformNames = new HashSet<String>();
-            for (Transform transform : transforms)
-            {
-                transformNames.add(transform.getName());
-            }
-
-            details[count++] = new BoardDetails(name, transformNames);
+            details[count++] = new BoardCapabilities(name, transformNames);
         }
 
         return new CapabilityMessage(CapabilityMessage.Type.BOARD_HOSTING, details);
@@ -272,6 +267,32 @@ public class BoardHostingService
                         return new MessageReply(MessageReply.Type.OKAY, new SeedAndWitnessMessage(seedAndWitness[0], seedAndWitness[1]));
                     }
                 });
+            case GET_BOARD_DETAILS:
+                Callable<MessageReply> replyCallable = new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        String[] boardNames = boardRegistry.getBoardNames();
+                        BoardDetailMessage[] details = new BoardDetailMessage[boardNames.length];
+
+                        int count = 0;
+                        for (String boardName : boardNames)
+                        {
+                            BulletinBoard board = boardRegistry.getBoard(boardName);
+
+                            details[count++] = new BoardDetailMessage(boardName, nodeContext.getName(), board.size(), board.getBackupHost());
+                        }
+
+                        return new MessageReply(MessageReply.Type.OKAY, new DERSequence(details));
+                    }
+                };
+                FutureTask<MessageReply> task = new FutureTask<>(replyCallable);
+
+                boardExecutor.execute(task);
+
+                return task;
             case GET_BOARD_HOST:
                 final BoardMessage boardMessage = BoardMessage.getInstance(message.getPayload());
 

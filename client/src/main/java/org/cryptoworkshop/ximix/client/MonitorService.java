@@ -26,7 +26,13 @@ import org.cryptoworkshop.ximix.common.asn1.message.NodeStatusMessage;
  * Carrier interface for methods associated with node health and state monitoring.
  */
 public interface MonitorService
+    extends Service
 {
+    /**
+     * Add a listener that monitors for board status and message count changes.
+     */
+    void addBulletinBoardListener(NetworkBoardListener boardListener);
+
     /**
      * Return a map of the details for all the nodes configured on the registrar this MonitorService is from.
      *

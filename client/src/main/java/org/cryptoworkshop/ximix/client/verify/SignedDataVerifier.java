@@ -117,6 +117,7 @@ public class SignedDataVerifier
         }
         catch (Exception e)
         {
+            // TODO: logging?
             return false;
         }
     }

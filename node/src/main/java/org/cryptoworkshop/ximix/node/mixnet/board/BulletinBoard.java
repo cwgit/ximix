@@ -136,4 +136,11 @@ public interface BulletinBoard
      * @return a block of transcript data of the appropriate type.
      */
     TranscriptBlock fetchTranscriptData(TranscriptType dataClass, IndexNumberGenerator indexGenerator, TranscriptBlock.Builder responseBuilder);
+
+    /**
+     * Return the backup host for this board, null if there isn't one.
+     *
+     * @return the name of the backup host, null otherwise.
+     */
+    String getBackupHost();
 }

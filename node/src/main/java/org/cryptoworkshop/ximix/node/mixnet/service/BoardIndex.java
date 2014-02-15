@@ -16,7 +16,7 @@
 package org.cryptoworkshop.ximix.node.mixnet.service;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.cryptoworkshop.ximix.common.asn1.message.BoardDetails;
+import org.cryptoworkshop.ximix.common.asn1.message.BoardCapabilities;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 
 /**
@@ -36,7 +36,7 @@ public class BoardIndex
 
         for (ASN1Encodable enc : capabilityMessage.getDetails())
         {
-            BoardDetails details = BoardDetails.getInstance(enc);
+            BoardCapabilities details = BoardCapabilities.getInstance(enc);
 
             if (details.getBoardName().equals(boardName))
             {

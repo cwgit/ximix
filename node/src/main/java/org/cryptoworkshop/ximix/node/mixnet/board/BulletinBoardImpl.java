@@ -43,10 +43,13 @@ import org.mapdb.DBMaker;
 public class BulletinBoardImpl
     implements BulletinBoard
 {
+    private static final String BACKUP_HOST = "backup.host";
+
     private final String boardName;
     private final File workingFile;
     private final DB boardDB;
     private final ConcurrentNavigableMap<Integer, byte[]> boardMap;
+    private final ConcurrentNavigableMap<String, String>  propertiesMap;
     private final ConcurrentNavigableMap<Integer, byte[]> commitmentMap;
     private final ConcurrentNavigableMap<Integer, byte[]> witnessMap;
 
@@ -84,7 +87,8 @@ public class BulletinBoardImpl
                 .make();
         }
 
-        boardMap = boardDB.getTreeMap(boardName);
+        boardMap = boardDB.getTreeMap("board");
+        propertiesMap = boardDB.getTreeMap("properties");
         commitmentMap = boardDB.getTreeMap("commitments");
         witnessMap = boardDB.getTreeMap(WITNESSES);
 
@@ -100,6 +104,12 @@ public class BulletinBoardImpl
     @Override
     public void addListener(BulletinBoardBackupListener bulletinBoardBackupListener)
     {
+        if (bulletinBoardBackupListener instanceof BoardRemoteBackupListener)
+        {
+            propertiesMap.put(BACKUP_HOST, ((BoardRemoteBackupListener)bulletinBoardBackupListener).getBackupHost());
+            boardDB.commit();
+        }
+
         backupListenerHandler.addListener(bulletinBoardBackupListener);
     }
 
@@ -151,6 +161,12 @@ public class BulletinBoardImpl
         }
 
         return responseBuilder.build();
+    }
+
+    @Override
+    public String getBackupHost()
+    {
+        return propertiesMap.get(BACKUP_HOST);
     }
 
     @Override

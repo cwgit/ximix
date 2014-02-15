@@ -39,6 +39,7 @@ import java.security.cert.X509Certificate;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -82,11 +83,15 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.cryptoworkshop.ximix.client.BoardCreationOptions;
+import org.cryptoworkshop.ximix.client.BoardDetail;
 import org.cryptoworkshop.ximix.client.CommandService;
 import org.cryptoworkshop.ximix.client.DownloadOperationListener;
 import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.DownloadShuffleResultOptions;
 import org.cryptoworkshop.ximix.client.KeyService;
+import org.cryptoworkshop.ximix.client.MonitorService;
+import org.cryptoworkshop.ximix.client.NetworkBoardListener;
+import org.cryptoworkshop.ximix.client.RegistrarServiceException;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
@@ -107,18 +112,18 @@ import org.cryptoworkshop.ximix.console.util.vote.VoteUnpacker;
 public class CommandApplet
     extends JApplet
 {
-    String trust = "-----BEGIN CERTIFICATE-----\n"+
-        "MIIB/jCCAaQCAQEwCgYIKoZIzj0EAwIwgYoxCzAJBgNVBAYTAkFVMSAwHgYDVQQK\n"+
-        "DBdDcnlwdG8gV29ya3Nob3AgUHR5IEx0ZDEbMBkGA1UECwwSWGltaXggTm9kZSBU\n"+
-        "ZXN0IENBMRIwEAYDVQQHDAlNZWxib3VybmUxETAPBgNVBAgMCFZpY3RvcmlhMRUw\n"+
-        "EwYDVQQDDAxUcnVzdCBBbmNob3IwHhcNMTQwMTI2MDAyMzIwWhcNMTQwMjEyMDEw\n"+
-        "NDM5WjCBijELMAkGA1UEBhMCQVUxIDAeBgNVBAoMF0NyeXB0byBXb3Jrc2hvcCBQ\n"+
-        "dHkgTHRkMRswGQYDVQQLDBJYaW1peCBOb2RlIFRlc3QgQ0ExEjAQBgNVBAcMCU1l\n"+
-        "bGJvdXJuZTERMA8GA1UECAwIVmljdG9yaWExFTATBgNVBAMMDFRydXN0IEFuY2hv\n"+
-        "cjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPi4By/W1ERoil8zTMzssTWevcBS\n"+
-        "f8pGZv7smhDDbN9lqimuTWw4uQB+KoOdzVaQVTENWDIGy1bdJ4nCDLCUeuQwCgYI\n"+
-        "KoZIzj0EAwIDSAAwRQIhAL7yIPg6GUX7IlVpcBFqF+yCq5TnR7ApE39uKJ/Ftkmi\n"+
-        "AiAkGWvE/pmFBYA2jQGH4WChbYMIvrjDBcgXfJE5oYQj7Q==\n"+
+    String trust = "-----BEGIN CERTIFICATE-----\n" +
+        "MIIB/zCCAaQCAQEwCgYIKoZIzj0EAwIwgYoxCzAJBgNVBAYTAkFVMSAwHgYDVQQK\n" +
+        "DBdDcnlwdG8gV29ya3Nob3AgUHR5IEx0ZDEbMBkGA1UECwwSWGltaXggTm9kZSBU\n" +
+        "ZXN0IENBMRIwEAYDVQQHDAlNZWxib3VybmUxETAPBgNVBAgMCFZpY3RvcmlhMRUw\n" +
+        "EwYDVQQDDAxUcnVzdCBBbmNob3IwHhcNMTQwMjE1MDA0MDU5WhcNMTYwMjE1MDA0\n" +
+        "MTQ5WjCBijELMAkGA1UEBhMCQVUxIDAeBgNVBAoMF0NyeXB0byBXb3Jrc2hvcCBQ\n" +
+        "dHkgTHRkMRswGQYDVQQLDBJYaW1peCBOb2RlIFRlc3QgQ0ExEjAQBgNVBAcMCU1l\n" +
+        "bGJvdXJuZTERMA8GA1UECAwIVmljdG9yaWExFTATBgNVBAMMDFRydXN0IEFuY2hv\n" +
+        "cjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABL6UHYMIHxn0/iy+psDMrZ6i5taB\n" +
+        "iWdCBg4Sf2seMgcIulj7rfha+gccITdfhFvekd4TuzKnN9Kdx+r/ANN18ccwCgYI\n" +
+        "KoZIzj0EAwIDSQAwRgIhALY/gND++XVgMcJqm9QkcoKgyXrIcK+I3vYn2oU+wVdq\n" +
+        "AiEA8V2OyZcqC1RXWsSziD7ZCHAKO2XU9uUyfdppPIfN+eA=\n" +
         "-----END CERTIFICATE-----\n";
 
     private static final int BATCH_SIZE = 10;
@@ -149,10 +154,34 @@ public class CommandApplet
         final JTextField uploadDirField = new JTextField(20);
 
         PEMParser pemParser = new PEMParser(new StringReader(trust));
+        final XimixRegistrar adminRegistrar;
 
         try
         {
             trustAnchor = new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder)pemParser.readObject());
+
+            adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(mixnetConf.openStream(), new EventNotifier()
+            {
+                @Override
+                public void notify(Level level, Throwable throwable)
+                {
+                    System.err.print(level + " " + throwable.getMessage());
+                    throwable.printStackTrace(System.err);
+                }
+
+                @Override
+                public void notify(Level level, Object detail)
+                {
+                    System.err.println(level + " " + detail.toString());
+                }
+
+                @Override
+                public void notify(Level level, Object detail, Throwable throwable)
+                {
+                    System.err.println(level + " " + detail.toString());
+                    throwable.printStackTrace(System.err);
+                }
+            });
         }
         catch (Exception e)
         {
@@ -385,29 +414,6 @@ public class CommandApplet
                 {
                     try
                     {
-                        XimixRegistrar adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(mixnetConf.openStream(), new EventNotifier()
-                        {
-                            @Override
-                            public void notify(Level level, Throwable throwable)
-                            {
-                                System.err.print(level + " " + throwable.getMessage());
-                                throwable.printStackTrace(System.err);
-                            }
-
-                            @Override
-                            public void notify(Level level, Object detail)
-                            {
-                                System.err.println(level + " " + detail.toString());
-                            }
-
-                            @Override
-                            public void notify(Level level, Object detail, Throwable throwable)
-                            {
-                                System.err.println(level + " " + detail.toString());
-                                throwable.printStackTrace(System.err);
-                            }
-                        });
-
                         KeyService keyService = adminRegistrar.connect(KeyService.class);
 
                         byte[] encPubKey = keyService.fetchPublicKey(keyID.getText().trim());
@@ -451,6 +457,34 @@ public class CommandApplet
         JPanel downloadButtonPanel = new JPanel();
         downloadButtonPanel.setLayout(new BoxLayout(downloadButtonPanel, BoxLayout.X_AXIS));
 
+        final JButton selectAllButton = new JButton("Select All");
+
+        selectAllButton.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent)
+            {
+                BoardTableModel tableModel = (BoardTableModel)boardTable.getModel();
+
+                if (selectAllButton.getText().startsWith("Sele"))
+                {
+                    selectAllButton.setText("Deselect All");
+                    for (BoardEntry entry : tableModel.getEntries())
+                    {
+                        entry.setSelected(true);
+                    }
+                }
+                else
+                {
+                    selectAllButton.setText("Select All");
+                    for (BoardEntry entry : tableModel.getEntries())
+                    {
+                         entry.setSelected(false);
+                    }
+                }
+            }
+        });
+        downloadButtonPanel.add(selectAllButton);
         downloadButtonPanel.add(shuffleButton);
 
         downloadControlPanel.add(downloadKeyPanel);
@@ -476,6 +510,29 @@ public class CommandApplet
 
         basePanel.add(topPanel);
         basePanel.add(tablePanel);
+
+        try
+        {
+            MonitorService monitor = adminRegistrar.connect(MonitorService.class);
+
+            monitor.addBulletinBoardListener(new NetworkBoardListener()
+            {
+                @Override
+                public void boardChanged(String boardName, BoardDetail boardDetail)
+                {
+                    BoardTableModel tableModel = (BoardTableModel)boardTable.getModel();
+
+                    BoardEntry entry = tableModel.getEntry(boardName, boardDetail.getHost(), boardDetail.getBackupHost());
+
+                    entry.setMessageCount(boardDetail.getMessageCount());
+                }
+            });
+        }
+        catch (RegistrarServiceException e)
+        {
+            // TODO:
+            e.printStackTrace();
+        }
 
         this.getContentPane().add(basePanel);
     }
@@ -510,7 +567,7 @@ public class CommandApplet
     {
         static String[] title = new String[] { "Select", "Board", "<html><body><center>Primary<br/>Node</center></body></html>", "<html><body><center>Backup<br/>Node</center></body></html>", "Size", "Status" };
 
-        private final List<BoardEntry> rows = new ArrayList<>();
+        private final Map<String, BoardEntry> entries = new LinkedHashMap<>();
 
         BoardTableModel()
         {
@@ -519,7 +576,7 @@ public class CommandApplet
         @Override
         public int getRowCount()
         {
-            return rows.size();
+            return entries.size();
         }
 
         @Override
@@ -543,12 +600,12 @@ public class CommandApplet
         @Override
         public Object getValueAt(int row, int column)
         {
-            if (row >= rows.size())
+            if (row >= entries.size())
             {
                 return null;
             }
 
-            return rows.get(row).getValue(column);
+            return new ArrayList<>(entries.values()).get(row).getValue(column);
         }
 
         public Class getColumnClass(int column)
@@ -566,21 +623,25 @@ public class CommandApplet
         {
             if (column == 0)
             {
-                rows.get(row).isSelected = ((Boolean)o).booleanValue();
+                new ArrayList<>(entries.values()).get(row).isSelected = ((Boolean)o).booleanValue();
             }
         }
 
         public synchronized List<BoardEntry> getEntries()
         {
-            return new ArrayList<>(rows);
+            return new ArrayList<>(entries.values());
         }
 
         public synchronized BoardEntry getEntry(String fileName, String primary, String secondary)
         {
-            BoardEntry boardEntry = new BoardEntry(this, fileName, primary, secondary);
+            BoardEntry boardEntry = entries.get(fileName);
 
-            rows.add(boardEntry);
-            fireTableRowsInserted(rows.size() - 1, rows.size() - 1);
+            if (boardEntry == null)
+            {
+                boardEntry = new BoardEntry(this, fileName, primary, secondary);
+                entries.put(fileName, boardEntry);
+                fireTableRowsInserted(entries.size() - 1, entries.size() - 1);
+            }
 
             return boardEntry;
         }
@@ -589,7 +650,7 @@ public class CommandApplet
         {
             List<BoardEntry> selected = new ArrayList<>();
 
-            for (BoardEntry entry : rows)
+            for (BoardEntry entry : entries.values())
             {
                 if (entry.isSelected)
                 {
@@ -628,9 +689,10 @@ public class CommandApplet
             this.name = name;
             this.primary = primary;
             this.secondary = secondary;
+            this.progressMessage = "Loaded";
         }
 
-        public Object getValue(int column)
+        public synchronized Object getValue(int column)
         {
             switch (column)
             {
@@ -669,7 +731,7 @@ public class CommandApplet
             }
         }
 
-        public void markProgress(State state, int numMessages, double pCentDone)
+        public synchronized void markProgress(State state, int numMessages, double pCentDone)
         {
             this.progressMessage = null;
             this.state = state;
@@ -678,9 +740,21 @@ public class CommandApplet
             this.parent.fireTableDataChanged();
         }
 
-        public void setShuffleProgress(String progress)
+        public synchronized void setShuffleProgress(String progress)
         {
             this.progressMessage = progress;
+            this.parent.fireTableDataChanged();
+        }
+
+        public synchronized void setMessageCount(int messageCount)
+        {
+            this.totalMesages = messageCount;
+            this.parent.fireTableDataChanged();
+        }
+
+        public synchronized void setSelected(boolean selected)
+        {
+            this.isSelected = selected;
             this.parent.fireTableDataChanged();
         }
 

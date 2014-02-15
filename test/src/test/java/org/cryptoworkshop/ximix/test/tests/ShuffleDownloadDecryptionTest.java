@@ -21,7 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.SocketException;
 import java.security.SecureRandom;
@@ -90,20 +90,6 @@ import static org.cryptoworkshop.ximix.test.node.NodeTestUtil.getXimixNode;
 public class ShuffleDownloadDecryptionTest
     extends TestCase
 {
-    String trust = "-----BEGIN CERTIFICATE-----\n" +
-        "MIIB/jCCAaQCAQEwCgYIKoZIzj0EAwIwgYoxCzAJBgNVBAYTAkFVMSAwHgYDVQQK\n" +
-        "DBdDcnlwdG8gV29ya3Nob3AgUHR5IEx0ZDEbMBkGA1UECwwSWGltaXggTm9kZSBU\n" +
-        "ZXN0IENBMRIwEAYDVQQHDAlNZWxib3VybmUxETAPBgNVBAgMCFZpY3RvcmlhMRUw\n" +
-        "EwYDVQQDDAxUcnVzdCBBbmNob3IwHhcNMTQwMTI2MDAyMzIwWhcNMTQwMjEyMDEw\n" +
-        "NDM5WjCBijELMAkGA1UEBhMCQVUxIDAeBgNVBAoMF0NyeXB0byBXb3Jrc2hvcCBQ\n" +
-        "dHkgTHRkMRswGQYDVQQLDBJYaW1peCBOb2RlIFRlc3QgQ0ExEjAQBgNVBAcMCU1l\n" +
-        "bGJvdXJuZTERMA8GA1UECAwIVmljdG9yaWExFTATBgNVBAMMDFRydXN0IEFuY2hv\n" +
-        "cjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPi4By/W1ERoil8zTMzssTWevcBS\n" +
-        "f8pGZv7smhDDbN9lqimuTWw4uQB+KoOdzVaQVTENWDIGy1bdJ4nCDLCUeuQwCgYI\n" +
-        "KoZIzj0EAwIDSAAwRQIhAL7yIPg6GUX7IlVpcBFqF+yCq5TnR7ApE39uKJ/Ftkmi\n" +
-        "AiAkGWvE/pmFBYA2jQGH4WChbYMIvrjDBcgXfJE5oYQj7Q==\n" +
-        "-----END CERTIFICATE-----\n";
-
     private static ECPoint generatePoint(ECDomainParameters params, SecureRandom rand)
     {
         return params.getG().multiply(getRandomInteger(params.getN(), rand));
@@ -161,7 +147,7 @@ public class ShuffleDownloadDecryptionTest
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
         handler.squelchType(SocketException.class);
 
-        PEMParser pemParser = new PEMParser(new StringReader(trust));
+        PEMParser pemParser = new PEMParser(new InputStreamReader(this.getClass().getResourceAsStream("/conf/trustCa.pem")));
         X509Certificate trustAnchor;
 
         try
@@ -618,7 +604,7 @@ public class ShuffleDownloadDecryptionTest
         SquelchingThrowableHandler handler = new SquelchingThrowableHandler();
         handler.squelchType(SocketException.class);
 
-        PEMParser pemParser = new PEMParser(new StringReader(trust));
+        PEMParser pemParser = new PEMParser(new InputStreamReader(this.getClass().getResourceAsStream("/conf/trustCa.pem")));
         X509Certificate trustAnchor;
 
         try

@@ -30,7 +30,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
  */
 public class GenNodeKeyStore
 {
-    private static final long YEAR = 1000 * 60 * 60 * 24 * 365;
+    private static final long YEAR = 1000 * 60 * 60 * 24 * 365L;
 
     public static void main(String[] args)
         throws Exception
@@ -73,7 +73,7 @@ public class GenNodeKeyStore
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             X500Name.getInstance(trustCert.getSubjectX500Principal().getEncoded()),
             BigInteger.valueOf(System.currentTimeMillis()),
-            startDate, new Date(System.currentTimeMillis() + YEAR),
+            startDate, trustCert.getNotAfter(),
             builder.build(), kp.getPublic());
 
         certGen.addExtension(Extension.subjectKeyIdentifier, false, extensionUtils.createSubjectKeyIdentifier(kp.getPublic()));

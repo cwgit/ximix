@@ -56,6 +56,7 @@ class MessageEvaluator
         alwaysHandleType.add(CommandMessage.Type.FETCH_BOARD_COMPLETION_STATUS);
         alwaysHandleType.add(CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT);
         alwaysHandleType.add(CommandMessage.Type.DOWNLOAD_SHUFFLE_TRANSCRIPT_STEPS);
+        alwaysHandleType.add(CommandMessage.Type.GET_BOARD_DETAILS);
         alwaysHandleType.add(CommandMessage.Type.GET_BOARD_HOST);
         alwaysHandleType.add(CommandMessage.Type.BOARD_CREATE);
         alwaysHandleType.add(CommandMessage.Type.BACKUP_BOARD_CREATE);

@@ -49,6 +49,15 @@ public class BoardExecutor
         this.scheduledExecutor = scheduledExecutor;
     }
 
+    /**
+     * Submit a task for a particular board.
+     *
+     * The task will be executed after any other currently running tasks for that board are done.
+     *
+     * @param boardName name of the board the task is for.
+     * @param task a callable representing the task to be performed.
+     * @return a Future returning the appropriate MessageReply.
+     */
     public FutureTask<MessageReply> submitTask(final String boardName, final Callable<MessageReply> task)
     {
         final BoardTask boardTask = new BoardTask(boardName, new Callable<MessageReply>()
@@ -97,6 +106,11 @@ public class BoardExecutor
         executing.add(boardTask.getBoardName());
 
         scheduledExecutor.submit(boardTask);
+    }
+
+    public void execute(Runnable task)
+    {
+        decoupler.execute(task);
     }
 
     private class BoardTask

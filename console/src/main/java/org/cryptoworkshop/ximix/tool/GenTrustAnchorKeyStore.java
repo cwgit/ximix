@@ -27,7 +27,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
  */
 public class GenTrustAnchorKeyStore
 {
-    private static final long YEAR = 1000 * 60 * 60 * 24 * 365;
+    private static final long YEAR = 1000 * 60 * 60 * 24 * 365L;
 
     public static void main(String[] args)
         throws Exception
@@ -58,7 +58,7 @@ public class GenTrustAnchorKeyStore
         Date startDate = new Date(System.currentTimeMillis() - 50000);
 
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(kp.getPrivate());
-        X509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), startDate, new Date(System.currentTimeMillis() + YEAR),builder.build(), kp.getPublic());
+        X509v1CertificateBuilder certGen1 = new JcaX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), startDate, new Date(System.currentTimeMillis() + 2 * YEAR),builder.build(), kp.getPublic());
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certGen1.build(sigGen));
 

@@ -29,9 +29,9 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
 /**
- * Carrier message for details of transforms associated with a particular bulletin board.
+ * Carrier message for capabilities of transforms associated with a particular bulletin board.
  */
-public class BoardDetails
+public class BoardCapabilities
     extends ASN1Object
 {
     private final String boardName;
@@ -43,13 +43,13 @@ public class BoardDetails
      * @param boardName the name of the board this message relates to.
      * @param transformNames a set of transforms that the board handler can perform.
      */
-    public BoardDetails(String boardName, Set<String> transformNames)
+    public BoardCapabilities(String boardName, Set<String> transformNames)
     {
         this.boardName = boardName;
         this.transformNames = Collections.unmodifiableSet(new HashSet<String>(transformNames));
     }
 
-    private BoardDetails(ASN1Sequence seq)
+    private BoardCapabilities(ASN1Sequence seq)
     {
         this.boardName = DERUTF8String.getInstance(seq.getObjectAt(0)).getString();
 
@@ -64,15 +64,15 @@ public class BoardDetails
         transformNames = Collections.unmodifiableSet(sTrans);
     }
 
-    public static final BoardDetails getInstance(Object o)
+    public static final BoardCapabilities getInstance(Object o)
     {
-        if (o instanceof BoardDetails)
+        if (o instanceof BoardCapabilities)
         {
-            return (BoardDetails)o;
+            return (BoardCapabilities)o;
         }
         else if (o != null)
         {
-            return new BoardDetails(ASN1Sequence.getInstance(o));
+            return new BoardCapabilities(ASN1Sequence.getInstance(o));
         }
 
         return null;

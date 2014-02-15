@@ -1,0 +1,55 @@
+/**
+ * Copyright 2013 Crypto Workshop Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.cryptoworkshop.ximix.client;
+
+/**
+ * Class for carrying basic board details.
+ */
+public class BoardDetail
+{
+    private final String host;
+    private final int messageCount;
+    private String backupHost;
+
+    /**
+     * Base constructor.
+     *
+     * @param host name of host holding the board.
+     * @param messageCount number of messages on the board.
+     * @param backupHost name of the back up host, if there is one.
+     */
+    public BoardDetail(String host, int messageCount, String backupHost)
+    {
+        this.host = host;
+        this.messageCount = messageCount;
+        this.backupHost = backupHost;
+    }
+
+    public int getMessageCount()
+    {
+        return messageCount;
+    }
+
+    public String getHost()
+    {
+        return host;
+    }
+
+    public String getBackupHost()
+    {
+        return backupHost;
+    }
+}

@@ -276,6 +276,10 @@ class ClientCommandService
                     if (reply.getType() == MessageReply.Type.OKAY && creationOptions.getBackUpHost() != null)
                     {
                         reply = connection.sendMessage(creationOptions.getBackUpHost(), CommandMessage.Type.BACKUP_BOARD_CREATE, new BoardMessage(boardName));
+                        if (reply.getType() != MessageReply.Type.OKAY)
+                        {
+                            eventNotifier.notify(EventNotifier.Level.ERROR, "Error on backup board creation: " + reply.interpretPayloadAsError());
+                        }
                     }
                 }
                 catch (ServiceConnectionException e)
