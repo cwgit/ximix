@@ -3,7 +3,7 @@ Welcome to the Ximix distribution.
 
 1. Build Setup.
 
-Building the distribution requires, at a minimum, gradle 1.8 and JDK 1.7.
+Building the distribution requires, at a minimum, gradle 1.8 and JDK 1.7. As the application makes liberal use of the JCE you *must* have the unrestricted policy files for the JCE installed.
 
 Once you have gradle installed you need to type:
 
