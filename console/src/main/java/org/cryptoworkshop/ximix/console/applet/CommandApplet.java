@@ -1440,6 +1440,26 @@ public class CommandApplet
                 downloadStream.close();
                 proofLogStream.close();
 
+                // log seed commitments and seed and witnesses
+
+                for (String node : seedCommitmentMap.keySet())
+                {
+                    FileOutputStream fOut = new FileOutputStream(new File(destDir, boardEntry.getName() + "." + node + ".sc"));
+
+                    fOut.write(seedCommitmentMap.get(node));
+
+                    fOut.close();
+                }
+
+                for (String node : seedAndWitnessesMap.keySet())
+                {
+                    FileOutputStream fOut = new FileOutputStream(new File(destDir, boardEntry.getName() + "." + node + ".svw"));
+
+                    fOut.write(new SeedAndWitnessMessage(seedAndWitnessesMap.get(node)[0], seedAndWitnessesMap.get(node)[1]).getEncoded());
+
+                    fOut.close();
+                }
+
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 1.0);
 
                 //

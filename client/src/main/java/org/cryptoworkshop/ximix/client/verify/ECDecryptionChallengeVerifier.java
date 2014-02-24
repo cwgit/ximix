@@ -20,34 +20,45 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
+import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
+import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.ChallengeLogMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
 
 /**
- * Verifier for a decryption challenge log stream
- * TODO: this should probably also take the final output, and verify that the partial decrypts match the final output as well.
+ * Verifier for a decryption challenge log stream and stream of outputs.
  */
 public class ECDecryptionChallengeVerifier
 {
     private final ECPublicKeyParameters pubKey;
     private final InputStream logStream;
+    private final InputStream resultStream;
+    private final InputStream lastStageStream;
 
     private ECPublicKeyParameters[] activePeers = new ECPublicKeyParameters[0];
+    private ECPoint[][] activeMsgParts = new ECPoint[0][];
     private int maxSequenceNo = 0;
 
     /**
      * Base constructor.
      *
      * @param pubKey the public key that we are verifying against.
+     * @param lastStageStream InputStream representing the last shuffle stage.
+     * @param resultStream InputStream representing the final out that was assembled.
      * @param logStream InputStream representing the decryption challenge transcript.
      */
-    public ECDecryptionChallengeVerifier(ECPublicKeyParameters pubKey, InputStream logStream)
+    public ECDecryptionChallengeVerifier(ECPublicKeyParameters pubKey, InputStream lastStageStream, InputStream resultStream, InputStream logStream)
     {
         this.pubKey = pubKey;
+        this.lastStageStream = lastStageStream;
+        this.resultStream = resultStream;
         this.logStream = logStream;
     }
 
@@ -60,6 +71,8 @@ public class ECDecryptionChallengeVerifier
         throws TranscriptVerificationException
     {
         ASN1InputStream aIn = new ASN1InputStream(logStream);
+        ASN1InputStream resultIn = new ASN1InputStream(resultStream);
+        ASN1InputStream lastIn = new ASN1InputStream(lastStageStream);
 
         try
         {
@@ -81,7 +94,6 @@ public class ECDecryptionChallengeVerifier
 
                 if (messageIndex != logMessage.getIndex())
                 {
-                    // verify the partial public keys represent the one we have.
                     if (activePeers.length != 0)
                     {
                         LagrangeWeightCalculator weightCalculator = new LagrangeWeightCalculator(maxSequenceNo + 1, pubKey.getParameters().getN());
@@ -90,6 +102,7 @@ public class ECDecryptionChallengeVerifier
 
                         BigInteger[] weights = weightCalculator.computeWeights(activePeers);
 
+                         // verify the partial public keys represent the one we have.
                         for (int i = 0; i != weights.length; i++)
                         {
                              if (weights[i] != null)
@@ -108,17 +121,60 @@ public class ECDecryptionChallengeVerifier
                         {
                             throw new TranscriptVerificationException("Log message indicates inconsistent public key.");
                         }
+
+                        // verify the partial decrypts result in the final message
+                        PostedMessage pM = PostedMessage.getInstance(lastIn.readObject());
+                        ECPair[] encPairs = PairSequence.getInstance(pubKey.getParameters().getCurve(), pM.getMessage()).getECPairs();
+
+                        int len = activeMsgParts[0].length;
+                        for (int i = 1; i != activeMsgParts.length; i++)
+                        {
+                             if (activeMsgParts[i].length != len)
+                             {
+                                 throw new TranscriptVerificationException("Partial decrypt length mismatch");
+                             }
+                        }
+
+                        int baseIndex = 0;
+                        for (int i = 0; i != activeMsgParts.length; i++)
+                        {
+                            if (activeMsgParts[i] != null)
+                            {
+                                baseIndex = i;
+                                break;
+                            }
+                        }
+
+                        BigInteger baseWeight = weights[baseIndex];
+
+                        ECPoint[] decryptions = reassemblePoints(activeMsgParts, encPairs, weights, baseIndex, baseWeight);
+
+                        ECPoint[] recordedDecrypts = PointSequence.getInstance(pubKey.getParameters().getCurve(), resultIn.readObject()).getECPoints();
+
+                        if (!Arrays.areEqual(decryptions, recordedDecrypts))
+                        {
+                            throw new TranscriptVerificationException("Recorded decrypts do not match partial ones.");
+                        }
+
                         // reset the peers array.
                         for (int i = 0; i != activePeers.length; i++)
                         {
                             activePeers[i] = null;
                         }
+                        for (int i = 0; i != activeMsgParts.length; i++)
+                        {
+                            activeMsgParts[i] = null;
+                        }
+                    }
+                    else if (messageIndex != -1)
+                    {
+                        throw new TranscriptVerificationException("Nothing to verify!");
                     }
 
                     messageIndex = logMessage.getIndex();
                 }
 
-                addPeer(logMessage.getSequenceNo(), currentPubKey);
+                addPeer(logMessage.getSequenceNo(), currentPubKey, logMessage.getSourceMessage());
 
                 if (!logMessage.hasPassed())
                 {
@@ -150,16 +206,58 @@ public class ECDecryptionChallengeVerifier
         return a.getCurve().equals(b.getCurve()) && a.getG().equals(b.getG()) && a.getH().equals(b.getH()) && a.getN().equals(b.getN());
     }
 
-    private void addPeer(int sequenceNo, ECPublicKeyParameters peerKey)
+    private void addPeer(int sequenceNo, ECPublicKeyParameters peerKey, ECPoint[] peerMsgPart)
     {
         if ((sequenceNo + 1) > activePeers.length)
         {
             ECPublicKeyParameters[] tmp = new ECPublicKeyParameters[sequenceNo + 1];
             System.arraycopy(activePeers, 0, tmp, 0, activePeers.length);
             activePeers = tmp;
+
+            ECPoint[][] tmpEC = new ECPoint[sequenceNo + 1][];
+            System.arraycopy(activeMsgParts, 0, tmpEC, 0, activeMsgParts.length);
+            activeMsgParts = tmpEC;
+
             maxSequenceNo = sequenceNo;
         }
 
         activePeers[sequenceNo] = peerKey;
+        activeMsgParts[sequenceNo] = peerMsgPart;
+    }
+
+    private ECPoint[] reassemblePoints(ECPoint[][] partialDecrypts, ECPair[] encMessage, BigInteger[] weights, int baseIndex, BigInteger baseWeight)
+    {
+        ECPoint[] weightedDecryptions = new ECPoint[partialDecrypts[0].length];
+        ECPoint[] fulls = new ECPoint[partialDecrypts[0].length];
+
+        ECPair[] partials = new ECPair[partialDecrypts[baseIndex].length];
+
+        for (int i = 0; i != partials.length; i++)
+        {
+            partials[i] = new ECPair(partialDecrypts[baseIndex][i], encMessage[i].getY());
+        }
+
+        for (int i = 0; i != weightedDecryptions.length; i++)
+        {
+            weightedDecryptions[i] = partials[i].getX().multiply(baseWeight);
+        }
+
+        for (int wIndex = baseIndex + 1; wIndex < weights.length; wIndex++)
+        {
+            if (weights[wIndex] != null)
+            {
+                for (int i = 0; i != weightedDecryptions.length; i++)
+                {
+                    weightedDecryptions[i] = weightedDecryptions[i].add(partialDecrypts[wIndex][i].multiply(weights[wIndex]));
+                }
+            }
+        }
+
+        for (int i = 0; i != weightedDecryptions.length; i++)
+        {
+            fulls[i] = partials[i].getY().add(weightedDecryptions[i].negate());
+        }
+
+        return fulls;
     }
 }

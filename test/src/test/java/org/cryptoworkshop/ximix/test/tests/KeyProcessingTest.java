@@ -58,6 +58,7 @@ import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
+import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
@@ -673,6 +674,8 @@ public class KeyProcessingTest extends TestCase
         Set<ECPoint> plain1 = new HashSet<>();
         Set<ECPoint> plain2 = new HashSet<>();
 
+        ByteArrayOutputStream postedMessageStream = new ByteArrayOutputStream();
+
         //
         // Encrypt and submit.
         //
@@ -687,8 +690,9 @@ public class KeyProcessingTest extends TestCase
             PairSequence encrypted = new PairSequence(new ECPair[]{encryptor.encrypt(plainText1[i]), encryptor.encrypt(plainText2[i])});
 
             client.uploadMessage("FRED", encrypted.getEncoded());
-        }
 
+            postedMessageStream.write(new PostedMessage(i, encrypted.getEncoded()).getEncoded());
+        }
 
         final ECPoint[] resultText1 = new ECPoint[plainText1.length];
         final ECPoint[] resultText2 = new ECPoint[plainText2.length];
@@ -697,7 +701,8 @@ public class KeyProcessingTest extends TestCase
         final CountDownLatch encryptLatch = new CountDownLatch(1);
         final AtomicReference<Thread> decryptThread = new AtomicReference<>();
 
-        ByteArrayOutputStream logStream = new ByteArrayOutputStream();
+        final ByteArrayOutputStream logStream = new ByteArrayOutputStream();
+        final ByteArrayOutputStream resultStream = new ByteArrayOutputStream();
 
         Operation<DownloadOperationListener> op = commandService.downloadBoardContents(
             "FRED",
@@ -712,10 +717,23 @@ public class KeyProcessingTest extends TestCase
                 @Override
                 public void messageDownloaded(int index, byte[] message, List<byte[]> proofs)
                 {
+                    try
+                    {
+                        resultStream.write(message);
+                        for (byte[] proof : proofs)
+                        {
+                            logStream.write(proof);
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        TestCase.fail(e.toString());
+                    }
                     PointSequence decrypted = PointSequence.getInstance(pubKey.getParameters().getCurve(), message);
                     resultText1[counter] = decrypted.getECPoints()[0];
                     resultText2[counter++] = decrypted.getECPoints()[1];
                     TestUtil.checkThread(decryptThread);
+
                 }
 
                 @Override
@@ -748,7 +766,10 @@ public class KeyProcessingTest extends TestCase
         TestCase.assertTrue("Complete method not called in DownloadOperationListener", downloadBoardCompleted.get());
         TestCase.assertFalse("Not failed.", downloadBoardFailed.get());
 
-        ECDecryptionChallengeVerifier verifier = new ECDecryptionChallengeVerifier(pubKey, new ByteArrayInputStream(logStream.toByteArray()));
+        ECDecryptionChallengeVerifier verifier = new ECDecryptionChallengeVerifier(pubKey,
+                                                       new ByteArrayInputStream(postedMessageStream.toByteArray()),
+                                                       new ByteArrayInputStream(resultStream.toByteArray()),
+                                                       new ByteArrayInputStream(logStream.toByteArray()));
 
         verifier.verify();
 

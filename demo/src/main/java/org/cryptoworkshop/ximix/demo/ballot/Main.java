@@ -68,7 +68,7 @@ public class Main
         throws IOException
     {
         File ballotFile = new File(baseName + ".blt");
-        File candidateFile = new File(baseName + "." + "candidates.json");
+        File candidateFile = new File(baseName + "." + "candidates.cid");
 
         int numberOfCandidates = 4 + rand.nextInt(10);
 
@@ -117,7 +117,10 @@ public class Main
         cWrt.write("    \"RaceName\": \"Bass\",");
         cWrt.newLine();
 
-        cWrt.write("    \"RaceType\": \"LA\",");
+        cWrt.write("    \"RaceType\": \"ATL\",");
+        cWrt.newLine();
+
+        cWrt.write("    \"DistrictName\": \"" + baseName.substring(0, baseName.indexOf('_')) + "\",");
         cWrt.newLine();
 
         cWrt.write("    \"CandidateIds\": [");
@@ -201,9 +204,12 @@ public class Main
 
         for (int i = 0; i != count; i++)
         {
-            String baseName = "REGION-" + fmt.format(i) + "_LA";
+            String baseName = "REGION-" + fmt.format(i) + "_ATL";
 
             generateBallots(baseName, new Random(i), ballotSize, encryptor, pubKey.getParameters(), new SecureRandom());
         }
+
+        keyGenerationService.shutdown();
+        adminRegistrar.shutdown();
     }
 }
