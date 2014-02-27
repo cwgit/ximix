@@ -23,7 +23,6 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSplitSecret;
@@ -57,13 +56,13 @@ public class ECNewDKGGenerator
         return keyManager.getParams(keyID);
     }
 
-    public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, NamedKeyGenParams ecKeyGenParams)
+    public ECCommittedSecretShareMessage[] generateThresholdKey(String keyID, ECDomainParameters domainParameters, int numberOfPeers, int threshold, ECPoint h)
     {
         // TODO: should have a source of randomness.
-        AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams);
+        AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, numberOfPeers, domainParameters, h);
 
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)keyPair.getPrivate();
-        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(ecKeyGenParams.getNodesToUse().size(), ecKeyGenParams.getThreshold(), ecKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
+        ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(numberOfPeers, threshold, h, privKey.getParameters(), new SecureRandom());
 
         ECCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getD());
         ECCommittedSecretShare[] shares = splitSecret.getCommittedShares();

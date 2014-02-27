@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -20,10 +21,10 @@ import it.unisa.dia.gas.jpbc.Pairing;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.ec.ECDecryptor;
 import org.bouncycastle.crypto.ec.ECElGamalEncryptor;
 import org.bouncycastle.crypto.ec.ECEncryptor;
@@ -91,8 +92,12 @@ public class CryptoServicesTest
         try
         {
             List<String> peers = Arrays.asList("A", "B", "C");
-            NamedKeyGenParams kGenParams = new NamedKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
-            ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
+            NamedKeyGenParams kGenParams = new NamedKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, "secp256r1", 4, peers);
+            X9ECParameters ecParameters = CustomNamedCurves.getByName("secp256r1");
+            ECDomainParameters domainParameters = new ECDomainParameters(ecParameters.getCurve(), ecParameters.getG(), ecParameters.getN(), ecParameters.getH());
+            ECPoint h = domainParameters.getG().multiply(BigInteger.valueOf(1000001));
+            ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL))
+                .generateThresholdKey("EC_KEY", domainParameters, kGenParams.getNodesToUse().size(), kGenParams.getThreshold(), h);
 
             Assert.fail("no exception!");
         }
@@ -114,12 +119,15 @@ public class CryptoServicesTest
         XimixNodeContext context = contextMap.get("A");
 
         List<String> peers = Arrays.asList("A", "B", "C", "D", "E");
-        NamedKeyGenParams kGenParams = new NamedKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 4, peers);
-        ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL)).generateThresholdKey("EC_KEY", kGenParams);
-
+        NamedKeyGenParams kGenParams = new NamedKeyGenParams("EC_KEY", Algorithm.EC_ELGAMAL, "secp256r1", 4, peers);
+        X9ECParameters ecParameters = CustomNamedCurves.getByName("secp256r1");
+        ECDomainParameters domainParameters = new ECDomainParameters(ecParameters.getCurve(), ecParameters.getG(), ecParameters.getN(), ecParameters.getH());
+        ECPoint h = domainParameters.getG().multiply(BigInteger.valueOf(1000001));
+        ECCommittedSecretShareMessage[] messages = ((ECNewDKGGenerator)context.getKeyPairGenerator(Algorithm.EC_ELGAMAL))
+            .generateThresholdKey("EC_KEY", domainParameters, kGenParams.getNodesToUse().size(), kGenParams.getThreshold(), h);
         Assert.assertEquals(5, messages.length);
 
-        X9ECParameters params = SECNamedCurves.getByName("secp256r1");
+        X9ECParameters params = CustomNamedCurves.getByName("secp256r1");
         ECDomainParameters domainParams = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
 
         for (int i = 0; i != messages.length; i++)
@@ -127,7 +135,7 @@ public class CryptoServicesTest
             ECCommittedSecretShareMessage message = ECCommittedSecretShareMessage.getInstance(params.getCurve(), messages[i].getEncoded());
             ECCommittedSecretShare share = new ECCommittedSecretShare(message.getValue(), message.getWitness(), message.getCommitmentFactors());
 
-            Assert.assertTrue(share.isRevealed(i, domainParams, BigInteger.valueOf(1000001)));
+            Assert.assertTrue(share.isRevealed(i, domainParams, h));
         }
     }
 
@@ -141,9 +149,9 @@ public class CryptoServicesTest
 
         final String[] peers = new String[] { "A", "B", "C", "D", "E" };
 
-        NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams("ECKEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 3, Arrays.asList(peers));
+        final NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams("ECKEY", Algorithm.EC_ELGAMAL, BigInteger.valueOf(1000001), "secp256r1", 3, Arrays.asList(peers));
 
-        Map<String, ServicesConnection> peerMap = new HashMap<>();
+        final Map<String, ServicesConnection> peerMap = new HashMap<>();
 
         peerMap.put("A", contextMap.get("B").getPeerMap().get("A"));
         peerMap.put("B", contextMap.get("A").getPeerMap().get("B"));
@@ -151,12 +159,31 @@ public class CryptoServicesTest
         peerMap.put("D", contextMap.get("B").getPeerMap().get("D"));
         peerMap.put("E", contextMap.get("B").getPeerMap().get("E"));
 
-        for (String nodeName : peers)
+        final CountDownLatch generateLatch = new CountDownLatch(5);
+        for (final String nodeName : peers)
         {
-            MessageReply reply = peerMap.get(nodeName).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.EC_ELGAMAL, new KeyPairGenerateMessage(Algorithm.EC_ELGAMAL, ECKeyPairGenerator.Type.GENERATE, ecKeyGenParams)));
+            new Thread(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    MessageReply reply = null;
+                    try
+                    {
+                        reply = peerMap.get(nodeName).sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(Algorithm.EC_ELGAMAL, new KeyPairGenerateMessage(Algorithm.EC_ELGAMAL, ECKeyPairGenerator.Type.GENERATE, ecKeyGenParams)));
+                    }
+                    catch (ServiceConnectionException e)
+                    {
+                        e.printStackTrace();
+                    }
 
-            Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
+                    Assert.assertEquals(reply.getType(), MessageReply.Type.OKAY);
+                    generateLatch.countDown();
+                }
+            }).start();
         }
+
+        generateLatch.await();
 
         SubjectPublicKeyInfo pubKeyInfo1 = context.getPublicKey("ECKEY");
         final ECPublicKeyParameters pubKey1 = (ECPublicKeyParameters)PublicKeyFactory.createKey(pubKeyInfo1);

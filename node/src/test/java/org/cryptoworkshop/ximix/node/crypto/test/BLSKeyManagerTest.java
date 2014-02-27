@@ -1,39 +1,20 @@
 package org.cryptoworkshop.ximix.node.crypto.test;
 
-import java.io.File;
 import java.math.BigInteger;
-import java.security.KeyStore;
 import java.security.Security;
-import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PrivateKeyParameters;
 import it.unisa.dia.gas.crypto.jpbc.signature.bls01.params.BLS01PublicKeyParameters;
 import it.unisa.dia.gas.jpbc.Element;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
-import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
-import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
-import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.key.BLSKeyManager;
 import org.cryptoworkshop.ximix.node.crypto.key.message.BLSCommittedSecretShareMessage;
 import org.cryptoworkshop.ximix.node.crypto.key.util.SubjectPublicKeyInfoFactory;
-import org.cryptoworkshop.ximix.node.service.Decoupler;
-import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
-import org.cryptoworkshop.ximix.node.service.NodeContext;
-import org.cryptoworkshop.ximix.node.service.NodeService;
-import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
-import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,7 +38,7 @@ public class BLSKeyManagerTest
     @Test
     public void testDuplicateKey()
     {
-        BLSKeyManager keyManager = new BLSKeyManager(new MyNodeContext("Test1"));
+        BLSKeyManager keyManager = new BLSKeyManager(new TestUtils.BasicNodeContext("Test1"));
 
         keyManager.generateKeyPair("Test1", null, 1, new NamedKeyGenParams("Test1", null, BigInteger.ONE, "d62003-159-158.param", 1, Collections.EMPTY_LIST));
 
@@ -132,7 +113,10 @@ public class BLSKeyManagerTest
     public void testSingleKeyStoreAndLoad()
         throws Exception
     {
-        BLSKeyManager keyManager = new BLSKeyManager(new MyNodeContext("foo"));
+        TestUtils.BasicNodeContext nodeContext1 = new TestUtils.BasicNodeContext("foo");
+
+        BLSKeyManager keyManager = new BLSKeyManager(nodeContext1);
+
         AsymmetricCipherKeyPair kp = keyManager.generateKeyPair("Test1", Algorithm.BLS, 1, new NamedKeyGenParams("Test1", Algorithm.BLS, BigInteger.ONE, "d62003-159-158.param", 1, Collections.EMPTY_LIST));
         BLS01PrivateKeyParameters privKey = (BLS01PrivateKeyParameters)kp.getPrivate();
         BLS01PublicKeyParameters pubKey = (BLS01PublicKeyParameters)kp.getPublic();
@@ -153,7 +137,8 @@ public class BLSKeyManagerTest
 //
 //        Assert.assertTrue(keyStore.containsAlias("Test1"));
 
-        BLSKeyManager rebuiltKeyManager = new BLSKeyManager(new MyNodeContext("foo"));
+        TestUtils.BasicNodeContext nodeContext2 = new TestUtils.BasicNodeContext("foo");
+        BLSKeyManager rebuiltKeyManager = new BLSKeyManager(nodeContext2);
 
         rebuiltKeyManager.load(passwd, p12enc);
 
@@ -163,159 +148,8 @@ public class BLSKeyManagerTest
         Assert.assertEquals(((BLS01PrivateKeyParameters)kp.getPrivate()).getSk().toBigInteger(), keyManager.getPartialPrivateKey("Test1"));
         Assert.assertEquals(keyManager.fetchPublicKey("Test1"), rebuiltKeyManager.fetchPublicKey("Test1"));
         Assert.assertEquals(keyManager.getPartialPrivateKey("Test1"), rebuiltKeyManager.getPartialPrivateKey("Test1"));
+
+        nodeContext1.shutdown(0, TimeUnit.MICROSECONDS);
+        nodeContext2.shutdown(0, TimeUnit.MICROSECONDS);
     }
-
-
-    private class MyNodeContext
-        implements NodeContext
-    {
-        private final String name;
-
-        public MyNodeContext(String name)
-        {
-            this.name = name;
-        }
-
-        @Override
-        public String getName()
-        {
-            return name;
-        }
-
-        @Override
-        public Map<String, ServicesConnection> getPeerMap()
-        {
-            return null;
-        }
-
-        @Override
-        public CapabilityMessage[] getCapabilities()
-        {
-            return new CapabilityMessage[0];
-        }
-
-        @Override
-        public SubjectPublicKeyInfo getPublicKey(String keyID)
-        {
-            return null;
-        }
-
-        @Override
-        public boolean hasPrivateKey(String keyID)
-        {
-            return false;
-        }
-
-        @Override
-        public PartialPublicKeyInfo getPartialPublicKey(String keyID)
-        {
-            return null;
-        }
-
-        @Override
-        public PrivateKeyOperator getPrivateKeyOperator(String keyID)
-        {
-            return null;
-        }
-
-        @Override
-        public boolean shutdown(int time, TimeUnit timeUnit)
-            throws InterruptedException
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isStopCalled()
-        {
-            return false;
-        }
-
-        @Override
-        public void execute(Runnable task)
-        {
-
-        }
-
-        @Override
-        public void schedule(Runnable task, long time, TimeUnit timeUnit)
-        {
-
-        }
-
-        @Override
-        public Executor getDecoupler(Decoupler task)
-        {
-            return Executors.newSingleThreadExecutor();
-        }
-
-        @Override
-        public ScheduledExecutorService getScheduledExecutorService()
-        {
-            return Executors.newScheduledThreadPool(5);
-        }
-
-        @Override
-        public ThresholdKeyPairGenerator getKeyPairGenerator(Algorithm algorithm)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public KeyStore getNodeCAStore()
-        {
-            return TestUtils.genCAKeyStore("blsTest");
-        }
-
-        @Override
-        public String getBoardHost(String boardName)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public File getHomeDirectory()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public Map<NodeService, Map<String, Object>> getServiceStatistics()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public Map<String, String> getDescription()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public ListeningSocketInfo getListeningSocketInfo()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-
-        @Override
-        public EventNotifier getEventNotifier()
-        {
-
-            return new TestNotifier();
-        }
-
-        @Override
-        public X509Certificate getTrustAnchor()
-        {
-            return null;
-        }
-
-        @Override
-        public ExecutorService getExecutorService()
-        {
-            return getScheduledExecutorService();
-        }
-    }
-
 }

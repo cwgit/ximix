@@ -83,7 +83,7 @@ public class NewDKGTest
         int numberOfPeers = kps.length;
 
         // create the splitter for the peers/threshold over the order of the curve.
-        BigInteger hVal = getRandomInteger(domainParams.getN(), new SecureRandom());
+        ECPoint hVal = domainParams.getG().multiply(getRandomInteger(domainParams.getN(), new SecureRandom()));
         ECNewDKGSecretSplitter secretSplitter = new ECNewDKGSecretSplitter(numberOfPeers, threshold, hVal, domainParams, new SecureRandom());
 
         // Having created a private key the server creates shares of that

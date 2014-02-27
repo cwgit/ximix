@@ -16,40 +16,22 @@
 package org.cryptoworkshop.ximix.node.crypto.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.math.BigInteger;
 import java.security.KeyStore;
 import java.security.Security;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
-import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
-import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
-import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
-import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
-import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.key.ECKeyManager;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
-import org.cryptoworkshop.ximix.node.service.Decoupler;
-import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
-import org.cryptoworkshop.ximix.node.service.NodeContext;
-import org.cryptoworkshop.ximix.node.service.NodeService;
-import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
-import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -70,13 +52,16 @@ public class ECKeyManagerTest
     @Test
     public void testDuplicateKey()
     {
-        ECKeyManager keyManager = new ECKeyManager(new MyNodeContext());
+        ECKeyManager keyManager = new ECKeyManager(new TestUtils.BasicNodeContext("Test"));
+        X9ECParameters ecParameters = CustomNamedCurves.getByName("secp256r1");
+        ECDomainParameters domainParameters = new ECDomainParameters(ecParameters.getCurve(), ecParameters.getG(), ecParameters.getN(), ecParameters.getH());
+        ECPoint h = domainParameters.getG().multiply(BigInteger.valueOf(1000001));
 
-        keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new NamedKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_LIST));
+        keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, domainParameters, h);
 
         try
         {
-            keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new NamedKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_LIST));
+            keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, domainParameters, h);
 
             Assert.fail("duplicate key not detected");
         }
@@ -90,12 +75,14 @@ public class ECKeyManagerTest
     public void testFailedCommitment()
         throws Exception
     {
-        ECKeyManager keyManager = new ECKeyManager(new MyNodeContext());
+        ECKeyManager keyManager = new ECKeyManager(new TestUtils.BasicNodeContext("Test"));
+        X9ECParameters ecParameters = CustomNamedCurves.getByName("secp256r1");
+        ECDomainParameters domainParameters = new ECDomainParameters(ecParameters.getCurve(), ecParameters.getG(), ecParameters.getN(), ecParameters.getH());
+        ECPoint h = domainParameters.getG().multiply(BigInteger.valueOf(1000001));
 
-        AsymmetricCipherKeyPair kp = keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new NamedKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_LIST));
+        AsymmetricCipherKeyPair kp = keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, domainParameters, h);
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)kp.getPrivate();
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)kp.getPublic();
-        ECPoint h = pubKey.getParameters().getG().multiply(BigInteger.ONE);
         ECPoint commitment = pubKey.getParameters().getG().multiply(privKey.getD()).add(h);
 
         try
@@ -114,11 +101,16 @@ public class ECKeyManagerTest
     public void testSingleKeyStoreAndLoad()
         throws Exception
     {
-        ECKeyManager keyManager = new ECKeyManager(new MyNodeContext());
-        AsymmetricCipherKeyPair kp = keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new NamedKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_LIST));
+        ECKeyManager keyManager = new ECKeyManager(new TestUtils.BasicNodeContext("Test"));
+
+        X9ECParameters ecParameters = CustomNamedCurves.getByName("secp256r1");
+        ECDomainParameters domainParameters = new ECDomainParameters(ecParameters.getCurve(), ecParameters.getG(), ecParameters.getN(), ecParameters.getH());
+        ECPoint h = domainParameters.getG().multiply(BigInteger.valueOf(1000001));
+
+        AsymmetricCipherKeyPair kp = keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, domainParameters, h);
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)kp.getPrivate();
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)kp.getPublic();
-        ECPoint h = pubKey.getParameters().getG().multiply(BigInteger.ONE);
+
         ECPoint commitment = pubKey.getParameters().getG().multiply(privKey.getD()).add(h);
 
         keyManager.buildSharedKey("Test1", new ECCommittedSecretShareMessage(0, privKey.getD(), BigInteger.ONE, new ECPoint[]{commitment}, pubKey.getQ(), new ECPoint[]{pubKey.getQ()}));
@@ -135,7 +127,7 @@ public class ECKeyManagerTest
 
         Assert.assertTrue(keyStore.containsAlias("Test1"));
 
-        ECKeyManager rebuiltKeyManager = new ECKeyManager(new MyNodeContext());
+        ECKeyManager rebuiltKeyManager = new ECKeyManager(new TestUtils.BasicNodeContext("Test"));
 
         rebuiltKeyManager.load(passwd, p12enc);
 
@@ -151,16 +143,19 @@ public class ECKeyManagerTest
     public void testMultipleKeyStoreAndLoad()
         throws Exception
     {
-        ECKeyManager keyManager = new ECKeyManager(new MyNodeContext());
-        AsymmetricCipherKeyPair kp1 = keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, new NamedKeyGenParams("Test1", Algorithm.EC_ELGAMAL, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_LIST));
+        ECKeyManager keyManager = new ECKeyManager(new TestUtils.BasicNodeContext("Test"));
+        X9ECParameters ecParameters = CustomNamedCurves.getByName("secp256r1");
+        ECDomainParameters domainParameters = new ECDomainParameters(ecParameters.getCurve(), ecParameters.getG(), ecParameters.getN(), ecParameters.getH());
+        ECPoint h = domainParameters.getG().multiply(BigInteger.valueOf(1000001));
+
+        AsymmetricCipherKeyPair kp1 = keyManager.generateKeyPair("Test1", Algorithm.EC_ELGAMAL, 1, domainParameters, h);
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)kp1.getPrivate();
         ECPublicKeyParameters pubKey = (ECPublicKeyParameters)kp1.getPublic();
-        ECPoint h = pubKey.getParameters().getG().multiply(BigInteger.ONE);
         ECPoint commitment = pubKey.getParameters().getG().multiply(privKey.getD()).add(h);
 
         keyManager.buildSharedKey("Test1", new ECCommittedSecretShareMessage(0, privKey.getD(), BigInteger.ONE, new ECPoint[]{commitment}, pubKey.getQ(), new ECPoint[]{pubKey.getQ()}));
 
-        AsymmetricCipherKeyPair kp2 = keyManager.generateKeyPair("Test2", Algorithm.ECDSA, 1, new NamedKeyGenParams("Test1", Algorithm.ECDSA, BigInteger.ONE, "secp256r1", 1, Collections.EMPTY_LIST));
+        AsymmetricCipherKeyPair kp2 = keyManager.generateKeyPair("Test2", Algorithm.ECDSA, 1, domainParameters, h);
         privKey = (ECPrivateKeyParameters)kp2.getPrivate();
         pubKey = (ECPublicKeyParameters)kp2.getPublic();
         commitment = pubKey.getParameters().getG().multiply(privKey.getD()).add(h);
@@ -180,7 +175,7 @@ public class ECKeyManagerTest
         Assert.assertTrue(keyStore.containsAlias("Test1"));
         Assert.assertTrue(keyStore.containsAlias("Test2"));
 
-        ECKeyManager rebuiltKeyManager = new ECKeyManager(new MyNodeContext());
+        ECKeyManager rebuiltKeyManager = new ECKeyManager(new TestUtils.BasicNodeContext("Test"));
 
         rebuiltKeyManager.load(passwd, p12enc);
 
@@ -196,150 +191,5 @@ public class ECKeyManagerTest
         Assert.assertEquals(keyManager.getPartialPrivateKey("Test1"), rebuiltKeyManager.getPartialPrivateKey("Test1"));
         Assert.assertEquals(keyManager.fetchPublicKey("Test2"), rebuiltKeyManager.fetchPublicKey("Test2"));
         Assert.assertEquals(keyManager.getPartialPrivateKey("Test2"), rebuiltKeyManager.getPartialPrivateKey("Test2"));
-    }
-
-    private class MyNodeContext
-        implements NodeContext
-    {
-        @Override
-        public String getName()
-        {
-            return "Test";
-        }
-
-        @Override
-        public Map<String, ServicesConnection> getPeerMap()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public CapabilityMessage[] getCapabilities()
-        {
-            return new CapabilityMessage[0];
-        }
-
-        @Override
-        public SubjectPublicKeyInfo getPublicKey(String keyID)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public boolean hasPrivateKey(String keyID)
-        {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public PartialPublicKeyInfo getPartialPublicKey(String keyID)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public PrivateKeyOperator getPrivateKeyOperator(String keyID)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public boolean shutdown(int time, TimeUnit timeUnit)
-            throws InterruptedException
-        {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public boolean isStopCalled()
-        {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void execute(Runnable task)
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public void schedule(Runnable task, long time, TimeUnit timeUnit)
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public Executor getDecoupler(Decoupler task)
-        {
-            return Executors.newSingleThreadExecutor();
-        }
-
-        @Override
-        public ScheduledExecutorService getScheduledExecutorService()
-        {
-            return Executors.newScheduledThreadPool(5);
-        }
-
-        @Override
-        public ThresholdKeyPairGenerator getKeyPairGenerator(Algorithm algorithm)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public KeyStore getNodeCAStore()
-        {
-            return TestUtils.genCAKeyStore("ecTest");
-        }
-
-        @Override
-        public String getBoardHost(String boardName)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public File getHomeDirectory()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public Map<NodeService, Map<String, Object>> getServiceStatistics()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public Map<String, String> getDescription()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        @Override
-        public ListeningSocketInfo getListeningSocketInfo()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-
-        @Override
-        public EventNotifier getEventNotifier()
-        {
-
-            return new TestNotifier();
-        }
-
-        @Override
-        public X509Certificate getTrustAnchor()
-        {
-            return null;
-        }
-
-        @Override
-        public ExecutorService getExecutorService()
-        {
-            return getScheduledExecutorService();
-        }
     }
 }

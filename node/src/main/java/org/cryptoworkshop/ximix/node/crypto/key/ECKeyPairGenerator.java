@@ -15,23 +15,39 @@
  */
 package org.cryptoworkshop.ximix.node.crypto.key;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.math.ec.ECPoint;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.ECPointMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.KeyPairGenerateMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
+import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.StoreMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.key.message.ECCommittedSecretShareMessage;
+import org.cryptoworkshop.ximix.node.crypto.util.ECPointShare;
+import org.cryptoworkshop.ximix.node.crypto.util.ShareMap;
+import org.cryptoworkshop.ximix.node.service.Decoupler;
 import org.cryptoworkshop.ximix.node.service.NodeContext;
 
 /**
@@ -40,12 +56,18 @@ import org.cryptoworkshop.ximix.node.service.NodeContext;
 public class ECKeyPairGenerator
     extends KeyPairGenerator
 {
+    private static final int MAX_ITERATIONS = 1000;      // if we can't generate a random number in the right subgroup in this many iterations, something is badly wrong
+
+    private final Map<String, ECDomainParameters> paramsMap = Collections.synchronizedMap(new HashMap<String, ECDomainParameters>());
+    private final ShareMap<String, ECPoint> sharedHMap;
+
     private final NodeContext nodeContext;
 
     public static enum Type
         implements MessageType
     {
         GENERATE,  // must always be first
+        STORE_H,
         STORE
     }
 
@@ -57,6 +79,8 @@ public class ECKeyPairGenerator
     public ECKeyPairGenerator(NodeContext nodeContext)
     {
         this.nodeContext = nodeContext;
+
+        this.sharedHMap = new ShareMap<>(nodeContext.getScheduledExecutorService(), nodeContext.getDecoupler(Decoupler.SHARING), nodeContext.getEventNotifier());
     }
 
     public CapabilityMessage getCapability()
@@ -64,7 +88,7 @@ public class ECKeyPairGenerator
         return new CapabilityMessage(CapabilityMessage.Type.KEY_GENERATION, new ASN1Encodable[0]); // TODO: add algorithms?
     }
 
-    public MessageReply handle(KeyPairGenerateMessage message)
+    public MessageReply handle(final KeyPairGenerateMessage message)
     {
         // TODO: sort out the reply messages
         try
@@ -75,14 +99,43 @@ public class ECKeyPairGenerator
                 final NamedKeyGenParams ecKeyGenParams = (NamedKeyGenParams)NamedKeyGenParams.getInstance(message.getPayload());
                 final List<String> involvedPeers = ecKeyGenParams.getNodesToUse();
 
-                if (involvedPeers.contains(nodeContext.getName()))
+                X9ECParameters params = CustomNamedCurves.getByName(ecKeyGenParams.getDomainParameters());
+
+                if (params == null)
                 {
-                    ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(ecKeyGenParams.getAlgorithm());
-
-                    ECCommittedSecretShareMessage[] messages = generator.generateThresholdKey(ecKeyGenParams.getKeyID(), ecKeyGenParams);
-
-                    nodeContext.execute(new SendShareTask(generator, message.getAlgorithm(), ecKeyGenParams.getKeyID(), involvedPeers, messages));
+                    params = ECNamedCurveTable.getByName(ecKeyGenParams.getDomainParameters());
                 }
+
+                paramsMap.put(ecKeyGenParams.getKeyID(), new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()));
+
+                sharedHMap.init(ecKeyGenParams.getKeyID(), involvedPeers.size());
+
+                BigInteger h = generateH(params.getN(), new SecureRandom());  // TODO: provide randomness?
+                ECPoint[]    messages = new ECPoint[involvedPeers.size()];
+
+                for (int i = 0; i != messages.length; i++)
+                {
+                    messages[i] = params.getG().multiply(h);
+                }
+
+                nodeContext.execute(new SendHTask(message.getAlgorithm(), ecKeyGenParams.getKeyID(), involvedPeers, messages));
+
+                final List<String> peerList = ecKeyGenParams.getNodesToUse();
+
+                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(ecKeyGenParams.getAlgorithm());
+
+                ECCommittedSecretShareMessage[] comMessages = generator.generateThresholdKey(
+                                                                          ecKeyGenParams.getKeyID(), paramsMap.get(ecKeyGenParams.getKeyID()), peerList.size(),
+                                                                          ecKeyGenParams.getThreshold(), sharedHMap.getShare(ecKeyGenParams.getKeyID()).getValue().normalize());
+
+                nodeContext.execute(new SendShareTask(generator, message.getAlgorithm(), ecKeyGenParams.getKeyID(), peerList, comMessages));
+
+                return new MessageReply(MessageReply.Type.OKAY);
+            case STORE_H:
+                StoreMessage storeMessage = StoreMessage.getInstance(message.getPayload());
+                ShareMessage shareMessage = ShareMessage.getInstance(storeMessage.getSecretShareMessage());
+
+                nodeContext.execute(new StoreHTask(storeMessage.getID(), shareMessage));
 
                 return new MessageReply(MessageReply.Type.OKAY);
             case STORE:
@@ -90,7 +143,7 @@ public class ECKeyPairGenerator
 
                 // we may not have been asked to generate our share yet, if this is the case we need to queue up our share requests
                 // till we can validate them.
-                ECNewDKGGenerator generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(message.getAlgorithm());
+                generator = (ECNewDKGGenerator)nodeContext.getKeyPairGenerator(message.getAlgorithm());
 
                 nodeContext.execute(new StoreShareTask(generator, sssMessage.getID(), sssMessage.getSecretShareMessage()));
 
@@ -106,6 +159,140 @@ public class ECKeyPairGenerator
             return new MessageReply(MessageReply.Type.ERROR, new DERUTF8String("NodeKeyGenerationService failure: " + e.getMessage()));
         }
 
+    }
+
+    private BigInteger generateH(BigInteger g, SecureRandom random)
+        throws ServiceConnectionException
+    {
+        int gBitLength = g.bitLength();
+        int count = 0;
+
+        BigInteger k = null;
+        do
+        {
+            if (count++ >= MAX_ITERATIONS)
+            {
+                break;
+            }
+
+            k = new BigInteger(gBitLength, random);
+        }
+        while (k.equals(BigInteger.ZERO) || k.compareTo(g) >= 0);
+
+        if (count >= MAX_ITERATIONS)
+        {
+            throw new ServiceConnectionException("Unable to generate random values for key generation.");
+        }
+
+        return k;
+    }
+
+    private class SendHTask
+        implements Runnable
+    {
+        private final String keyID;
+        private final List<String> peers;
+        private final ECPoint[] messages;
+        private final Algorithm algorithm;
+
+        SendHTask(Algorithm algorithm, String keyID, List<String> peers, ECPoint[] messages)
+        {
+            this.algorithm = algorithm;
+            this.keyID = keyID;
+            this.peers = peers;
+            this.messages = messages;
+        }
+
+        public void run()
+        {
+            for (int i = 0; i != peers.size(); i++)
+            {
+                String name = peers.get(i);
+
+                if (name.equals(nodeContext.getName()))
+                {
+                    sharedHMap.addValue(keyID, new ECPointShare(i + 1, messages[i]));
+                }
+                else
+                {
+                    nodeContext.execute(new SendHToNodeTask(name, keyID, algorithm, i + 1, messages[i]));
+                }
+            }
+        }
+    }
+
+    private class SendHToNodeTask
+        implements Runnable
+    {
+        private final String name;
+        private final String keyID;
+        private final Algorithm algorithm;
+        private final int sequenceNo;
+        private final ECPoint shareMessage;
+
+        SendHToNodeTask(String name, String keyID, Algorithm algorithm, int sequenceNo, ECPoint shareMessage)
+        {
+            this.name = name;
+            this.keyID = keyID;
+            this.algorithm = algorithm;
+            this.sequenceNo = sequenceNo;
+            this.shareMessage = shareMessage;
+        }
+
+        public void run()
+        {
+            try
+            {
+                ServicesConnection connection = nodeContext.getPeerMap().get(name);
+                if (connection != null)
+                {
+                    MessageReply rep = connection.sendMessage(CommandMessage.Type.GENERATE_KEY_PAIR,
+                        new AlgorithmServiceMessage(algorithm, new KeyPairGenerateMessage(algorithm, Type.STORE_H, new StoreMessage(keyID, new ShareMessage(sequenceNo, new ECPointMessage(shareMessage))))));
+                    if (rep.getType() != MessageReply.Type.OKAY)
+                    {
+                        nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Error in SendShare: " + rep.interpretPayloadAsError());
+                    }
+                }
+                else
+                {
+                    nodeContext.getEventNotifier().notify(EventNotifier.Level.WARN, "Node " + name + " not connected, waiting");
+
+                    nodeContext.schedule(SendHToNodeTask.this, 2, TimeUnit.SECONDS);
+                }
+            }
+            catch (ServiceConnectionException e)
+            {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.ERROR, "Exception in SendShareToNodeTask: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    private class StoreHTask
+        implements Runnable
+    {
+        private final String keyID;
+        private final ShareMessage message;
+
+        StoreHTask(String keyID, ShareMessage message)
+        {
+            this.keyID = keyID;
+            this.message = message;
+        }
+
+        @Override
+        public void run()
+        {
+            if (sharedHMap.containsKey(keyID))
+            {
+                sharedHMap.addValue(keyID, new ECPointShare(message.getSequenceNo(), ECPointMessage.getInstance(paramsMap.get(keyID).getCurve(), message.getShareData()).getPoint()));
+            }
+            else
+            {
+                nodeContext.getEventNotifier().notify(EventNotifier.Level.WARN, "Still waiting for generate message for key " + keyID);
+
+                nodeContext.schedule(StoreHTask.this, 1, TimeUnit.SECONDS);
+            }
+        }
     }
 
     private class SendShareTask
@@ -218,15 +405,7 @@ public class ECKeyPairGenerator
             else
             {
                 nodeContext.getEventNotifier().notify(EventNotifier.Level.WARN, "Still waiting for generate message for key " + keyID);
-                try
-                {
-                    Thread.sleep(1000);
-                }
-                catch (InterruptedException e)
-                {
-                    Thread.currentThread().interrupt();
-                }
-                nodeContext.execute(StoreShareTask.this);
+                nodeContext.schedule(StoreShareTask.this, 1, TimeUnit.SECONDS);
             }
         }
     }

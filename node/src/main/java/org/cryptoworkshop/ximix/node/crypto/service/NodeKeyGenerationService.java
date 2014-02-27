@@ -36,6 +36,9 @@ import org.cryptoworkshop.ximix.node.service.NodeContext;
 public class NodeKeyGenerationService
     extends BasicNodeService
 {
+    private final ECKeyPairGenerator ecKeyPairGenerator;
+    private final BLSKeyPairGenerator blsKeyPairGenerator;
+
     /**
      * Base constructor.
      *
@@ -45,6 +48,9 @@ public class NodeKeyGenerationService
     public NodeKeyGenerationService(NodeContext nodeContext, Config config)
     {
         super(nodeContext);
+
+        ecKeyPairGenerator = new ECKeyPairGenerator(nodeContext);
+        blsKeyPairGenerator = new BLSKeyPairGenerator(nodeContext);
     }
 
     public CapabilityMessage getCapability()
@@ -63,11 +69,11 @@ public class NodeKeyGenerationService
                 AlgorithmServiceMessage generateMessage = AlgorithmServiceMessage.getInstance(message.getPayload());
                 if (generateMessage.getAlgorithm() == Algorithm.EC_ELGAMAL || generateMessage.getAlgorithm() == Algorithm.ECDSA)
                 {
-                    return new ECKeyPairGenerator(nodeContext).handle(KeyPairGenerateMessage.getInstance(ECKeyPairGenerator.Type.values(), generateMessage.getPayload()));
+                    return ecKeyPairGenerator.handle(KeyPairGenerateMessage.getInstance(ECKeyPairGenerator.Type.values(), generateMessage.getPayload()));
                 }
                 else if (generateMessage.getAlgorithm() == Algorithm.BLS)
                 {
-                    return new BLSKeyPairGenerator(nodeContext).handle(KeyPairGenerateMessage.getInstance(BLSKeyPairGenerator.Type.values(), generateMessage.getPayload()));
+                    return blsKeyPairGenerator.handle(KeyPairGenerateMessage.getInstance(BLSKeyPairGenerator.Type.values(), generateMessage.getPayload()));
                 }
                 else
                 {

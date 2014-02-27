@@ -43,7 +43,7 @@ public class BLSNewDKGSecretSplitter
      * @param domainParams domain parameters for the EC group to use.
      * @param random a source of randomness,
      */
-    public BLSNewDKGSecretSplitter(int numberOfPeers, int threshold, BigInteger h, BLS01Parameters domainParams, SecureRandom random)
+    public BLSNewDKGSecretSplitter(int numberOfPeers, int threshold, Element h, BLS01Parameters domainParams, SecureRandom random)
     {
         if (numberOfPeers < threshold)
         {
@@ -51,7 +51,7 @@ public class BLSNewDKGSecretSplitter
         }
 
         this.k = threshold;
-        this.h = domainParams.getG().duplicate().mul(h);
+        this.h = h;
         this.domainParams = domainParams;
         this.secretSplitter = new ShamirSecretSplitter(numberOfPeers, threshold, PairingFactory.getPairing(domainParams.getCurveParameters()).getZr().getOrder(), random);
         this.random = random;

@@ -19,11 +19,12 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import it.unisa.dia.gas.jpbc.CurveParameters;
 import it.unisa.dia.gas.plaf.jpbc.pairing.DefaultCurveParameters;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.common.asn1.message.AlgorithmServiceMessage;
@@ -35,6 +36,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
 
 /**
  * Internal implementation of the KeyGenerationService interface. This class creates the messages which are then sent down
@@ -51,6 +53,8 @@ class KeyGenerationCommandService
         GENERATE
     }
 
+    private ExecutorService executor = Executors.newCachedThreadPool();
+
     private AdminServicesConnection connection;
 
     public KeyGenerationCommandService(AdminServicesConnection connection)
@@ -63,38 +67,84 @@ class KeyGenerationCommandService
         throws ServiceConnectionException
     {
         connection.shutdown();
+        executor.shutdown();
     }
 
     @Override
-    public byte[] generatePublicKey(String keyID, KeyGenerationOptions keyGenOptions)
+    public byte[] generatePublicKey(String keyID, final KeyGenerationOptions keyGenOptions)
         throws ServiceConnectionException
-    {                            // TODO: may not need the if after all.
+
+    {
+        final CountDownLatch keyGenLatch = new CountDownLatch(keyGenOptions.getNodesToUse().length);
+
+     // TODO: may not need the if after all.
         if (keyGenOptions.getAlgorithm() == Algorithm.BLS)
         {
             CurveParameters curveParameters = new DefaultCurveParameters().load(this.getClass().getResourceAsStream("d62003-159-158.param"));      // Type D curve
+            // TODO: do this properly once JPBC issues are addressed.
+            final NamedKeyGenParams blsKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), generateH(curveParameters.getBigInteger("n"), keyGenOptions.getRandom()), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
 
-            NamedKeyGenParams blsKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), generateH(curveParameters.getBigInteger("n"), keyGenOptions.getRandom()), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
-
-            for (String node : keyGenOptions.getNodesToUse())
+            for (final String node : keyGenOptions.getNodesToUse())
             {
-                connection.sendMessage(node, CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.GENERATE, blsKeyGenParams)));
+                executor.execute(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            connection.sendMessage(node, CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.GENERATE, blsKeyGenParams)));
+                        }
+                        catch (ServiceConnectionException e)
+                        {
+                            connection.getEventNotifier().notify(EventNotifier.Level.ERROR, "BLS Key Gneeration failure node " + node, e);
+                        }
+                        finally
+                        {
+                            keyGenLatch.countDown();
+                        }
+                    }
+                });
             }
-
-            return fetchPublicKey(keyID);
         }
         else
         {
-            X9ECParameters params = ECNamedCurveTable.getByName(keyGenOptions.getParameters()[0]);
+            final NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
 
-            NamedKeyGenParams ecKeyGenParams = new NamedKeyGenParams(keyID, keyGenOptions.getAlgorithm(), generateH(params.getN(), keyGenOptions.getRandom()), keyGenOptions.getParameters()[0], keyGenOptions.getThreshold(), Arrays.asList(keyGenOptions.getNodesToUse()));
-
-            for (String node : keyGenOptions.getNodesToUse())
+            for (final String node : keyGenOptions.getNodesToUse())
             {
-                connection.sendMessage(node, CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.GENERATE, ecKeyGenParams)));
+                executor.execute(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            connection.sendMessage(node, CommandMessage.Type.GENERATE_KEY_PAIR, new AlgorithmServiceMessage(keyGenOptions.getAlgorithm(), new KeyPairGenerateMessage(keyGenOptions.getAlgorithm(), Type.GENERATE, ecKeyGenParams)));
+                        }
+                        catch (ServiceConnectionException e)
+                        {
+                            connection.getEventNotifier().notify(EventNotifier.Level.ERROR, "EC Key Gneeration failure node " + node, e);
+                        }
+                        finally
+                        {
+                            keyGenLatch.countDown();
+                        }
+                    }
+                });
             }
-
-            return fetchPublicKey(keyID);
         }
+
+        try
+        {
+            keyGenLatch.await();
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
+
+        return fetchPublicKey(keyID);
     }
 
     @Override

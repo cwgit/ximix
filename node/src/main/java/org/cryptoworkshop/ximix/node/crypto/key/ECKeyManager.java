@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Attribute;
@@ -44,17 +43,13 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
@@ -78,7 +73,6 @@ import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
 import org.cryptoworkshop.ximix.common.asn1.XimixObjectIdentifiers;
-import org.cryptoworkshop.ximix.common.asn1.message.NamedKeyGenParams;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.crypto.threshold.ECCommittedSecretShare;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
@@ -103,7 +97,7 @@ public class ECKeyManager
     private static final int TIME_OUT = 20;
 
     private final Map<String, ECDomainParameters> paramsMap = new HashMap<>();
-    private final Map<String, BigInteger> hMap = new HashMap<>();
+    private final Map<String, ECPoint> hMap = new HashMap<>();
     private final Set<String> signingKeys = new HashSet<>();
     private final ShareMap<String, BigInteger> sharedPrivateKeyMap;
     private final ShareMap<String, ECPoint> sharedPublicKeyMap;
@@ -153,23 +147,13 @@ public class ECKeyManager
         return signingKeys.contains(keyID);
     }
 
-    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, NamedKeyGenParams keyGenParams)
+    public synchronized AsymmetricCipherKeyPair generateKeyPair(String keyID, Algorithm algorithm, int numberOfPeers, ECDomainParameters domainParameters, ECPoint h)
     {
-        ECDomainParameters domainParameters = paramsMap.get(keyID);
-
-        if (domainParameters == null)
+        if (!paramsMap.containsKey(keyID))
         {
-            ASN1ObjectIdentifier curveID = ECNamedCurveTable.getOID(keyGenParams.getDomainParameters());
-            X9ECParameters params = CustomNamedCurves.getByName(keyGenParams.getDomainParameters());
-
-            if (params == null)
-            {
-                params = ECNamedCurveTable.getByName(keyGenParams.getDomainParameters());
-            }
-
             ECKeyPairGenerator kpGen = new ECKeyPairGenerator();
 
-            kpGen.init(new ECKeyGenerationParameters(new ECNamedDomainParameters(curveID, params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed()), new SecureRandom()));
+            kpGen.init(new ECKeyGenerationParameters(domainParameters, new SecureRandom()));
 
             AsymmetricCipherKeyPair kp =  kpGen.generateKeyPair();
 
@@ -181,7 +165,7 @@ public class ECKeyManager
                 signingKeys.add(keyID);
             }
 
-            hMap.put(keyID, keyGenParams.getH());
+            hMap.put(keyID, h);
             paramsMap.put(keyID, ((ECPublicKeyParameters)kp.getPublic()).getParameters());
 
             return kp;

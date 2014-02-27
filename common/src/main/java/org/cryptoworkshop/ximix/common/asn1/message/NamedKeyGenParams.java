@@ -51,6 +51,7 @@ public class NamedKeyGenParams
      * @param domainParameters identifier for the domain parameters to use.
      * @param threshold the minimum threshold for simple private key operations.
      * @param nodesToUse the names of the nodes to take part in the sharing process.
+     * @deprecated this is only here due to issues with JPBC, once we can deal with BLS key generation properly this constructor should be removed.
      */
     public NamedKeyGenParams(String keyID, Algorithm algorithm, BigInteger h, String domainParameters, int threshold, List<String> nodesToUse)
     {
@@ -59,6 +60,26 @@ public class NamedKeyGenParams
         this.algorithm = algorithm;
         this.domainParameters = domainParameters;
         this.h = h;
+        this.threshold = threshold;
+        this.nodesToUse = nodesToUse;
+    }
+
+    /**
+     * Base constructor.
+     *
+     * @param keyID ID of the key to be generated.
+     * @param algorithm algorithm the key is to be generated for.
+     * @param domainParameters identifier for the domain parameters to use.
+     * @param threshold the minimum threshold for simple private key operations.
+     * @param nodesToUse the names of the nodes to take part in the sharing process.
+     */
+    public NamedKeyGenParams(String keyID, Algorithm algorithm, String domainParameters, int threshold, List<String> nodesToUse)
+    {
+        super(NAMED_PARAMETER_SET);
+        this.keyID = keyID;
+        this.algorithm = algorithm;
+        this.domainParameters = domainParameters;
+        this.h = BigInteger.ZERO;
         this.threshold = threshold;
         this.nodesToUse = nodesToUse;
     }
@@ -110,6 +131,9 @@ public class NamedKeyGenParams
         return keyID;
     }
 
+    /**
+     * @deprecated to be removed.
+     */
     public BigInteger getH()
     {
         return h;

@@ -93,10 +93,8 @@ public class ECCommittedSecretShare
      * @param hValue the value of h used to commit against.
      * @return true if share is revealed by commitment, false otherwise.
      */
-    public boolean isRevealed(int shareNumber, ECDomainParameters domainParams, BigInteger hValue)
+    public boolean isRevealed(int shareNumber, ECDomainParameters domainParams, ECPoint hValue)
     {
-        ECPoint h = domainParams.getG().multiply(hValue);
-
-        return getCommitment(shareNumber).equals(domainParams.getG().multiply(share).add(h.multiply(witness)));
+        return getCommitment(shareNumber).equals(domainParams.getG().multiply(share).add(hValue.multiply(witness)));
     }
 }

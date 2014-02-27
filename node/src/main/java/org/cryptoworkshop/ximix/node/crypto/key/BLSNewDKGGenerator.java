@@ -63,7 +63,7 @@ public class BLSNewDKGGenerator
         AsymmetricCipherKeyPair keyPair = keyManager.generateKeyPair(keyID, algorithm, blsKeyGenParams.getNodesToUse().size(), blsKeyGenParams);
 
         BLS01PrivateKeyParameters privKey = (BLS01PrivateKeyParameters)keyPair.getPrivate();
-        BLSNewDKGSecretSplitter secretSplitter = new BLSNewDKGSecretSplitter(blsKeyGenParams.getNodesToUse().size(), blsKeyGenParams.getThreshold(), blsKeyGenParams.getH(), privKey.getParameters(), new SecureRandom());
+        BLSNewDKGSecretSplitter secretSplitter = new BLSNewDKGSecretSplitter(blsKeyGenParams.getNodesToUse().size(), blsKeyGenParams.getThreshold(), privKey.getParameters().getG().duplicate().mul(blsKeyGenParams.getH()), privKey.getParameters(), new SecureRandom());
 
         BLSCommittedSplitSecret splitSecret = secretSplitter.split(privKey.getSk().toBigInteger());
         BLSCommittedSecretShare[] shares = splitSecret.getCommittedShares();

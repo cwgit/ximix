@@ -1,5 +1,6 @@
 package org.cryptoworkshop.ximix.node.crypto.test;
 
+import java.io.File;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyStore;
@@ -13,9 +14,16 @@ import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
@@ -23,6 +31,17 @@ import org.bouncycastle.jce.ECPointUtil;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.encoders.Hex;
+import org.cryptoworkshop.ximix.client.connection.ServicesConnection;
+import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
+import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.crypto.Algorithm;
+import org.cryptoworkshop.ximix.common.util.EventNotifier;
+import org.cryptoworkshop.ximix.node.service.Decoupler;
+import org.cryptoworkshop.ximix.node.service.ListeningSocketInfo;
+import org.cryptoworkshop.ximix.node.service.NodeContext;
+import org.cryptoworkshop.ximix.node.service.NodeService;
+import org.cryptoworkshop.ximix.node.service.PrivateKeyOperator;
+import org.cryptoworkshop.ximix.node.service.ThresholdKeyPairGenerator;
 
 public class TestUtils
 {
@@ -86,4 +105,159 @@ public class TestUtils
             throw new IllegalStateException("unable to set up test CA", e);
         }
     }
+
+    static class BasicNodeContext
+         implements NodeContext
+     {
+         private final String name;
+
+         private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(10);
+
+         BasicNodeContext(String name)
+         {
+             this.name = name;
+         }
+         @Override
+         public String getName()
+         {
+             return name;
+         }
+
+         @Override
+         public Map<String, ServicesConnection> getPeerMap()
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public CapabilityMessage[] getCapabilities()
+         {
+             return new CapabilityMessage[0];
+         }
+
+         @Override
+         public SubjectPublicKeyInfo getPublicKey(String keyID)
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public boolean hasPrivateKey(String keyID)
+         {
+             return false;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public PartialPublicKeyInfo getPartialPublicKey(String keyID)
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public PrivateKeyOperator getPrivateKeyOperator(String keyID)
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public boolean shutdown(int time, TimeUnit timeUnit)
+             throws InterruptedException
+         {
+             scheduledExecutorService.shutdown();
+
+             return true;
+         }
+
+         @Override
+         public boolean isStopCalled()
+         {
+             return false;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public void execute(Runnable task)
+         {
+             scheduledExecutorService.execute(task);
+         }
+
+         @Override
+         public void schedule(Runnable task, long time, TimeUnit timeUnit)
+         {
+             scheduledExecutorService.schedule(task, time, TimeUnit.SECONDS);
+         }
+
+         @Override
+         public Executor getDecoupler(Decoupler task)
+         {
+             return Executors.newSingleThreadExecutor();
+         }
+
+         @Override
+         public ScheduledExecutorService getScheduledExecutorService()
+         {
+             return scheduledExecutorService;
+         }
+
+         @Override
+         public ThresholdKeyPairGenerator getKeyPairGenerator(Algorithm algorithm)
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public KeyStore getNodeCAStore()
+         {
+             return TestUtils.genCAKeyStore(name);
+         }
+
+         @Override
+         public String getBoardHost(String boardName)
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public File getHomeDirectory()
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public Map<NodeService, Map<String, Object>> getServiceStatistics()
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public Map<String, String> getDescription()
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+         @Override
+         public ListeningSocketInfo getListeningSocketInfo()
+         {
+             return null;  //To change body of implemented methods use File | Settings | File Templates.
+         }
+
+
+         @Override
+         public EventNotifier getEventNotifier()
+         {
+
+             return new TestNotifier();
+         }
+
+         @Override
+         public X509Certificate getTrustAnchor()
+         {
+             return null;
+         }
+
+         @Override
+         public ExecutorService getExecutorService()
+         {
+             return getScheduledExecutorService();
+         }
+     }
 }
