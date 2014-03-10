@@ -199,6 +199,7 @@ task fetch_libs << {
     ['commons-codec-1.7.jar',
      'json-20090211.jar',
      'slf4j-api-1.7.2.jar',
+     'slf4j-nop-1.7.2.jar',
      'vVoteLibrary-20131217011536.jar',
      'vVoteTableBuilding.jar'
     ].each { i ->

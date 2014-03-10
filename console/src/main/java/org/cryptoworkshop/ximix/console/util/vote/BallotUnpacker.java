@@ -30,7 +30,7 @@ import uk.ac.surrey.cs.tvs.votepacking.search.BinarySearchFile;
 /**
  * This class is still very much under development!!!
  */
-public class VoteUnpacker
+public class BallotUnpacker
 {
     private final ECCurve             curve;
     private final Map<String, Lookup> lookupMap = new HashMap<>();
@@ -38,7 +38,7 @@ public class VoteUnpacker
     private final ECPoint             paddingPoint;
     private final Set<String>         useCandidateList = new HashSet<>();
 
-    public VoteUnpacker(File unpackerConfig)
+    public BallotUnpacker(File unpackerConfig)
         throws IOException, JSONException, JSONIOException
     {
         Properties mapProperties = new Properties();
@@ -134,6 +134,11 @@ public class VoteUnpacker
 
         byte[] indexes = lookUp.find(point);
 
+        if (indexes == null)
+        {
+            throw new NullPointerException("EC Point not found in lookup table!!!");
+        }
+
         //
         // truncate zeroes
         int end = indexes.length - 1;
@@ -219,7 +224,7 @@ public class VoteUnpacker
     public static void main(String[] args)
         throws Exception
     {
-        VoteUnpacker unpacker = new VoteUnpacker(new File(args[0]));
+        BallotUnpacker unpacker = new BallotUnpacker(new File(args[0]));
 
         File inputVotes = new File(args[1]);
 

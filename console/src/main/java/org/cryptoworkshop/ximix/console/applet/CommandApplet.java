@@ -107,7 +107,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.SeedAndWitnessMessage;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
 import org.cryptoworkshop.ximix.common.util.TranscriptType;
-import org.cryptoworkshop.ximix.console.util.vote.VoteUnpacker;
+import org.cryptoworkshop.ximix.console.util.vote.BallotUnpacker;
 
 public class CommandApplet
     extends JApplet
@@ -1465,7 +1465,7 @@ public class CommandApplet
                 //
                 // Convert the votes into a CSV
                 //
-                VoteUnpacker unpacker = new VoteUnpacker(new File(conversionFile));
+                BallotUnpacker unpacker = new BallotUnpacker(new File(conversionFile));
 
                 ASN1InputStream aIn = new ASN1InputStream(new FileInputStream(new File(destDir, boardEntry.getName() + ".out")));
 
