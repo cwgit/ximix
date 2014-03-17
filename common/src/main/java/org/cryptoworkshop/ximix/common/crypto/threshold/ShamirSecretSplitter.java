@@ -25,7 +25,7 @@ public class ShamirSecretSplitter
 {
     private final int numberOfPeers;
     private final int k;
-    private final BigInteger fieldSize;
+    private final BigInteger order;
     private final SecureRandom random;
     private final BigInteger[] alphas;
     private final BigInteger[][] alphasPow;
@@ -43,7 +43,7 @@ public class ShamirSecretSplitter
     {
         this.numberOfPeers = numberOfPeers;
         this.k = threshold;
-        this.fieldSize = order;
+        this.order = order;
         this.random = random;
 
          // Pre-calculate powers for each peer.
@@ -94,14 +94,14 @@ public class ShamirSecretSplitter
         // D1 to DT for each share
         for (int degree = 1; degree < k; degree++)
         {
-            BigInteger nextCoefficient = generateCoeff(fieldSize, random);
+            BigInteger nextCoefficient = generateCoeff(order, random);
 
             coefficients[degree] = nextCoefficient;
 
             for (int privacyPeerIndex = 0; privacyPeerIndex < numberOfPeers; privacyPeerIndex++)
             {
                 shares[privacyPeerIndex] = shares[privacyPeerIndex].add(
-                    nextCoefficient.multiply(alphasPow[privacyPeerIndex][degree]).mod(fieldSize)).mod(fieldSize);
+                    nextCoefficient.multiply(alphasPow[privacyPeerIndex][degree]).mod(order)).mod(order);
             }
         }
 
