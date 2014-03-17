@@ -36,14 +36,14 @@ public class ShamirSecretSplitter
      *
      * @param numberOfPeers the number of peers among which the secret is shared
      * @param threshold number of peers that must be available for secret reconstruction,
-     * @param fieldSize size of the group's field.
+     * @param order number of elements in the field's group..
      * @param random a source of randomness,
      */
-    public ShamirSecretSplitter(int numberOfPeers, int threshold, BigInteger fieldSize, SecureRandom random)
+    public ShamirSecretSplitter(int numberOfPeers, int threshold, BigInteger order, SecureRandom random)
     {
         this.numberOfPeers = numberOfPeers;
         this.k = threshold;
-        this.fieldSize = fieldSize;
+        this.fieldSize = order;
         this.random = random;
 
          // Pre-calculate powers for each peer.
