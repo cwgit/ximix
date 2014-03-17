@@ -1,6 +1,11 @@
 
 Welcome to the Ximix distribution.
 
+Ximix is a network application for doing threshold cryptography, including key generation, signatures, and decryption. It also includes a MixNet based on static RPC.
+
+Ximix was largely made possible through the sponsorship of the Victorian Electoral Commission as part of the vVote project in 2013/2014.
+
+
 1. Build Setup.
 
 Building the distribution requires, at a minimum, gradle 1.8 and JDK 1.7. As the application makes liberal use of the JCE you *must* have the unrestricted policy files for the JCE installed.
@@ -36,8 +41,38 @@ gradle apiJavaDoc
 
 to generate the JavaDoc. The JavaDoc will appear in build/docs.
 
-5. Further Information.
+5. Licenses
 
-See the file LICENSE in this directory for license information.
+See the file LICENSE in this directory for license information for this code basse.
 
-To find out more in general, have a look at http://www.cryptoworkshop.com/ximix for information on running the installer generators and building nodes.
+Please note that some included jars use different licenses from the following locations:
+
+http://www.bouncycastle.org
+
+bcpkix-jdk15on-151b07.jar - The Bouncy Castle License (MIT X11)
+bcprov-jdk15on-151b07.jar - The Bouncy Castle License (MIT X11)
+
+http://gas.dia.unisa.it/projects/jpbc
+
+jpbc-api-1.2.1.jar - GNU LESSER GENERAL PUBLIC LICENSE Version 3
+jpbc-crypto-1.2.1.jar - GNU LESSER GENERAL PUBLIC LICENSE Version 3
+jpbc-pbc-1.2.1.jar - GNU LESSER GENERAL PUBLIC LICENSE Version 3
+jpbc-plaf-1.2.1.jar - GNU LESSER GENERAL PUBLIC LICENSE Version 3
+ 
+http://www.slf4j.org/
+
+slf4j-api-1.7.2.jar - MIT X11
+slf4j-nop-1.7.2.jar - MIT X11
+
+http://www.json.org/
+
+json-20090211.jar - JSON.org License (MIT X11)
+
+https://bitbucket.org/tvsproject/suvote_tablebuilding
+
+vVoteLibrary-20131217011536.jar - GNU GENERAL PUBLIC LICENSE, Version 3
+vVoteTableBuilding.jar  - GNU GENERAL PUBLIC LICENSE, Version 3
+
+6. Further Information.
+
+To find out more in general, have a look at http://www.cryptoworkshop.com/ximix for information on running the installer generators and building nodes. There is also a PDF in the docs directory providing some more in depth information on Ximix.
