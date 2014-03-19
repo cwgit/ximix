@@ -58,6 +58,7 @@ import org.cryptoworkshop.ximix.client.connection.XimixRegistrarFactory;
 import org.cryptoworkshop.ximix.client.verify.ECDecryptionChallengeVerifier;
 import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
+import org.cryptoworkshop.ximix.common.asn1.message.ChallengeLogMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
 import org.cryptoworkshop.ximix.common.crypto.Algorithm;
 import org.cryptoworkshop.ximix.common.util.Operation;
@@ -558,6 +559,15 @@ public class KeyProcessingTest extends TestCase
                     resultText1[counter] = decrypted.getECPoints()[0];
                     resultText2[counter++] = decrypted.getECPoints()[1];
                     TestUtil.checkThread(decryptThread);
+                    for (int i = 0; i != proofs.size(); i++)
+                    {
+                        ChallengeLogMessage logMessage = ChallengeLogMessage.getInstance(proofs.get(i));
+
+                        if (!logMessage.hasPassed())
+                        {
+                            downloadBoardFailed.set(true);
+                        }
+                    }
                 }
 
                 @Override

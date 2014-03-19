@@ -16,7 +16,7 @@
 package org.cryptoworkshop.ximix.node.crypto.service;
 
 import java.io.IOException;
-import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -34,6 +34,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessageDataBlock;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
+import org.cryptoworkshop.ximix.common.crypto.ECDecryptionProof;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.operator.ECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
@@ -82,24 +83,20 @@ public class NodeDecryptionService
 
             ECDomainParameters domainParameters = ecOperator.getDomainParameters();
 
-            ProofGenerator pGen = new ProofGenerator();
+            ProofGenerator pGen = new ProofGenerator(ecOperator, new SecureRandom()); // TODO: randomness
 
             for (int i = 0; i != messages.size(); i++)
             {
                 PairSequence ps = PairSequence.getInstance(domainParameters.getCurve(), messages.get(i));
                 ECPair[] pairs = ps.getECPairs();
-                ECPoint[] proofs = new ECPoint[pairs.length];
+                ECDecryptionProof[] proofs = new ECDecryptionProof[pairs.length];
 
                 for (int j = 0; j != pairs.length; j++)
                 {
+                    ECPoint c = pairs[j].getX();
                     pairs[j] = new ECPair(ecOperator.transform(pairs[j].getX()), pairs[j].getY());
-                }
 
-                BigInteger challenge = pGen.computeChallenge(ps.getECPairs(), pairs);
-
-                for (int j = 0; j != pairs.length; j++)
-                {
-                    proofs[j] = pGen.computeProof(pairs[j].getX(), challenge, domainParameters, ecOperator);
+                    proofs[j] = pGen.computeProof(c, pairs[j]);
                 }
 
                 try

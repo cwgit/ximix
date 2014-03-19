@@ -50,7 +50,6 @@ import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cms.CMSSignedDataParser;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -102,6 +101,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptQueryResponse;
 import org.cryptoworkshop.ximix.common.asn1.message.TranscriptTransferMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.TransitBoardMessage;
+import org.cryptoworkshop.ximix.common.crypto.ECDecryptionProof;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.common.util.Operation;
@@ -1225,7 +1225,7 @@ class ClientCommandService
                 ECPublicKeyParameters nodeKey = (ECPublicKeyParameters)pubKeys[wIndex];
                 PairSequenceWithProofs pairSequenceWithProofs = PairSequenceWithProofs.getInstance(domainParams.getCurve(), partialDecrypts[wIndex].get(messageIndex));
 
-                ECPoint[] proofs = pairSequenceWithProofs.getECProofs();
+                ECDecryptionProof[] proofs = pairSequenceWithProofs.getECProofs();
                 ECPair[] partials = pairSequenceWithProofs.getECPairs();
 
                 if (proofs.length != partials.length)
@@ -1234,7 +1234,7 @@ class ClientCommandService
                     throw new ServiceConnectionException("Partial decrypts and proofs differ in length");
                 }
 
-                BigInteger challenge = computeChallenge(cipherText, partials);
+
                 ECPoint[] decrypts = new ECPoint[partials.length];
 
                 for (int i = 0; i != partials.length; i++)
@@ -1245,7 +1245,7 @@ class ClientCommandService
                 boolean hasPassed = true;
                 for (int i = 0; i != partials.length; i++)
                 {
-                    if (!isVerifiedDecryption(nodeKey, partials[i].getX(), challenge, proofs[i]))
+                    if (!proofs[i].isVerified(nodeKey, cipherText[i].getX(), partials[i].getX()))
                     {
                        hasPassed = false;
                     }
@@ -1253,7 +1253,7 @@ class ClientCommandService
 
                 try
                 {
-                    proofList.add(new ChallengeLogMessage(messageIndex, wIndex, hasPassed, challenge, SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(nodeKey), decrypts, proofs).getEncoded());
+                    proofList.add(new ChallengeLogMessage(messageIndex, wIndex, hasPassed, SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(nodeKey), decrypts, proofs).getEncoded());
                     if (hasPassed)
                     {
                         eventNotifier.notify(EventNotifier.Level.INFO, "Proof for message " + messageIndex + " for node " + nodeNames[wIndex] + " passed.");
@@ -1310,44 +1310,6 @@ class ClientCommandService
         }
 
         return fulls;
-    }
-
-    // The next two functions are an application of:
-    // An application of "Efficient Cryptographic Protocol Design Based on Distributed El Gamal Encryption, F. Brandt, and
-    // "How not to Prove Yourself: Pitfalls of the Fiat-Shamir Heuristic and Applications to Helios" by D. Bernhard, O. Prereira, and B. Warinschi.
-    private BigInteger computeChallenge(ECPair[] ciphers, ECPair[] partials)
-    {
-        SHA256Digest sha256 = new SHA256Digest();
-
-        for (ECPair cText : ciphers)
-        {
-            addIn(sha256, cText.getX());
-            addIn(sha256, cText.getY());
-        }
-
-        for (ECPair plain : partials)
-        {
-            addIn(sha256, plain.getX());
-            addIn(sha256, plain.getY());
-        }
-
-        byte[] res = new byte[sha256.getDigestSize()];
-
-        sha256.doFinal(res, 0);
-
-        return new BigInteger(1, res);
-    }
-
-    private boolean isVerifiedDecryption(ECPublicKeyParameters nodeKey, ECPoint pTxt, BigInteger challenge, ECPoint proof)
-    {
-        return pTxt.add(nodeKey.getQ().multiply(challenge)).normalize().equals(proof);
-    }
-
-    private void addIn(SHA256Digest sha256, ECPoint point)
-    {
-        byte[] enc = point.getEncoded();
-
-        sha256.update(enc, 0, enc.length);
     }
 
     private class DownloadShuffleTranscriptsOp

@@ -16,6 +16,7 @@
 package org.cryptoworkshop.ximix.common.asn1.board;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -24,7 +25,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.crypto.ec.ECPair;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
+import org.cryptoworkshop.ximix.common.crypto.ECDecryptionProof;
 
 /**
  * Helper class for carrying an array of EC pairs with associated proofs of decryption.
@@ -33,7 +34,7 @@ public class PairSequenceWithProofs
     extends ASN1Object
 {
     private final ECPair[] ecPairs;
-    private final ECPoint[] ecProofs;
+    private final ECDecryptionProof[] ecProofs;
 
     /**
      * Create a sequence from a collection of pairs representing partial decrypts.
@@ -41,7 +42,7 @@ public class PairSequenceWithProofs
      * @param ecPairs the pairs to include.
      * @param ecProofs proofs of decryption associated with each pair
      */
-    public PairSequenceWithProofs(ECPair[] ecPairs, ECPoint[] ecProofs)
+    public PairSequenceWithProofs(ECPair[] ecPairs, ECDecryptionProof[] ecProofs)
     {
         this.ecPairs = ecPairs.clone();
         this.ecProofs = ecProofs.clone();
@@ -59,11 +60,13 @@ public class PairSequenceWithProofs
         }
 
         s = ASN1Sequence.getInstance(sequence.getObjectAt(1));
-        ecProofs = new ECPoint[s.size()];
+        ecProofs = new ECDecryptionProof[s.size()];
 
         for (int i = 0; i != ecPairs.length; i++)
         {
-            ecProofs[i] = curve.decodePoint(ASN1OctetString.getInstance(s.getObjectAt(i)).getOctets());
+            ASN1Sequence proof = ASN1Sequence.getInstance(s.getObjectAt(i));
+            ecProofs[i] = new ECDecryptionProof(curve.decodePoint(ASN1OctetString.getInstance(proof.getObjectAt(0)).getOctets()),
+                curve.decodePoint(ASN1OctetString.getInstance(proof.getObjectAt(1)).getOctets()), ASN1Integer.getInstance(proof.getObjectAt(2)).getValue());
         }
     }
 
@@ -87,9 +90,15 @@ public class PairSequenceWithProofs
         tot.add(new DERSequence(v));
 
         v = new ASN1EncodableVector();
-        for (ECPoint point : ecProofs)
+        for (ECDecryptionProof proof : ecProofs)
         {
-            v.add(new DEROctetString(point.getEncoded()));
+            ASN1EncodableVector proofV = new ASN1EncodableVector();
+
+            proofV.add(new DEROctetString(proof.getA().getEncoded(true)));
+            proofV.add(new DEROctetString(proof.getB().getEncoded(true)));
+            proofV.add(new ASN1Integer(proof.getR()));
+
+            v.add(new DERSequence(proofV));
         }
 
         tot.add(new DERSequence(v));
@@ -131,9 +140,9 @@ public class PairSequenceWithProofs
     /**
      * Return the EC proofs associated with the pairs in this object.
      *
-     * @return an array of EC points representing proofs.
+     * @return an array of decryption proofs.
      */
-    public ECPoint[] getECProofs()
+    public ECDecryptionProof[] getECProofs()
     {
         return ecProofs;
     }

@@ -89,7 +89,7 @@ public class ECNewDKGSecretSplitter
         {
             r = new BigInteger(maxbits, rand);
         }
-        while (r.compareTo(n) >= 0);
+        while (r.compareTo(n) >= 0 || r.equals(BigInteger.ZERO));
 
         return r;
     }

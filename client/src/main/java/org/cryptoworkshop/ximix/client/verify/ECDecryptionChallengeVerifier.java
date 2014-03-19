@@ -30,6 +30,7 @@ import org.cryptoworkshop.ximix.common.asn1.board.PairSequence;
 import org.cryptoworkshop.ximix.common.asn1.board.PointSequence;
 import org.cryptoworkshop.ximix.common.asn1.message.ChallengeLogMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.PostedMessage;
+import org.cryptoworkshop.ximix.common.crypto.ECDecryptionProof;
 import org.cryptoworkshop.ximix.common.crypto.threshold.LagrangeWeightCalculator;
 
 /**
@@ -77,6 +78,7 @@ public class ECDecryptionChallengeVerifier
         try
         {
             int messageIndex = -1;
+            ECPair[] encPairs = null;
 
             ASN1Object obj;
             while ((obj = aIn.readObject()) != null)
@@ -84,7 +86,7 @@ public class ECDecryptionChallengeVerifier
                 ChallengeLogMessage logMessage = ChallengeLogMessage.getInstance(obj);
 
                 ECPoint[] sourceMessage = logMessage.getSourceMessage();
-                ECPoint[] proofs = logMessage.getProofs();
+                ECDecryptionProof[] proofs = logMessage.getProofs();
 
                 ECPublicKeyParameters currentPubKey = (ECPublicKeyParameters)PublicKeyFactory.createKey(logMessage.getKeyInfo());
                 if (!isSameParameters(pubKey.getParameters(), currentPubKey.getParameters()))
@@ -117,14 +119,13 @@ public class ECDecryptionChallengeVerifier
                                  }
                              }
                         }
+
                         if (!pubKey.getQ().equals(accumulatedQ))
                         {
                             throw new TranscriptVerificationException("Log message indicates inconsistent public key.");
                         }
 
                         // verify the partial decrypts result in the final message
-                        PostedMessage pM = PostedMessage.getInstance(lastIn.readObject());
-                        ECPair[] encPairs = PairSequence.getInstance(pubKey.getParameters().getCurve(), pM.getMessage()).getECPairs();
 
                         int len = activeMsgParts[0].length;
                         for (int i = 1; i != activeMsgParts.length; i++)
@@ -172,21 +173,22 @@ public class ECDecryptionChallengeVerifier
                     }
 
                     messageIndex = logMessage.getIndex();
+                    PostedMessage pM = PostedMessage.getInstance(lastIn.readObject());
+                    encPairs = PairSequence.getInstance(pubKey.getParameters().getCurve(), pM.getMessage()).getECPairs();
                 }
 
-                addPeer(logMessage.getSequenceNo(), currentPubKey, logMessage.getSourceMessage());
+                addPeer(logMessage.getSequenceNo(), currentPubKey, sourceMessage);
 
                 if (!logMessage.hasPassed())
                 {
                     throw new TranscriptVerificationException("Log message indicates challenge did not pass.");
                 }
 
-                for (int i = 0; i != sourceMessage.length; i++)
+                for (int i = 0; i != proofs.length; i++)
                 {
-                    // check proof
-                    if (!sourceMessage[i].add(activePeers[logMessage.getSequenceNo()].getQ().multiply(logMessage.getM())).normalize().equals(proofs[i]))
+                    if (!proofs[i].isVerified(activePeers[logMessage.getSequenceNo()], encPairs[i].getX(), sourceMessage[i]))
                     {
-                        throw new TranscriptVerificationException("Proof results do not match combined source message and m value.");
+                        throw new TranscriptVerificationException("Proof results do not match combined source message and cipher text.");
                     }
                 }
             }

@@ -24,7 +24,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,6 +65,7 @@ import org.cryptoworkshop.ximix.common.asn1.message.SeedAndWitnessMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.ShareMessage;
 import org.cryptoworkshop.ximix.common.config.Config;
 import org.cryptoworkshop.ximix.common.config.ConfigException;
+import org.cryptoworkshop.ximix.common.crypto.ECDecryptionProof;
 import org.cryptoworkshop.ximix.common.util.EventNotifier;
 import org.cryptoworkshop.ximix.node.crypto.operator.ECPrivateKeyOperator;
 import org.cryptoworkshop.ximix.node.service.BasicNodeService;
@@ -351,24 +352,21 @@ public class NodeShuffledBoardDecryptionService
             try
             {
                 Object o = null;
-                ProofGenerator pGen = new ProofGenerator();
+                ProofGenerator pGen = new ProofGenerator(ecOperator, new SecureRandom()); // TODO: randomness
                 while (partialDecryptsBuilder.hasCapacity() && (o = aIn.readObject()) != null)
                 {
                     PostedMessage postedMessage = PostedMessage.getInstance(o);
                     PairSequence ps = PairSequence.getInstance(domainParameters.getCurve(), postedMessage.getMessage());
                     ECPair[] pairs = ps.getECPairs();
-                    ECPoint[] proofs = new ECPoint[pairs.length];
+                    ECPair[] partials = new ECPair[pairs.length];
+                    ECDecryptionProof[] proofs = new ECDecryptionProof[pairs.length];
 
                     for (int j = 0; j != pairs.length; j++)
                     {
+                        ECPoint c = pairs[j].getX();
                         pairs[j] = new ECPair(ecOperator.transform(pairs[j].getX()), pairs[j].getY());
-                    }
 
-                    BigInteger challenge = pGen.computeChallenge(ps.getECPairs(), pairs);
-
-                    for (int j = 0; j != pairs.length; j++)
-                    {
-                        proofs[j] = pGen.computeProof(pairs[j].getX(), challenge, domainParameters, ecOperator);
+                        proofs[j] = pGen.computeProof(c, pairs[j]);
                     }
 
                     partialDecryptsBuilder.add(new PairSequenceWithProofs(pairs, proofs).getEncoded());
