@@ -340,7 +340,7 @@ task make_console_installer(dependsOn: 'jar') << {
 
 
 
-    println("\r\nMaking Node Installer Jar\r\n");
+    println("\r\nMaking Console Installer Jar\r\n");
 
     File root = new File(projectDir, "build/installers");
 
