@@ -356,14 +356,12 @@ public class NodeShuffledBoardDecryptionService
                     PostedMessage postedMessage = PostedMessage.getInstance(o);
                     PairSequence ps = PairSequence.getInstance(domainParameters.getCurve(), postedMessage.getMessage());
                     ECPair[] pairs = ps.getECPairs();
-                    ECPair[] partials = new ECPair[pairs.length];
                     ECDecryptionProof[] proofs = new ECDecryptionProof[pairs.length];
 
                     for (int j = 0; j != pairs.length; j++)
                     {
                         ECPoint c = pairs[j].getX();
                         pairs[j] = new ECPair(ecOperator.transform(pairs[j].getX()), pairs[j].getY());
-
                         proofs[j] = pGen.computeProof(c, pairs[j]);
                     }
 
