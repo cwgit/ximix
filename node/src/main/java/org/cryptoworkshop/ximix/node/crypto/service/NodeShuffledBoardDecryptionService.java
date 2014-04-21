@@ -271,6 +271,8 @@ public class NodeShuffledBoardDecryptionService
                     bIn.close();
                 }
 
+                linkIndexVerifier = null;        // free the resources
+
                 // verify the opened commitments.
                 for (Integer key : witnessTranscripts.keySet())
                 {
