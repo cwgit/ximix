@@ -213,16 +213,12 @@ public class Verifier
                 File nextTranscript = generalTranscripts.get(key + 1);
 
                 InputStream witnessTranscriptStream = new BufferedInputStream(new FileInputStream(transcriptFile));
-                InputStream initialTranscriptStream = new BufferedInputStream(new FileInputStream(initialTranscript));
-                InputStream nextTranscriptStream = new BufferedInputStream(new FileInputStream(nextTranscript));
 
-                ECShuffledTranscriptVerifier verifier = new ECShuffledTranscriptVerifier(pubKey, witnessTranscriptStream, initialTranscriptStream, nextTranscriptStream);
+                ECShuffledTranscriptVerifier verifier = new ECShuffledTranscriptVerifier(pubKey, witnessTranscriptStream, initialTranscript, nextTranscript);
 
                 verifier.verify();
 
                 witnessTranscriptStream.close();
-                initialTranscriptStream.close();
-                nextTranscriptStream.close();
 
                 System.out.print(".");
             }

@@ -17,7 +17,6 @@ package org.cryptoworkshop.ximix.client.verify.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 
 import junit.framework.TestCase;
@@ -1720,11 +1719,13 @@ public class VerifierTest
         {
             ECShuffledTranscriptVerifier verifier = new ECShuffledTranscriptVerifier(pubKey, new ByteArrayInputStream(initialTranscript), new ByteArrayInputStream(initialTranscript), new ByteArrayInputStream(finalTranscript));
 
+            verifier.verify();
+
             TestCase.fail("corrupt messages not noticed");
         }
-        catch (IOException e)
+        catch (TranscriptVerificationException e)
         {
-            TestCase.assertEquals("Unable to parse transcripts: illegal object in getInstance: org.bouncycastle.asn1.DLSequence", e.getMessage());
+            TestCase.assertEquals("illegal object in getInstance: org.bouncycastle.asn1.DLSequence", e.getCause().getMessage());
         }
     }
 
