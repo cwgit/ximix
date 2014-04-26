@@ -93,11 +93,7 @@ public class RemoteServicesCache
         Future<NodeInfo> future = cache.remove(entry);
         if (future != null)
         {
-            if (future.isDone())
-            {
-                future.cancel(true);
-            }
-            else if (!future.isCancelled())    // put back queries that are still in progress to allow for short term caching.
+            if (!future.isCancelled())    // put back queries that are still in progress to allow for short term caching.
             {
                 cache.put(entry, future);
             }
@@ -139,7 +135,7 @@ public class RemoteServicesCache
             // we want to ignore cache entries which resulted in an exception
             try
             {
-                future.get(TIME_OUT, TimeUnit.MINUTES);   // we rely on the time out to stop hung entries hanging aroud.
+                future.get(TIME_OUT, TimeUnit.MINUTES);   // we rely on the time out to stop hung entries hanging around.
 
                 active.put(entry, true);                 // we mark the entry as active.
             }

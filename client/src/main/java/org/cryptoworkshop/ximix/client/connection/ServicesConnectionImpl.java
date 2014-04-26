@@ -23,6 +23,7 @@ import java.util.concurrent.Executor;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.cryptoworkshop.ximix.common.asn1.message.CapabilityMessage;
+import org.cryptoworkshop.ximix.common.asn1.message.CommandMessage;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageReply;
 import org.cryptoworkshop.ximix.common.asn1.message.MessageType;
 import org.cryptoworkshop.ximix.common.util.DecoupledListenerHandlerFactory;
@@ -40,8 +41,10 @@ class ServicesConnectionImpl
     private final NodeConnectionListener nodeConnectionListener;
     private final CountDownLatch isActivated = new CountDownLatch(1);
     private final List<NodeServicesConnection> connections = new ArrayList<>();
+    private final List<NodeServicesConnection> adminConnections = new ArrayList<>();
 
     private volatile NodeServicesConnection connection;
+    private volatile NodeServicesConnection adminConnection;
 
     public ServicesConnectionImpl(List<NodeConfig> configList, Executor decoupler, EventNotifier eventNotifier)
     {
@@ -70,6 +73,7 @@ class ServicesConnectionImpl
             if (nodeConf.getThrowable() == null)
             {
                 connections.add(new NodeServicesConnection(nodeConf, nodeConnectionListener, eventNotifier));
+                adminConnections.add(new NodeServicesConnection(nodeConf, nodeConnectionListener, eventNotifier));
             }
             else
             {
@@ -83,6 +87,7 @@ class ServicesConnectionImpl
         throws ServiceConnectionException
     {
         connection.shutdown();
+        adminConnection.shutdown();
     }
 
     @Override
@@ -104,8 +109,10 @@ class ServicesConnectionImpl
                     try
                     {
                         connections.get(nodeNo).activate();
+                        adminConnections.get(nodeNo).activate();
 
                         connection = connections.get(nodeNo);
+                        adminConnection = adminConnections.get(nodeNo);
                         return;
                     }
                     catch (Exception e)
@@ -116,12 +123,15 @@ class ServicesConnectionImpl
 
                 // none are currently working, we'll just have to make the best of it.
                 connection = connections.get(0);
+                adminConnection = adminConnections.get(0);
             }
             else
             {
                 // if we end up here, there's only one
                 connection = connections.get(0);
                 connection.activate();
+                adminConnection = adminConnections.get(0);
+                adminConnection.activate();
             }
         }
         finally
@@ -169,6 +179,14 @@ class ServicesConnectionImpl
             Thread.currentThread().interrupt();
         }
 
-        return connection.sendMessage(type, messagePayload);
+        // keep admin info messages on a separate channel.
+        if (type == CommandMessage.Type.NODE_INFO_UPDATE || type == CommandMessage.Type.NODE_STATISTICS)
+        {
+            return adminConnection.sendMessage(type, messagePayload);
+        }
+        else
+        {
+            return connection.sendMessage(type, messagePayload);
+        }
     }
 }

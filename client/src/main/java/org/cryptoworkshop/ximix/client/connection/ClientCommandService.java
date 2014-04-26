@@ -1347,8 +1347,7 @@ class ClientCommandService
                 //
                 boolean notFound = true;
 
-                MessageReply startRep = connection.sendMessage(CommandMessage.Type.GET_BOARD_HOST, new BoardMessage(boardName));
-                String boardHost = DERUTF8String.getInstance(startRep.getPayload()).getString();
+                String boardHost = getHostName(boardName);
 
                 for (int i = 0; i != nodes.length; i++)
                 {

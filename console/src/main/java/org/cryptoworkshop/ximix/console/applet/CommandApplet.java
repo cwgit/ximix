@@ -38,6 +38,7 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -132,6 +133,7 @@ public class CommandApplet
 
     private X509Certificate trustAnchor;
     private Semaphore processSemaphore = new Semaphore(ncores);
+    private Semaphore maxProcessSemaphore = new Semaphore(ncores * 5);
 
     public void init()
     {
@@ -567,7 +569,7 @@ public class CommandApplet
     {
         static String[] title = new String[] { "Select", "Board", "<html><body><center>Primary<br/>Node</center></body></html>", "<html><body><center>Backup<br/>Node</center></body></html>", "Size", "Status" };
 
-        private final Map<String, BoardEntry> entries = new LinkedHashMap<>();
+        private final Map<String, BoardEntry> entries = Collections.<String, BoardEntry>synchronizedMap(new LinkedHashMap());
 
         BoardTableModel()
         {
@@ -1131,6 +1133,7 @@ public class CommandApplet
             try
             {
                 processSemaphore.acquire();
+                maxProcessSemaphore.acquire();
             }
             catch (InterruptedException e)
             {
@@ -1560,7 +1563,7 @@ public class CommandApplet
             finally
             {
                 shuffleLatch.countDown();
-
+                maxProcessSemaphore.release();
                 dialog.adjustProgress(1);
             }
         }

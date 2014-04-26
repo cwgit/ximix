@@ -105,7 +105,7 @@ public class CopyAndMoveTask
 
         if (reply.getType() != MessageReply.Type.OKAY)
         {
-            throw new ServiceConnectionException("message failed");
+            throw new ServiceConnectionException("message failed: " + reply.interpretPayloadAsError());
         }
     }
 }
