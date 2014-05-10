@@ -196,7 +196,7 @@ public class XimixRegistrarFactory
                 }
                 if (serviceClass.isAssignableFrom(UploadService.class))
                 {
-                    return (T)new ClientUploadService(adminServicesConnection);
+                    return (T)new ClientCommandService(adminServicesConnection);
                 }
                 if (serviceClass.isAssignableFrom(SigningService.class))
                 {
