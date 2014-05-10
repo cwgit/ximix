@@ -42,9 +42,11 @@ class ServicesConnectionImpl
     private final CountDownLatch isActivated = new CountDownLatch(1);
     private final List<NodeServicesConnection> connections = new ArrayList<>();
     private final List<NodeServicesConnection> adminConnections = new ArrayList<>();
+    private final List<NodeServicesConnection> backupConnections = new ArrayList<>();
 
     private volatile NodeServicesConnection connection;
     private volatile NodeServicesConnection adminConnection;
+    private volatile NodeServicesConnection backupConnection;
 
     public ServicesConnectionImpl(List<NodeConfig> configList, Executor decoupler, EventNotifier eventNotifier)
     {
@@ -74,6 +76,7 @@ class ServicesConnectionImpl
             {
                 connections.add(new NodeServicesConnection(nodeConf, nodeConnectionListener, eventNotifier));
                 adminConnections.add(new NodeServicesConnection(nodeConf, nodeConnectionListener, eventNotifier));
+                backupConnections.add(new NodeServicesConnection(nodeConf, nodeConnectionListener, eventNotifier));
             }
             else
             {
@@ -88,6 +91,7 @@ class ServicesConnectionImpl
     {
         connection.shutdown();
         adminConnection.shutdown();
+        backupConnection.shutdown();
     }
 
     @Override
@@ -108,11 +112,13 @@ class ServicesConnectionImpl
 
                     try
                     {
-                        connections.get(nodeNo).activate();
-                        adminConnections.get(nodeNo).activate();
-
                         connection = connections.get(nodeNo);
                         adminConnection = adminConnections.get(nodeNo);
+                        backupConnection = backupConnections.get(nodeNo);
+
+                        connection.activate();
+                        adminConnection.activate();
+                        backupConnection.activate();
                         return;
                     }
                     catch (Exception e)
@@ -124,6 +130,7 @@ class ServicesConnectionImpl
                 // none are currently working, we'll just have to make the best of it.
                 connection = connections.get(0);
                 adminConnection = adminConnections.get(0);
+                backupConnection = backupConnections.get(0);
             }
             else
             {
@@ -132,6 +139,8 @@ class ServicesConnectionImpl
                 connection.activate();
                 adminConnection = adminConnections.get(0);
                 adminConnection.activate();
+                backupConnection = backupConnections.get(0);
+                backupConnection.activate();
             }
         }
         finally
@@ -183,6 +192,10 @@ class ServicesConnectionImpl
         if (type == CommandMessage.Type.NODE_INFO_UPDATE || type == CommandMessage.Type.NODE_STATISTICS)
         {
             return adminConnection.sendMessage(type, messagePayload);
+        }
+        else if (type == CommandMessage.Type.BACKUP_BOARD_CREATE || type == CommandMessage.Type.TRANSFER_TO_BACKUP_BOARD || type == CommandMessage.Type.CLEAR_BACKUP_BOARD)
+        {
+            return backupConnection.sendMessage(type, messagePayload);
         }
         else
         {
