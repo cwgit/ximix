@@ -66,6 +66,7 @@ import org.cryptoworkshop.ximix.client.DownloadOptions;
 import org.cryptoworkshop.ximix.client.DownloadShuffleResultOptions;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
+import org.cryptoworkshop.ximix.client.ShuffleStatus;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.common.asn1.PartialPublicKeyInfo;
@@ -480,9 +481,13 @@ class ClientCommandService
                 MessageReply reply = connection.sendMessage(CommandMessage.Type.BOARD_SHUFFLE_LOCK, new BoardMessage(boardName));
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {
-                    notifier.failed(reply.interpretPayloadAsError());
+                    notifier.failed(new ShuffleStatus(reply.interpretPayloadAsError(), "", null));
                     return;
+
+
                 }
+
+                String boardHost = DERUTF8String.getInstance(reply.getPayload()).getString();
 
                 Map<String, byte[]> commitmentMap = new HashMap<>();
 
@@ -503,7 +508,7 @@ class ClientCommandService
                     }
                     else
                     {
-                        notifier.failed(seedReply.interpretPayloadAsError());
+                        notifier.failed(new ShuffleStatus(seedReply.interpretPayloadAsError(), node, null));
                         return;
                     }
                 }
@@ -514,19 +519,19 @@ class ClientCommandService
                 reply = connection.sendMessage(nodes[0], CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, 0));
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {
-                    notifier.failed(reply.interpretPayloadAsError());
+                    notifier.failed(new ShuffleStatus(reply.interpretPayloadAsError(), nodes[0], null));
                     return;
                 }
 
-                reply = connection.sendMessage(CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE, new CopyAndMoveMessage(this.getOperationNumber(), boardName, 0, nodes[0]));
+                reply = connection.sendMessage(boardHost, CommandMessage.Type.START_SHUFFLE_AND_MOVE_BOARD_TO_NODE, new CopyAndMoveMessage(this.getOperationNumber(), boardName, 0, nodes[0]));
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {
-                    notifier.failed(reply.interpretPayloadAsError());
+                    notifier.failed(new ShuffleStatus(reply.interpretPayloadAsError(), boardHost, null));
                     return;
                 }
 
-                String boardHost = DERUTF8String.getInstance(reply.getPayload()).getString();
-                notifier.status("Starting  (" + nodes[0] + "/0)");
+
+                notifier.status(new ShuffleStatus("Starting  (" + nodes[0] + "/0)", nodes[0], 0));
                 for (int i = 0; i < nodes.length - 1; i++)
                 {
                     waitForCompleteStatus(this.getOperationNumber(), nodes[i], i);
@@ -534,18 +539,18 @@ class ClientCommandService
                     reply = connection.sendMessage(nodes[i + 1], CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, i + 1));
                     if (reply.getType() != MessageReply.Type.OKAY)
                     {
-                        notifier.failed(reply.interpretPayloadAsError());
+                        notifier.failed(new ShuffleStatus(reply.interpretPayloadAsError(), nodes[i + 1], null));
                         return;
                     }
 
                     reply = connection.sendMessage(nodes[i], CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, i, options.getTransformName(), options.getKeyID(), nodes[i + 1]));
                     if (reply.getType() != MessageReply.Type.OKAY)
                     {
-                        notifier.failed(reply.interpretPayloadAsError());
+                        notifier.failed(new ShuffleStatus(reply.interpretPayloadAsError(), nodes[i + 1], null));
                         return;
                     }
 
-                    notifier.status("Shuffling (" + nodes[i + 1] + "/" + (i + 1) + ")");
+                    notifier.status(new ShuffleStatus("Shuffling (" + nodes[i + 1] + "/" + (i + 1) + ")", nodes[i + 1], i + 1));
                 }
 
                 waitForCompleteStatus(this.getOperationNumber(), nodes[nodes.length - 1], nodes.length - 1);
@@ -553,25 +558,25 @@ class ClientCommandService
                 reply = connection.sendMessage(boardHost, CommandMessage.Type.INITIATE_INTRANSIT_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length));
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {
-                    notifier.failed(reply.interpretPayloadAsError());
+                    notifier.failed(new ShuffleStatus(reply.interpretPayloadAsError(), boardHost, null));
                     return;
                 }
 
                 reply = connection.sendMessage(nodes[nodes.length - 1], CommandMessage.Type.SHUFFLE_AND_MOVE_BOARD_TO_NODE, new PermuteAndMoveMessage(this.getOperationNumber(), boardName, nodes.length - 1, options.getTransformName(), options.getKeyID(), boardHost));
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {
-                    notifier.failed(reply.interpretPayloadAsError());
+                    notifier.failed(new ShuffleStatus(reply.interpretPayloadAsError(), nodes[nodes.length - 1], null));
                     return;
                 }
 
                 waitForCompleteStatus(this.getOperationNumber(), boardHost, nodes.length);
 
-                notifier.status("Returning (" + boardHost + "/" + nodes.length + ")");
+                notifier.status(new ShuffleStatus("Returning (" + boardHost + "/" + nodes.length + ")", boardHost, nodes.length));
 
                 reply = connection.sendMessage(boardHost, CommandMessage.Type.RETURN_TO_BOARD, new TransitBoardMessage(this.getOperationNumber(), boardName, nodes.length));
                 if (reply.getType() != MessageReply.Type.OKAY)
                 {
-                    notifier.failed(reply.interpretPayloadAsError());
+                    notifier.failed(new ShuffleStatus(reply.interpretPayloadAsError(), boardHost, null));
                     return;
                 }
 
@@ -581,7 +586,7 @@ class ClientCommandService
             }
             catch (Exception e)
             {
-                notifier.failed(e.toString());
+                notifier.failed(new ShuffleStatus(e.toString(), "", e));
             }
         }
 

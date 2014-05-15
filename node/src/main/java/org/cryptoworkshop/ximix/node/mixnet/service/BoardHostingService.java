@@ -410,6 +410,36 @@ public class BoardHostingService
                         return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
                     }
                 });
+            case BOARD_SHUFFLE_LOCK:
+                final BoardMessage shuffleLockBoardMessage = BoardMessage.getInstance(message.getPayload());
+                return boardExecutor.submitTask(shuffleLockBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+                        if (boardRegistry.isLocked(shuffleLockBoardMessage.getBoardName()))
+                        {
+                            return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(shuffleLockBoardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
+                        }
+                        boardRegistry.shuffleLock(shuffleLockBoardMessage.getBoardName());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
+            case BOARD_SHUFFLE_UNLOCK:
+                final BoardMessage shuffleUnlockBoardMessage = BoardMessage.getInstance(message.getPayload());
+
+                return boardExecutor.submitTask(shuffleUnlockBoardMessage.getBoardName(), new Callable<MessageReply>()
+                {
+                    @Override
+                    public MessageReply call()
+                        throws Exception
+                    {
+
+                        boardRegistry.shuffleUnlock(shuffleUnlockBoardMessage.getBoardName());
+                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
+                    }
+                });
             case FETCH_BOARD_STATUS:
                 final TransitBoardMessage transitBoardMessage = TransitBoardMessage.getInstance(message.getPayload());
                 return boardExecutor.submitTask(transitBoardMessage.getBoardName(), new Callable<MessageReply>()
@@ -442,36 +472,6 @@ public class BoardHostingService
                             return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(compStatusBoardMessage.getBoardName(), BoardStatusMessage.Status.IN_TRANSIT));
                         }
                         return new MessageReply(MessageReply.Type.OKAY, new BoardStatusMessage(compStatusBoardMessage.getBoardName(), BoardStatusMessage.Status.COMPLETE));
-                    }
-                });
-            case BOARD_SHUFFLE_LOCK:
-                final BoardMessage shuffleLockBoardMessage = BoardMessage.getInstance(message.getPayload());
-                return boardExecutor.submitTask(shuffleLockBoardMessage.getBoardName(), new Callable<MessageReply>()
-                {
-                    @Override
-                    public MessageReply call()
-                        throws Exception
-                    {
-                        if (boardRegistry.isLocked(shuffleLockBoardMessage.getBoardName()))
-                        {
-                            return new MessageReply(MessageReply.Type.ERROR, new BoardErrorStatusMessage(shuffleLockBoardMessage.getBoardName(), BoardErrorStatusMessage.Status.SUSPENDED));
-                        }
-                        boardRegistry.shuffleLock(shuffleLockBoardMessage.getBoardName());
-                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
-                    }
-                });
-            case BOARD_SHUFFLE_UNLOCK:
-                final BoardMessage shuffleUnlockBoardMessage = BoardMessage.getInstance(message.getPayload());
-
-                return boardExecutor.submitTask(shuffleUnlockBoardMessage.getBoardName(), new Callable<MessageReply>()
-                {
-                    @Override
-                    public MessageReply call()
-                        throws Exception
-                    {
-
-                        boardRegistry.shuffleUnlock(shuffleUnlockBoardMessage.getBoardName());
-                        return new MessageReply(MessageReply.Type.OKAY, new DERUTF8String(nodeContext.getName()));
                     }
                 });
             case START_SHUFFLE_AND_MOVE_BOARD_TO_NODE:

@@ -55,6 +55,7 @@ import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
+import org.cryptoworkshop.ximix.client.ShuffleStatus;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.client.UploadService;
@@ -228,9 +229,9 @@ public class Main
             }
 
             @Override
-            public void status(String statusObject)
+            public void status(ShuffleStatus statusObject)
             {
-                System.err.println("status: " + statusObject);
+                System.err.println("status: " + statusObject.getMessage());
             }
 
             @Override
@@ -241,10 +242,10 @@ public class Main
             }
 
             @Override
-            public void failed(String errorObject)
+            public void failed(ShuffleStatus errorObject)
             {
                 shuffleLatch.countDown();
-                System.err.println("failed: " + errorObject);
+                System.err.println("failed: " + errorObject.getMessage());
             }
         };
 

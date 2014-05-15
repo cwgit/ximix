@@ -95,6 +95,7 @@ import org.cryptoworkshop.ximix.client.NetworkBoardListener;
 import org.cryptoworkshop.ximix.client.RegistrarServiceException;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
+import org.cryptoworkshop.ximix.client.ShuffleStatus;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.client.UploadService;
@@ -1149,6 +1150,7 @@ public class CommandApplet
                 ShuffleOperationListener shuffleListener = new ShuffleOperationListener()
                 {
                     private boolean firstStepDone = false;
+                    private String  startNode = "";
 
                     @Override
                     public void commit(Map<String, byte[]> seedCommitments)
@@ -1164,22 +1166,31 @@ public class CommandApplet
                     }
 
                     @Override
-                    public void status(String statusObject)
+                    public void status(ShuffleStatus statusObject)
                     {
-                        boardEntry.setShuffleProgress(statusObject);
-                        if (!statusObject.startsWith("Starting") && !firstStepDone)
+                        String statusMessage = statusObject.getMessage();
+                        boardEntry.setShuffleProgress(statusMessage);
+                        if (statusMessage.startsWith("Starting"))
+                        {
+                            startNode = statusObject.getNodeName();
+                        }
+                        else if (!firstStepDone && !startNode.equals(statusObject.getNodeName()))
                         {
                             firstStepDone = true;
                             processSemaphore.release();
                         }
-                        System.err.println("status: " + statusObject);
+                        System.err.println("status: " + statusMessage);
                     }
 
                     @Override
-                    public void failed(String errorObject)
+                    public void failed(ShuffleStatus errorObject)
                     {
                         shuffleOperationLatch.countDown();
-                        System.err.println("failed: " + errorObject);
+                        System.err.println("failed: " + errorObject.getMessage());
+                        if (errorObject.getCause() != null)
+                        {
+                            errorObject.getCause().printStackTrace(System.err);
+                        }
                     }
                 };
 

@@ -23,7 +23,7 @@ import org.cryptoworkshop.ximix.common.util.OperationListener;
  * Listener for monitoring shuffle operations.
  */
 public interface ShuffleOperationListener
-    extends OperationListener<String>
+    extends OperationListener<ShuffleStatus>
 {
     /**
      * Called to pass in the commitments for seeds for later transcript recovery committed to by the nodes in
