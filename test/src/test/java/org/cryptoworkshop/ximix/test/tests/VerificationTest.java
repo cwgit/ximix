@@ -48,6 +48,7 @@ import org.cryptoworkshop.ximix.client.KeyGenerationOptions;
 import org.cryptoworkshop.ximix.client.KeyGenerationService;
 import org.cryptoworkshop.ximix.client.ShuffleOperationListener;
 import org.cryptoworkshop.ximix.client.ShuffleOptions;
+import org.cryptoworkshop.ximix.client.ShuffleStatus;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptOptions;
 import org.cryptoworkshop.ximix.client.ShuffleTranscriptsDownloadOperationListener;
 import org.cryptoworkshop.ximix.client.UploadService;
@@ -216,13 +217,13 @@ public class VerificationTest
             }
 
             @Override
-            public void status(String statusObject)
+            public void status(ShuffleStatus statusObject)
             {
                 //To change body of implemented methods use File | Settings | File Templates.
             }
 
             @Override
-            public void failed(String errorObject)
+            public void failed(ShuffleStatus errorObject)
             {
                 shuffleFailed.set(true);
                 shufflerLatch.countDown();
@@ -558,13 +559,13 @@ public class VerificationTest
             }
 
             @Override
-            public void status(String statusObject)
+            public void status(ShuffleStatus statusObject)
             {
                 //To change body of implemented methods use File | Settings | File Templates.
             }
 
             @Override
-            public void failed(String errorObject)
+            public void failed(ShuffleStatus errorObject)
             {
                 shuffleFailed.set(true);
                 shufflerLatch.countDown();

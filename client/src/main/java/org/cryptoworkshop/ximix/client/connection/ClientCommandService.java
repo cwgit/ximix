@@ -210,6 +210,10 @@ class ClientCommandService
 
                         seedsAndWitnesses.put(node, new byte[][] { swMessage.getSeed(), swMessage.getWitness() });
                     }
+                    else
+                    {
+                        eventNotifier.notify(EventNotifier.Level.ERROR, "Unable to get seed and witness from " + node + ": " + reply.interpretPayloadAsError());
+                    }
                 }
 
                 return seedsAndWitnesses;
@@ -483,8 +487,6 @@ class ClientCommandService
                 {
                     notifier.failed(new ShuffleStatus(reply.interpretPayloadAsError(), "", null));
                     return;
-
-
                 }
 
                 String boardHost = DERUTF8String.getInstance(reply.getPayload()).getString();
