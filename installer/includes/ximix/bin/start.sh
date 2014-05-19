@@ -1,9 +1,13 @@
 #!/bin/bash
 
-if [[ -z "$XIMXI_HOME" ]]; then
+if [[ -z "$XIMIX_HOME" ]]; then
 	L=`dirname $0`
 	XIMIX_HOME="$L/../"
+fi
+
 	 
+if [[ -z "$XIMIX_JAVA_OPTS" ]]; then
+    XIMIX_JAVA_OPTS=-Xmx768m
 fi
 
 if [[ "x$1" = "x" ]]; then
@@ -38,7 +42,7 @@ if [[ ! -f "$NODE" ]]; then
 	exit -1;
 fi
 
-$JAVA_HOME/bin/java -cp "$XIMIX_HOME/libs/*" org.cryptoworkshop.ximix.node.Main $MIX $NODE "$@" &
+$JAVA_HOME/bin/java $XIMIX_JAVA_OPTS -cp "$XIMIX_HOME/libs/*" org.cryptoworkshop.ximix.node.Main $MIX $NODE "$@" &
 PID=$!
 
 echo $PID > $PIDFILE
