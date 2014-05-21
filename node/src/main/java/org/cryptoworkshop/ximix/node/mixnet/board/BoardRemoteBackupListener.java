@@ -15,6 +15,9 @@
  */
 package org.cryptoworkshop.ximix.node.mixnet.board;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.bouncycastle.asn1.DERUTF8String;
 import org.cryptoworkshop.ximix.client.connection.ServiceConnectionException;
 import org.cryptoworkshop.ximix.common.asn1.message.BoardMessage;
@@ -27,6 +30,8 @@ import org.cryptoworkshop.ximix.node.service.NodeContext;
 public class BoardRemoteBackupListener
     implements BulletinBoardBackupListener
 {
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
     private final NodeContext nodeContext;
     private final String backUpHost;
 
@@ -44,7 +49,7 @@ public class BoardRemoteBackupListener
     @Override
     public void cleared(final BulletinBoard bulletinBoard)
     {
-        nodeContext.getExecutorService().execute(new Runnable()
+        executor.execute(new Runnable()
         {
             @Override
             public void run()
@@ -66,7 +71,7 @@ public class BoardRemoteBackupListener
     public void messagePosted(final BulletinBoard bulletinBoard, final int index, final byte[] message)
     {
         // TODO: there needs to be an initialisation phase to make sure the backup board is in sync
-        nodeContext.getExecutorService().execute(new Runnable()
+        executor.execute(new Runnable()
         {
             @Override
             public void run()
@@ -88,7 +93,7 @@ public class BoardRemoteBackupListener
     public void messagesPosted(final BulletinBoard bulletinBoard, final int startIndex, final byte[][] messages)
     {
                     // TODO: there needs to be an initialisation phase to make sure the backup board is in sync
-        nodeContext.getExecutorService().execute(new Runnable()
+        executor.execute(new Runnable()
         {
             @Override
             public void run()
@@ -105,6 +110,12 @@ public class BoardRemoteBackupListener
                 }
             }
         });
+    }
+
+    @Override
+    public void shutdown()
+    {
+        executor.shutdown();
     }
 
     private void checkForError(MessageReply reply)

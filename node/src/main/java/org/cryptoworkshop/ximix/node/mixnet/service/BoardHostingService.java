@@ -1027,7 +1027,7 @@ public class BoardHostingService
         {
             BulletinBoard transitBoard = boardRegistry.getTransitBoard(transitBoardMessage.getOperationNumber(), transitBoardMessage.getBoardName(), transitBoardMessage.getStepNumber());
             BulletinBoard homeBoard = boardRegistry.getBoard(transitBoardMessage.getBoardName());
-            PostedMessageBlock.Builder messageFetcher = new PostedMessageBlock.Builder(100);
+            PostedMessageBlock.Builder messageFetcher = new PostedMessageBlock.Builder(10);
 
             homeBoard.clear();
 

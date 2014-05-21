@@ -60,6 +60,12 @@ public class BulletinBoardTest
                     uploadLatch.countDown();
                 }
             }
+
+            @Override
+            public void shutdown()
+            {
+
+            }
         });
 
         board.clear();

@@ -173,6 +173,7 @@ public class BulletinBoardImpl
     public void shutdown()
     {
         boardDB.close();
+        backupNotifier.shutdown();
     }
 
     public String getName()

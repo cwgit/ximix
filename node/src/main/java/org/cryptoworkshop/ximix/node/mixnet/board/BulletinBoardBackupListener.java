@@ -44,4 +44,9 @@ public interface BulletinBoardBackupListener
      * @param messages      the data representing the message batch posted.
      */
     void messagesPosted(BulletinBoard bulletinBoard, int startIndex, byte[][] messages);
+
+    /**
+     * Shutdown the listener freeing the resources.
+     */
+    void shutdown();
 }
