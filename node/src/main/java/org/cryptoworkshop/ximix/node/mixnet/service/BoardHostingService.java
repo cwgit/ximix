@@ -22,6 +22,7 @@ import java.lang.reflect.Constructor;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -239,11 +240,14 @@ public class BoardHostingService
                         CMSSignedDataGenerator cmsGen = new CMSSignedDataGenerator();
 
                         KeyStore nodeCAStore = nodeContext.getNodeCAStore();
-                        X509Certificate nodeCert = (X509Certificate)nodeCAStore.getCertificate("nodeCA");
+                        Certificate[] nodeCerts = nodeCAStore.getCertificateChain("nodeCA");
 
-                        cmsGen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC").build("SHA256withECDSA", (PrivateKey)nodeCAStore.getKey("nodeCA", new char[0]), nodeCert));
+                        cmsGen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC").build("SHA256withECDSA", (PrivateKey)nodeCAStore.getKey("nodeCA", new char[0]), (X509Certificate)nodeCerts[0]));
 
-                        cmsGen.addCertificate(new JcaX509CertificateHolder(nodeCert));
+                        for (Certificate cert : nodeCerts)
+                        {
+                            cmsGen.addCertificate(new JcaX509CertificateHolder((X509Certificate)cert));
+                        }
 
                         return new MessageReply(MessageReply.Type.OKAY, cmsGen.generate(new CMSProcessableByteArray(seedCommitmentMessage.getEncoded()), true).toASN1Structure());
                     }
@@ -1070,11 +1074,14 @@ public class BoardHostingService
             {
                 KeyStore nodeCAStore = nodeContext.getNodeCAStore();
 
-                X509Certificate nodeCert = (X509Certificate)nodeCAStore.getCertificate("nodeCA");
+                Certificate[] nodeCerts = nodeCAStore.getCertificateChain("nodeCA");
 
-                cmsGen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC").build("SHA256withECDSA", (PrivateKey)nodeCAStore.getKey("nodeCA", new char[0]), nodeCert));
+                cmsGen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC").build("SHA256withECDSA", (PrivateKey)nodeCAStore.getKey("nodeCA", new char[0]), (X509Certificate)nodeCerts[0]));
 
-                cmsGen.addCertificate(new JcaX509CertificateHolder(nodeCert));
+                for (Certificate cert : nodeCerts)
+                {
+                    cmsGen.addCertificate(new JcaX509CertificateHolder((X509Certificate)cert));
+                }
 
                 cmsOut = cmsGen.open(bOut, true);
             }

@@ -305,7 +305,7 @@ task coverage_report(dependsOn: 'compileTestJava') << {
     //
     // Delete source file..
     //
-    new File("{$rootDir}/build/coverage/jacoco.exe").delete();
+    new File("${rootDir}/build/coverage/jacoco.exe").delete();
 
     println("\r\nCoverage Report can be found in: \r\n" + coverageReport);
 
