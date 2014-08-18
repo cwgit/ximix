@@ -50,6 +50,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -338,11 +339,21 @@ public class CommandApplet
             {
                 String planStr = shufflePlan.getText().trim();
                 String dirName = downloadDirField.getText().trim();
+                String configName = configField.getText().trim();
 
                 if (dirName.length() == 0)
                 {
                     JOptionPane.showMessageDialog(SwingUtilities.windowForComponent(CommandApplet.this),
                         "Please enter a download directory.",
+                        "Missing Field Error",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (configName.length() == 0)
+                {
+                    JOptionPane.showMessageDialog(SwingUtilities.windowForComponent(CommandApplet.this),
+                        "Please enter a candidate configuration file name.",
                         "Missing Field Error",
                         JOptionPane.ERROR_MESSAGE);
                     return;
@@ -1146,6 +1157,8 @@ public class CommandApplet
             try
             {
                 final CountDownLatch shuffleOperationLatch = new CountDownLatch(1);
+                final CountDownLatch seedLatch = new CountDownLatch(1);
+                final AtomicBoolean  hasFailed = new AtomicBoolean(false);
 
                 final Map<String, byte[]> seedCommitmentMap = new HashMap<>();
 
@@ -1158,6 +1171,7 @@ public class CommandApplet
                     public void commit(Map<String, byte[]> seedCommitments)
                     {
                         seedCommitmentMap.putAll(seedCommitments);
+                        seedLatch.countDown();
                     }
 
                     @Override
@@ -1187,6 +1201,7 @@ public class CommandApplet
                     @Override
                     public void failed(ShuffleStatus errorObject)
                     {
+                        hasFailed.set(true);
                         shuffleOperationLatch.countDown();
                         System.err.println("failed: " + errorObject.getMessage());
                         if (errorObject.getCause() != null)
@@ -1201,6 +1216,13 @@ public class CommandApplet
                 Operation<ShuffleOperationListener> shuffleOp = commandService.doShuffleAndMove(boardEntry.getName(), new ShuffleOptions.Builder("MultiColumnRowTransform").withKeyID(keyID).build(), shuffleListener, shufflePlan);
 
                 shuffleOperationLatch.await();
+
+                if (hasFailed.get())
+                {
+                    throw new IllegalStateException("Shuffle process failed!!!");
+                }
+
+                seedLatch.await();
 
                 boardEntry.markProgress(BoardEntry.State.SHUFFLING, 0, 0.25);
 
