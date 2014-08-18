@@ -30,8 +30,8 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Security;
@@ -114,20 +114,6 @@ import org.cryptoworkshop.ximix.console.util.vote.BallotUnpacker;
 public class CommandApplet
     extends JApplet
 {
-    String trust = "-----BEGIN CERTIFICATE-----\n" +
-        "MIIB/zCCAaQCAQEwCgYIKoZIzj0EAwIwgYoxCzAJBgNVBAYTAkFVMSAwHgYDVQQK\n" +
-        "DBdDcnlwdG8gV29ya3Nob3AgUHR5IEx0ZDEbMBkGA1UECwwSWGltaXggTm9kZSBU\n" +
-        "ZXN0IENBMRIwEAYDVQQHDAlNZWxib3VybmUxETAPBgNVBAgMCFZpY3RvcmlhMRUw\n" +
-        "EwYDVQQDDAxUcnVzdCBBbmNob3IwHhcNMTQwMjE1MDA0MDU5WhcNMTYwMjE1MDA0\n" +
-        "MTQ5WjCBijELMAkGA1UEBhMCQVUxIDAeBgNVBAoMF0NyeXB0byBXb3Jrc2hvcCBQ\n" +
-        "dHkgTHRkMRswGQYDVQQLDBJYaW1peCBOb2RlIFRlc3QgQ0ExEjAQBgNVBAcMCU1l\n" +
-        "bGJvdXJuZTERMA8GA1UECAwIVmljdG9yaWExFTATBgNVBAMMDFRydXN0IEFuY2hv\n" +
-        "cjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABL6UHYMIHxn0/iy+psDMrZ6i5taB\n" +
-        "iWdCBg4Sf2seMgcIulj7rfha+gccITdfhFvekd4TuzKnN9Kdx+r/ANN18ccwCgYI\n" +
-        "KoZIzj0EAwIDSQAwRgIhALY/gND++XVgMcJqm9QkcoKgyXrIcK+I3vYn2oU+wVdq\n" +
-        "AiEA8V2OyZcqC1RXWsSziD7ZCHAKO2XU9uUyfdppPIfN+eA=\n" +
-        "-----END CERTIFICATE-----\n";
-
     private static final int BATCH_SIZE = 10;
     private ExecutorService  threadPool = Executors.newCachedThreadPool();   // TODO: maybe configure?
     private static final int ncores = 3;
@@ -144,6 +130,7 @@ public class CommandApplet
         }
 
         final URL mixnetConf = getConfURL();
+        final URL trustCa = getCaURL();
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
@@ -155,12 +142,12 @@ public class CommandApplet
         JButton uploadBrowseButton = new JButton("...");
 
         final JTextField uploadDirField = new JTextField(20);
-
-        PEMParser pemParser = new PEMParser(new StringReader(trust));
         final XimixRegistrar adminRegistrar;
 
         try
         {
+            PEMParser pemParser = new PEMParser(new InputStreamReader(trustCa.openStream()));
+
             trustAnchor = new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder)pemParser.readObject());
 
             adminRegistrar = XimixRegistrarFactory.createAdminServiceRegistrar(mixnetConf.openStream(), new EventNotifier()
@@ -546,6 +533,21 @@ public class CommandApplet
         try
         {
             mixnetConf = new URL(getParameter("mixnetConf"));
+        }
+        catch (MalformedURLException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            mixnetConf = null; // TODO:
+        }
+        return mixnetConf;
+    }
+
+    private URL getCaURL()
+    {
+        URL mixnetConf;
+        try
+        {
+            mixnetConf = new URL(getParameter("trustAnchor"));
         }
         catch (MalformedURLException e)
         {
