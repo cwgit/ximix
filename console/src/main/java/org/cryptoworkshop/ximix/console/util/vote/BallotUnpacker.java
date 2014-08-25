@@ -112,8 +112,6 @@ public class BallotUnpacker
      */
     public int[] lookup(String gid, String type, String meta, ECPoint point)
     {
-        Lookup lookUp = lookupMap.get(type.toLowerCase());
-
         if (useCandidateList.contains(Strings.toLowerCase(type)))
         {
             List<ECPoint> candidateList = candidateTable.get(gid + "_" + type + "_" + meta).getCandidateList();
@@ -130,6 +128,13 @@ public class BallotUnpacker
         if (point.equals(paddingPoint))
         {
             return new int[0];
+        }
+
+        Lookup lookUp = lookupMap.get(Strings.toLowerCase(type));
+
+        if (lookUp == null)
+        {
+            throw new NullPointerException("Lookup for " + Strings.toLowerCase(type) + " returned NULL!");
         }
 
         byte[] indexes = lookUp.find(point);
